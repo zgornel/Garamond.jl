@@ -12,7 +12,7 @@ function find_cluster_mean(clmodel, model, treemodel, word::String, n::Int)
 
 	# Return most similar word to mean cluster
 	idx, _ = knn(treemodel, vc, n+1, true)
-	return model.vocab[idx[2:end]]
+	return model.vocab[idx[1:end]]
 end
 
 
@@ -53,7 +53,7 @@ function find_close_clusters(clmodel, model, word, n)
 end
 
 
-function path(clmodel, model, fv, Mc, word1, word2; κ::Float64=0.0, δ::Int=1 )
+function path(clmodel, model, fv, Mc, word1, word2; κ::Float64=1.0, δ::Int=1 )
 	#Mc = get_cluster_matrix(clmodel,model)
 	D = 1-(MLKernels.kernelmatrix(MLKernels.ColumnMajor(),MLKernels.LinearKernel(), Mc)-1.0);
 	minD = minimum(D)
@@ -88,8 +88,8 @@ function path(clmodel, model, fv, Mc, word1, word2; κ::Float64=0.0, δ::Int=1 )
 		t = "\t"
 		for cl in path
 			pos_cl = find(clmodel.clusters .== cl)
-			descriptors = model.vocab[pos_cl][sortperm(freqs[pos_cl],rev=true)]
-			descriptors = filter(x->!isupper(x[1]), descriptors)
+			descriptors = model.vocab[pos_cl][sortperm(fv[pos_cl],rev=true)]
+			#descriptors = filter(x->!isupper(x[1]), descriptors)
 			println("$t [$cl] --> $(descriptors[1:min(δ, length(descriptors))])")
 			t*="\t"
 		end
