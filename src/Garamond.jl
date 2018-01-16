@@ -4,7 +4,8 @@ VERSION >= v"0.6.0" && __precompile__(true)
 
 	# Using section
 	using Word2Vec, LightGraphs, NearestNeighbors, MLKernels
-
+	using HttpServer, WebSockets
+ 
 	# Import section
 
 	# Export section
@@ -12,9 +13,12 @@ VERSION >= v"0.6.0" && __precompile__(true)
 		get_cluster_matrix, 
 		get_cluster_matrix!,
 		find_close_clusters, 
-		path
+		path, 
+		start_http_server 
+		
 
 	# Includes
 	include("utils.jl")
+	include("sockserver.jl")
 
 end # module
