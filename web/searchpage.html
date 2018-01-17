@@ -5,12 +5,15 @@
     <style>
 	form {
 		width:500px;
-		margin:50px auto;
+		margin:100px auto;
 	}
 	.search {
-		padding:8px 25px;
+		width:300px;
+		padding:8px 30px;
 		background:rgba(100, 100, 100, 0.2);
 		border:1px solid #000000;
+		font-family: 'Times New Roman';
+		font-size: 15px;
 	}
 	.button {
 		position:relative;
@@ -19,65 +22,80 @@
 		border:1px solid #000000;
 		background-color:#a0cfff;
 		color:#000000;
+		font-family: 'Times New Roman';
+		font-size: 15px;
 	}
 	.button:hover  {
 		background-color:#fafafa;
 		color:#207cca;
 	}
-	.sent {
-		color: blue;
-	}
-	.received {
-		color: green;
+	#pby {
+		font-family: 'Times New Roman';
+		font-size: 12px;
 	}
     </style>
 </head>
-<body>
+<body>	
 	<!-- search section -->
-	<div id="search_box", style="position:fixed;top:0;height:50px;width:100%;">
-		<form>
+	<div id="search_header" style="position:fixed;top:0;height:50px;width:100%;">
+		<form id="search_box">
 			<input id="search_box_txt" type="text" class="search" placeholder="Search..." required>
-			<input id="search_box_button" type="submit" class="button" value="Search">
+			<input id="search_box_button" type="button" class="button" value="Search">
+			<p id="pby" align="right"> powered by 
+				<img src="img/logo.png" style="float:center;max-width:15%">
+			</p>
 		</form>
 	</div>
-	
+
 	<!-- results section -->
 	<div id="search_results">
+		<p id="results_list"> </p>
 	</div>
 
 <script type="text/javascript">
-   document.addEventListener("DOMContentLoaded", function() {
-        var connection = new WebSocket("ws://localhost:9999");
-	
+	//document.addEventListener('DOMContentLoaded', function (){
+	//}, 'false');
+		
+	var connection = new WebSocket('ws://'+window.location.host); 
+	var results_list = document.getElementById("results_list");
+	console.log("websocket ok");
+
 	//When receiving socket message
-        connection.onmessage = function( query_response ){
-            window.lastmessage = query_response;
-            $("#search_results").append( $("<p class='received'></p>").html( query_response.data ) );
-        }
-        
+	connection.onmessage = function( query_response ){
+		window.lastmessage = query_response;
+		console.log("Response:"+query_response.data)
+		//results_list.innerHTML(query_response.data);
+	}
+
 	// Send message function
 	function sendMessage( query ){
-            connection.send(query);
-        }
+		console.log("sending message");
+		connection.send(query);
+	}
 
+	
 	// Variables for the search box and button
-	var search_box_button = document.getElementById("search_box_button"),
-	    serch_box_txt = document.getElementById("search_box_txt")
+	var search_box = document.getElementById("search_box"),
+	    search_box_button = document.getElementById("search_box_button"),
+	    serch_box_txt = document.getElementById("search_box_txt");
 
 	// When clicking the button
-	search_box_button.onclick = function(){
-		//sendMessage(search_box_txt.value);
-		document.write(search_box_txt.value);
-        	}
-	);
+	search_box_button.onclick = function(){ 
+		sendMessage(search_box_txt.value);
+	}; 
 	
-	// If enter is pressed when in the search box
-	search_box_txt.addEventListener("onkeyup", function(e) {
-    		if (e.keyCode === 13) {
-        		search_box_button.click();
-    		}
-	});
-    });
+	// When submitting the form
+	search_box.onsubmit = function(){ 
+		sendMessage(search_box_txt.value);
+		return false;
+	};
+
+	// Close web socket when page is reloaded
+	window.onunload = function() {
+		window.alert("CLOSING");
+		console.log("closing web socket...");
+		connection.close();
+	};
 </script>
 
 </body>

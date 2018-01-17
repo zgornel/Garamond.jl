@@ -6,10 +6,18 @@ function start_http_server(webpage_file::String, port::Int)
 	# Socket hadling function
 	function ws_func(req, client)
 		while true
+
+			# Read from web socket
 			msg = read(client)
 			msg = String(copy(msg))
 			println("RECEIVED QUERY: $msg")
-			write(client, msg)
+			
+			# Write back data 
+			if isopen(client)
+				write(client, msg)
+			else 
+				warn("Could not write to Web socket.")
+			end
 		end
 	end
 
