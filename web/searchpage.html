@@ -47,11 +47,11 @@
 			<input id="search_box_txt" type="text" class="search" placeholder="Search..." required>
 			<input id="search_box_button" type="button" class="button" value="Search">
 			<p id="pby" align="right"> powered by 
-				<img alt="0x0α Research" src="img/logo.png" style="float:center;max-width:15%">
+			<!--	<img alt="0x0α Research" src="img/logo.png" style="float:center;max-width:15%"> -->
+				<img alt="0x0α Research" src="https://s9.postimg.org/kmiy2ofbj/logo.png" style="float:center;max-width:15%">
 			</p>
 		</form>
 	</div>
-
 	<!-- results section -->
 	<div id="search_results" style="position:fixed;float:left;left:100px;top:200px">
 		<p id="results_list"> </p>
@@ -67,19 +67,21 @@
 	//}, 'false');
 		
 	var connection = new WebSocket('ws://localhost:9999'); 
-	var results_list = document.getElementById("search_results");
-	console.log("websocket ok");
+	var search_results = document.getElementById("search_results");
 
 	//When receiving socket message
+	connection.onopen = function(e){ console.log("websocket ok")};
+
 	connection.onmessage = function( query_response ){
 		window.lastmessage = query_response;
 		console.log("Response:"+query_response.data)
 
 		//Append to results list
+		search_results.innerHTML = "";
 		var r = document.createElement("p");
 		var rtext = document.createTextNode(query_response.data);
 		r.appendChild(rtext);
-		results_list.appendChild(r);
+		search_results.appendChild(r);
 	}
 
 	// Send message function
