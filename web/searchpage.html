@@ -33,38 +33,53 @@
 		font-family: 'Times New Roman';
 		font-size: 12px;
 	}
+	
+	#search_results {
+		font-family: 'Times New Roman';
+		font-size: 12px;
+	}
     </style>
 </head>
 <body>	
 	<!-- search section -->
-	<div id="search_header" style="position:fixed;top:0;height:50px;width:100%;">
+	<div id="search_header" style="position:fixed;float:left;top:0;height:50px;width:100%;">
 		<form id="search_box">
 			<input id="search_box_txt" type="text" class="search" placeholder="Search..." required>
 			<input id="search_box_button" type="button" class="button" value="Search">
 			<p id="pby" align="right"> powered by 
-				<img src="img/logo.png" style="float:center;max-width:15%">
+				<img alt="0x0α Research" src="img/logo.png" style="float:center;max-width:15%">
 			</p>
 		</form>
 	</div>
 
 	<!-- results section -->
-	<div id="search_results">
+	<div id="search_results" style="position:fixed;float:left;left:100px;top:200px">
 		<p id="results_list"> </p>
+		<p> paragraph 1</p>
+		<p> paragraph 2</p>
+		<p> paragraph 3</p>
+		<p> paragraph 4</p>
+		<p> paragraph 4</p>
 	</div>
 
 <script type="text/javascript">
 	//document.addEventListener('DOMContentLoaded', function (){
 	//}, 'false');
 		
-	var connection = new WebSocket('ws://'+window.location.host); 
-	var results_list = document.getElementById("results_list");
+	var connection = new WebSocket('ws://localhost:9999'); 
+	var results_list = document.getElementById("search_results");
 	console.log("websocket ok");
 
 	//When receiving socket message
 	connection.onmessage = function( query_response ){
 		window.lastmessage = query_response;
 		console.log("Response:"+query_response.data)
-		//results_list.innerHTML(query_response.data);
+
+		//Append to results list
+		var r = document.createElement("p");
+		var rtext = document.createTextNode(query_response.data);
+		r.appendChild(rtext);
+		results_list.appendChild(r);
 	}
 
 	// Send message function
@@ -81,12 +96,14 @@
 
 	// When clicking the button
 	search_box_button.onclick = function(){ 
+		search_box_txt.value = ""
 		sendMessage(search_box_txt.value);
 	}; 
 	
 	// When submitting the form
 	search_box.onsubmit = function(){ 
 		sendMessage(search_box_txt.value);
+		search_box_txt.value = ""
 		return false;
 	};
 
