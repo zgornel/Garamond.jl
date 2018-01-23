@@ -7,6 +7,7 @@ VERSION >= v"0.6.0" && __precompile__(true)
 	using HttpServer, WebSockets
  
 	# Import section
+	import Base: show
 
 	# Export section
 	export find_cluster_mean,
@@ -14,14 +15,15 @@ VERSION >= v"0.6.0" && __precompile__(true)
 		get_cluster_matrix!,
 		find_close_clusters, 
 		path, 
-		start_http_server 
+		start_http_server,
+		AbstractItem, AbstractBook, Book,
+		parse_books
 		
 
 	# Includes
 	include("data.jl")
-	include("server.jl")
 	include("heuristics.jl")
 	include("search.jl")
-	include("run.jl")
+	include("server.jl")
 
 end # module

@@ -12,6 +12,9 @@ function start_http_server(webpage_file::String, port::Int)
 			msg = String(copy(msg))
 			println("RECEIVED QUERY: $msg")
 			
+			# Process query
+			# ...
+
 			# Write back data 
 			if isopen(client)
 				write(client, msg)
