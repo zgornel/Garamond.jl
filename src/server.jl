@@ -27,13 +27,7 @@ function start_http_server(webpage_file::String, port::Int)
 		Response(webpage)
 	end
 	
-	# Define WebSocket and HTTP handlers
-	ws_handler = WebSocketHandler(ws_func)
-	http_handler = HttpHandler(http_func)
-
 	# Start server
-	server = Server(http_handler, ws_handler)
-	println("Server listening on port $port...")
-	run(server, port)
+	run(Server(HttpHandler(http_func), WebSocketHandler(ws_func)), port)
 
 end

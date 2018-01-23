@@ -36,7 +36,7 @@
 	
 	#search_results {
 		font-family: 'Times New Roman';
-		font-size: 12px;
+		font-size: 14px;
 	}
     </style>
 </head>
@@ -55,46 +55,74 @@
 	<!-- results section -->
 	<div id="search_results" style="position:fixed;float:left;left:100px;top:200px">
 		<p id="results_list"> </p>
-		<p> paragraph 1</p>
-		<p> paragraph 2</p>
-		<p> paragraph 3</p>
-		<p> paragraph 4</p>
-		<p> paragraph 4</p>
+		<p><b> Some items: </b> <br>
+			&emsp; item 1 <br>
+			item 2
+			<p>
 	</div>
 
 <script type="text/javascript">
 	//document.addEventListener('DOMContentLoaded', function (){
 	//}, 'false');
-		
+	
+	// Global variables
 	var connection = new WebSocket('ws://localhost:9999'); 
 	var search_results = document.getElementById("search_results");
-
-	//When receiving socket message
+	
+	// When socket connection opened i.e. on page load
 	connection.onopen = function(e){ console.log("websocket ok")};
 
-	connection.onmessage = function( query_response ){
-		window.lastmessage = query_response;
-		console.log("Response:"+query_response.data)
+	
 
+	//When receiving socket message
+	connection.onmessage = function(r){
+		window.lastmessage = r;
+		console.log("Response received!");
+		
+		// Response example: { "etime": 0.2,
+		//			"exact_matches": 1 ,
+		//			"exact_match_list":"[2,3,4]",
+		//			"partial_matches":"2"
+		//			"partial_match_list":"[5,6,7]",
+		jr = JSON.parse(r.data);
+		
+		// Process JSON data (access with jr.etime, etc)
+		//var search_time = jr.etime;
+		//var exact_m = jr.exact_matches;
+		//var exact_ml = jr.exact_match_list;
+		//var exact_m = jr.exact_matches;
+		//var exact_ml = jr.exact_match_list;
+		
 		//Append to results list
 		search_results.innerHTML = "";
-		var r = document.createElement("p");
-		var rtext = document.createTextNode(query_response.data);
-		r.appendChild(rtext);
-		search_results.appendChild(r);
+		var np = document.createElement("p");
+		var np_text = document.createTextNode(r.data);
+		np.appendChild(np_text);
+		search_results.appendChild(np);
 	}
 
+
+
 	// Send message function
-	function sendMessage( query ){
-		console.log("sending message");
-		connection.send(query);
+	function sendMessage(q){
+		console.log("Sending message...");
+		// Create JSON query
+		var jq = {
+			type: "unknown",
+			text: q,
+			date: Date()
+		}
+		connection.send(JSON.stringify(jq));
 	}
 
 	
+
 	// Variables for the search box and button
 	var search_box = document.getElementById("search_box"),
 	    search_box_button = document.getElementById("search_box_button"),
 	    serch_box_txt = document.getElementById("search_box_txt");
+
+
 
 	// When clicking the button
 	search_box_button.onclick = function(){ 

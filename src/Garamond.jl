@@ -18,7 +18,10 @@ VERSION >= v"0.6.0" && __precompile__(true)
 		
 
 	# Includes
-	include("utils.jl")
-	include("sockserver.jl")
+	include("data.jl")
+	include("server.jl")
+	include("heuristics.jl")
+	include("search.jl")
+	include("run.jl")
 
 end # module
