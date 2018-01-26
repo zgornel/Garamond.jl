@@ -17,7 +17,7 @@
 	}
 	.button {
 		position:relative;
-		padding:8px 15px;
+		padding:8px 25px;
 		left:8px;
 		border:1px solid #000000;
 		background-color:#a0cfff;
@@ -27,7 +27,7 @@
 	}
 	.button:hover  {
 		background-color:#fafafa;
-		color:#207cca;
+		color:#000000;
 	}
 	#pby {
 		font-family: 'Times New Roman';
@@ -54,11 +54,6 @@
 	</div>
 	<!-- results section -->
 	<div id="search_results" style="position:fixed;float:left;left:100px;top:200px">
-		<p id="results_list"> </p>
-		<p><b> Some items: </b> <br>
-			&emsp; item 1 <br>
-			item 2
-			<p>
 	</div>
 
 <script type="text/javascript">
@@ -80,25 +75,36 @@
 		console.log("Response received!");
 		
 		// Response example: { "etime": 0.2,
-		//			"exact_matches": 1 ,
-		//			"exact_match_list":"[2,3,4]",
-		//			"partial_matches":"2"
-		//			"partial_match_list":"[5,6,7]",
+		//			"n_matches": 3 ,
+		//			"matches":<list of book Dicts>}
 		jr = JSON.parse(r.data);
 		
 		// Process JSON data (access with jr.etime, etc)
-		//var search_time = jr.etime;
-		//var exact_m = jr.exact_matches;
-		//var exact_ml = jr.exact_match_list;
-		//var exact_m = jr.exact_matches;
-		//var exact_ml = jr.exact_match_list;
+		var search_time = jr.etime;
+		var n_matchesm = jr.n_matches;
+		var matches = jr.matches;
 		
 		//Append to results list
-		search_results.innerHTML = "";
-		var np = document.createElement("p");
-		var np_text = document.createTextNode(r.data);
-		np.appendChild(np_text);
-		search_results.appendChild(np);
+		/* search_results.innerHTML = "<p>Elapsed search time: <b>" + jr.etime + "</b>s.</br>";
+		var ep = document.createElement("p");
+
+		for (i=0; i < jr.n_matches; i++){
+			text_node = document.createTextNode("&emsp; \""+jr.matches[i].book+"\"" + " by " + jr.matches[i].author)
+			ep.appendChild(text_node)
+			ep.appendChild(document.createElement("br"));
+		}
+		search_results.appendChild(ep);
+		*/
+		results_text = "<p>Elapsed search time: <b>" + jr.etime + "</b>s.</br>i</p>";
+		results_text += "<br>";
+		results_text += "<p>Found " + jr.n_matches + " results.<p>";
+		results_text += "<br><p>";
+		for (i=0; i < jr.n_matches; i++){
+			results_text +=
+				"&emsp; \""+jr.matches[i].book+"\"" + " by " + jr.matches[i].author +"<br>"
+		}
+		results_text += "</p>"
+		search_results.innerHTML = results_text;
 	}
 
 

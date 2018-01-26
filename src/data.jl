@@ -24,11 +24,17 @@ end
 # Printer
 Base.show(io::IO, book::T where T <: AbstractBook) = begin 
 	if length(book.author) == 1
-		print(io, "[book] $(book.book) by $(book.author[1])")
+		print(io, "\"$(book.book)\" by $(book.author[1]) ~ $(book.publisher), $(book.year_published)")
 	else
-		print(io, "[book] $(book.book) by $(book.author[1]) et al.")
+		print(io, "\"$(book.book)\" by $(book.author[1]) et al. ~ $(book.publisher), $(book.year_published)")
 	end
 end
+
+
+
+# Convert methods
+convert(::Type{Dict}, b::Garamond.Book) = Dict{String,Any}((String(field)=>getfield(b,field) for field in fieldnames(b)))
+#convert(::Type{S}, b::Garamond.Book) where {S>:Book} = error("Conversion from $S to Book not possible")
 
 
 
