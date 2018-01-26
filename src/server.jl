@@ -17,14 +17,22 @@ function start_http_server(webpage_file::String, port::Int)
 			print("PROCESSING QUERY...")
 			pquery = query_process(query); 
 			println(" OK")
+<<<<<<< HEAD
+
+=======
 			
+>>>>>>> 00c07d29890eec1a34c870a87aef952818f92570
 			# Make search
 			print("SEARCHING...")
 			etime = @elapsed begin
 				bv = parse_books(Book, "/home/zgornel/projects/Garamond.jl/data/Cornel/library_big.tsv", delim='\t', header=true);
 				response = matcher(pquery, bv)
 			end
+<<<<<<< HEAD
+
+=======
 			
+>>>>>>> 00c07d29890eec1a34c870a87aef952818f92570
 			rj = JSON.json(build_response(etime, response))
 			println(" OK")
 
