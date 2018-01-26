@@ -7,7 +7,7 @@ VERSION >= v"0.6.0" && __precompile__(true)
 	using HttpServer, WebSockets, JSON
  
 	# Import section
-	import Base: show, ismatch, convert
+	import Base: show, ismatch, convert, lowercase
 
 	# Export section
 	export  #HTTP server
@@ -32,9 +32,9 @@ VERSION >= v"0.6.0" && __precompile__(true)
 		
 
 	# Includes
+	include("data.jl")
 	include("server.jl")
 	include("search.jl")
-	include("data.jl")
 	include("heuristics.jl")
 
 end # module

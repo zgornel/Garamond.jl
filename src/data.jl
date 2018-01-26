@@ -7,12 +7,12 @@ abstract type AbstractItem end
 abstract type AbstractBook <: AbstractItem end
 
 mutable struct Book <: AbstractBook
-	id::Int
+	id::String
 	author::Vector{String}
 	book::String
 	publisher::String
-	year_apparition::Int
-	year_published::Int
+	year_apparition::String
+	year_published::String
 	language::String
 	booktype::String
 	characteristics::Vector{String}
@@ -33,7 +33,7 @@ end
 
 
 # Convert methods
-convert(::Type{Dict}, b::Garamond.Book) = Dict{String,Any}((String(field)=>getfield(b,field) for field in fieldnames(b)))
+book_to_dict(b::Garamond.Book) = Dict{String,Union{String, Vector{String}}}((String(field)=>getfield(b,field) for field in fieldnames(b)))
 #convert(::Type{S}, b::Garamond.Book) where {S>:Book} = error("Conversion from $S to Book not possible")
 
 
@@ -60,12 +60,12 @@ function parse_books(booktype::Type{<:AbstractBook}, file::T where T <:AbstractS
 			v = split(line, delim)
 
 			# Process fields
-			b = Book(parse(Int, v[1]), 			# id
+			b = Book(strip(v[1]), 				# id
 				String.(split(strip(v[2]),",")),	# author
 				strip(v[3]),				# book
 				strip(v[4]),				# publisher
-				parse(Int, v[5]),			# year_apparition
-				parse(Int, v[6]),			# year_published
+				strip(v[5]),				# year_apparition
+				strip(v[6]),				# year_published
 				strip(v[7]),				# language
 				strip(v[8]),				# booktype
 				String.(split(v[9], r"(,|\s)+")),	# characteristics

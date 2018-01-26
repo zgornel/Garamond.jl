@@ -101,7 +101,8 @@
 		results_text += "<p>";
 		for (i=0; i < jr.n_matches; i++){
 			results_text +=
-				"&emsp;<i> \""+jr.matches[i].book+"\"</i>" + " by " + jr.matches[i].author +"<br>"
+				"&emsp;<i> \""+jr.matches[i].book+"\"</i>" + " by " + jr.matches[i].author + " <b>" +
+				jr.matches[i].publisher + "</b>, " + jr.matches[i].year_apparition + "<br>"
 		}
 		results_text += "</p>"
 		search_results.innerHTML = results_text;

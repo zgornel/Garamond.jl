@@ -1,8 +1,11 @@
 # Overload ismatch to work matching any value within a vector
-ismatch(r::Regex, sv::T) where T<:AbstractArray{S} where S<:AbstractString = reduce(|,ismatch.(r,sv))
+ismatch(r::Regex, sv::T) where T<:AbstractArray{S} where S<:AbstractString = any(ismatch(r,si) for si in sv);
+
+# Overload lowervase function to work with vectors of strings
+lowercase(v::T) where T<:AbstractArray{S} where S<:AbstractString = Base.lowercase.(v)
 
 # Function that matches whether a pattern is found in a specific field of a books vector
-function match_exactly_by_field(pattern, books, field; ignorecase::Bool = true)
+function match_exactly_by_field(pattern::AbstractString, books::Vector{Book}, field::Symbol; ignorecase::Bool = true)
 	
 	# Pre-allocate matches
 	N = length(books)
@@ -16,7 +19,7 @@ function match_exactly_by_field(pattern, books, field; ignorecase::Bool = true)
 	
 	# Loop and match
 	for (i,val) in enumerate(fieldvals)
-		m[i] = ismatch(rpattern, mutator.(val))
+		m[i] = ismatch(rpattern, mutator(val))
 	end
 
 	return m
@@ -27,10 +30,10 @@ end
 # Function that does the actual search
 # we assume the match function fm is something of the form:
 # 	fm(pattern, books, field) = match_exactly_by_field(pattern, books, field)
-function matcher(patterns, books)
+function matcher(patterns::Vector{String}, books::Vector{Book})
 
 	# Define matching functions
-	fm = (p,b,f)->match_exactly_by_field(p,b,f)
+	fm = (p::String,b::Vector{Book},f::Symbol)->match_exactly_by_field(p,b,f)
 
 	# Initialize fields
 	fields = [:author, :book, :publisher, :characteristics]
@@ -39,12 +42,12 @@ function matcher(patterns, books)
 	matches = zeros(Int, length(books))
 	for p in patterns
 		for fi in fields	
-			matches += Int.(fm(p,books, fi)) 
+			matches += fm(p,books, fi) 
 		end
 	end
 	
 	# Order matches and select only those with a more than one match
 	good_matches = setdiff(sortperm(matches,rev=true), find(x->x==0, matches))
 	
-	return convert.(Dict,books[good_matches])
+	return book_to_dict.(books[good_matches])
 end

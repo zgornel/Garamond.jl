@@ -5,6 +5,9 @@ function start_http_server(webpage_file::String, port::Int)
 
 	# Socket hadling function
 	function ws_func(req, client)
+	
+		bv = parse_books(Book, "/home/zgornel/projects/Garamond.jl/data/Cornel/library_big.tsv", delim='\t', header=true);
+	
 		while true
 			println("WAITING...")
 
@@ -21,7 +24,6 @@ function start_http_server(webpage_file::String, port::Int)
 			# Make search
 			print("SEARCHING...")
 			etime = @elapsed begin
-				bv = parse_books(Book, "/home/zgornel/projects/Garamond.jl/data/Cornel/library_big.tsv", delim='\t', header=true);
 				response = matcher(pquery, bv)
 			end
 
