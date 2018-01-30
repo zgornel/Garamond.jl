@@ -3,9 +3,10 @@ module Garamond
 VERSION >= v"0.6.0" && __precompile__(true)
 
 	# Using section
-	using Word2Vec, LightGraphs, NearestNeighbors, MLKernels
-	using HttpServer, WebSockets, JSON
- 
+	using Word2Vec, LightGraphs, NearestNeighbors, MLKernels	# - for word discovery
+	using HttpServer, WebSockets, JSON				# - for HTTP/WebSocket/JSON communication with the http server
+	using ArgParse							# - for command line argument parsing
+
 	# Import section
 	import Base: show, ismatch, convert, lowercase
 
@@ -18,6 +19,9 @@ VERSION >= v"0.6.0" && __precompile__(true)
 		match_exactly_by_field,
 		matcher,
 		query_process, 
+
+		# Command line (application) related
+		get_commandline_arguments,
 
 		# Data related
 		AbstractItem, AbstractBook, Book,
@@ -35,6 +39,7 @@ VERSION >= v"0.6.0" && __precompile__(true)
 	include("data.jl")
 	include("server.jl")
 	include("search.jl")
+	include("cmdline.jl")
 	include("heuristics.jl")
 
 end # module
