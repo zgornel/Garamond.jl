@@ -28,7 +28,7 @@ function start_http_server(webpage_file::String, data_file::String, http_port::I
 			# Make search
 			print("SEARCHING...")
 			etime = @elapsed begin
-				response = matcher(pquery, bv)
+				response = search(pquery, bv)
 			end
 
 			rj = JSON.json(build_response(etime, response))
@@ -59,8 +59,8 @@ end
 
 # Function that processes a search query arrived from the webpage
 function query_process(query::S where S<:AbstractString)
-	qd = JSON.parse(query)
-	String.(split(qd["text"], r"(\s|,|\.,|\t)"))
+	qd = JSON.parse(query)									# Parse JSON query received
+	searchquery_preprocess(qd["text"])							# Pass the query through the processing pipeline
 end
 
 

@@ -1,4 +1,3 @@
-
 function find_cluster_mean(clmodel, model, treemodel, word::String, n::Int)  
 	# Get word cluster
 	c::Int = get_cluster(clmodel, word)
@@ -121,3 +120,4 @@ end
 #	println("Cluster $cl, descriptor: $descriptors")
 #end
 #"""
+

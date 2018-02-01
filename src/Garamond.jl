@@ -8,18 +8,24 @@ VERSION >= v"0.6.0" && __precompile__(true)
 	using ArgParse							# - for command line argument parsing
 
 	# Import section
-	import Base: show, ismatch, convert, lowercase
+	import Base: show, contains, convert, lowercase, search
 
 	# Export section
 	export  #HTTP server
 		start_http_server,
+		
+		# String processing
+		searchquery_preprocess,
 
 		# Search related 
-		ismatch,
+		search,
+		contains,
 		match_exactly_by_field,
 		matcher,
 		query_process, 
-
+		fuzzysort,
+		levsort,
+		
 		# Command line (application) related
 		get_commandline_arguments,
 
@@ -38,8 +44,10 @@ VERSION >= v"0.6.0" && __precompile__(true)
 	# Includes
 	include("data.jl")
 	include("server.jl")
+	include("string.jl")
 	include("search.jl")
+	include("search_heuristics.jl")
 	include("cmdline.jl")
-	include("heuristics.jl")
+	include("word_model_utils.jl")
 
 end # module
