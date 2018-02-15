@@ -10,7 +10,7 @@ function start_http_server(webpage_file::String, data_file::String, http_port::I
 	# Socket hadling function
 	function ws_func(req, client)
 	
-		bv = parse_books(Book, data_file, delim='\t', header=true);
+		crps = parse_csv(data_file, delim='\t', header=true);
 	
 		while true
 			println("WAITING...")
@@ -28,7 +28,10 @@ function start_http_server(webpage_file::String, data_file::String, http_port::I
 			# Make search
 			print("SEARCHING...")
 			etime = @elapsed begin
-				response = search(pquery, bv)
+				###############################
+				##### Where it all begins #####
+				response = search(crps, pquery)
+				###############################
 			end
 
 			rj = JSON.json(build_response(etime, response))
@@ -169,8 +172,8 @@ default_webpage = ()->return "
 			results_text += \"<p>\";
 			for (i=0; i < jr.n_matches; i++){
 				results_text +=
-					\"&emsp;<i> \\\"\"+jr.matches[i].book+\"\\\"</i>\" + \" by \" + jr.matches[i].author + \" <b>\" +
-					jr.matches[i].publisher + \"</b>, \" + jr.matches[i].year_apparition + \"<br>\"
+					\"&emsp;<i> \\\"\"+jr.matches[i].name+\"\\\"</i>\" + \" by \" + jr.matches[i].author + \" <b>\" +
+					jr.matches[i].publisher + \"</b>, \" + jr.matches[i].published_year + \"<br>\"
 			}
 			results_text += \"</p>\"
 			search_results.innerHTML = results_text;

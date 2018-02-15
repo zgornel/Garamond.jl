@@ -3,6 +3,7 @@ module Garamond
 VERSION >= v"0.6.0" && __precompile__(true)
 
 	# Using section
+	using TextAnalysis, Languages					# - for index creation
 	using Word2Vec, LightGraphs, NearestNeighbors, MLKernels	# - for word discovery
 	using HttpServer, WebSockets, JSON				# - for HTTP/WebSocket/JSON communication with the http server
 	using ArgParse							# - for command line argument parsing
@@ -30,10 +31,9 @@ VERSION >= v"0.6.0" && __precompile__(true)
 		get_commandline_arguments,
 
 		# Data related
-		AbstractItem, AbstractBook, Book,
-		parse_books,
+		metadata, metastring, dict, 
 
-		# Word embedddings
+		# Word embeddings
 		find_cluster_mean,
 		get_cluster_matrix, 
 		get_cluster_matrix!,

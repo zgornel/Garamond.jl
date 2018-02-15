@@ -7,7 +7,7 @@ function get_commandline_arguments(args::Vector{String})
 			default = ""
 		"--http-port", "-p"
 			help = "use specified port for HTTP related communication"
-			default = 80
+			default = 9999
 			arg_type = Int
 		"--data", "-d"
 			help = "data file to be used"
