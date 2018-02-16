@@ -84,8 +84,9 @@ function search(crps::Corpus{T} where T<:AbstractDocument,
 		suggestions = Dict{String,Vector{String}}()
 	end
 
-	# Sort matches and obtain the indexes of best maches; return corresponding data
+	# Sort matches and obtain the indexes of best maches
 	idxs::Vector{Int} = setdiff(sortperm(needle_matches,rev=true), find(iszero,needle_matches))
+
 	return (dict.(metadata.(crps[idxs][1:min(MAX_MATCHES, length(idxs))])),
 	 	suggestions)
 end
