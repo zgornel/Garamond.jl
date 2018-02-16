@@ -28,10 +28,10 @@ function start_http_server(webpage_file::String, data_file::String, http_port::I
 			# Make search
 			print("SEARCHING...")
 			etime = @elapsed begin
-				###############################
-				##### Where it all begins #####
-				response = search(crps, pquery)
-				###############################
+				##############################################
+				#####         Where it all begins        #####
+				(response, suggestions) = search(crps, pquery)
+				##############################################
 			end
 
 			rj = JSON.json(build_response(etime, response))
