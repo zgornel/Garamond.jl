@@ -87,18 +87,6 @@ end
 
 
 
-#Insert metadata the text of the corpus documents.
-const TEXT_STRIP = strip_case + strip_numbers + strip_punctuation +
-		strip_articles + strip_non_letters + strip_stopwords + 
-		strip_prepositions + strip_whitespace
-
-function corpus_preparator!(crps::C where C<:TextAnalysis.Corpus, 
-			    operations = TEXT_STRIP)
-	prepare!(crps, operations)
-end
-
-
-
 ################
 # Data Loading #
 ################
@@ -164,7 +152,7 @@ function parse_csv(file::AbstractString, config::CSVParserConfig=CSVParserConfig
 
 	# create and post-process corpus
 	crps = Corpus(vsd)
-	corpus_preparator!(crps)
+	prepare!(crps, TEXT_STRIP_FLAGS)
 	
 	# Update lexicon and inverse index
 	update_lexicon!(crps)

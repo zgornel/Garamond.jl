@@ -10,20 +10,20 @@ VERSION >= v"0.6.0" && __precompile__(true)
 
 	# Import section
 	import Base: show, contains, convert, lowercase, search
+	import TextAnalysis:prepare!
 
 	# Export section
 	export  #HTTP server
 		start_http_server,
 		
 		# String processing
-		searchquery_preprocess,
+		TEXT_STRIP_FLAGS,
+		QUERY_STRIP_FLAGS,
+		prepare!,
 
 		# Search related 
 		search,
 		contains,
-		match_exactly_by_field,
-		matcher,
-		query_process, 
 		fuzzysort,
 		levsort,
 		

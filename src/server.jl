@@ -63,7 +63,7 @@ end
 # Function that processes a search query arrived from the webpage
 function query_process(query::S where S<:AbstractString)
 	qd = JSON.parse(query)									# Parse JSON query received
-	searchquery_preprocess(qd["text"])							# Pass the query through the processing pipeline
+	prepare!(qd["text"], QUERY_STRIP_FLAGS)							# Pass the query through the processing pipeline
 end
 
 
