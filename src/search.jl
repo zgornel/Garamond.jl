@@ -174,17 +174,17 @@ function heuristic_search(crps::Corpus{T} where T<:AbstractDocument,
 		return suggestions
 	else # There are terms that have not been found
 		if search == :metadata
-			words = unique(searchquery_preprocess(join(
+			words = unique(prepare!(join(
 					      (metastring(crps[i],metadata_fields) for i in 1:length(crps)
-	    					)," "))); 
+	    					)," "),QUERY_STRIP_FLAGS)); 
 		elseif search == :index
 			@assert !isempty(inverse_index(crps)) "FATAL: The corpus has no inverse index."
 			words = collect(keys(inverse_index(crps)))
 		elseif search == :all
 			@assert !isempty(inverse_index(crps)) "FATAL: The corpus has no inverse index."
-			words = unique( [searchquery_preprocess(join(
+			words = unique( [prepare!(join(
 						(metastring(crps[i],metadata_fields) for i in 1:length(crps)
-	     					)," ")); 
+	     					)," "),QUERY_STRIP_FLAGS); 
 		    			collect(keys(inverse_index(crps)))] )
 		else
 			error("Unknown search method.")
