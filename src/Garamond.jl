@@ -43,7 +43,7 @@ VERSION >= v"0.6.0" && __precompile__(true)
 
 	# Includes
 	include("data.jl")
-	include("server.jl")
+	include("servers.jl")
 	include("string.jl")
 	include("search.jl")
 	include("search_heuristics.jl")
