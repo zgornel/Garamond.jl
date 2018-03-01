@@ -1,4 +1,4 @@
-function start_http_server(webpage_file::String, data_file::String, http_port::Int)
+function start_http_server(webpage_file::String, data_config_file::String, http_port::Int)
 	
 	# Read Web page
 	if isempty(webpage_file)								# If webpage is empty (not specified) 
@@ -10,7 +10,7 @@ function start_http_server(webpage_file::String, data_file::String, http_port::I
 	# Socket hadling function
 	function ws_func(req, client)
 	
-		crps = parse_csv(data_file, delim='\t', header=true);
+		crpra = load_corpora(data_config_file)
 	
 		while true
 			println("WAITING...")
@@ -30,7 +30,7 @@ function start_http_server(webpage_file::String, data_file::String, http_port::I
 			etime = @elapsed begin
 				##############################################
 				#####         Where it all begins        #####
-				(response, suggestions) = search(crps, pquery)
+				response, suggestions = search(crpra, pquery)
 				##############################################
 			end
 
@@ -71,7 +71,7 @@ end
 # Function that builds the response to a query
 function build_response(etime, response)
 	return Dict("etime" => etime,
-	     	"n_matches" => length(response),
+	     	"n_matches" => sum(length(r[1]) for r in values(response)),
 		"matches" => response)
 end
 

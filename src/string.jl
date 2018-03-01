@@ -1,3 +1,7 @@
+# Useful regular expressions
+# - replace middle initial replace.(select(tt2,2),r"([A-Z]\s|[A-Z]\.\s)","")
+# - replace end spaces replace.(select(tt2,2),r"[\s]+$","")
+
 # Define base filtering functions
 #=
 remove_punctuation(s) = filter(x->!ispunct(x), s)

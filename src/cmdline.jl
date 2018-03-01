@@ -9,8 +9,11 @@ function get_commandline_arguments(args::Vector{String})
 			help = "use specified port for HTTP related communication"
 			default = 9999
 			arg_type = Int
-		"--data", "-d"
-			help = "data file to be used"
+		"--data-config", "-d"
+			help = "data configuration file"
+			default = ""
+		"--engine-config", "-e"
+			help = "search engine configuration file"
 			default = ""
 		"--data-port"
 			help = "use specified port for TCP data communication"

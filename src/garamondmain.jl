@@ -18,12 +18,14 @@ Base.@ccallable function garamondmain(ARGS::Vector{String})::Cint
 	
 	# Parse command line arguments
 	args = get_commandline_arguments(ARGS)
-	web_page = args["webpage"]
-	data_file = args["data"]
-	http_port = args["http-port"]
+	
+	wp = args["webpage"]
+	dconf = args["data-config"]
+	phttp = args["http-port"]
 	
 	# Start web server
-	start_http_server(web_page, data_file, http_port)
+	@assert !isempty(dconf) && isfile(dconf)
+	start_http_server(wp, dconf, phttp)
 	
 	return 0
 end

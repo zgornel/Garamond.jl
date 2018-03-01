@@ -1,8 +1,42 @@
-# Useful regular expressions
-# - replace middle initial replace.(select(tt2,2),r"([A-Z]\s|[A-Z]\.\s)","")
-# - replace end spaces replace.(select(tt2,2),r"[\s]+$","")
-
+#########################
+# Interface for Corpora #
+#########################
 abstract type AbstractCorpora end
+
+# CorpusRefs can be built from a data configuration file or manually
+mutable struct CorpusRef
+	path::String				# file/directory path
+	name::String				# name of corpus
+	parser::Function			# file/directory parser function used to obtain corpus
+	enabled::Bool				# whether to use the corpus in search or not
+end
+
+CorpusRef() = CorpusRef("","",identity, false)
+
+Base.show(io::IO, cref::CorpusRef) = print(io, "Corpus Refernce: $(cref.name) at $(cref.path)") 
+
+
+
+# Corpora can be built from a .garamond configuration file or from a vector of CorpusRef's
+mutable struct Corpora <: AbstractCorpora	# the 'hash' identifies the corpus
+	corpora::Dict{UInt, Corpus}		# hash --> corpus
+	refs::Dict{UInt, CorpusRef}		# hash --> corpus name
+	enabled::Dict{UInt, Bool}		# whether to use the corpus in search or not
+end
+
+Corpora() = Corpora(Dict{UInt, Corpus}(), Dict{UInt, CorpusRef}(), Dict{UInt, Bool}())
+
+Base.show(io::IO, crpra::Corpora) = begin 
+	print(io, "$(length(crpra.corpora))-element Corpora:\n")
+	for (h, crps) in crpra.corpora
+		print(io, " 0x$(hex(h)) => $(crpra.refs[h].name):") 
+		println(io, " $(crps) [$(crpra.enabled[h] ? "Enabled" : "Disabled")]")
+	end
+end
+
+#TODO: Additional methods for Corpora: delete!, keys, various updates, file checks, etc.
+
+
 
 
 
@@ -12,7 +46,7 @@ abstract type AbstractCorpora end
 
 #Printer for TextAnalysis metadata
 show(io::IO, md::TextAnalysis.DocumentMetadata) = 
-	print("TextAnalysis.DocumentMetadata ~ id=$(md.id) \"$(md.name)\" by $(md.author) from $(md.published_year))")
+	print(io,"TextAnalysis.DocumentMetadata ~ id=$(md.id) \"$(md.name)\" by $(md.author) from $(md.published_year)")
 
 # Function that returns a Languages.Language from a language string i.e. "english" to Languages.EnglishLanguage
 function get_language(l::AbstractString)
@@ -68,8 +102,6 @@ function dict(md::TextAnalysis.DocumentMetadata)
 	Dict{String,String}((String(field)=>getfield(md,field) for field in fieldnames(md)))
 end
 
-
-
 # Medatadata getter for documents
 metadata(document::D where D<:TextAnalysis.AbstractDocument) = document.metadata
 metadata(crps::C where C<:TextAnalysis.Corpus) = [crps[i].metadata for i in 1:length(crps)]
@@ -83,80 +115,4 @@ end
 function metastring(md::TextAnalysis.DocumentMetadata, 
 		    fields::Vector{Symbol}=[:author, :name, :publisher])
 	join([getfield(md,field) for field in fields]," ")
-end
-
-
-
-################
-# Data Loading #
-################
-"""
-Define the csv parser configuration. It maps the fields from a delimited files 
-to document metadata fields through the values associated to the ':medatadata' 
-key and specifies whether a field is to be included or not in the document text 
-through the :data value associated to the ':data' key
-"""
-mutable struct CSVParserConfig
-	metadata::Dict{Int, Symbol}
-	data::Dict{Int, Bool}
-end
-
-CSVParserConfig()= CSVParserConfig(Dict(1=>:id,
-					 2=>:author,
-					 3=>:name,
-					 4=>:publisher,
-					 5=>:edition_year,
-					 6=>:published_year,
-					 8=>:documenttype,
-					 ),
-			 	Dict(1=>false, 2=>true, 3=>true, 4=>true,
-				     5=>false, 6=>false, 7=>false, 8=>true, 
-				     9=>true, 10=>false)
-)
-
-# Function that returns a corpus from a delimited file; 
-# the individual document metadata and text are filled according 
-# to the config::CSVParserConfig
-function parse_csv(file::AbstractString, config::CSVParserConfig=CSVParserConfig(); 
-		   delim::Char = ',', header::Bool = true)
-	
-	# Pre-allocate
-	vsd = Vector{StringDocument}()
-	
-	# Open file
-	f = open(file, "r")
-
-	# Select and sort the line fields which will be used as 
-	# document text in the corpus
-	mask = sort([k for k in keys(config.data) if config.data[k]])
-
-	# Iterate and parse
-	li = 1
-	while !eof(f)
-		if li==1 && header
-			line = readline(f)
-			li+=1
-			continue
-		else
-			line = readline(f)
-			vline = String.(split(line, delim))
-			sd = StringDocument(join(vline[mask]," "))		# Set document data	
-			for (column, metafield) in config.metadata		# Set document metadata
-				setfield!(sd.metadata, metafield, vline[column])
-			end
-			language!(sd, Languages.EnglishLanguage)		# language (csv written in English) 
-			
-			push!(vsd, sd)
-		end
-	end
-
-	# create and post-process corpus
-	crps = Corpus(vsd)
-	prepare!(crps, TEXT_STRIP_FLAGS)
-	
-	# Update lexicon and inverse index
-	update_lexicon!(crps)
-	update_inverse_index!(crps)
-
-	return crps
 end

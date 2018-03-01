@@ -7,7 +7,7 @@ VERSION >= v"0.6.0" && __precompile__(true)
 	using Word2Vec, LightGraphs, NearestNeighbors, MLKernels	# - for word discovery
 	using HttpServer, WebSockets, JSON				# - for HTTP/WebSocket/JSON communication with the http server
 	using ArgParse							# - for command line argument parsing
-
+	using DataStructures: Set
 	# Import section
 	import Base: show, contains, convert, lowercase, search
 	import TextAnalysis:prepare!
@@ -30,8 +30,13 @@ VERSION >= v"0.6.0" && __precompile__(true)
 		# Command line (application) related
 		get_commandline_arguments,
 
-		# Data related
+		# Parsing, corpora and TextAnalysis related
 		metadata, metastring, dict, 
+		AbstractCorpora, 
+		CorpusRef, 
+		Corpora,
+		parse_data_config,
+		load_corpora,
 
 		# Word embeddings
 		find_cluster_mean,
@@ -42,7 +47,8 @@ VERSION >= v"0.6.0" && __precompile__(true)
 		
 
 	# Includes
-	include("data.jl")
+	include("corpus.jl")
+	include("parsers.jl")
 	include("servers.jl")
 	include("string.jl")
 	include("search.jl")

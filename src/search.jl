@@ -6,8 +6,45 @@ lowercase(v::T) where T<:AbstractArray{S} where S<:AbstractString = Base.lowerca
 
 
 
+# Function that searches through several corpora
+function search(crpra::T where T<:AbstractCorpora,
+		needles::Vector{String}; 
+		search_method::Symbol=:metadata,
+		metadata_fields::Vector{Symbol}=[:author, :name, :publisher],
+		ignorecase::Bool = true,
+		heuristic::Symbol = :levenshtein,
+		MAX_MATCHES::Int = 10,
+		WORD_SUGGESTIONS::Int = 1)
+	
+	results = Dict{UInt, Vector{Dict{String, String}}}()
+	suggestions = Dict{String, Set{String}}()
+	for (h, crps) in crpra.corpora
+		if crpra.enabled[h]
+			ridx, sugg = search(crps, needles,
+					search_method=search_method, 
+			 		metadata_fields=metadata_fields,
+					ignorecase=ignorecase,
+					heuristic=heuristic,
+					MAX_MATCHES=MAX_MATCHES,
+					WORD_SUGGESTIONS=WORD_SUGGESTIONS)
+
+			push!(results, h=>dict.(metadata.(crps[ridx])))
+			for (ks, vs) in sugg
+				if ks in keys(suggestions)
+					union!(suggestions[ks], vs)
+				else
+					push!(suggestions, ks=>vs)
+				end
+			end
+		end
+	end
+	return results, suggestions
+end
+
+
+
 """
-	search(needles, crps, search [;kwargs])
+	search(crps, needles [;kwargs])
 
 Searches for needles (i.e. key terms) in a corpus' metadata, text or both and 
 returns the documents that match best the query. The function returns a 
@@ -15,20 +52,20 @@ vector of dictionaries representing the metadata of the best matching
 documents.
 
 # Arguments
-  * `needles::Vector{String}` is a vector of key terms representing the query
   * `crps::Corpus{T}` is the text corpus
-  * `search::Symbol` is the type of the search; can be `:metadata` (default),
+  * `needles::Vector{String}` is a vector of key terms representing the query
+
+# Keyword arguments
+  * `search_method::Symbol` is the type of the search; can be `:metadata` (default),
      `:index` or `:all`; the options specify that the needles can be found in
      the metadata of the documents of the corpus, their inverse index or both 
      respectively
-
-# Keyword arguments
   * `metadata_fields::Vector{Symbol}` are fields in metadata to search
   * `ignorecase::Bool` specifies whether to ignore the case
-  * `heuristics::Bool` specifies whether to use heuristics
-  * `heuristic::Bool` specifies what heuristics function to use
+  * `heuristic::Bool` specifies what heuristic function to use for
+    missing strings matching; can be :levenshtein (default), :fuzzy or :none
   * `MAX_MATCHES::Int` is the maximum number of search results to return
-  * `WORD_SUGGESTIONS` is the maximum number of suggestions to return for 
+  * `WORD_SUGGESTIONS::Int` is the maximum number of suggestions to return for 
      each missing needle
 
 # Examples
@@ -39,28 +76,27 @@ documents.
 # Function that searches in a corpus'a metdata or metadata + content for needles (i.e. keyterms) 
 function search(crps::Corpus{T} where T<:AbstractDocument,
 		needles::Vector{String};
-		search::Symbol=:metadata,
+		search_method::Symbol=:metadata,
 		metadata_fields::Vector{Symbol}=[:author, :name, :publisher],
 		ignorecase::Bool = true,
-		heuristics::Bool = true,
 		heuristic::Symbol = :levenshtein,
 		MAX_MATCHES::Int = 10,
 		WORD_SUGGESTIONS::Int = 1)
 
 	# Initializations
-	n = length(crps)									# Number of documents
-	p = length(needles)									# Number of search terms
-	matches = spzeros(Int, n, p)								# Match matrix
+	n = length(crps)		# Number of documents
+	p = length(needles)		# Number of search terms
+	matches = spzeros(Int, n, p)	# Match matrix
 	
 	# Search
-	if search == :metadata
+	if search_method == :metadata
 		matches += search_metadata(crps, needles, 
 			     	metadata_fields=metadata_fields, 
 			     	ignorecase=ignorecase)
-	elseif search == :index
+	elseif search_method == :index
 		matches += search_index(crps, needles, 
 			  	ignorecase=ignorecase)
-	elseif search == :all
+	elseif search_method == :all
 		matches +=  search_metadata(crps, needles, 
 			      	metadata_fields=metadata_fields, 
 			      	ignorecase=ignorecase)
@@ -75,20 +111,17 @@ function search(crps::Corpus{T} where T<:AbstractDocument,
 	doc_matches = vec(sum(matches,1))	# number of documents matching each needle (for heuristics)
 	
 	# Heuristic search (try to find closest string)
-	if heuristics
-		suggestions = heuristic_search(crps, needles[doc_matches .== 0],
-				  search=search, heuristic=heuristic, 
-				  metadata_fields=metadata_fields,
-				  word_suggestions=WORD_SUGGESTIONS)
-	else 
-		suggestions = Dict{String,Vector{String}}()
-	end
+	suggestions = heuristic_search(crps,
+			 needles[doc_matches .== 0],
+			 search_method=search_method,
+			 heuristic=heuristic,
+			 metadata_fields=metadata_fields,
+			 word_suggestions=WORD_SUGGESTIONS)
 
 	# Sort matches and obtain the indexes of best maches
 	idxs::Vector{Int} = setdiff(sortperm(needle_matches,rev=true), find(iszero,needle_matches))
-
-	return (dict.(metadata.(crps[idxs][1:min(MAX_MATCHES, length(idxs))])),
-	 	suggestions)
+	resize!(idxs, min(MAX_MATCHES, length(idxs)))
+	return idxs, suggestions
 end
 
 
@@ -160,40 +193,51 @@ end
 """
 function heuristic_search(crps::Corpus{T} where T<:AbstractDocument,
 			  needles::Vector{String};
-			  search::Symbol=:index,
+			  search_method::Symbol=:index,
 			  heuristic::Symbol=:levenshtein,
 			  metadata_fields::Vector{Symbol}=Symbol[],
 			  word_suggestions::Int=1)
 
 	# Initializations
 	n = length(crps)
-	h_search_func = ifelse(heuristic == :levenshtein, levsort, fuzzysort) 
-	suggestions = Dict{String, Vector{String}}()
+	use_heuristic = true
+	suggestions = Dict{String, Set{String}}()
 
-	if isempty(needles)
-		return suggestions
-	else # There are terms that have not been found
-		if search == :metadata
-			words = unique(prepare!(join(
-					      (metastring(crps[i],metadata_fields) for i in 1:length(crps)
-	    					)," "),QUERY_STRIP_FLAGS)); 
-		elseif search == :index
-			@assert !isempty(inverse_index(crps)) "FATAL: The corpus has no inverse index."
-			words = collect(keys(inverse_index(crps)))
-		elseif search == :all
-			@assert !isempty(inverse_index(crps)) "FATAL: The corpus has no inverse index."
-			words = unique( [prepare!(join(
-						(metastring(crps[i],metadata_fields) for i in 1:length(crps)
-	     					)," "),QUERY_STRIP_FLAGS); 
-		    			collect(keys(inverse_index(crps)))] )
-		else
-			error("Unknown search method.")
-		end
+	if heuristic == :levenshtein 
+		h_search_func = levsort
+	elseif heuristic == :fuzzy
+		h_search_func = fuzzysort
+	else
+		h_search_func = identity
+		use_heuristic = false
+	end
+	
+	if use_heuristic
+		if isempty(needles)
+			return suggestions
+		else # There are terms that have not been found
+			if search_method == :metadata
+				words = unique(prepare!(join(
+						      (metastring(crps[i],metadata_fields) for i in 1:length(crps)
+							)," "),QUERY_STRIP_FLAGS)); 
+			elseif search_method == :index
+				@assert !isempty(inverse_index(crps)) "FATAL: The corpus has no inverse index."
+				words = collect(keys(inverse_index(crps)))
+			elseif search_method == :all
+				@assert !isempty(inverse_index(crps)) "FATAL: The corpus has no inverse index."
+				words = unique( [prepare!(join(
+							(metastring(crps[i],metadata_fields) for i in 1:length(crps)
+							)," "),QUERY_STRIP_FLAGS); 
+						collect(keys(inverse_index(crps)))] )
+			else
+				error("Unknown search method.")
+			end
 
-		# Search a suggestion for each word/pattern
-		ns = min(length(words),word_suggestions)
-		for (i,needle) in enumerate(needles)
-			push!(suggestions, needle=>h_search_func(needle, words)[1:ns])
+			# Search a suggestion for each word/pattern
+			ns = min(length(words),word_suggestions)
+			for (i,needle) in enumerate(needles)
+				push!(suggestions, needle=>Set(h_search_func(needle, words)[1:ns]))
+			end
 		end
 	end
 	return suggestions
