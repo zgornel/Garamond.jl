@@ -105,20 +105,21 @@ function search(crps::Corpus{T} where T<:AbstractDocument,
 	else
 		error("Unknown search method.")
 	end
-
-	# Organize results
-	needle_matches = vec(sum(matches,2)) 	# number of needles matched in each document (for sorting search quality)
-	doc_matches = vec(sum(matches,1))	# number of documents matching each needle (for heuristics)
 	
-	# Heuristic search (try to find closest string)
-	suggestions = heuristic_search(crps,
-			 needles[doc_matches .== 0],
-			 search_method=search_method,
-			 heuristic=heuristic,
-			 metadata_fields=metadata_fields,
-			 word_suggestions=WORD_SUGGESTIONS)
+	# Number of needles matched in each document (for sorting search quality)
+	needle_matches = vec(sum(matches,2)) 	
 
-	# Sort matches and obtain the indexes of best maches
+	# Number of documents matching each needle (for heuristics)
+	doc_matches = vec(sum(matches,1))	
+	
+	# Try to find closest string
+	suggestions = search_heuristically(crps,
+			 	needles[doc_matches .== 0],
+			 	search_method=search_method,
+			 	heuristic=heuristic,
+			 	metadata_fields=metadata_fields,
+			 	word_suggestions=WORD_SUGGESTIONS)
+
 	idxs::Vector{Int} = setdiff(sortperm(needle_matches,rev=true), find(iszero,needle_matches))
 	resize!(idxs, min(MAX_MATCHES, length(idxs)))
 	return idxs, suggestions
@@ -191,7 +192,7 @@ end
 """
 	Heuristically search for best matches for a list of needles (not found otherwise) in a corpus
 """
-function heuristic_search(crps::Corpus{T} where T<:AbstractDocument,
+function search_heuristically(crps::Corpus{T} where T<:AbstractDocument,
 			  needles::Vector{String};
 			  search_method::Symbol=:index,
 			  heuristic::Symbol=:levenshtein,

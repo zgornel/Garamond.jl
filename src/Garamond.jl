@@ -9,7 +9,7 @@ VERSION >= v"0.6.0" && __precompile__(true)
 	using ArgParse							# - for command line argument parsing
 	using DataStructures: Set
 	# Import section
-	import Base: show, contains, convert, lowercase, search
+	import Base: show, keys, values, contains, convert, lowercase, search
 	import TextAnalysis:prepare!
 
 	# Export section
@@ -22,19 +22,29 @@ VERSION >= v"0.6.0" && __precompile__(true)
 		prepare!,
 
 		# Search related 
-		search,
 		contains,
 		fuzzysort,
 		levsort,
-		
+		search,
+		search_metadata, 
+		search_index,
+		search_heuristically,
+
 		# Command line (application) related
 		get_commandline_arguments,
 
-		# Parsing, corpora and TextAnalysis related
-		metadata, metastring, dict, 
+		# Corpora related
 		AbstractCorpora, 
 		CorpusRef, 
 		Corpora,
+		keys,
+		values,
+		names,
+		update_lexicons!, 
+		update_reverse_indices!,
+		metadata, metastring, dict, 
+
+		# Parsing
 		parse_data_config,
 		load_corpora,
 
