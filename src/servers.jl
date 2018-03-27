@@ -1,10 +1,10 @@
 function start_http_server(webpage_file::String, data_config_file::String, http_port::Int)
 	
 	# Read Web page
-	if isempty(webpage_file)								# If webpage is empty (not specified) 
-		webpage = default_webpage() 							# load default webpage, else
-	else											# or, 
-		webpage = read(webpage_file, String)						# read specified webpage.
+	if isempty(webpage_file)
+		webpage = default_webpage()
+	else
+		webpage = read(webpage_file, String)
 	end
 
 	# Socket hadling function
@@ -46,8 +46,6 @@ function start_http_server(webpage_file::String, data_config_file::String, http_
 		end
 	end
 
-
-	
 	# Function called when a HTTP request is received
 	function http_func(req::Request, res::Response) 
 		Response(webpage)
@@ -55,24 +53,28 @@ function start_http_server(webpage_file::String, data_config_file::String, http_
 	
 	# Start server
 	run(Server(HttpHandler(http_func), WebSocketHandler(ws_func)), http_port)
-
 end
 
 
 
 # Function that processes a search query arrived from the webpage
 function query_process(query::S where S<:AbstractString)
-	qd = JSON.parse(query)									# Parse JSON query received
-	prepare!(qd["text"], QUERY_STRIP_FLAGS)							# Pass the query through the processing pipeline
+	qd = JSON.parse(query)
+	prepare!(qd["text"], QUERY_STRIP_FLAGS)
 end
 
 
 
 # Function that builds the response to a query
 function build_response(etime, response)
+	ncrps = length(response)  #  number of corpora
+	nmatch = sum(map(length, values(response)))  # number of matches
+	ncrpsm = sum(map(!isempty, values(response)))  # number of corpora with matches
 	return Dict("etime" => etime,
-	     	"n_matches" => sum(length(r[1]) for r in values(response)),
-		"matches" => response)
+		    "n_matches" => nmatch,
+		    "n_corpora" => ncrps,
+		    "n_corpora_match" => ncrpsm,
+		    "matches" => response)
 end
 
 

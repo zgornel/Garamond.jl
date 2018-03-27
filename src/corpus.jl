@@ -30,7 +30,7 @@ Base.show(io::IO, crpra::Corpora) = begin
 	print(io, "$(length(crpra.corpora))-element Corpora:\n")
 	for (h, crps) in crpra.corpora
 		print(io, " 0x$(hex(h)) => $(crpra.refs[h].name):") 
-		print(io, " $(crps) [$(crpra.enabled[h] ? "Enabled" : "Disabled")]")
+		println(io, " $(crps) [$(crpra.enabled[h] ? "Enabled" : "Disabled")]")
 	end
 end
 
@@ -43,15 +43,15 @@ keys(crpra::Corpora) = keys(crpra.corpora)
 values(crpra::Corpora) = ((crpra.corpora[k], crpra.refs[k], crpra.enabled[k]) for k in keys(crpra.corpora))
 names(crpra::Corpora) = (ref.name for ref in values(books.refs))
 
-function update_lexicons!(crpra::Corpora)
+function update_lexicon!(crpra::Corpora)
 	for c in values(crpra.corpora)
-		update_lexicon!(c)
+		TextAnalysis.update_lexicon!(c)
 	end
 end
 
-function update_inverse_indices!(crpra::Corpora)
+function update_inverse_index!(crpra::Corpora)
 	for c in values(crpra.corpora)
-		update_inverse_index!(c)
+		TextAnalysis.update_inverse_index!(c)
 	end
 end
 

@@ -33,8 +33,9 @@ const QUERY_STRIP_FLAGS = strip_non_letters+strip_punctuation+strip_whitespace
 
 function prepare!(s::AbstractString, flags::UInt32)
 	tmp_sd = StringDocument(normalize_string(s, decompose=true,
-					  compat=true, casefold=true, stripmark=true,
-					  stripignore=true, stripcc=true))
+ 			        compat=true, casefold=true, stripmark=true,
+				stripignore=true, stripcc=true))
 	prepare!(tmp_sd, flags)
-	return filter(x::AbstractString->length(x)>1, String.(split(text(tmp_sd)))) 
+	return filter(x::AbstractString->length(x)>1,
+	              String.(split(text(tmp_sd))))
 end

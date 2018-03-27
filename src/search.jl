@@ -62,7 +62,7 @@ documents.
      respectively
   * `metadata_fields::Vector{Symbol}` are fields in metadata to search
   * `ignorecase::Bool` specifies whether to ignore the case
-  * `heuristic::Bool` specifies what heuristic function to use for
+  * `heuristic::Symbol` specifies what heuristic function to use for
     missing strings matching; can be :levenshtein (default), :fuzzy or :none
   * `MAX_MATCHES::Int` is the maximum number of search results to return
   * `WORD_SUGGESTIONS::Int` is the maximum number of suggestions to return for 

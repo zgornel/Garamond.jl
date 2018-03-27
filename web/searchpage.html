@@ -97,12 +97,20 @@
 		*/
 		results_text = "<p>Elapsed search time: <b>" + jr.etime + "</b>s.</br></p>";
 		results_text += "<br>";
-		results_text += "<p>Found " + jr.n_matches + " results:</p>";
+		results_text += "<p>Found " + jr.n_matches + " results in " + jr.n_corpora_match +
+			        " corpora (out of a total of " + jr.n_corpora + "):</p>";
 		results_text += "<p>";
-		for (i=0; i < jr.n_matches; i++){
-			results_text +=
-				"&emsp;<i> \""+jr.matches[i].name+"\"</i>" + " by " + jr.matches[i].author + " <b>" +
-				jr.matches[i].publisher + "</b>, " + jr.matches[i].published_year + "<br>"
+
+		for (let crps_id in jr.matches){
+			let crps_matches = jr.matches[crps_id]  // individual corpus matches
+			results_text +="<p><b>i" + crps_id +"</b></br></p>"
+			for (i=0; i < crps_matches.length; i++){
+				results_text += "&emsp;<i> \"" +
+					crps_matches[i].name + "\"</i>" + " by " +
+					crps_matches[i].author + " <b>" +
+					crps_matches[i].publisher + "</b>, " +
+					crps_matches[i].published_year + "<br>"
+			}
 		}
 		results_text += "</p>"
 		search_results.innerHTML = results_text;

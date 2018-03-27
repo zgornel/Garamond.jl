@@ -10,7 +10,7 @@ VERSION >= v"0.6.0" && __precompile__(true)
 	using DataStructures: Set
 	# Import section
 	import Base: show, keys, values, contains, convert, lowercase, search
-	import TextAnalysis:prepare!
+	import TextAnalysis:prepare!, update_lexicon!, update_inverse_index!
 
 	# Export section
 	export  #HTTP server
@@ -40,8 +40,8 @@ VERSION >= v"0.6.0" && __precompile__(true)
 		keys,
 		values,
 		names,
-		update_lexicons!, 
-		update_reverse_indices!,
+		update_lexicon!,
+		update_reverse_index!,
 		metadata, metastring, dict, 
 
 		# Parsing
