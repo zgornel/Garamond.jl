@@ -26,7 +26,7 @@ function garamond_julia()
 	# Start web server
 	@assert !isempty(dconf) && isfile(dconf)
 	start_http_server(wp, dconf, phttp)
-	
+
 	return 0
 end
 

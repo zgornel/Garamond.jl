@@ -13,7 +13,7 @@ end
 
 CorpusRef() = CorpusRef("","",identity, false)
 
-Base.show(io::IO, cref::CorpusRef) = print(io, "CorpusRef for $(cref.name)") 
+Base.show(io::IO, cref::CorpusRef) = print(io, "CorpusRef for $(cref.name)")
 
 
 
@@ -26,10 +26,10 @@ end
 
 Corpora() = Corpora(Dict{UInt, Corpus}(), Dict{UInt, CorpusRef}(), Dict{UInt, Bool}())
 
-Base.show(io::IO, crpra::Corpora) = begin 
+Base.show(io::IO, crpra::Corpora) = begin
 	print(io, "$(length(crpra.corpora))-element Corpora:\n")
 	for (h, crps) in crpra.corpora
-		print(io, " 0x$(hex(h)) => $(crpra.refs[h].name):") 
+		print(io, " 0x$(hex(h)) => $(crpra.refs[h].name):")
 		println(io, " $(crps) [$(crpra.enabled[h] ? "Enabled" : "Disabled")]")
 	end
 end
@@ -54,7 +54,6 @@ function update_inverse_index!(crpra::Corpora)
 		TextAnalysis.update_inverse_index!(c)
 	end
 end
-
 
 
 

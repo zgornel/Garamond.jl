@@ -67,16 +67,17 @@
 	// When socket connection opened i.e. on page load
 	connection.onopen = function(e){ console.log("websocket ok")};
 
-	
-
 	//When receiving socket message
 	connection.onmessage = function(r){
 		window.lastmessage = r;
 		console.log("Response received!");
 		
-		// Response example: { "etime": 0.2,
+		// Response example: {	"etime": 0.2,
 		//			"n_matches": 3 ,
-		//			"matches":<list of book Dicts>}
+		//			"n_corpora": 10,
+		//			"n_corpora_match": 1,
+		//			"matches":Dict(crps: <list of book matches>)
+		//		}
 		jr = JSON.parse(r.data);
 		
 		// Process JSON data (access with jr.etime, etc)
@@ -116,8 +117,6 @@
 		search_results.innerHTML = results_text;
 	}
 
-
-
 	// Send message function
 	function sendMessage(q){
 		console.log("Sending message...");
@@ -130,14 +129,10 @@
 		connection.send(JSON.stringify(jq));
 	}
 
-	
-
 	// Variables for the search box and button
 	var search_box = document.getElementById("search_box"),
 	    search_box_button = document.getElementById("search_box_button"),
 	    serch_box_txt = document.getElementById("search_box_txt");
-
-
 
 	// When clicking the button
 	search_box_button.onclick = function(){ 

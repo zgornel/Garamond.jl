@@ -8,6 +8,7 @@ VERSION >= v"0.6.0" && __precompile__(true)
 	using HttpServer, WebSockets, JSON				# - for HTTP/WebSocket/JSON communication with the http server
 	using ArgParse							# - for command line argument parsing
 	using DataStructures: Set
+
 	# Import section
 	import Base: show, keys, values, contains, convert, lowercase, search
 	import TextAnalysis:prepare!, update_lexicon!, update_inverse_index!
@@ -26,7 +27,7 @@ VERSION >= v"0.6.0" && __precompile__(true)
 		fuzzysort,
 		levsort,
 		search,
-		search_metadata, 
+		search_metadata,
 		search_index,
 		search_heuristically,
 
@@ -34,15 +35,15 @@ VERSION >= v"0.6.0" && __precompile__(true)
 		get_commandline_arguments,
 
 		# Corpora related
-		AbstractCorpora, 
-		CorpusRef, 
+		AbstractCorpora,
+		CorpusRef,
 		Corpora,
 		keys,
 		values,
 		names,
 		update_lexicon!,
 		update_reverse_index!,
-		metadata, metastring, dict, 
+		metadata, metastring, dict,
 
 		# Parsing
 		parse_data_config,
@@ -50,11 +51,10 @@ VERSION >= v"0.6.0" && __precompile__(true)
 
 		# Word embeddings
 		find_cluster_mean,
-		get_cluster_matrix, 
+		get_cluster_matrix,
 		get_cluster_matrix!,
-		find_close_clusters, 
-		path 
-		
+		find_close_clusters,
+		path
 
 	# Includes
 	include("corpus.jl")

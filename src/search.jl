@@ -1,8 +1,10 @@
 # Overload ismatch to work matching any value within a vector
-contains(sv::T, r::Regex) where T<:AbstractArray{S} where S<:AbstractString = any(contains(si,r) for si in sv);
+contains(sv::T, r::Regex) where T<:AbstractArray{S} where S<:AbstractString = 
+	any(contains(si,r) for si in sv);
 
 # Overload lowervase function to work with vectors of strings
-lowercase(v::T) where T<:AbstractArray{S} where S<:AbstractString = Base.lowercase.(v)
+lowercase(v::T) where T<:AbstractArray{S} where S<:AbstractString =
+	Base.lowercase.(v)
 
 
 

@@ -57,6 +57,8 @@ function matchinds(needle, haystack; acronym = false)
 	return is
 end
 
+
+
 longer(x, y) = length(x) ≥ length(y) ? (x, true) : (y, false)
 
 bestmatch(needle, haystack) =
@@ -77,7 +79,8 @@ end
 
 # Sort candidates by their Fuzzy distance with respect to a search term 
 function fuzzysort(search, candidates)
-	scores = pmap(cand -> (fuzzyscore(search, cand), -levenshtein(search, cand)), candidates)
+	scores = pmap(cand -> (fuzzyscore(search, cand),
+				-levenshtein(search, cand)), candidates)
 	candidates[sortperm(scores)] |> reverse
 end
 
@@ -104,7 +107,8 @@ end
 
 # Sort candidates by their Levenshtein distance with respect to a search term 
 function levsort(search, candidates; κ::Int = 3)
-	scores = map(cand -> (levenshtein(search, cand), -fuzzyscore(search, cand)), candidates)
+	scores = map(cand -> (levenshtein(search, cand),
+		              -fuzzyscore(search, cand)), candidates)
 	candidates = candidates[sortperm(scores)]
 	k = 0
 	for i = 1:length(candidates)
