@@ -37,16 +37,16 @@ end
 
 
 # Function that creates corpus references using a Garamond data config file
-function parse_data_config(dataconfigpath::AbstractString) 
+function parse_data_config(dataconfigpath::AbstractString)
 	crefs = Vector{CorpusRef}()
-	
+
 	open(dataconfigpath, "r") do f
 		# Start parsing
 		li = 1
 		entry_counter = 0
 		while !eof(f)
 			line = strip(readline(f))
-			if startswith(line, "#") 
+			if startswith(line, "#")
 				continue # skip comments
 			elseif startswith(line, "[") # start of entry
 				entry_counter += 1
@@ -64,7 +64,7 @@ function parse_data_config(dataconfigpath::AbstractString)
 					warn("Line $li in $(dataconfigpath): unrecognized option or empty option.")
 					continue
 				end
-			else 
+			else
 				continue # skip un-parsable line
 			end
 			li += 1
@@ -106,7 +106,7 @@ function parse_csv_cornel(file::AbstractString, config::CSVParserConfig;
 
 	# Pre-allocate
 	vsd = Vector{StringDocument}()
-	
+
 	# Parse
 	open(file, "r") do f
 		# Select and sort the line fields which will be used as
