@@ -58,7 +58,7 @@ function path(clmodel, model, fv, Mc, word1, word2; κ::Float64=1.0, δ::Int=1 )
 	minD = minimum(D)
 	maxD = maximum(D)
 	D = (D.-minD)./(maxD-minD)
-	D[D.>=κ] = 0
+	D[D.<=κ] = 0
 	G = Graph(D)
 	src_c = get_cluster(clmodel,word1)
 	dst_c = get_cluster(clmodel,word2)
@@ -121,3 +121,12 @@ end
 #end
 #"""
 
+# Functional example for word vector path finding:
+# 1-billion-words folder
+#using NearestNeighbors
+#wv_model = wordvectors("./model_skipgram_wordvectors_1bil_words",kind=:text);
+#wc_model = wordclusters("./model_skipgram_wordclusters_500_1bil_words");
+#tree_model = KDTree(wv_model.vectors);
+#fv = open(deserialize, "./frequencies_processed.bin");
+#Mc = Garamond.get_cluster_matrix(wc_model, wv_model)
+#Garamond.path(wc_model, wv_model, fv, Mc, "jesus", "Kubrick", κ=.3, δ = 15)
