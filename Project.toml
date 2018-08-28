@@ -1,0 +1,17 @@
+name = "Garamond"
+uuid = "f94abbfa-aaac-11e8-0b90-db3d29b1d021"
+authors = ["Corneliu Cofaru <cornel@oxoaresearch.com>"]
+version = "0.1.0"
+
+[deps]
+BSON = "fbb218c0-5317-5bc6-957e-2ee96dd4b1f0"
+DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
+HttpServer = "58cfbd8c-6b7d-5447-85c1-563540e28d27"
+JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
+Languages = "8ef0a80b-9436-5d2c-a485-80b904378c43"
+LightGraphs = "093fc24a-ae57-5d10-9952-331d41423f4d"
+MLKernels = "6899632a-1081-549c-8d71-752c8a25a7ba"
+NearestNeighbors = "b8a86587-4115-5ab1-83bc-aa920d37bbce"
+TextAnalysis = "648cd920-aaad-11e8-1b86-4f560d251b3f"
+WebSockets = "104b5d7c-a370-577a-8038-80a2059c5097"
+Word2Vec = "c64b6f0f-98cd-51d1-af78-58ae84944834"
