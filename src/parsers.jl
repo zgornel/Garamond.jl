@@ -2,144 +2,130 @@
 # Data Loading - related functions and structures #
 ###################################################
 """
-Define the csv parser configuration. It maps the fields from a delimited files
-to document metadata fields through the values associated to the ':medatadata'
-key and specifies whether a field is to be included or not in the document text
-through the :data value associated to the ':data' key
+Define the csv parser configuration. It maps the fields from a delimited file
+to document metadata fields and specifies whether a field is to be included
+or not in the document text through the `data` field value.
+For example:
+    ParserConfig(Dict(1=>:id, 2=>:author),
+                 Dict(1=>true, 2=>true))
+    specifies to map the first column of the delimited file to the id field,
+    the second to the author and to load both.
 """
-mutable struct CSVParserConfig
-	metadata::Dict{Int, Symbol}
-	data::Dict{Int, Bool}
+mutable struct ParserConfig
+    metadata::Dict{Int, Symbol}
+    data::Dict{Int, Bool}
 end
 
 
 
-# Load corpora using a Garamond data config file
-function load_corpora(dataconfigpath::AbstractString)
-	crefs = parse_data_config(dataconfigpath)
-	load_corpora(crefs)
-end
-
-# Load corpora using a vector of corpus references
-function load_corpora(crefs::Vector{CorpusRef})
-	crpra = Corpora()
-	for cref in crefs
-		crps = cref.parser(cref.path)
-		h = hash(crps)
-		push!(crpra.corpora, h=>crps)
-		push!(crpra.refs, h=>cref)
-		push!(crpra.enabled, h=>cref.enabled) # all corpora enabled by default
-	end
-
-	return crpra
-end
+# Parser configurations
+PARSER_CONFIGS = Dict(
+    :csv_format_1 => ParserConfig(
+        Dict(1=>:id, 2=>:author, 3=>:name, 4=>:publisher, 5=>:edition_year, 6=>:published_year, 8=>:documenttype),
+        Dict(1=>false, 2=>true, 3=>true, 4=>true, 5=>true, 6=>false, 7=>false, 8=>true, 9=>true, 10=>true)
+       )
+)
 
 
 
-# Function that creates corpus references using a Garamond data config file
-function parse_data_config(dataconfigpath::AbstractString)
-	crefs = Vector{CorpusRef}()
-
-	open(dataconfigpath, "r") do f
-		# Start parsing
-		li = 1
-		entry_counter = 0
-		while !eof(f)
-			line = strip(readline(f))
-			if startswith(line, "#")
-				continue # skip comments
-			elseif startswith(line, "[") # start of entry
-				entry_counter += 1
-				push!(crefs, CorpusRef())
-				crefs[entry_counter].name = replace(line, r"(\[|\])", "")
-			elseif contains(line, "=") # opt = val line
-				opt, val = strip.(split(line,"="))
-				if opt == "parser" && !isempty(val)
-					crefs[entry_counter].parser = get_parser_function(val)
-				elseif opt == "path" && !isempty(val)
-					crefs[entry_counter].path = val
-				elseif opt == "enabled" && !isempty(val)
-					crefs[entry_counter].enabled = Bool(parse(val))
-				else
-					warn("Line $li in $(dataconfigpath): unrecognized option or empty option.")
-					continue
-				end
-			else
-				continue # skip un-parsable line
-			end
-			li += 1
-		end
-	end
-
-	return crefs
-end
-
-
-
-# Small enum of parsers
-function get_parser_function(pname::AbstractString)
-	if pname == "cornel_csv"
-		config = CSVParserConfig(
-			Dict(1=>:id, 2=>:author,
-			     3=>:name, 4=>:publisher,
-			     5=>:edition_year,
-			     6=>:published_year,
-			     8=>:documenttype),
-			Dict(1=>false, 2=>true, 3=>true,
-			     4=>true, 5=>false, 6=>false,
-			     7=>false, 8=>true,
-			     9=>true, 10=>false)
-		)
-		return (path::String)->parse_csv_cornel(path, config, delim='\t', header=true)
-	else
-		return (path::String)->nothing
-	end
+"""
+Function that creates corpus references i.e. CorpusRef,
+using a Garamond data config file. The corpus reference
+links a Corpus object to its file representation and is
+used when loading the corpus.
+"""
+function generate_corpus_references(filename::AbstractString)
+    #######
+    # Function that generated a parsing function from a parser configuration name
+    # and header information (used in parsing the data configuration file for
+    # generating a ParserConfig)
+    function get_parsing_function(parser_config::Symbol; header::Bool=false)
+        PREFIX = :__parser_
+        _function  = eval(Symbol(PREFIX, parser_config))
+        _config = get(PARSER_CONFIGS, parser_config, nothing)
+        _config isa Nothing && @error ":$config_name parser configuration not found!"
+        return (filename::String)->_function(filename, _config, delim='\t', header=header)
+    end
+    #######
+    crefs = Vector{CorpusRef}()
+    last_header = false
+    last_parser = :indentity
+    # Start parsing
+    open(filename, "r") do f
+        counter = 0
+        for line in eachline(f)
+            # Initialize temporary variables
+            _line = strip(line)
+            if startswith(_line, "#")
+                # Comment
+                continue
+            elseif startswith(_line, "[")
+                push!(crefs, CorpusRef(name=replace(line, r"(\[|\])"=>"")))
+                counter+= 1
+            elseif occursin("=", _line)
+                # Property assignment (option = value)
+                opt, val = strip.(split(_line, "="))
+                if opt == "parser" && !isempty(val)
+                    last_parser = Symbol(val)
+                    crefs[counter].parser =
+                        get_parsing_function(last_parser, header=last_header)
+                elseif opt == "path" && !isempty(val)
+                    crefs[counter].path = val
+                elseif opt == "enabled" && !isempty(val)
+                    crefs[counter].enabled = Bool(Meta.parse(val))
+                elseif opt == "header" && !isempty(val)
+                    last_header = Bool(Meta.parse(val))
+                    crefs[counter].parser = get_parsing_function(
+                        last_parser, header=last_header)
+                else
+                    @warn "Line \"$line\" in $(filename) is not valid. will skip"
+                    continue
+                end
+            else
+                # Un-parsable line (skip)
+                continue
+            end
+        end
+    end
+    return crefs
 end
 
 
 
-# Function that returns a corpus from a delimited file;
-# the individual document metadata and text are filled according
-# to the config::CSVParserConfig
-function parse_csv_cornel(file::AbstractString, config::CSVParserConfig;
-		   delim::Char = ',', header::Bool = true)
+#######################
+#       PARSERS       #
+#######################
 
-	# Pre-allocate
-	vsd = Vector{StringDocument}()
-
-	# Parse
-	open(file, "r") do f
-		# Select and sort the line fields which will be used as
-		# document text in the corpus
-		mask = sort([k for k in keys(config.data) if config.data[k]])
-
-		# Iterate and parse
-		li = 1
-		while !eof(f)
-			if li==1 && header
-				line = readline(f)
-				li+=1
-				continue
-			else
-				line = readline(f)
-				vline = String.(split(line, delim))
-				sd = StringDocument(join(vline[mask]," "))		# Set document data
-				for (column, metafield) in config.metadata		# Set document metadata
-					setfield!(sd.metadata, metafield, vline[column])
-				end
-				language!(sd, Languages.EnglishLanguage)		# language (csv written in English)
-				push!(vsd, sd)
-			end
-		end
-	end
-
-	# create and post-process corpus
-	crps = Corpus(vsd)
-	prepare!(crps, TEXT_STRIP_FLAGS)
-
-	# Update lexicon and inverse index
-	update_lexicon!(crps)
-	update_inverse_index!(crps)
-
-	return crps
+function __parser_csv_format_1(filename::AbstractString,
+                               config::ParserConfig,
+                               doctype::Type{T}=NGramDocument;
+                               delim::Char = ',',
+                               header::Bool = false) where
+        {T<:TextAnalysis.AbstractDocument}
+    # Pre-allocate
+    documents = Vector{doctype}()
+    # Parse
+    open(filename, "r") do f
+        # Select and sort the line fields which will be used as
+        # document text in the corpus
+        mask = sort!([k for k in keys(config.data) if config.data[k]])
+        # Iterate and parse
+        header && readline(f)  # skip header
+        for line in eachline(f)
+            vline = String.(strip.(split(line, delim, keepempty=false)))
+            sd = doctype(join(vline[mask]," "))		# Set document data
+            for (column, metafield) in config.metadata		# Set document metadata
+                setfield!(sd.metadata, metafield, vline[column])
+            end
+            language!(sd, Languages.English())
+            push!(documents, sd)
+        end
+    end
+    # Create and post-process corpus
+    crps = Corpus(documents)
+    prepare!(crps, TEXT_STRIP_FLAGS)
+    # Update lexicon and inverse index
+    update_lexicon!(crps)
+    update_inverse_index!(crps)
+    return crps
 end
