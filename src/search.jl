@@ -93,14 +93,22 @@ function push!(csr::CorporaSearchResult{T},
 end
 
 function update_suggestions!(csr::CorporaSearchResult)
-    mismatches = intersect((keys(_result.suggestions) for _result in values(csr.corpus_results))...)
-    for ks in mismatches
-        for _result in values(csr.corpus_results)
-            if ks in keys(_result.suggestions)
-                push!(csr.suggestions, ks=>_result.suggestions[ks])
+    if length(csr.corpus_results) > 1
+        # multiple corpora
+        mismatches = intersect((keys(_result.suggestions) for _result in values(csr.corpus_results))...)
+        for ks in mismatches
+            for _result in values(csr.corpus_results)
+                if ks in keys(_result.suggestions)
+                    push!(csr.suggestions, ks=>_result.suggestions[ks])
+                end
             end
+            unique!(csr.suggestions[ks])
         end
-        unique!(csr.suggestions[ks])
+    else
+        # 1 corpus
+        for (ks, vs) in collect(values(csr.corpus_results))[1].suggestions
+            push!(csr.suggestions, ks=>vs)
+        end
     end
     return csr
 end
@@ -134,7 +142,7 @@ function search(crpra::AbstractCorpora,
             push!(result, _hash=>_result)
         end
     end
-    update_suggestions!(result)
+    !isempty(result) && update_suggestions!(result)
     return result
 end
 

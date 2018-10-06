@@ -163,12 +163,12 @@ const METADATA_STRIP_FLAGS = strip_punctuation +
 
 function prepare!(input_string::AbstractString, flags::UInt32)
 	_sd = StringDocument(Unicode.normalize(input_string,
-                                              decompose=true,
-                                              compat=true,
-                                              casefold=true,
-                                              stripmark=true,
-                                              stripignore=true,
-                                              stripcc=true))
+                                           decompose=true,
+                                           compat=true,
+                                           casefold=true,
+                                           stripmark=true,
+                                           stripignore=true,
+                                           stripcc=true))
 	prepare!(_sd, flags)
 	return filter(x::AbstractString -> length(x) > 1,
 	              String.(split(text(_sd))))

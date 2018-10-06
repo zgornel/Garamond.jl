@@ -62,7 +62,7 @@ function generate_corpus_references(filename::AbstractString)
             elseif startswith(_line, "[")
                 push!(crefs, CorpusRef(name=replace(line, r"(\[|\])"=>"")))
                 counter+= 1
-            elseif occursin("=", _line)
+            elseif occursin("=", _line) && counter > 0
                 # Property assignment (option = value)
                 opt, val = strip.(split(_line, "="))
                 if opt == "parser" && !isempty(val)
@@ -113,12 +113,12 @@ function __parser_csv_format_1(filename::AbstractString,
         header && readline(f)  # skip header
         for line in eachline(f)
             vline = String.(strip.(split(line, delim, keepempty=false)))
-            sd = doctype(join(vline[mask]," "))		# Set document data
+            doc = doctype(join(vline[mask]," "))		# Set document data
             for (column, metafield) in config.metadata		# Set document metadata
-                setfield!(sd.metadata, metafield, vline[column])
+                setfield!(doc.metadata, metafield, vline[column])
             end
-            language!(sd, Languages.English())
-            push!(documents, sd)
+            language!(doc, Languages.English())
+            push!(documents, doc)
         end
     end
     # Create and post-process corpus
