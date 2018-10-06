@@ -13,7 +13,7 @@ module Garamond
     using DataStructures: Set, MultiDict
 
     import Base: show, keys, values, push!, delete!, getindex,
-           names, convert, lowercase, occursin
+           names, convert, lowercase, occursin, isempty
     import TextAnalysis: prepare!, update_lexicon!,
            update_inverse_index!
 

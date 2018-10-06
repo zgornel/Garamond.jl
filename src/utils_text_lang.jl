@@ -157,6 +157,10 @@ const QUERY_STRIP_FLAGS = strip_non_letters +
                           strip_whitespace +
                           strip_corrupt_utf8
 
+const METADATA_STRIP_FLAGS = strip_punctuation +
+                             strip_whitespace +
+                             strip_case
+
 function prepare!(input_string::AbstractString, flags::UInt32)
 	_sd = StringDocument(Unicode.normalize(input_string,
                                               decompose=true,

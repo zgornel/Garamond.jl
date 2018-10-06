@@ -5,12 +5,12 @@
 # Search results for a Corpus
 struct CorpusSearchResult{T<:Real}
     matches::MultiDict{T, TextAnalysis.DocumentMetadata}  # Dict(score=>metadata)
-    suggestions::Dict{String, Set{String}}
+    suggestions::MultiDict{String, String}
 end
 
 CorpusSearchResult() = CorpusSearchResult(
     MultiDict{Float64, TextAnalysis.DocumentMetadata}(),
-    Dict{String, Set{String}}()
+    MultiDict{String, String}()
 )
 
 # Calculate the length of a MultiDict as the number
@@ -23,42 +23,45 @@ valength(md::MultiDict) = begin
     end
 end
     
-show(io::IO, result::CorpusSearchResult) = begin
-    nm = valength(result.matches)
-    ns = length(result.suggestions)
-    printstyled(io, "$nm search result(s)")
+show(io::IO, csr::CorpusSearchResult) = begin
+    nm = valength(csr.matches)
+    ns = length(csr.suggestions)
+    printstyled(io, "$nm search csr(s)")
     ch = ifelse(nm==0, ".", ":"); printstyled("$ch\n")
-    for score in sort(collect(keys(result.matches)), rev=true)
-        for metadata in result.matches[score]
+    for score in sort(collect(keys(csr.matches)), rev=true)
+        for metadata in csr.matches[score]
             printstyled(io, "  $score ~ ", color=:normal, bold=true)
             printstyled(io, "$metadata\n", color=:normal)
         end
     end
     ns > 0 && printstyled(io, "$ns suggestion(s):\n")
-    for (keyword, suggestions) in result.suggestions 
+    for (keyword, suggestions) in csr.suggestions
         printstyled(io, "  \"$keyword\": ", color=:normal, bold=true)
         printstyled(io, "$(join(suggestions, ", "))\n", color=:normal)
     end
 end
 
+isempty(csr::CorpusSearchResult) = isempty(csr.matches) &&
+                                   isempty(csr.suggestions)
+
 
 
 # Search results for multiple Corpus-like objects (i.e. Corpora)
 struct CorporaSearchResult{T}
-    matches::Dict{UInt, CorpusSearchResult{T}}  # Dict(score=>metadata)
-    suggestions::Dict{String, Set{String}}
+    corpus_results::Dict{UInt, CorpusSearchResult{T}}  # Dict(score=>metadata)
+    suggestions::MultiDict{String, String}
 end
 
 CorporaSearchResult() = CorporaSearchResult(
     Dict{UInt, CorpusSearchResult{Float64}}(),
-    Dict{String, Set{String}}()
+    MultiDict{String, String}()
 )
 
 show(io::IO, result::CorporaSearchResult) = begin
-    nt = mapreduce(x->valength(x[2].matches), +, result.matches)
-    printstyled(io, "$nt search results from $(length(result.matches)) Corpora\n")
+    nt = mapreduce(x->valength(x[2].matches), +, result.corpus_results)
+    printstyled(io, "$nt search results from $(length(result.corpus_results)) Corpora\n")
     ns = length(result.suggestions)
-    for (_hash, _result) in result.matches 
+    for (_hash, _result) in result.corpus_results
         nm = valength(_result.matches)
         printstyled(io, "`-[0x$(string(_hash, base=16))] ", color=:cyan)  # hash
         printstyled(io, "$(nm) search result(s)")
@@ -71,30 +74,33 @@ show(io::IO, result::CorporaSearchResult) = begin
         end
     end
     ns > 0 && printstyled(io, "$ns suggestion(s):\n")
-    for (keyword, suggestions) in result.suggestions 
+    for (keyword, suggestions) in result.suggestions
         printstyled(io, "  \"$keyword\": ", color=:normal, bold=true)
         printstyled(io, "$(join(suggestions, ", "))\n", color=:normal)
     end
 end
+
+isempty(csr::CorporaSearchResult) = isempty(csr.corpus_results) &&
+                                    isempty(csr.suggestions)
 
 # Push method (useful for inserting Corpus search results
 # into Corpora search results)
 function push!(csr::CorporaSearchResult{T},
                sr::Pair{UInt, CorpusSearchResult{T}}) where {T<:Real}
     _hash, _result = sr
-    push!(csr.matches, _hash=>_result)
-    if !isempty(csr.suggestions)
-        for ks in intersect(keys(csr.suggestions), keys(_result.suggestions))
-            union!(csr.suggestions[ks], _result.suggestions[ks])
+    push!(csr.corpus_results, _hash=>_result)  # results get pushed after suggestions
+    return csr
+end
+
+function update_suggestions!(csr::CorporaSearchResult)
+    mismatches = intersect((keys(_result.suggestions) for _result in values(csr.corpus_results))...)
+    for ks in mismatches
+        for _result in values(csr.corpus_results)
+            if ks in keys(_result.suggestions)
+                push!(csr.suggestions, ks=>_result.suggestions[ks])
+            end
         end
-        for ks in symdiff(keys(csr.suggestions), keys(_result.suggestions))
-            delete!(csr.suggestions, ks)
-        end
-    else
-        # Add suggestions if none already
-        for (ks, vs) in _result.suggestions
-            push!(csr.suggestions, ks=>vs)
-        end
+        unique!(csr.suggestions[ks])
     end
     return csr
 end
@@ -128,6 +134,7 @@ function search(crpra::AbstractCorpora,
             push!(result, _hash=>_result)
         end
     end
+    update_suggestions!(result)
     return result
 end
 
@@ -289,7 +296,7 @@ function search_heuristically(crps::Corpus{T},
     # Initializations
     n = length(crps)
     use_heuristic = word_suggestions > 0 
-    suggestions = Dict{String, Set{String}}()
+    suggestions = MultiDict{String, String}()
     # Make heuristic function
     if heuristic == :levenshtein
         heuristic_sort = levsort
@@ -300,34 +307,28 @@ function search_heuristically(crps::Corpus{T},
         use_heuristic = false
     end
     # Search
+    words_meta = String[]
+    words_index = String[]
     if use_heuristic
         if isempty(needles)
             return suggestions
         else # There are terms that have not been found
-            if search_method == :metadata
-                words = unique(prepare!(join(
-                                             (metastring(crps[i],metadata_fields)
-                                              for i in 1:length(crps)),
-							                 " "),
-                                        QUERY_STRIP_FLAGS));
-            elseif search_method == :index
+            if search_method != :index
+                metadata_it = (metastring(meta, metadata_fields)
+                               for meta in metadata(crps))
+                words_meta = unique(prepare!(join(metadata_it, " "),
+                                             METADATA_STRIP_FLAGS));
+            elseif search_method != :metadata
                 @assert !isempty(inverse_index(crps)) "FATAL: The corpus has no inverse index."
-                words = collect(keys(inverse_index(crps)))
-            elseif search_method == :all
-                @assert !isempty(inverse_index(crps)) "FATAL: The corpus has no inverse index."
-                words = unique([prepare!(join(
-                                              (metastring(crps[i],metadata_fields)
-                                               for i in 1:length(crps)),
-							                  " "),
-                                         QUERY_STRIP_FLAGS);
-                                collect(keys(inverse_index(crps)))] )
+                words_index = collect(keys(inverse_index(crps)))
             else
                 @error "FATAL: Unknown search method."
             end
 			# Search a suggestion for each word/pattern
+            words = vcat(words_meta, words_index)
             ns = min(length(words), word_suggestions)
             for (i, needle) in enumerate(needles)
-                push!(suggestions, needle=>Set(heuristic_sort(needle, words; κ=ns)))
+                push!(suggestions, needle=>heuristic_sort(needle, words; κ=ns))
             end
         end
     end
