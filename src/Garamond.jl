@@ -4,6 +4,7 @@ module Garamond
     using Unicode
     using TextAnalysis, Languages
     using ConceptnetNumberbatch
+    using StringDistances, BKTrees
     ###using LightGraphs, NearestNeighbors, MLKernels
     ###using HttpServer, WebSockets, JSON
     #using JSON

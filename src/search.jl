@@ -120,12 +120,12 @@ end
 ##################
 
 # Defaults
-const DEFAULT_METADATA_FIELDS = [:author, :name]  # Default metadata fields for search
 const DEFAULT_SEARCH_TYPE = :index  # can be :index or :metadata
 const DEFAULT_SEARCH_METHOD = :exact  #can be :exact or :regex
-const DEFAULT_HEURISTIC = :levenshtein  #can be :levenshtein or :fuzzy
-const MAX_MATCHES = 1_000  # maximum number of matches that can be retrned
-const MAX_CORPUS_SUGGESTIONS = 1
+const DEFAULT_MAX_MATCHES = 1_000  # maximum number of matches that can be retrned
+const DEFAULT_MAX_SUGGESTIONS = 1  # maximum number of overall suggestions
+const DEFAULT_MAX_CORPUS_SUGGESTIONS = 1  # maximum number of suggestions for each corpus
+const MAX_EDIT_DISTANCE = 2  # maximum edit distance for which to return suggestions
 # Remarks:
 #  - the configuration searchmethod == :exact with search_type==:metadata is NOT to be used as the metadata
 #  contains compound expressions which the exact method cannot match
@@ -136,27 +136,24 @@ function search(crpra::AbstractCorpora,
                 needles::Vector{String};
                 search_type::Symbol=DEFAULT_SEARCH_TYPE,
                 search_method::Symbol=DEFAULT_SEARCH_METHOD,
-                metadata_fields::Vector{Symbol}=DEFAULT_METADATA_FIELDS,
                 ignorecase::Bool=true,
-                heuristic::Symbol=DEFAULT_HEURISTIC,
-                max_matches::Int=MAX_MATCHES,
-                max_suggestions::Int=MAX_CORPUS_SUGGESTIONS)
+                max_matches::Int=DEFAULT_MAX_MATCHES,
+                max_suggestions::Int=DEFAULT_MAX_SUGGESTIONS)
     result = CorporaSearchResult()
     for (_hash, crps) in crpra.corpora
         if crpra.enabled[_hash]
             _result = search(crps,
                              needles,
+                             search_tree=crpra.search_trees[_hash, search_type],
                              search_type=search_type,
                              search_method=search_method,
-                             metadata_fields=metadata_fields,
                              ignorecase=ignorecase,
-                             heuristic=heuristic,
                              max_matches=max_matches,
-                             max_suggestions=max_suggestions)
+                             max_suggestions=DEFAULT_MAX_CORPUS_SUGGESTIONS)
             push!(result, _hash=>_result)
         end
     end
-    !isempty(result) && update_suggestions!(result)
+    !isempty(result) && update_suggestions!(result, max_suggestions)
     return result
 end
 
@@ -175,6 +172,7 @@ documents.
   * `needles::Vector{String}` is a vector of key terms representing the query
 
 # Keyword arguments
+  * `search_tree::BKTree{String}` search tree for mismatch suggestions
   * `search_type::Symbol` is the type of the search; can be `:metadata` (default),
      `:index` or `:all`; the options specify that the needles can be found in
      the metadata of the documents of the corpus, their inverse index or both 
@@ -182,10 +180,7 @@ documents.
   * `search_method::Symbol` controls the type of matching: `:exact` (default)
      searches for the very same string while `:regex` searches for a string
      in the corpus that includes the needle
-  * `metadata_fields::Vector{Symbol}` are fields in metadata to search
   * `ignorecase::Bool` specifies whether to ignore the case
-  * `heuristic::Symbol` specifies what heuristic function to use for
-    missing strings matching; can be :levenshtein (default), :fuzzy or :none
   * `max_matches::Int` is the maximum number of search results to return
   * `max_suggestions::Int` is the maximum number of suggestions to return for
      each missing needle
@@ -198,13 +193,15 @@ documents.
 # Function that searches in a corpus'a metdata or metadata + content for needles (i.e. keyterms) 
 function search(crps::Corpus{T}, 
                 needles::Vector{String};
+                search_tree::BKTree{String}=BKTree{String}(),
                 search_type::Symbol=:metadata,
                 search_method::Symbol=:exact,
-                metadata_fields::Vector{Symbol}=[:author, :name, :publisher],
                 ignorecase::Bool=true,
-                heuristic::Symbol=:levenshtein,
                 max_matches::Int=10,
-                max_suggestions::Int=1) where {T<:AbstractDocument}
+                max_suggestions::Int=DEFAULT_MAX_CORPUS_SUGGESTIONS) where {T<:AbstractDocument}
+    # Checks
+    @assert search_type in [:index, :metadata, :all]
+    @assert search_method in [:exact, :regex]
     # Initializations
     n = length(crps)		# Number of documents
     p = length(needles)		# Number of search terms
@@ -239,11 +236,8 @@ function search(crps::Corpus{T},
     # Number of documents matching each needle (for heuristics)
     doc_matches = vec(sum(matches, dims=1))
     # Try to find closest string
-    suggestions = search_heuristically(crps,
+    suggestions = search_heuristically(search_tree,
                                        needles[doc_matches .== 0],
-                                       search_type=search_type,
-                                       heuristic=heuristic,
-                                       metadata_fields=metadata_fields,
                                        max_suggestions=max_suggestions)
     idxs::Vector{Int} = setdiff(sortperm(needle_matches, rev=true),
                                 findall(iszero,needle_matches))
@@ -254,6 +248,7 @@ function search(crps::Corpus{T},
     )
     return CorpusSearchResult(matches, suggestions)
 end
+
 
 
 """
@@ -334,51 +329,26 @@ end
 
 
 """
-	Heuristically search for best matches for a list of needles (not found otherwise) in a corpus
+    Search in the search tree for matches.
 """
-function search_heuristically(crps::Corpus{T},
+function search_heuristically(search_tree::BKTree{String},
                               needles::Vector{String};
-                              search_type::Symbol=:index,
-                              heuristic::Symbol=:levenshtein,
-                              metadata_fields::Vector{Symbol}=Symbol[],
-                              max_suggestions::Int=1) where {T<:AbstractDocument}
+                              max_suggestions::Int=1)
+    # Checks
+    @assert !BKTrees.is_empty_node(search_tree.roo) "FATAL: empty search tree."
     # Initializations
-    n = length(crps)
+    suggestions = MultiDict{String, Vector{Tuple{String, Float64}}}()
     use_heuristic = max_suggestions > 0
-    suggestions = MultiDict{String, String}()
-    # Make heuristic function
-    if heuristic == :levenshtein
-        heuristic_sort = levsort
-    elseif heuristic == :fuzzy
-        heuristic_sort = fuzzysort
-    else
-        heuristic_sort = identity
-        use_heuristic = false
-    end
-    # Search
-    words_meta = String[]
-    words_index = String[]
+
     if use_heuristic
         if isempty(needles)
             return suggestions
-        else # There are terms that have not been found
-            if search_type != :index
-                metadata_it = (metastring(meta, metadata_fields)
-                               for meta in metadata(crps))
-                words_meta = unique(prepare!(join(metadata_it, " "),
-                                             METADATA_STRIP_FLAGS));
-            elseif search_type != :metadata
-                @assert !isempty(inverse_index(crps)) "FATAL: The corpus has no inverse index."
-                words_index = collect(keys(inverse_index(crps)))
-            else
-                @error "FATAL: Unknown search method."
-            end
-			# Search a suggestion for each word/pattern
-            words = vcat(words_meta, words_index)
-            ns = min(length(words), max_suggestions)
-            for (i, needle) in enumerate(needles)
-                push!(suggestions, needle=>heuristic_sort(needle, words; κ=ns))
-            end
+        else  # there are terms that have not been found
+            for needle in needles
+                _suggestion_vector = find(search_tree, needle, max_suggestions,
+                                          k=MAX_EDIT_DISTANCE)
+                push!(suggestions, needle => sort!(_suggestion_vector,
+                                                   by=x->x[1]))
         end
     end
     return suggestions
