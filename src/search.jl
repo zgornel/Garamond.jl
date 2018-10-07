@@ -28,7 +28,7 @@ end
 show(io::IO, csr::CorpusSearchResult) = begin
     nm = valength(csr.matches)
     ns = length(csr.suggestions)
-    printstyled(io, "$nm search csr(s)")
+    printstyled(io, "$nm search result(s)")
     ch = ifelse(nm==0, ".", ":"); printstyled("$ch\n")
     for score in sort(collect(keys(csr.matches)), rev=true)
         for metadata in csr.matches[score]
@@ -259,11 +259,13 @@ function search(crps::Corpus{T},
                                        max_suggestions=max_suggestions)
     idxs::Vector{Int} = setdiff(sortperm(needle_matches, rev=true),
                                 findall(iszero,needle_matches))
-    matches = MultiDict{Float64,TextAnalysis.DocumentMetadata}(
-        [needle_matches[idx]=>metadata(crps[idx])
-         for (i, idx) in enumerate(idxs)
-         if i <= min(max_matches, length(idxs))]
-    )
+    nm = min(max_matches, length(idxs))
+    matches = MultiDict{Float64,TextAnalysis.DocumentMetadata}()
+    for (i, idx) in enumerate(idxs)
+        if i <= nm
+            push!(matches, needle_matches[idx]=>metadata(crps[idx]))
+        end
+    end
     return CorpusSearchResult(matches, suggestions)
 end
 
@@ -363,7 +365,7 @@ function search_heuristically(search_tree::BKTree{String},
             return suggestions
         else  # there are terms that have not been found
             for needle in needles
-                _suggestion_vector = sort!(find(search_tree, needle, 
+                _suggestion_vector = sort!(find(search_tree, needle,
                                                 MAX_EDIT_DISTANCE,
                                                 k=max_suggestions),
                                            by=x->x[1])

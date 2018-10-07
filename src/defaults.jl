@@ -35,7 +35,6 @@ const METADATA_STRIP_FLAGS = strip_punctuation +
 
 # String <=>Language dictionaries and
 # Languages.Languages <=> String conversion functions
-const LANG_TO_STR = Dict((v=>k) for (k,v) in STR_TO_LANG)
 const STR_TO_LANG = Dict("english"=>Languages.English(),
                          "french"=>Languages.French(),
                          "german"=>Languages.German(),
@@ -79,3 +78,4 @@ const STR_TO_LANG = Dict("english"=>Languages.English(),
                          "azerbaijani"=>Languages.Azerbaijani(),
                          "tamil"=>Languages.Tamil()
                         )
+const LANG_TO_STR = Dict((v=>k) for (k,v) in STR_TO_LANG)

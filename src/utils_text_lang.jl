@@ -24,10 +24,6 @@ convert(::Type{Dict}, md::TextAnalysis.DocumentMetadata) =
     Dict{String,String}((String(field) => getfield(md, field))
                          for field in fieldnames(TextAnalysis.DocumentMetadata))
 
-# Converts a TextAnalysis.DocumentMetadata to a Vector{TextAnalysisMetadata}
-# (used by MultiDict{T}([...]) in search.jl)
-convert(::Type{Vector{T}}, metadata::T) where {T<:TextAnalysis.DocumentMetadata}=
-    T[metadata] 
 
 
 # Medatadata getter for documents
