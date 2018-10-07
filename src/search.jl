@@ -4,14 +4,16 @@
 
 # Search results for a Corpus
 struct CorpusSearchResult{T<:Real}
-    matches::MultiDict{T, TextAnalysis.DocumentMetadata}  # Dict(score=>metadata)
-    suggestions::MultiDict{String, String}
+    matches::MultiDict{T, TextAnalysis.DocumentMetadata}  # score=>metadata
+    suggestions::MultiDict{String, Tuple{Float64,String}}
 end
 
 CorpusSearchResult() = CorpusSearchResult(
     MultiDict{Float64, TextAnalysis.DocumentMetadata}(),
-    MultiDict{String, String}()
+    MultiDict{String, Tuple{Float64,String}}()
 )
+
+
 
 # Calculate the length of a MultiDict as the number
 # of values considering all keys
@@ -37,7 +39,7 @@ show(io::IO, csr::CorpusSearchResult) = begin
     ns > 0 && printstyled(io, "$ns suggestion(s):\n")
     for (keyword, suggestions) in csr.suggestions
         printstyled(io, "  \"$keyword\": ", color=:normal, bold=true)
-        printstyled(io, "$(join(suggestions, ", "))\n", color=:normal)
+        printstyled(io, "$(join(map(x->x[2], suggestions), ", "))\n", color=:normal)
     end
 end
 
@@ -56,6 +58,8 @@ CorporaSearchResult() = CorporaSearchResult(
     Dict{UInt, CorpusSearchResult{Float64}}(),
     MultiDict{String, String}()
 )
+
+
 
 show(io::IO, result::CorporaSearchResult) = begin
     nt = mapreduce(x->valength(x[2].matches), +, result.corpus_results)
@@ -92,22 +96,40 @@ function push!(csr::CorporaSearchResult{T},
     return csr
 end
 
-function update_suggestions!(csr::CorporaSearchResult)
+# Update suggestions for multiple corpora search results
+function update_suggestions!(csr::CorporaSearchResult, max_suggestions::Int=1)
+    max_suggestions <=0 && return MultiDict{String, String}()
     if length(csr.corpus_results) > 1
         # multiple corpora
-        mismatches = intersect((keys(_result.suggestions) for _result in values(csr.corpus_results))...)
+        mismatches = intersect((keys(_result.suggestions)
+                                for _result in values(csr.corpus_results))...)
         for ks in mismatches
+            _tmpvec = Vector{Tuple{Float64,String}}()
             for _result in values(csr.corpus_results)
                 if ks in keys(_result.suggestions)
-                    push!(csr.suggestions, ks=>_result.suggestions[ks])
+                    _tmpvec = vcat(_tmpvec, _result.suggestions[ks])
                 end
             end
-            unique!(csr.suggestions[ks])
+            sort!(_tmpvec, by=x->x[1])  # sort vector of tuples by distance
+            n = min(max_suggestions, length(_tmpvec))
+            nn = 0
+            d = -1.0
+            for (i, (dist, _)) in enumerate(_tmpvec)
+                if i <= n || d == dist
+                    d = dist
+                    nn = i
+                end
+            end
+            push!(csr.suggestions, ks=>map(x->x[2],_tmpvec)[1:nn])
         end
     else
-        # 1 corpus
+        # 1 corpus result
         for (ks, vs) in collect(values(csr.corpus_results))[1].suggestions
-            push!(csr.suggestions, ks=>vs)
+            # vs is a Vector{Tuple{Float64, String}},
+            # sorted by distance i.e. the float
+            for v in vs
+                push!(csr.suggestions, ks=>v[2])
+            end
         end
     end
     return csr
@@ -119,17 +141,9 @@ end
 # Search methods #
 ##################
 
-# Defaults
-const DEFAULT_SEARCH_TYPE = :index  # can be :index or :metadata
-const DEFAULT_SEARCH_METHOD = :exact  #can be :exact or :regex
-const DEFAULT_MAX_MATCHES = 1_000  # maximum number of matches that can be retrned
-const DEFAULT_MAX_SUGGESTIONS = 1  # maximum number of overall suggestions
-const DEFAULT_MAX_CORPUS_SUGGESTIONS = 1  # maximum number of suggestions for each corpus
-const MAX_EDIT_DISTANCE = 2  # maximum edit distance for which to return suggestions
 # Remarks:
-#  - the configuration searchmethod == :exact with search_type==:metadata is NOT to be used as the metadata
-#  contains compound expressions which the exact method cannot match
-
+#  - the configuration searchmethod == :exact with search_type==:metadata is NOT
+#  to be used as the metadata contains compound expressions which the exact method cannot match
 
 # Function that searches through several corpora
 function search(crpra::AbstractCorpora,
@@ -138,8 +152,11 @@ function search(crpra::AbstractCorpora,
                 search_method::Symbol=DEFAULT_SEARCH_METHOD,
                 ignorecase::Bool=true,
                 max_matches::Int=DEFAULT_MAX_MATCHES,
-                max_suggestions::Int=DEFAULT_MAX_SUGGESTIONS)
+                max_suggestions::Int=DEFAULT_MAX_SUGGESTIONS,
+                max_corpus_suggestions::Int=DEFAULT_MAX_CORPUS_SUGGESTIONS)
     result = CorporaSearchResult()
+    n = length(crpra.corpora)
+    max_corpus_suggestions = min(max_suggestions, max_corpus_suggestions)
     for (_hash, crps) in crpra.corpora
         if crpra.enabled[_hash]
             _result = search(crps,
@@ -149,7 +166,7 @@ function search(crpra::AbstractCorpora,
                              search_method=search_method,
                              ignorecase=ignorecase,
                              max_matches=max_matches,
-                             max_suggestions=DEFAULT_MAX_CORPUS_SUGGESTIONS)
+                             max_suggestions=max_corpus_suggestions)
             push!(result, _hash=>_result)
         end
     end
@@ -197,6 +214,7 @@ function search(crps::Corpus{T},
                 search_type::Symbol=:metadata,
                 search_method::Symbol=:exact,
                 ignorecase::Bool=true,
+                metadata_fields::Vector{Symbol}=DEFAULT_METADATA_FIELDS,
                 max_matches::Int=10,
                 max_suggestions::Int=DEFAULT_MAX_CORPUS_SUGGESTIONS) where {T<:AbstractDocument}
     # Checks
@@ -335,9 +353,9 @@ function search_heuristically(search_tree::BKTree{String},
                               needles::Vector{String};
                               max_suggestions::Int=1)
     # Checks
-    @assert !BKTrees.is_empty_node(search_tree.roo) "FATAL: empty search tree."
+    @assert !BKTrees.is_empty_node(search_tree.root) "FATAL: empty search tree."
     # Initializations
-    suggestions = MultiDict{String, Vector{Tuple{String, Float64}}}()
+    suggestions = MultiDict{String, Tuple{Float64, String}}()
     use_heuristic = max_suggestions > 0
 
     if use_heuristic
@@ -345,10 +363,12 @@ function search_heuristically(search_tree::BKTree{String},
             return suggestions
         else  # there are terms that have not been found
             for needle in needles
-                _suggestion_vector = find(search_tree, needle, max_suggestions,
-                                          k=MAX_EDIT_DISTANCE)
-                push!(suggestions, needle => sort!(_suggestion_vector,
-                                                   by=x->x[1]))
+                _suggestion_vector = sort!(find(search_tree, needle, max_suggestions,
+                                                k=MAX_EDIT_DISTANCE),
+                                           by=x->x[1])
+                n = min(max_suggestions, length(_suggestion_vector))
+                push!(suggestions, needle=>_suggestion_vector[1:n])
+            end
         end
     end
     return suggestions

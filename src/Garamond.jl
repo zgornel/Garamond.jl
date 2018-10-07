@@ -50,6 +50,8 @@ module Garamond
         ###find_close_clusters,
         ###path
 
+    # Include section
+    include("defaults.jl")
     include("parsers.jl")
     include("corpus.jl")
     include("utils_text_lang.jl")

@@ -124,16 +124,6 @@ function add_corpus!(crpra::Corpora, cref::CorpusRef)
 end
 
 
-# Search tree constants
-const DEFAULT_METADATA_FIELDS = [:author, :name]  # Default metadata fields for search
-const DEFAULT_HEURISTIC = :levenshtein  #can be :levenshtein or :fuzzy
-const HEURISTIC_TO_DISTANCE = Dict(  # heuristic to distance object mapping
-    :levenshtein => StringDistances.Levenshtein(),
-    :dameraulevenshtein => StringDistances.DamerauLevenshtein(),
-    :hamming => StringDistances.Hamming(),
-    :jaro => StringDistances.Jaro())
-
-
 
 function add_search_trees!(crpra::AbstractCorpora,
                            search_type::Symbol;
@@ -148,17 +138,16 @@ function add_search_trees!(crpra::AbstractCorpora,
         if search_type != :metadata
             @assert !isempty(inverse_index(crps)) "FATAL: The corpus has no inverse index."
             words = collect(keys(inverse_index(crps)))
-            push!(crpra.search_trees, (_hash, search_type)=>
+            push!(crpra.search_trees, (_hash, :index)=>
                   BKTree((x,y)->evaluate(distance, x, y), words))
-        elseif search_type != :index
+        end
+        if search_type != :index
             metadata_it = (metastring(meta, metadata_fields)
                            for meta in metadata(crps))
             words = unique(prepare!(join(metadata_it, " "),
                                     METADATA_STRIP_FLAGS));
-            push!(crpra.search_trees, (_hash, search_type)=>
+            push!(crpra.search_trees, (_hash, :metadata)=>
                   BKTree((x,y)->evaluate(distance, x, y), words))
-        else
-            # Do nothing
         end
     end
     return crpra
