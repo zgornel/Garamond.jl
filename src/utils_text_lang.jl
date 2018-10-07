@@ -11,56 +11,6 @@ end
 
 
 
-# String <=>Language dictionaries and
-# Languages.Languages <=> String conversion functions
-const STR_TO_LANG = Dict("english"=>Languages.English(),
-                         "french"=>Languages.French(),
-                         "german"=>Languages.German(),
-                         "italian"=>Languages.Italian(),
-                         "finnish"=>Languages.Finnish(),
-                         "dutch"=>Languages.Dutch(),
-                         "afrikaans"=>Languages.Dutch(),
-                         "portuguese"=>Languages.Portuguese(),
-                         "spanish"=>Languages.Spanish(),
-                         "russian"=>Languages.Russian(),
-                         "serbian"=>Languages.Serbian(),# and Languages.Croatian()
-                         "swedish"=>Languages.Swedish(),
-                         "czech"=>Languages.Czech(),
-                         "polish"=>Languages.Polish(),
-                         "bulgarian"=>Languages.Bulgarian(),
-                         "esperanto"=>Languages.Esperanto(),
-                         "hungarian"=>Languages.Hungarian(),
-                         "greek"=>Languages.Greek(),
-                         "norwegian"=>Languages.Nynorsk(),
-                         "slovene"=>Languages.Slovene(),
-                         "romanian"=>Languages.Romanian(),
-                         "vietnamese"=>Languages.Vietnamese(),
-                         "latvian"=>Languages.Latvian(),
-                         "turkish"=>Languages.Turkish(),
-                         "danish"=>Languages.Danish(),
-                         "arabic"=>Languages.Arabic(),
-                         "persian"=>Languages.Persian(),
-                         "korean"=>Languages.Korean(),
-                         "thai"=>Languages.Thai(),
-                         "georgian"=>Languages.Georgian(),
-                         "hebrew"=>Languages.Hebrew(),
-                         "telugu"=>Languages.Telugu(),
-                         "estonian"=>Languages.Estonian(),
-                         "hindi"=>Languages.Hindi(),
-                         "lithuanian"=>Languages.Lithuanian(),
-                         "ukrainian"=>Languages.Ukrainian(),
-                         "belarusian"=>Languages.Belarusian(),
-                         "swahili"=>Languages.Swahili(),
-                         "urdu"=>Languages.Urdu(),
-                         "kurdish"=>Languages.Kurdish(),
-                         "azerbaijani"=>Languages.Azerbaijani(),
-                         "tamil"=>Languages.Tamil()
-                        )
-
-const LANG_TO_STR = Dict((v=>k) for (k,v) in STR_TO_LANG)
-
-
-
 # Converts a String to Languages.Language (using STR_TO_LANG)
 convert(::Type{L}, lang::S) where {L<:Languages.Language, S<:AbstractString} =
     get(STR_TO_LANG, strip(lower(lang)), Languages.English())
@@ -140,26 +90,6 @@ lowercase(v::T) where T<:AbstractArray{S} where S<:AbstractString =
 ### 	)
 ### ))	
 ### end
-
-
-const TEXT_STRIP_FLAGS = strip_case +
-                         strip_numbers +
-                         strip_punctuation +
-			             strip_articles +
-                         strip_non_letters +
-                         strip_stopwords +
-			             strip_prepositions +
-                         strip_whitespace +
-                         strip_corrupt_utf8
-
-const QUERY_STRIP_FLAGS = strip_non_letters +
-                          strip_punctuation +
-                          strip_whitespace +
-                          strip_corrupt_utf8
-
-const METADATA_STRIP_FLAGS = strip_punctuation +
-                             strip_whitespace +
-                             strip_case
 
 function prepare!(input_string::AbstractString, flags::UInt32)
 	_sd = StringDocument(Unicode.normalize(input_string,

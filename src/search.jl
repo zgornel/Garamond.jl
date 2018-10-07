@@ -363,8 +363,9 @@ function search_heuristically(search_tree::BKTree{String},
             return suggestions
         else  # there are terms that have not been found
             for needle in needles
-                _suggestion_vector = sort!(find(search_tree, needle, max_suggestions,
-                                                k=MAX_EDIT_DISTANCE),
+                _suggestion_vector = sort!(find(search_tree, needle, 
+                                                MAX_EDIT_DISTANCE,
+                                                k=max_suggestions),
                                            by=x->x[1])
                 n = min(max_suggestions, length(_suggestion_vector))
                 push!(suggestions, needle=>_suggestion_vector[1:n])
