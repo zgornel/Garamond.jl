@@ -27,11 +27,13 @@ end
 mutable struct Corpora <: AbstractCorpora	# the 'hash' identifies the corpus
     corpora::Dict{UInt, Corpus}     # Dict(hash=>corpus)
     refs::Dict{UInt, CorpusRef}     # Dict(hash=>corpus name)
+    search_trees::Dict{Tuple{UInt,Symbol}, BKTree{String}}
     enabled::Dict{UInt, Bool}       # whether to use the corpus in search or not
 end
 
 Corpora() = Corpora(Dict{UInt, Corpus}(),
                     Dict{UInt, CorpusRef}(),
+                    Dict{Tuple{UInt,Symbol}, BKTree{String}}(),
                     Dict{UInt, Bool}())
 
 show(io::IO, crpra::Corpora) = begin
@@ -103,17 +105,50 @@ end
 function load_corpora(crefs::Vector{CorpusRef})
     crpra = Corpora()
     for cref in crefs
-        add_corpus!(crpra, cref)
+        add_corpus!(crpra, cref)  # load and add corpus
     end
+    add_search_trees!(crpra, :all)  # add both metadata and index trees
 	return crpra
 end
+
+
 
 # Load corpora using a single corpus reference
 function add_corpus!(crpra::Corpora, cref::CorpusRef)
     crps = cref.parser(cref.path)
-    _hash = hash(crps)
+    _hash = hash(abspath(cref.path))
     push!(crpra.corpora, _hash=>crps)
     push!(crpra.refs, _hash=>cref)
     push!(crpra.enabled, _hash=>cref.enabled) # all corpora enabled by default
 	return crpra
+end
+
+
+
+function add_search_trees!(crpra::AbstractCorpora,
+                           search_type::Symbol;
+                           metadata_fields::Vector{Symbol}=DEFAULT_METADATA_FIELDS,
+                           heuristic::Symbol=DEFAULT_HEURISTIC)
+    # Checks
+    @assert search_type in [:index, :metadata, :all]
+    distance = get(HEURISTIC_TO_DISTANCE, heuristic, DEFAULT_HEURISTIC)
+    # Create search vocabulary
+    words = String[]
+    for (_hash, crps) in crpra.corpora
+        if search_type != :metadata
+            @assert !isempty(inverse_index(crps)) "FATAL: The corpus has no inverse index."
+            words = collect(keys(inverse_index(crps)))
+            push!(crpra.search_trees, (_hash, :index)=>
+                  BKTree((x,y)->evaluate(distance, x, y), words))
+        end
+        if search_type != :index
+            metadata_it = (metastring(meta, metadata_fields)
+                           for meta in metadata(crps))
+            words = unique(prepare!(join(metadata_it, " "),
+                                    METADATA_STRIP_FLAGS));
+            push!(crpra.search_trees, (_hash, :metadata)=>
+                  BKTree((x,y)->evaluate(distance, x, y), words))
+        end
+    end
+    return crpra
 end
