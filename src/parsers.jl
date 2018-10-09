@@ -143,7 +143,7 @@ function __parser_csv_format_1(filename::AbstractString,
                         end
                         setfield!(doc.metadata, metafield, _language)
                     else
-                        setfield!(doc.metadata, metafield, vline[column])
+                        setfield!(doc.metadata, metafield, lowercase(vline[column]))
                     end
                 end
             end

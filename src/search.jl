@@ -150,7 +150,6 @@ function search(crpra::AbstractCorpora,
                 needles::Vector{String};
                 search_type::Symbol=DEFAULT_SEARCH_TYPE,
                 search_method::Symbol=DEFAULT_SEARCH_METHOD,
-                ignorecase::Bool=true,
                 max_matches::Int=DEFAULT_MAX_MATCHES,
                 max_suggestions::Int=DEFAULT_MAX_SUGGESTIONS,
                 max_corpus_suggestions::Int=DEFAULT_MAX_CORPUS_SUGGESTIONS)
@@ -170,7 +169,6 @@ function search(crpra::AbstractCorpora,
                              search_tree=crpra.search_trees[_hash, search_type],
                              search_type=search_type,
                              search_method=search_method,
-                             ignorecase=ignorecase,
                              max_matches=max_matches,
                              max_suggestions=max_corpus_suggestions)
             push!(result, _hash=>_result)
@@ -203,7 +201,6 @@ documents.
   * `search_method::Symbol` controls the type of matching: `:exact` (default)
      searches for the very same string while `:regex` searches for a string
      in the corpus that includes the needle
-  * `ignorecase::Bool` specifies whether to ignore the case
   * `max_matches::Int` is the maximum number of search results to return
   * `max_suggestions::Int` is the maximum number of suggestions to return for
      each missing needle
@@ -219,10 +216,10 @@ function search(crps::Corpus{T},
                 search_tree::BKTree{String}=BKTree{String}(),
                 search_type::Symbol=:metadata,
                 search_method::Symbol=:exact,
-                ignorecase::Bool=true,
                 metadata_fields::Vector{Symbol}=DEFAULT_METADATA_FIELDS,
                 max_matches::Int=10,
-                max_suggestions::Int=DEFAULT_MAX_CORPUS_SUGGESTIONS) where {T<:AbstractDocument}
+                max_suggestions::Int=DEFAULT_MAX_CORPUS_SUGGESTIONS
+               ) where {T<:AbstractDocument}
     # Checks
     @assert search_type in [:index, :metadata, :all]
     @assert search_method in [:exact, :regex]
@@ -235,23 +232,19 @@ function search(crps::Corpus{T},
         matches += search_metadata(crps,
                                    needles,
                                    search_method=search_method,
-                                   metadata_fields=metadata_fields,
-                                   ignorecase=ignorecase)
+                                   metadata_fields=metadata_fields)
     elseif search_type == :index
         matches += search_index(crps,
                                 needles,
-                                search_method=search_method,
-                                ignorecase=ignorecase)
+                                search_method=search_method)
     elseif search_type == :all
         matches +=  search_metadata(crps,
                                     needles,
                                     search_method=search_method,
-                                    metadata_fields=metadata_fields,
-                                    ignorecase=ignorecase)
+                                    metadata_fields=metadata_fields)
         matches += search_index(crps,
                                 needles,
-                                search_method=search_method,
-                                ignorecase=ignorecase)
+                                search_method=search_method)
     else
 		@error "FATAL: Unknown search method."
     end
@@ -299,20 +292,19 @@ end
 function search_metadata(crps::Corpus{T},
                          needles::Vector{String};
                          search_method::Symbol=:exact,
-                         metadata_fields::Vector{Symbol}=Symbol[],
-                         ignorecase::Bool=true) where {T<:AbstractDocument}
+                         metadata_fields::Vector{Symbol}=Symbol[]
+                        ) where {T<:AbstractDocument}
     # Initializations
     n = length(crps)
     p = length(needles)
     matches = spzeros(Float64, n, p)
-    haystack_mutator = ifelse(ignorecase, lowercase, identity)
     needle_mutator, matching_function = parse_search_method(search_method)
     patterns = needle_mutator.(needles)
     # Search
     for (j, pattern) in enumerate(patterns)
         for (i, meta) in enumerate(metadata(crps))
             for field in metadata_fields
-                if matching_function(pattern, haystack_mutator(getfield(meta, field)))
+                if matching_function(pattern, getfield(meta, field))
                     matches[i,j]+= 1.0
                     break # from 'for field...'
                 end
@@ -330,24 +322,31 @@ end
 function search_index(crps::Corpus{T},
                       needles::Vector{String};
                       search_method::Symbol=:exact,
-                      ignorecase::Bool=true) where {T<:AbstractDocument}
+                     ) where {T<:AbstractDocument}
     # Initializations
     n = length(crps)
     p = length(needles)
     matches = spzeros(Float64, n, p)
     invidx = inverse_index(crps)
-    haystack_mutator = ifelse(ignorecase, lowercase, identity)
     needle_mutator, matching_function = parse_search_method(search_method)
     patterns = needle_mutator.(needles)
     # Check that inverse index exists
     @assert !isempty(inverse_index(crps)) "FATAL: The corpus has no inverse index."
     # Search
-    mutated_keys = (haystack_mutator(key) for key in keys(invidx))
+    haystack = (k for k in keys(invidx))
+    empty_vector = Int[]
     for (j, pattern) in enumerate(patterns)
-        for k in mutated_keys
-            if matching_function(pattern, k)
-                for i in invidx[k]
-                    matches[i,j] += 1.0
+        if search_method == :exact
+            idxs = get(invidx, pattern, empty_vector) # fast!!
+            for i in idxs
+                matches[i,j]+= 1.0
+            end
+        else
+            for k in haystack
+                if matching_function(pattern, k)
+                    for i in invidx[k]
+                        matches[i,j]+= 1.0
+                    end
                 end
             end
         end

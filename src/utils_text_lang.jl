@@ -3,10 +3,16 @@
 ###############################################################
 
 # Printer for TextAnalysis metadata
+titleize(str::AbstractString) = begin
+    join(map(uppercasefirst, strip.(split(str, "."))), ". ","")
+end
+
 show(io::IO, md::TextAnalysis.DocumentMetadata) = begin
-    printstyled(io,"$(md.id)-[",color=:light_black)
-    printstyled(io,"\"$(md.name)\" by $(md.author), ",
-                "$(md.edition_year) ($(md.published_year))]")
+    printstyled(io, "$(md.id)-[", color=:light_black)
+    printstyled(io, "\"$(titleize(md.name))\"",
+                    " by $(titlecase(md.author)),",
+                    " $(md.edition_year)",
+                    " ($(md.published_year))]")
 end
 
 
