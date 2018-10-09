@@ -157,6 +157,12 @@ function search(crpra::AbstractCorpora,
     result = CorporaSearchResult()
     n = length(crpra.corpora)
     max_corpus_suggestions = min(max_suggestions, max_corpus_suggestions)
+    # Issue warning when search the metadata with exact matches as the
+    # metadata contains by definition compound words that are difficult
+    # to match exactly
+    if search_type == :metadata && search_method == :exact
+        @warn "Searching the metadata with exact matches if bound to yield poor results!"
+    end
     for (_hash, crps) in crpra.corpora
         if crpra.enabled[_hash]
             _result = search(crps,
@@ -278,7 +284,7 @@ function parse_search_method(search_method::Symbol)
     if search_method == :exact
         return identity, isequal
     elseif search_method == :regex
-        return (arg)->Regex(arg), occursin
+        return (arg::String)->Regex(arg), occursin
     else
         # default if wrong input
         return identity, isequal
@@ -336,10 +342,13 @@ function search_index(crps::Corpus{T},
     # Check that inverse index exists
     @assert !isempty(inverse_index(crps)) "FATAL: The corpus has no inverse index."
     # Search
+    mutated_keys = (haystack_mutator(key) for key in keys(invidx))
     for (j, pattern) in enumerate(patterns)
-        for k in keys(invidx)
-            if matching_function(pattern, haystack_mutator(k))
-                matches[invidx[k], j].+= 1.0
+        for k in mutated_keys
+            if matching_function(pattern, k)
+                for i in invidx[k]
+                    matches[i,j] += 1.0
+                end
             end
         end
     end

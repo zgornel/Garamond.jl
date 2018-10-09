@@ -95,9 +95,9 @@ end
 
 
 
-# Load corpora using a Garamond data config file
+# Load corpora using a Garamond corpora config file
 function load_corpora(filename::AbstractString)
-	corpus_refs = generate_corpus_references(filename)
+	corpus_refs = parse_corpora_configuration(filename)
 	load_corpora(corpus_refs)
 end
 
