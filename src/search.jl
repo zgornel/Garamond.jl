@@ -227,13 +227,9 @@ function search(crpra::AbstractCorpora,
     end
     for (_hash, crps) in crpra.corpora
         if crpra.enabled[_hash]
-            search_tree = get(crpra.search_trees,
-                              (_hash, search_type),
-                              BKTrees.BKTree{String}()
-                             )
             _result = search(crps,
                              needles,
-                             search_tree=search_tree,
+                             search_trees=crpra.search_trees[_hash],
                              search_type=search_type,
                              search_method=search_method,
                              max_matches=max_matches,
@@ -260,7 +256,8 @@ documents.
   * `needles::Vector{String}` is a vector of key terms representing the query
 
 # Keyword arguments
-  * `search_tree::BKTree{String}` search tree used for approximate matching
+  * `search_trees::Dict{Symbol, BKTree{String}}` search trees used for approximate
+     string matching i.e. for suggestion generation
   * `search_type::Symbol` is the type of the search; can be `:metadata` (default),
      `:index` or `:all`; the options specify that the needles can be found in
      the metadata of the documents of the corpus, their inverse index or both 
@@ -280,7 +277,7 @@ documents.
 # Function that searches in a corpus'a metdata or metadata + content for needles (i.e. keyterms) 
 function search(crps::Corpus{T}, 
                 needles::Vector{String};
-                search_tree::BKTree{String}=BKTree{String}(),
+                search_trees::Dict{Symbol,BKTree{String}}=Dict{Symbol,BKTree{String}}(),
                 search_type::Symbol=:metadata,
                 search_method::Symbol=:exact,
                 metadata_fields::Vector{Symbol}=DEFAULT_METADATA_FIELDS,
@@ -330,13 +327,22 @@ function search(crps::Corpus{T},
         push!(query_matches, document_scores[ordered_docs[i]]=>ordered_docs[i])
     end
     # Try to partially match needles that were not found
-    if search_type == :all && max_suggestions != 0
-        max_suggestions = 0
-        @warn "No suggestions are returned when search_type==:all"
+    needles_not_found = needles[needle_popularity.== 0]
+    if search_type != :all
+        suggestions = search_heuristically(search_trees[search_type],
+                                           needles_not_found,
+                                           max_suggestions=max_suggestions)
+    else
+        # Get suggestions from both index and metadata
+        suggestions = MultiDict{String, Tuple{Float64,String}}(
+            search_heuristically(search_trees[:index],
+                                 needles_not_found,
+                                 max_suggestions=max_suggestions)...,
+            search_heuristically(search_trees[:metadata],
+                                 needles_not_found,
+                                 max_suggestions=max_suggestions)...
+        )
     end
-    suggestions = search_heuristically(search_tree,
-                                       needles[needle_popularity.== 0],
-                                       max_suggestions=max_suggestions)
     return CorpusSearchResult(query_matches, needle_matches, suggestions)
 end
 
