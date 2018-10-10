@@ -37,8 +37,9 @@ end
 show(io::IO, csr::CorpusSearchResult) = begin
     n = valength(csr.query_matches)
     nm = length(csr.needle_matches)
+    ns = length(csr.suggestions)
     printstyled(io, "Search results for a corpus: ")
-    printstyled(io, " $n hits using $nm query terms.\n", bold=true)
+    printstyled(io, " $n hits, $nm query terms, $ns suggestions.", bold=true)
 end
 
 ### show(io::IO, csr::CorpusSearchResult) = begin
@@ -79,13 +80,15 @@ show(io::IO, csr::CorporaSearchResult) = begin
     matched_needles = unique(collect(needle for (_, _result) in csr.corpus_results
                                      for needle in keys(_result.needle_matches)))
     nmt = length(matched_needles)
+    nst = length(csr.suggestions)
     printstyled(io, "Search results for $(length(csr.corpus_results)) corpora: ")
-    printstyled(io, "$nt hits, using $nmt query terms.\n", bold=true)
+    printstyled(io, "$nt hits, $nmt query terms, $nst suggestions.\n", bold=true)
     for (_hash, _result) in csr.corpus_results
         n = valength(_result.query_matches)
         nm = length(_result.needle_matches)
+        ns = length(_result.suggestions)
         printstyled(io, "`-[0x$(string(_hash, base=16))] ", color=:cyan)  # hash
-        printstyled(io, "$n hits using $nm query terms\n")
+        printstyled(io, "$n hits, $nm query terms, $ns suggestions\n")
     end
 end
 ### show(io::IO, csr::CorporaSearchResult) = begin
@@ -421,12 +424,14 @@ function search_heuristically(search_tree::BKTree{String},
             return suggestions
         else  # there are terms that have not been found
             for needle in needles
-                _suggestion_vector = sort!(find(search_tree, needle,
-                                                MAX_EDIT_DISTANCE,
-                                                k=max_suggestions),
-                                           by=x->x[1])
-                n = min(max_suggestions, length(_suggestion_vector))
-                push!(suggestions, needle=>_suggestion_vector[1:n])
+                _suggestions = sort!(find(search_tree, needle,
+                                          MAX_EDIT_DISTANCE,
+                                          k=max_suggestions),
+                                     by=x->x[1])
+                if !isempty(_suggestions)
+                    n = min(max_suggestions, length(_suggestions))
+                    push!(suggestions, needle=>_suggestions[1:n])
+                end
             end
         end
     end
