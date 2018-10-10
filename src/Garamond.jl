@@ -32,9 +32,6 @@ module Garamond
         # Utils
         prepare!,
         # Search related
-        contains,
-        fuzzysort,
-        levsort,
         search,
         search_metadata,
         search_index,
