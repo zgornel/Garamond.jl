@@ -38,7 +38,8 @@ module Garamond
         search,
         search_metadata,
         search_index,
-        search_heuristically
+        search_heuristically,
+        print_search_results
         #HTTP server
         ###start_http_server,
         # Command line (application) related

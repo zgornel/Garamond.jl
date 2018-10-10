@@ -1,26 +1,24 @@
-###############################################
-# Search result object and associated methods #
-###############################################
+#################################################
+# Search results objects and associated methods #
+#################################################
 
-# Search results for a Corpus
-### struct CorpusSearchResult{T<:Real}
-###     matches::MultiDict{T, TextAnalysis.DocumentMetadata}  # score => metadata
-###     suggestions::MultiDict{String, Tuple{Float64,String}} # needle=>(score,partial_match)
-###     matched_needles::Vector{String}                       # matches
-### end
-
+# Search results from a single corpus
 struct CorpusSearchResult
     query_matches::MultiDict{Float64, Int}  # score => document indices
     needle_matches::Dict{String, Int}  # needle => number of matches
     suggestions::MultiDict{String, Tuple{Float64,String}} # needle => tuples of (score,partial match)
 end
 
-
 CorpusSearchResult() = CorpusSearchResult(
     MultiDict{Float64, Int}(),
     Dict{String, Int}(),
     MultiDict{String, Tuple{Float64,String}}()
 )
+
+
+
+isempty(csr::T) where T<:CorpusSearchResult =
+    all(isempty(getfield(csr, field)) for field in fieldnames(T))
 
 
 
@@ -33,7 +31,10 @@ valength(md::MultiDict) = begin
         return mapreduce(x->length(x[2]), +, md)
     end
 end
-    
+
+
+
+# Show method
 show(io::IO, csr::CorpusSearchResult) = begin
     n = valength(csr.query_matches)
     nm = length(csr.needle_matches)
@@ -42,29 +43,29 @@ show(io::IO, csr::CorpusSearchResult) = begin
     printstyled(io, " $n hits, $nm query terms, $ns suggestions.", bold=true)
 end
 
-### show(io::IO, csr::CorpusSearchResult) = begin
-###     nm = valength(csr.matches)
-###     ns = length(csr.suggestions)
-###     printstyled(io, "$nm search result(s)")
-###     ch = ifelse(nm==0, ".", ":"); printstyled("$ch\n")
-###     for score in sort(collect(keys(csr.matches)), rev=true)
-###         for metadata in csr.matches[score]
-###             printstyled(io, "  $score ~ ", color=:normal, bold=true)
-###             printstyled(io, "$metadata\n", color=:normal)
-###         end
-###     end
-###     ns > 0 && printstyled(io, "$ns suggestion(s):\n")
-###     for (keyword, suggestions) in csr.suggestions
-###         printstyled(io, "  \"$keyword\": ", color=:normal, bold=true)
-###         printstyled(io, "$(join(map(x->x[2], suggestions), ", "))\n", color=:normal)
-###     end
-### end
-
-isempty(csr::T) where T<:CorpusSearchResult =
-    all(isempty(getfield(csr, field)) for field in fieldnames(T))
 
 
-# Search results for multiple Corpus-like objects (i.e. Corpora)
+# Pretty printer of results
+print_search_results(crps::Corpus, csr::CorpusSearchResult) = begin
+    nm = valength(csr.query_matches)
+    ns = length(csr.suggestions)
+    printstyled("$nm search results")
+    ch = ifelse(nm==0, ".", ":"); printstyled("$ch\n")
+    for score in sort(collect(keys(csr.query_matches)), rev=true)
+        for doc in (crps[i] for i in csr.query_matches[score])
+            printstyled("  $score ~ ", color=:normal, bold=true)
+            printstyled("$(metadata(doc))\n", color=:normal)
+        end
+    end
+    ns > 0 && printstyled("$ns suggestions:\n")
+    for (keyword, suggestions) in csr.suggestions
+        printstyled("  \"$keyword\": ", color=:normal, bold=true)
+        printstyled("$(join(map(x->x[2], suggestions), ", "))\n", color=:normal)
+    end
+end
+
+
+# Search results for multiple corpora
 struct CorporaSearchResult
     corpus_results::Dict{UInt, CorpusSearchResult}  # Dict(score=>metadata)
     suggestions::MultiDict{String, String}
@@ -75,6 +76,14 @@ CorporaSearchResult() = CorporaSearchResult(
     MultiDict{String, String}()
 )
 
+
+
+isempty(csr::T) where T<:CorporaSearchResult =
+    all(isempty(getfield(csr, field)) for field in fieldnames(T))
+
+
+
+# Show method
 show(io::IO, csr::CorporaSearchResult) = begin
     nt = mapreduce(x->valength(x[2].query_matches), +, csr.corpus_results)
     matched_needles = unique(collect(needle for (_, _result) in csr.corpus_results
@@ -91,31 +100,33 @@ show(io::IO, csr::CorporaSearchResult) = begin
         printstyled(io, "$n hits, $nm query terms, $ns suggestions\n")
     end
 end
-### show(io::IO, csr::CorporaSearchResult) = begin
-###     nt = mapreduce(x->valength(x[2].matches), +, csr.corpus_results)
-###     printstyled(io, "$nt search results from $(length(csr.corpus_results)) Corpora\n")
-###     ns = length(csr.suggestions)
-###     for (_hash, _result) in csr.corpus_results
-###         nm = valength(_result.matches)
-###         printstyled(io, "`-[0x$(string(_hash, base=16))] ", color=:cyan)  # hash
-###         printstyled(io, "$(nm) search result(s)")
-###         ch = ifelse(nm==0, ".", ":"); printstyled("$ch\n")
-###         for score in sort(collect(keys(_result.matches)), rev=true)
-###             for metadata in _result.matches[score]
-###                 printstyled(io, "  $score ~ ", color=:normal, bold=true)
-###                 printstyled(io, "$metadata\n", color=:normal)
-###             end
-###         end
-###     end
-###     ns > 0 && printstyled(io, "$ns suggestion(s):\n")
-###     for (keyword, suggestions) in csr.suggestions
-###         printstyled(io, "  \"$keyword\": ", color=:normal, bold=true)
-###         printstyled(io, "$(join(suggestions, ", "))\n", color=:normal)
-###     end
-### end
 
-isempty(csr::T) where T<:CorporaSearchResult =
-    all(isempty(getfield(csr, field)) for field in fieldnames(T))
+
+
+# Pretty printer of results
+print_search_results(corpora::Corpora, csr::CorporaSearchResult) = begin
+    nt = mapreduce(x->valength(x[2].query_matches), +, csr.corpus_results)
+    printstyled("$nt search results from $(length(csr.corpus_results)) corpora\n")
+    ns = length(csr.suggestions)
+    for (_hash, _result) in csr.corpus_results
+        crps = corpora[_hash]
+        nm = valength(_result.query_matches)
+        printstyled("`-[0x$(string(_hash, base=16))] ", color=:cyan)  # hash
+        printstyled("$(nm) search results")
+        ch = ifelse(nm==0, ".", ":"); printstyled("$ch\n")
+        for score in sort(collect(keys(_result.query_matches)), rev=true)
+            for doc in (crps[i] for i in _result.query_matches[score])
+                printstyled("  $score ~ ", color=:normal, bold=true)
+                printstyled("$(metadata(doc))\n", color=:normal)
+            end
+        end
+    end
+    ns > 0 && printstyled("$ns suggestions:\n")
+    for (keyword, suggestions) in csr.suggestions
+        printstyled("  \"$keyword\": ", color=:normal, bold=true)
+        printstyled("$(join(suggestions, ", "))\n", color=:normal)
+    end
+end
 
 
 
@@ -125,6 +136,8 @@ function push!(csr::CorporaSearchResult, sr::Pair{UInt, CorpusSearchResult})
     push!(csr.corpus_results, sr)
     return csr
 end
+
+
 
 # Update suggestions for multiple corpora search results
 function update_suggestions!(csr::CorporaSearchResult, max_suggestions::Int=1)
@@ -214,9 +227,13 @@ function search(crpra::AbstractCorpora,
     end
     for (_hash, crps) in crpra.corpora
         if crpra.enabled[_hash]
+            search_tree = get(crpra.search_trees,
+                              (_hash, search_type),
+                              BKTrees.BKTree{String}()
+                             )
             _result = search(crps,
                              needles,
-                             search_tree=crpra.search_trees[_hash, search_type],
+                             search_tree=search_tree,
                              search_type=search_type,
                              search_method=search_method,
                              max_matches=max_matches,
@@ -313,6 +330,10 @@ function search(crps::Corpus{T},
         push!(query_matches, document_scores[ordered_docs[i]]=>ordered_docs[i])
     end
     # Try to partially match needles that were not found
+    if search_type == :all && max_suggestions != 0
+        max_suggestions = 0
+        @warn "No suggestions are returned when search_type==:all"
+    end
     suggestions = search_heuristically(search_tree,
                                        needles[needle_popularity.== 0],
                                        max_suggestions=max_suggestions)
@@ -413,16 +434,16 @@ end
 function search_heuristically(search_tree::BKTree{String},
                               needles::Vector{String};
                               max_suggestions::Int=1)
-    # Checks
-    @assert !BKTrees.is_empty_node(search_tree.root) "FATAL: empty search tree."
     # Initializations
     suggestions = MultiDict{String, Tuple{Float64, String}}()
     use_heuristic = max_suggestions > 0
-
+    # Search
     if use_heuristic
         if isempty(needles)
             return suggestions
         else  # there are terms that have not been found
+            # Checks
+            @assert !BKTrees.is_empty_node(search_tree.root) "FATAL: empty search tree."
             for needle in needles
                 _suggestions = sort!(find(search_tree, needle,
                                           MAX_EDIT_DISTANCE,
