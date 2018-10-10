@@ -5,12 +5,14 @@
 # Search results for a Corpus
 struct CorpusSearchResult{T<:Real}
     matches::MultiDict{T, TextAnalysis.DocumentMetadata}  # score=>metadata
-    suggestions::MultiDict{String, Tuple{Float64,String}}
+    suggestions::MultiDict{String, Tuple{Float64,String}} # mismatch=>(score,partial_match)
+    matched_needles::Vector{String}                       # matches
 end
 
 CorpusSearchResult() = CorpusSearchResult(
     MultiDict{Float64, TextAnalysis.DocumentMetadata}(),
-    MultiDict{String, Tuple{Float64,String}}()
+    MultiDict{String, Tuple{Float64,String}}(),
+    String[]
 )
 
 
@@ -61,11 +63,11 @@ CorporaSearchResult() = CorporaSearchResult(
 
 
 
-show(io::IO, result::CorporaSearchResult) = begin
-    nt = mapreduce(x->valength(x[2].matches), +, result.corpus_results)
-    printstyled(io, "$nt search results from $(length(result.corpus_results)) Corpora\n")
-    ns = length(result.suggestions)
-    for (_hash, _result) in result.corpus_results
+show(io::IO, csr::CorporaSearchResult) = begin
+    nt = mapreduce(x->valength(x[2].matches), +, csr.corpus_results)
+    printstyled(io, "$nt search results from $(length(csr.corpus_results)) Corpora\n")
+    ns = length(csr.suggestions)
+    for (_hash, _result) in csr.corpus_results
         nm = valength(_result.matches)
         printstyled(io, "`-[0x$(string(_hash, base=16))] ", color=:cyan)  # hash
         printstyled(io, "$(nm) search result(s)")
@@ -78,7 +80,7 @@ show(io::IO, result::CorporaSearchResult) = begin
         end
     end
     ns > 0 && printstyled(io, "$ns suggestion(s):\n")
-    for (keyword, suggestions) in result.suggestions
+    for (keyword, suggestions) in csr.suggestions
         printstyled(io, "  \"$keyword\": ", color=:normal, bold=true)
         printstyled(io, "$(join(suggestions, ", "))\n", color=:normal)
     end
@@ -97,30 +99,42 @@ function push!(csr::CorporaSearchResult{T},
 end
 
 # Update suggestions for multiple corpora search results
-function update_suggestions!(csr::CorporaSearchResult, max_suggestions::Int=1)
+function update_suggestions!(csr::CorporaSearchResult,
+                             needles::Vector{String},
+                             max_suggestions::Int=1)
     max_suggestions <=0 && return MultiDict{String, String}()
-    if length(csr.corpus_results) > 1
-        # multiple corpora
+    if length(csr.corpus_results) > 1  # multiple corpora
+        # Get the mismatches across all corpus results
+        corpus_results = values(csr.corpus_results)
+        matched_needles = (needle for _result in corpus_results
+                           for needle in _result.matched_needles)
         mismatches = intersect((keys(_result.suggestions)
-                                for _result in values(csr.corpus_results))...)
+                                for _result in corpus_results)...)
+        # Construct suggestions for the whole Corpora
         for ks in mismatches
             _tmpvec = Vector{Tuple{Float64,String}}()
-            for _result in values(csr.corpus_results)
-                if ks in keys(_result.suggestions)
+            for _result in corpus_results
+                if ks in keys(_result.suggestions) &&
+                    !(any(suggestion[2] in matched_needles
+                          for suggestion in _result.suggestions[ks]))
                     _tmpvec = vcat(_tmpvec, _result.suggestions[ks])
                 end
             end
-            sort!(_tmpvec, by=x->x[1])  # sort vector of tuples by distance
-            n = min(max_suggestions, length(_tmpvec))
-            nn = 0
-            d = -1.0
-            for (i, (dist, _)) in enumerate(_tmpvec)
-                if i <= n || d == dist
-                    d = dist
-                    nn = i
+            if !isempty(_tmpvec)
+                sort!(_tmpvec, by=x->x[1])  # sort vector of tuples by distance
+                # Keep results with the same distance even if the number is
+                # larger than the maximum
+                n = min(max_suggestions, length(_tmpvec))
+                nn = 0
+                d = -1.0
+                for (i, (dist, _)) in enumerate(_tmpvec)
+                    if i <= n || d == dist
+                        d = dist
+                        nn = i
+                    end
                 end
+                push!(csr.suggestions, ks=>map(x->x[2],_tmpvec)[1:nn])
             end
-            push!(csr.suggestions, ks=>map(x->x[2],_tmpvec)[1:nn])
         end
     else
         # 1 corpus result
@@ -174,7 +188,7 @@ function search(crpra::AbstractCorpora,
             push!(result, _hash=>_result)
         end
     end
-    !isempty(result) && update_suggestions!(result, max_suggestions)
+    !isempty(result) && update_suggestions!(result, needles, max_suggestions)
     return result
 end
 
@@ -254,18 +268,18 @@ function search(crps::Corpus{T},
     doc_matches = vec(sum(matches, dims=1))
     # Try to find closest string
     suggestions = search_heuristically(search_tree,
-                                       needles[doc_matches .== 0],
+                                       needles[doc_matches.== 0],
                                        max_suggestions=max_suggestions)
+    # Sort result by score and return Corpus search result
     idxs::Vector{Int} = setdiff(sortperm(needle_matches, rev=true),
-                                findall(iszero,needle_matches))
+                                findall(iszero, needle_matches))
     nm = min(max_matches, length(idxs))
     matches = MultiDict{Float64,TextAnalysis.DocumentMetadata}()
-    for (i, idx) in enumerate(idxs)
-        if i <= nm
-            push!(matches, needle_matches[idx]=>metadata(crps[idx]))
-        end
+    matched_needles = needles[doc_matches.!= 0]
+    @inbounds for i in 1:nm
+        push!(matches, needle_matches[idxs[i]]=>metadata(crps[idxs[i]]))
     end
-    return CorpusSearchResult(matches, suggestions)
+    return CorpusSearchResult(matches, suggestions, matched_needles)
 end
 
 
