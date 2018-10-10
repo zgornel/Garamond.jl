@@ -27,13 +27,13 @@ end
 mutable struct Corpora <: AbstractCorpora	# the 'hash' identifies the corpus
     corpora::Dict{UInt, Corpus}     # Dict(hash=>corpus)
     refs::Dict{UInt, CorpusRef}     # Dict(hash=>corpus name)
-    search_trees::Dict{Tuple{UInt,Symbol}, BKTree{String}}
+    search_trees::Dict{UInt, Dict{Symbol, BKTree{String}}}
     enabled::Dict{UInt, Bool}       # whether to use the corpus in search or not
 end
 
 Corpora() = Corpora(Dict{UInt, Corpus}(),
                     Dict{UInt, CorpusRef}(),
-                    Dict{Tuple{UInt,Symbol}, BKTree{String}}(),
+                    Dict{UInt, Dict{Symbol, BKTree{String}}}(),
                     Dict{UInt, Bool}())
 
 show(io::IO, crpra::Corpora) = begin
@@ -135,19 +135,20 @@ function add_search_trees!(crpra::AbstractCorpora,
     # Create search vocabulary
     words = String[]
     for (_hash, crps) in crpra.corpora
+        push!(crpra.search_trees, _hash=>Dict{Symbol, BKTree{String}}())
         if search_type != :metadata
             @assert !isempty(inverse_index(crps)) "FATAL: The corpus has no inverse index."
             words = collect(keys(inverse_index(crps)))
-            push!(crpra.search_trees, (_hash, :index)=>
-                  BKTree((x,y)->evaluate(distance, x, y), words))
+            push!(crpra.search_trees[_hash],
+                  :index=>BKTree((x,y)->evaluate(distance, x, y), words))
         end
         if search_type != :index
             metadata_it = (metastring(meta, metadata_fields)
                            for meta in metadata(crps))
             words = unique(prepare!(join(metadata_it, " "),
                                     METADATA_STRIP_FLAGS));
-            push!(crpra.search_trees, (_hash, :metadata)=>
-                  BKTree((x,y)->evaluate(distance, x, y), words))
+            push!(crpra.search_trees[_hash],
+                  :metadata=>BKTree((x,y)->evaluate(distance, x, y), words))
         end
     end
     return crpra
