@@ -1,14 +1,13 @@
 module Garamond
 
-    using Distributed
     using Unicode
     using TextAnalysis, Languages
     using ConceptnetNumberbatch
     using StringDistances, BKTrees
+    using ArgParse
     ###using LightGraphs, NearestNeighbors, MLKernels
     ###using HttpServer, WebSockets, JSON
     #using JSON
-    ###using ArgParse
     using SparseArrays: spzeros
     using Statistics: mean  # can be removed if fuzzy matcher is removed
     using DataStructures: Set, MultiDict
@@ -36,11 +35,11 @@ module Garamond
         search_metadata,
         search_index,
         search_heuristically,
-        print_search_results
+        print_search_results,
+        # Command line (application) related
+        get_commandline_arguments
         #HTTP server
         ###start_http_server,
-        # Command line (application) related
-        ###get_commandline_arguments,
         # Word embeddings
         ###find_cluster_mean,
         ###get_cluster_matrix,
@@ -54,7 +53,7 @@ module Garamond
     include("corpus.jl")
     include("utils_text_lang.jl")
     include("search.jl")
-    ###include("cmdline.jl")
+    include("cmdline.jl")
     ###include("servers.jl")
     ###include("word_model_utils.jl")
 

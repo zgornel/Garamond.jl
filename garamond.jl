@@ -1,14 +1,12 @@
+#!/bin/julia
+
 ##########################################################################
 # File that is to be run with `julia run.jl` in order to start Garamond  #
 ##########################################################################
 module RunGaramond
 
-# Set variables
-LOCAL_PACKAGES = expanduser("~/projects/")
-push!(LOAD_PATH, LOCAL_PACKAGES)
-
-
-
+using Pkg
+Pkg.activate(@__DIR__)
 using Garamond
 
 ########################
@@ -18,6 +16,7 @@ function garamond_julia()
 
     # Parse command line arguments
     args = get_commandline_arguments(ARGS)
+    println("~ GARAMOND ~")
 
     ### wp = args["webpage"]
     ### dconf = args["data-config"]
