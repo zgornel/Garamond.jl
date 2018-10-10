@@ -8,5 +8,5 @@ data/
 doc/
 config/
 dump/
-build/
+build/bin/
 benchmarks/

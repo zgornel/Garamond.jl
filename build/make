@@ -1,1 +1,0 @@
-julia juliac.jl -ve ../src/garamondmain.jl ./program.c ../build/bin/
