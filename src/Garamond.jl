@@ -8,7 +8,7 @@ module Garamond
     ###using LightGraphs, NearestNeighbors, MLKernels
     ###using HttpServer, WebSockets, JSON
     #using JSON
-    using SparseArrays: spzeros
+    using SparseArrays
     using Statistics: mean  # can be removed if fuzzy matcher is removed
     using DataStructures: Set, MultiDict
 

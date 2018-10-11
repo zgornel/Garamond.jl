@@ -290,41 +290,44 @@ function search(crps::Corpus{T},
     # Initializations
     n = length(crps)		# Number of documents
     p = length(needles)		# Number of search terms
-    matches = spzeros(Int, n, p)	# Match matrix
+    local dtm::SparseMatrixCSC{Float64, Int64}
 	# Search
     if search_type == :metadata
-        matches += search_metadata(crps,
-                                   needles,
-                                   search_method=search_method,
-                                   metadata_fields=metadata_fields)
+        dtm = search_metadata(crps, needles, search_method=search_method,
+                              metadata_fields=metadata_fields)
     elseif search_type == :index
-        matches += search_index(crps,
-                                needles,
-                                search_method=search_method)
+        dtm = search_index(crps, needles, search_method=search_method)
     elseif search_type == :all
-        matches +=  search_metadata(crps,
-                                    needles,
-                                    search_method=search_method,
-                                    metadata_fields=metadata_fields)
-        matches += search_index(crps,
-                                needles,
-                                search_method=search_method)
+        dtm = search_metadata(crps, needles, search_method=search_method,
+                              metadata_fields=metadata_fields)
+                search_index(crps, needles, search_method=search_method)
     else
 		@error "FATAL: Unknown search method."
     end
-    # Number of needles matched in each document (for sorting search quality)
-    document_scores = vec(sum(matches, dims=2))
-    # Number of documents matching each needle (for heuristics)
-    needle_popularity = vec(sum(matches, dims=1))
+    ### # Number of needles matched in each document (for sorting search quality)
+    ### document_scores::Vector{Float64} = vec(sum(dtm, dims=2))
+    ### # Number of documents matching each needle (for heuristics)
+    ### needle_popularity::Vector{Float64} = vec(sum(dtm, dims=1))
+    document_scores = zeros(Float64, n)
+    needle_popularity = zeros(Float64, p)
+    @inbounds @simd for j in 1:p
+         for i in 1:n
+            if dtm[i,j] != 0
+                document_scores[i]+= dtm[i,j]
+                needle_popularity[j]+= dtm[i,j]
+            end
+        end
+    end
     # Sort result by score
-    ordered_docs::Vector{Int} = setdiff(sortperm(document_scores, rev=true),
-                                        findall(iszero, document_scores))
+    ordered_docs::Vector{Tuple{Float64, Int}} =
+        [(score, i) for (i, score) in enumerate(document_scores) if score > 0]
+    sort!(ordered_docs, by=x->x[1], rev=true)
     needle_matches = Dict(needle=>needle_popularity[i]
                           for (i, needle) in enumerate(needles)
                           if needle_popularity[i] > 0)
     query_matches = MultiDict{Float64, Int}()
     @inbounds for i in 1:min(max_matches, length(ordered_docs))
-        push!(query_matches, document_scores[ordered_docs[i]]=>ordered_docs[i])
+        push!(query_matches, document_scores[ordered_docs[i][2]]=>ordered_docs[i][2])
     end
     # Try to partially match needles that were not found
     needles_not_found = needles[needle_popularity.== 0]
@@ -379,7 +382,7 @@ function search_metadata(crps::Corpus{T},
     needle_mutator, matching_function = parse_search_method(search_method)
     patterns = needle_mutator.(needles)
     # Search
-    for (j, pattern) in enumerate(patterns)
+    @inbounds for (j, pattern) in enumerate(patterns)
         for (i, meta) in enumerate(metadata(crps))
             for field in metadata_fields
                 if matching_function(pattern, getfield(meta, field))
@@ -416,13 +419,13 @@ function search_index(crps::Corpus{T},
     for (j, pattern) in enumerate(patterns)
         if search_method == :exact
             idxs = get(invidx, pattern, empty_vector) # fast!!
-            for i in idxs
+            @inbounds @simd for i in idxs
                 matches[i,j]+= 1.0
             end
         else
             for k in haystack
                 if matching_function(pattern, k)
-                    for i in invidx[k]
+                    @inbounds @simd for i in invidx[k]
                         matches[i,j]+= 1.0
                     end
                 end
