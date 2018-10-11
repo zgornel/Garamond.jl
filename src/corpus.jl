@@ -15,7 +15,7 @@ CorpusRef(;path="", name="", parser=identity, enabled=false) =
     CorpusRef(path, name, parser, enabled)
 
 Base.show(io::IO, cref::CorpusRef) = begin
-    printstyled(io, "Corpus Reference for $(cref.name)\n:")
+    printstyled(io, "Corpus Reference for $(cref.name)\n")
     _status = ifelse(cref.enabled, "Enabled", "Disabled")
     _status_color = ifelse(cref.enabled, :light_green, :light_black)
     printstyled(io, "`-[$_status] ", color=_status_color)
@@ -116,7 +116,8 @@ end
 # Load corpora using a single corpus reference
 function add_corpus!(crpra::Corpora, cref::CorpusRef)
     crps = cref.parser(cref.path)
-    _hash = hash(abspath(cref.path))
+    _hash = hash(hash(abspath(cref.path))+
+                 hash(cref.name))
     push!(crpra.corpora, _hash=>crps)
     push!(crpra.refs, _hash=>cref)
     push!(crpra.enabled, _hash=>cref.enabled) # all corpora enabled by default

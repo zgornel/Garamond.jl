@@ -108,6 +108,17 @@ end
 #       PARSERS       #
 #######################
 
+# Function that gets the number of lines in a file
+function linecount(filename::AbstractString)::Int
+    @assert !Sys.iswindows() "wc does not work on Windows."
+    @assert isfile(filename) "$filename does not exist."
+    n = parse(Int, split(read(`wc -l $filename`, String))[1])
+    return n
+end
+
+
+
+# Parser for "csv_format-1"
 function __parser_csv_format_1(filename::AbstractString,
                                config::ParserConfig,
                                doctype::Type{T}=NGramDocument;
@@ -121,10 +132,19 @@ function __parser_csv_format_1(filename::AbstractString,
         # Select and sort the line fields which will be used as
         # document text in the corpus
         mask = sort!([k for k in keys(config.data) if config.data[k]])
+        # Progressbar
+        _nl = 10  # number of lines after wihich progress is updated
+        nlines = linecount(filename) - ifelse(header,1,0)
+        _filename = split(filename,"/")[end]
+        progressbar = Progress(div(nlines, _nl)+1,
+                               desc="Parsing $_filename...",
+                               color=:normal)
         # Iterate and parse
+        lc = 0  # line counter
         header && readline(f)  # skip header
         for line in eachline(f)
             vline = String.(strip.(split(line, delim, keepempty=false)))
+            lc += 1; iszero(mod(lc, _nl)) && next!(progressbar)
             doc = doctype(join(vline[mask]," "))		# Set document data
             for (column, metafield) in config.metadata		# Set document metadata
                 local _language

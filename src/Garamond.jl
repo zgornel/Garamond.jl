@@ -5,12 +5,13 @@ module Garamond
     using ConceptnetNumberbatch
     using StringDistances, BKTrees
     using ArgParse
-    ###using LightGraphs, NearestNeighbors, MLKernels
-    ###using HttpServer, WebSockets, JSON
-    #using JSON
+    using ProgressMeter
     using SparseArrays
     using Statistics: mean  # can be removed if fuzzy matcher is removed
     using DataStructures: Set, MultiDict
+    ###using LightGraphs, NearestNeighbors, MLKernels
+    ###using HttpServer, WebSockets, JSON
+    #using JSON
 
     import Base: show, keys, values, push!, delete!, getindex,
            names, convert, lowercase, occursin, isempty
