@@ -53,10 +53,23 @@ function parse_corpora_configuration(filename::AbstractString)
     # generating a ParserConfig)
     function get_parsing_function(parser_config::Symbol; header::Bool=false)
         PREFIX = :__parser_
+        # Construct basic parsing function from parser option value
         _function  = eval(Symbol(PREFIX, parser_config))
+        # Get parser config
         _config = get(PARSER_CONFIGS, parser_config, nothing)
         _config isa Nothing && @error ":$config_name parser configuration not found!"
-        return (filename::String)->_function(filename, _config, delim='\t', header=header)
+        # Build parsing function (a nice closure)
+        function parsing_function(filename::String,
+                                  id_type::Type{T}=DEFAULT_ID_TYPE,
+                                  doc_type::Type{D}=DEFAULT_DOC_TYPE) where
+                {T<:AbstractId, D<:AbstractDocument}
+            return _function(filename,
+                             _config,
+                             doc_type,
+                             delim='\t',
+                             header=header)
+        end
+        return parsing_function
     end
     #######
     crefs = Vector{CorpusRef}()
@@ -121,12 +134,14 @@ end
 # Parser for "csv_format-1"
 function __parser_csv_format_1(filename::AbstractString,
                                config::ParserConfig,
-                               doctype::Type{T}=NGramDocument;
+                               doc_type::Type{T}=DEFAULT_DOC_TYPE;
                                delim::Char = ',',
-                               header::Bool = false) where
-        {T<:TextAnalysis.AbstractDocument}
-    # Pre-allocate
-    documents = Vector{doctype}()
+                               header::Bool = false) where T<:AbstractDocument
+    # Initializations
+    nlines = linecount(filename) - ifelse(header,1,0)
+    documents = Vector{doc_type}(undef, nlines)
+    documents_meta = Vector{doc_type}(undef, nlines)
+    metafields = fieldnames(TextAnalysis.DocumentMetadata)
     # Parse
     open(filename, "r") do f
         # Select and sort the line fields which will be used as
@@ -134,7 +149,6 @@ function __parser_csv_format_1(filename::AbstractString,
         mask = sort!([k for k in keys(config.data) if config.data[k]])
         # Progressbar
         _nl = 10  # number of lines after wihich progress is updated
-        nlines = linecount(filename) - ifelse(header,1,0)
         _filename = split(filename,"/")[end]
         progressbar = Progress(div(nlines, _nl)+1,
                                desc="Parsing $_filename...",
@@ -144,9 +158,12 @@ function __parser_csv_format_1(filename::AbstractString,
         header && readline(f)  # skip header
         for line in eachline(f)
             vline = String.(strip.(split(line, delim, keepempty=false)))
-            lc += 1; iszero(mod(lc, _nl)) && next!(progressbar)
-            doc = doctype(join(vline[mask]," "))		# Set document data
-            for (column, metafield) in config.metadata		# Set document metadata
+            lc += 1
+            iszero(mod(lc, _nl)) && next!(progressbar)
+            # Set document data
+            doc = doc_type(join(vline[mask]," "))
+            # Set document metadata
+            for (column, metafield) in config.metadata
                 local _language
                 if metafield in fieldnames(typeof(doc.metadata))
                     if metafield == :language
@@ -167,14 +184,22 @@ function __parser_csv_format_1(filename::AbstractString,
                     end
                 end
             end
-            push!(documents, doc)
+            # Create metadata document vector
+            doc_meta = metastring(doc, collect(v for v in values(config.metadata)
+                                               if v in metafields))
+            documents_meta[lc] = doc_type(doc_meta)
+            # Create document vector
+            documents[lc] = doc
         end
     end
-    # Create and post-process corpus
+    # Create and post-process document/document metadata corpora
     crps = Corpus(documents)
-    prepare!(crps, TEXT_STRIP_FLAGS)
-    # Update lexicon and inverse index
-    update_lexicon!(crps)
-    update_inverse_index!(crps)
-    return crps
+    crps_meta = Corpus(documents_meta)
+    for (c, flags) in zip((crps, crps_meta),
+                          (TEXT_STRIP_FLAGS, METADATA_STRIP_FLAGS))
+        prepare!(c, flags)       # preprocess
+        #update_lexicon!(c)       # create lexicon
+        update_inverse_index!(c) # create inverse index
+    end
+    return Corpus(crps.documents), inverse_index(crps), inverse_index(crps_meta)
 end

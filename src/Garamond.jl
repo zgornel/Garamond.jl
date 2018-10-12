@@ -18,11 +18,16 @@ module Garamond
     import TextAnalysis: prepare!, update_lexicon!,
            update_inverse_index!
 
+    abstract type AbstractId end
+    abstract type AbstractCorpora end
+
     export
         # Corpora related
         AbstractCorpora,
         CorpusRef,
         Corpora,
+        AbstractId,
+        HashId,
         update_lexicon!,
         update_inverse_index!,
         enable!,
