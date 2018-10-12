@@ -365,7 +365,7 @@ function search_index(index::Dict{String, Vector{Int}},
         needle_mutator = (arg::String)->Regex(arg)
         matching_function = occursin
     end
-    # Mutate needles 
+    # Mutate needles
     patterns = needle_mutator.(needles)
     # Check that inverse index exists
     @assert !isempty(index) "FATAL: The index is empty."

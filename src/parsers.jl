@@ -186,7 +186,7 @@ function __parser_csv_format_1(filename::AbstractString,
             end
             # Create metadata document vector
             doc_meta = metastring(doc, collect(v for v in values(config.metadata)
-                                               if v in metafields)) 
+                                               if v in metafields))
             documents_meta[lc] = doc_type(doc_meta)
             # Create document vector
             documents[lc] = doc
