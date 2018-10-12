@@ -66,15 +66,18 @@ end
 
 
 # Search results for multiple corpora
-struct CorporaSearchResult
-    corpus_results::Dict{UInt, CorpusSearchResult}  # Dict(score=>metadata)
+struct CorporaSearchResult{T}
+    corpus_results::Dict{T, CorpusSearchResult}  # Dict(score=>metadata)
     suggestions::MultiDict{String, String}
 end
 
-CorporaSearchResult() = CorporaSearchResult(
-    Dict{UInt, CorpusSearchResult}(),
-    MultiDict{String, String}()
+CorporaSearchResult{T}() where T<:AbstractID =
+    CorporaSearchResult(
+        Dict{T, CorpusSearchResult}(),
+        MultiDict{String, String}()
 )
+
+CorporaSearchResult() = CorporaSearchResult{HashID}()
 
 
 
@@ -96,7 +99,7 @@ show(io::IO, csr::CorporaSearchResult) = begin
         n = valength(_result.query_matches)
         nm = length(_result.needle_matches)
         ns = length(_result.suggestions)
-        printstyled(io, "`-[0x$(string(_hash, base=16))] ", color=:cyan)  # hash
+        printstyled(io, "`-[$_hash] ", color=:cyan)  # hash
         printstyled(io, "$n hits, $nm query terms, $ns suggestions\n")
     end
 end
@@ -109,9 +112,9 @@ print_search_results(corpora::Corpora, csr::CorporaSearchResult) = begin
     printstyled("$nt search results from $(length(csr.corpus_results)) corpora\n")
     ns = length(csr.suggestions)
     for (_hash, _result) in csr.corpus_results
-        crps = corpora[_hash]
+        crps = corpora.corpus[_hash]
         nm = valength(_result.query_matches)
-        printstyled("`-[0x$(string(_hash, base=16))] ", color=:cyan)  # hash
+        printstyled("`-[$_hash] ", color=:cyan)  # hash
         printstyled("$(nm) search results")
         ch = ifelse(nm==0, ".", ":"); printstyled("$ch\n")
         for score in sort(collect(keys(_result.query_matches)), rev=true)
@@ -132,7 +135,8 @@ end
 
 # Push method (useful for inserting Corpus search results
 # into Corpora search results)
-function push!(csr::CorporaSearchResult, sr::Pair{UInt, CorpusSearchResult})
+function push!(csr::CorporaSearchResult{T},
+               sr::Pair{T, CorpusSearchResult}) where T<:AbstractID
     push!(csr.corpus_results, sr)
     return csr
 end
@@ -140,7 +144,8 @@ end
 
 
 # Update suggestions for multiple corpora search results
-function update_suggestions!(csr::CorporaSearchResult, max_suggestions::Int=1)
+function update_suggestions!(csr::CorporaSearchResult{T},
+                             max_suggestions::Int=1) where T<:AbstractID
     # Quickly exit if no suggestions are sought
     max_suggestions <=0 && return MultiDict{String, String}()
     if length(csr.corpus_results) > 1
@@ -217,18 +222,15 @@ function search(crpra::AbstractCorpora,
                 max_suggestions::Int=DEFAULT_MAX_SUGGESTIONS,
                 max_corpus_suggestions::Int=DEFAULT_MAX_CORPUS_SUGGESTIONS)
     result = CorporaSearchResult()
-    n = length(crpra.corpora)
+    n = length(crpra.corpus)
     max_corpus_suggestions = min(max_suggestions, max_corpus_suggestions)
-    # Issue warning when search the metadata with exact matches as the
-    # metadata contains by definition compound words that are difficult
-    # to match exactly
-    if search_type == :metadata && search_method == :exact
-        @warn "Searching the metadata with exact matches if bound to yield poor results!"
-    end
-    for (_hash, crps) in crpra.corpora
+    # Search
+    for (_hash, crps) in crpra.corpus
         if crpra.enabled[_hash]
             _result = search(crps,
                              needles,
+                             index=crpra.index[_hash],
+                             index_meta=crpra.index_meta[_hash],
                              search_trees=crpra.search_trees[_hash],
                              search_type=search_type,
                              search_method=search_method,
@@ -256,6 +258,8 @@ documents.
   * `needles::Vector{String}` is a vector of key terms representing the query
 
 # Keyword arguments
+  * `index::Dict{String, Vector{Int}}` document reverse index
+  * `index_meta::Dict{String, Vector{Int}}` document metadata reverse index
   * `search_trees::Dict{Symbol, BKTree{String}}` search trees used for approximate
      string matching i.e. for suggestion generation
   * `search_type::Symbol` is the type of the search; can be `:metadata` (default),
@@ -277,6 +281,8 @@ documents.
 # Function that searches in a corpus'a metdata or metadata + content for needles (i.e. keyterms) 
 function search(crps::Corpus{T}, 
                 needles::Vector{String};
+                index::Dict{String, Vector{Int}}=Dict{String, Vector{Int}}(),
+                index_meta::Dict{String, Vector{Int}}=Dict{String, Vector{Int}}(),
                 search_trees::Dict{Symbol,BKTree{String}}=Dict{Symbol,BKTree{String}}(),
                 search_type::Symbol=:metadata,
                 search_method::Symbol=:exact,
@@ -292,15 +298,13 @@ function search(crps::Corpus{T},
     p = length(needles)		# Number of search terms
     local dtm::SparseMatrixCSC{Float64, Int64}
 	# Search
-    if search_type == :metadata
-        dtm = search_metadata(crps, needles, search_method=search_method,
-                              metadata_fields=metadata_fields)
-    elseif search_type == :index
-        dtm = search_index(crps, needles, search_method=search_method)
+    if search_type == :index
+        dtm = search_index(index, needles, n_docs=n, search_method=search_method)
+    elseif search_type == :metadata
+        dtm = search_index(index_meta, needles, n_docs=n, search_method=search_method)
     elseif search_type == :all
-        dtm = search_metadata(crps, needles, search_method=search_method,
-                              metadata_fields=metadata_fields)
-                search_index(crps, needles, search_method=search_method)
+        dtm = (search_index(index, needles, n_docs=n, search_method=search_method) +
+               search_index(index_meta, needles, n_docs=n, search_method=search_method))./2
     else
 		@error "FATAL: Unknown search method."
     end
@@ -352,80 +356,43 @@ end
 
 
 """
-    Return a needle expression mutator and an matching function
+	Search function for searching an inverse index associated to a corpus.
 """
-function parse_search_method(search_method::Symbol)
-    if search_method == :exact
-        return identity, isequal
-    elseif search_method == :regex
-        return (arg::String)->Regex(arg), occursin
-    else
-        # default if wrong input
-        return identity, isequal
-    end
-end
-
-
-
-"""
-	Search function for searching in the metadata of the documents in a corpus.
-"""
-function search_metadata(crps::Corpus{T},
-                         needles::Vector{String};
-                         search_method::Symbol=:exact,
-                         metadata_fields::Vector{Symbol}=Symbol[]
-                        ) where {T<:AbstractDocument}
-    # Initializations
-    n = length(crps)
-    p = length(needles)
-    matches = spzeros(Float64, n, p)
-    needle_mutator, matching_function = parse_search_method(search_method)
-    patterns = needle_mutator.(needles)
-    # Search
-    @inbounds for (j, pattern) in enumerate(patterns)
-        for (i, meta) in enumerate(metadata(crps))
-            for field in metadata_fields
-                if matching_function(pattern, getfield(meta, field))
-                    matches[i,j]+= 1.0
-                    break # from 'for field...'
-                end
-            end
-        end
-    end
-    return matches
-end
-
-
-
-"""
-	Search function for searching in the inverse index of a corpus.
-"""
-function search_index(crps::Corpus{T},
+function search_index(index::Dict{String, Vector{Int}},
                       needles::Vector{String};
+                      n_docs::Int=0,
                       search_method::Symbol=:exact,
                      ) where {T<:AbstractDocument}
     # Initializations
-    n = length(crps)
+    @assert n_docs > 0 "Number of documents has to be > 0."
     p = length(needles)
-    matches = spzeros(Float64, n, p)
-    invidx = inverse_index(crps)
-    needle_mutator, matching_function = parse_search_method(search_method)
+    matches = spzeros(Float64, n_docs, p)
+    # Get needle mutating and string matching functions
+    if search_method == :exact
+        needle_mutator = identity
+        matching_function = isequal
+    else  # search_method == :regex
+        needle_mutator = (arg::String)->Regex(arg)
+        matching_function = occursin
+    end
+    # Mutate needles 
     patterns = needle_mutator.(needles)
     # Check that inverse index exists
-    @assert !isempty(inverse_index(crps)) "FATAL: The corpus has no inverse index."
+    @assert !isempty(index) "FATAL: The index is empty."
     # Search
-    haystack = (k for k in keys(invidx))
+    haystack = (k for k in keys(index))
     empty_vector = Int[]
     for (j, pattern) in enumerate(patterns)
         if search_method == :exact
-            idxs = get(invidx, pattern, empty_vector) # fast!!
+            idxs = get(index, pattern, empty_vector) # fast!!
             @inbounds @simd for i in idxs
                 matches[i,j]+= 1.0
             end
         else
+            # search_method==:regex
             for k in haystack
                 if matching_function(pattern, k)
-                    @inbounds @simd for i in invidx[k]
+                    @inbounds @simd for i in index[k]
                         matches[i,j]+= 1.0
                     end
                 end

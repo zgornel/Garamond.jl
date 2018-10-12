@@ -43,12 +43,12 @@ metadata(crps::C) where {C<:TextAnalysis.Corpus} =
 
 # Turn the document metadata into a string
 function metastring(md::TextAnalysis.DocumentMetadata,
-                    fields::Vector{Symbol}=[:author, :name, :publisher])
+                    fields::Vector{Symbol}=DEFAULT_METADATA_FIELDS)
 	join([getfield(md, field) for field in fields]," ")
 end
 
 function metastring(document::T,
-                    fields::Vector{Symbol}=[:author, :name, :publisher]) where
+                    fields::Vector{Symbol}=DEFAULT_METADATA_FIELDS) where
         {T<: TextAnalysis.AbstractDocument}
 	metastring(metadata(document), fields)
 end

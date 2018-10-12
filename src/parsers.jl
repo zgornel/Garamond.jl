@@ -125,8 +125,11 @@ function __parser_csv_format_1(filename::AbstractString,
                                delim::Char = ',',
                                header::Bool = false) where
         {T<:TextAnalysis.AbstractDocument}
-    # Pre-allocate
-    documents = Vector{doctype}()
+    # Initializations
+    nlines = linecount(filename) - ifelse(header,1,0)
+    documents = Vector{doctype}(undef, nlines)
+    documents_meta = Vector{doctype}(undef, nlines)
+    metafields = fieldnames(TextAnalysis.DocumentMetadata)
     # Parse
     open(filename, "r") do f
         # Select and sort the line fields which will be used as
@@ -134,7 +137,6 @@ function __parser_csv_format_1(filename::AbstractString,
         mask = sort!([k for k in keys(config.data) if config.data[k]])
         # Progressbar
         _nl = 10  # number of lines after wihich progress is updated
-        nlines = linecount(filename) - ifelse(header,1,0)
         _filename = split(filename,"/")[end]
         progressbar = Progress(div(nlines, _nl)+1,
                                desc="Parsing $_filename...",
@@ -144,9 +146,12 @@ function __parser_csv_format_1(filename::AbstractString,
         header && readline(f)  # skip header
         for line in eachline(f)
             vline = String.(strip.(split(line, delim, keepempty=false)))
-            lc += 1; iszero(mod(lc, _nl)) && next!(progressbar)
-            doc = doctype(join(vline[mask]," "))		# Set document data
-            for (column, metafield) in config.metadata		# Set document metadata
+            lc += 1
+            iszero(mod(lc, _nl)) && next!(progressbar)
+            # Set document data
+            doc = doctype(join(vline[mask]," "))
+            # Set document metadata
+            for (column, metafield) in config.metadata
                 local _language
                 if metafield in fieldnames(typeof(doc.metadata))
                     if metafield == :language
@@ -167,14 +172,22 @@ function __parser_csv_format_1(filename::AbstractString,
                     end
                 end
             end
-            push!(documents, doc)
+            # Create metadata document vector
+            doc_meta = metastring(doc, collect(v for v in values(config.metadata)
+                                               if v in metafields)) 
+            documents_meta[lc] = doctype(doc_meta)
+            # Create document vector
+            documents[lc] = doc
         end
     end
-    # Create and post-process corpus
+    # Create and post-process document/document metadata corpora
     crps = Corpus(documents)
-    prepare!(crps, TEXT_STRIP_FLAGS)
-    # Update lexicon and inverse index
-    update_lexicon!(crps)
-    update_inverse_index!(crps)
-    return crps
+    crps_meta = Corpus(documents_meta)
+    for (c, flags) in zip((crps, crps_meta),
+                          (TEXT_STRIP_FLAGS, METADATA_STRIP_FLAGS))
+        prepare!(c, flags)       # preprocess
+        update_lexicon!(c)       # create lexicon
+        update_inverse_index!(c) # create inverse index
+    end
+    return Corpus(crps.documents), inverse_index(crps), inverse_index(crps_meta)
 end

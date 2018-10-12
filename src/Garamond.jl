@@ -23,6 +23,8 @@ module Garamond
         AbstractCorpora,
         CorpusRef,
         Corpora,
+        AbstractID,
+        HashID,
         update_lexicon!,
         update_inverse_index!,
         enable!,
