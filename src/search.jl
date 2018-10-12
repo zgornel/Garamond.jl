@@ -164,7 +164,7 @@ function update_suggestions!(csr::CorporaSearchResult{T},
         for needle in missed_needles
             _tmpvec = Vector{Tuple{Float64,String}}()
             for _result in corpus_results
-                if needle in keys(_result.suggestions) &&
+                if haskey(_result.suggestions, needle) &&
                    !(any(suggestion in matched_needles
                          for (_, suggestion) in _result.suggestions[needle]))
                    # Current key was not found and the suggestions
