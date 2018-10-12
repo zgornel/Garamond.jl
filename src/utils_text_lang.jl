@@ -33,7 +33,7 @@ convert(::Type{Dict}, md::TextAnalysis.DocumentMetadata) =
 
 
 # Medatadata getter for documents
-metadata(document::D) where {D<:TextAnalysis.AbstractDocument} =
+metadata(document::D) where {D<:AbstractDocument} =
     document.metadata
 
 metadata(crps::C) where {C<:TextAnalysis.Corpus} =
@@ -47,9 +47,9 @@ function metastring(md::TextAnalysis.DocumentMetadata,
 	join([getfield(md, field) for field in fields]," ")
 end
 
-function metastring(document::T,
+function metastring(document::D,
                     fields::Vector{Symbol}=DEFAULT_METADATA_FIELDS) where
-        {T<: TextAnalysis.AbstractDocument}
+        {D<: AbstractDocument}
 	metastring(metadata(document), fields)
 end
 

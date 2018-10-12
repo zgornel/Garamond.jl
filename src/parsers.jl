@@ -53,10 +53,23 @@ function parse_corpora_configuration(filename::AbstractString)
     # generating a ParserConfig)
     function get_parsing_function(parser_config::Symbol; header::Bool=false)
         PREFIX = :__parser_
+        # Construct basic parsing function from parser option value
         _function  = eval(Symbol(PREFIX, parser_config))
+        # Get parser config
         _config = get(PARSER_CONFIGS, parser_config, nothing)
         _config isa Nothing && @error ":$config_name parser configuration not found!"
-        return (filename::String)->_function(filename, _config, delim='\t', header=header)
+        # Build parsing function (a nice closure)
+        function parsing_function(filename::String,
+                                  id_type::Type{T}=DEFAULT_ID_TYPE,
+                                  doc_type::Type{D}=DEFAULT_DOC_TYPE) where
+                {T<:AbstractId, D<:AbstractDocument}
+            return _function(filename,
+                             _config,
+                             doc_type,
+                             delim='\t',
+                             header=header)
+        end
+        return parsing_function
     end
     #######
     crefs = Vector{CorpusRef}()
@@ -121,14 +134,13 @@ end
 # Parser for "csv_format-1"
 function __parser_csv_format_1(filename::AbstractString,
                                config::ParserConfig,
-                               doctype::Type{T}=NGramDocument;
+                               doc_type::Type{T}=DEFAULT_DOC_TYPE;
                                delim::Char = ',',
-                               header::Bool = false) where
-        {T<:TextAnalysis.AbstractDocument}
+                               header::Bool = false) where T<:AbstractDocument
     # Initializations
     nlines = linecount(filename) - ifelse(header,1,0)
-    documents = Vector{doctype}(undef, nlines)
-    documents_meta = Vector{doctype}(undef, nlines)
+    documents = Vector{doc_type}(undef, nlines)
+    documents_meta = Vector{doc_type}(undef, nlines)
     metafields = fieldnames(TextAnalysis.DocumentMetadata)
     # Parse
     open(filename, "r") do f
@@ -149,7 +161,7 @@ function __parser_csv_format_1(filename::AbstractString,
             lc += 1
             iszero(mod(lc, _nl)) && next!(progressbar)
             # Set document data
-            doc = doctype(join(vline[mask]," "))
+            doc = doc_type(join(vline[mask]," "))
             # Set document metadata
             for (column, metafield) in config.metadata
                 local _language
@@ -175,7 +187,7 @@ function __parser_csv_format_1(filename::AbstractString,
             # Create metadata document vector
             doc_meta = metastring(doc, collect(v for v in values(config.metadata)
                                                if v in metafields)) 
-            documents_meta[lc] = doctype(doc_meta)
+            documents_meta[lc] = doc_type(doc_meta)
             # Create document vector
             documents[lc] = doc
         end
@@ -186,7 +198,7 @@ function __parser_csv_format_1(filename::AbstractString,
     for (c, flags) in zip((crps, crps_meta),
                           (TEXT_STRIP_FLAGS, METADATA_STRIP_FLAGS))
         prepare!(c, flags)       # preprocess
-        update_lexicon!(c)       # create lexicon
+        #update_lexicon!(c)       # create lexicon
         update_inverse_index!(c) # create inverse index
     end
     return Corpus(crps.documents), inverse_index(crps), inverse_index(crps_meta)

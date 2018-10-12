@@ -71,13 +71,13 @@ struct CorporaSearchResult{T}
     suggestions::MultiDict{String, String}
 end
 
-CorporaSearchResult{T}() where T<:AbstractID =
+CorporaSearchResult{T}() where T<:AbstractId =
     CorporaSearchResult(
         Dict{T, CorpusSearchResult}(),
         MultiDict{String, String}()
 )
 
-CorporaSearchResult() = CorporaSearchResult{HashID}()
+CorporaSearchResult() = CorporaSearchResult{HashId}()
 
 
 
@@ -136,7 +136,7 @@ end
 # Push method (useful for inserting Corpus search results
 # into Corpora search results)
 function push!(csr::CorporaSearchResult{T},
-               sr::Pair{T, CorpusSearchResult}) where T<:AbstractID
+               sr::Pair{T, CorpusSearchResult}) where T<:AbstractId
     push!(csr.corpus_results, sr)
     return csr
 end
@@ -145,7 +145,7 @@ end
 
 # Update suggestions for multiple corpora search results
 function update_suggestions!(csr::CorporaSearchResult{T},
-                             max_suggestions::Int=1) where T<:AbstractID
+                             max_suggestions::Int=1) where T<:AbstractId
     # Quickly exit if no suggestions are sought
     max_suggestions <=0 && return MultiDict{String, String}()
     if length(csr.corpus_results) > 1
@@ -230,7 +230,6 @@ function search(crpra::AbstractCorpora,
             _result = search(crps,
                              needles,
                              index=crpra.index[_hash],
-                             index_meta=crpra.index_meta[_hash],
                              search_trees=crpra.search_trees[_hash],
                              search_type=search_type,
                              search_method=search_method,
@@ -258,8 +257,7 @@ documents.
   * `needles::Vector{String}` is a vector of key terms representing the query
 
 # Keyword arguments
-  * `index::Dict{String, Vector{Int}}` document reverse index
-  * `index_meta::Dict{String, Vector{Int}}` document metadata reverse index
+  * `index::Dict{Symbol, Dict{String, Vector{Int}}}` document ans metadata reverse index
   * `search_trees::Dict{Symbol, BKTree{String}}` search trees used for approximate
      string matching i.e. for suggestion generation
   * `search_type::Symbol` is the type of the search; can be `:metadata` (default),
@@ -279,17 +277,16 @@ documents.
 ```
 """
 # Function that searches in a corpus'a metdata or metadata + content for needles (i.e. keyterms) 
-function search(crps::Corpus{T}, 
+function search(crps::Corpus{D},
                 needles::Vector{String};
-                index::Dict{String, Vector{Int}}=Dict{String, Vector{Int}}(),
-                index_meta::Dict{String, Vector{Int}}=Dict{String, Vector{Int}}(),
+                index::Dict{Symbol, Dict{String, Vector{Int}}}=
+                    Dict{Symbol, Dict{String, Vector{Int}}}(),
                 search_trees::Dict{Symbol,BKTree{String}}=Dict{Symbol,BKTree{String}}(),
                 search_type::Symbol=:metadata,
                 search_method::Symbol=:exact,
-                metadata_fields::Vector{Symbol}=DEFAULT_METADATA_FIELDS,
                 max_matches::Int=10,
                 max_suggestions::Int=DEFAULT_MAX_CORPUS_SUGGESTIONS
-               ) where {T<:AbstractDocument}
+               ) where {D<:AbstractDocument}
     # Checks
     @assert search_type in [:index, :metadata, :all]
     @assert search_method in [:exact, :regex]
@@ -298,20 +295,13 @@ function search(crps::Corpus{T},
     p = length(needles)		# Number of search terms
     local dtm::SparseMatrixCSC{Float64, Int64}
 	# Search
-    if search_type == :index
-        dtm = search_index(index, needles, n_docs=n, search_method=search_method)
-    elseif search_type == :metadata
-        dtm = search_index(index_meta, needles, n_docs=n, search_method=search_method)
-    elseif search_type == :all
-        dtm = (search_index(index, needles, n_docs=n, search_method=search_method) +
-               search_index(index_meta, needles, n_docs=n, search_method=search_method))./2
+    if search_type != :all
+        dtm = search_index(index[search_type], needles, n_docs=n, search_method=search_method)
     else
-		@error "FATAL: Unknown search method."
+        dtm = search_index(index[:index], needles, n_docs=n, search_method=search_method) +
+              search_index(index[:metadata], needles, n_docs=n, search_method=search_method)
     end
-    ### # Number of needles matched in each document (for sorting search quality)
-    ### document_scores::Vector{Float64} = vec(sum(dtm, dims=2))
-    ### # Number of documents matching each needle (for heuristics)
-    ### needle_popularity::Vector{Float64} = vec(sum(dtm, dims=1))
+    # Process finds
     document_scores = zeros(Float64, n)
     needle_popularity = zeros(Float64, p)
     @inbounds @simd for j in 1:p

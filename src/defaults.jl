@@ -6,8 +6,9 @@ const DEFAULT_MAX_SUGGESTIONS = 1  # maximum number of overall suggestions
 const DEFAULT_MAX_CORPUS_SUGGESTIONS = 1  # maximum number of suggestions for each corpus
 const MAX_EDIT_DISTANCE = 2  # maximum edit distance for which to return suggestions
 
-# Search tree constants
+# Various document processing related constants
 const DEFAULT_METADATA_FIELDS = [:author, :name]  # Default metadata fields for search
+# Search tree constants
 const DEFAULT_DISTANCE = StringDistances.Levenshtein()
 const DEFAULT_HEURISTIC = :levenshtein
 const HEURISTIC_TO_DISTANCE = Dict(  # heuristic to distance object mapping
