@@ -1,4 +1,5 @@
 # Seatch defaults
+const DEFAULT_TERM_IMPORTANCE = :tf  # can be :tf or :tfidf
 const DEFAULT_SEARCH_TYPE = :index  # can be :index or :metadata
 const DEFAULT_SEARCH_METHOD = :exact  #can be :exact or :regex
 const DEFAULT_MAX_MATCHES = 1_000  # maximum number of matches that can be retrned

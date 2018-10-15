@@ -18,11 +18,13 @@ mutable struct CorpusRef
     path::String        # file/directory path
     name::String        # name of corpus
     parser::Function    # file/directory parser function used to obtain corpus
+    termimp::Symbol     # term importance (can be :tf or :tfidf)
     enabled::Bool       # whether to use the corpus in search or not
 end
 
-CorpusRef(;path="", name="", parser=identity, enabled=false) =
-    CorpusRef(path, name, parser, enabled)
+CorpusRef(;path="", name="", parser=identity,
+          termimp=DEFAULT_TERM_IMPORTANCE, enabled=false) =
+    CorpusRef(path, name, parser, termimp, enabled)
 
 Base.show(io::IO, cref::CorpusRef) = begin
     printstyled(io, "Corpus Reference for $(cref.name)\n")
@@ -34,12 +36,33 @@ end
 
 
 
+# Term Importance structure
+###############################
+struct TermImportances
+    column_indices::Dict{String, Int}
+    values::SparseMatrixCSC{Float64, Int64}
+end
+
+Base.show(io::IO, ti::TermImportances) = begin
+    m, n = size(ti.values)
+    print("Term importances for $m documents, $n unique terms.")
+end
+
+getindex(ti::TermImportances, doc::Int, key::String) = begin
+    #TODO
+    return 0
+end
+
+
+
 # Corpora can be built from a .garamond configuration file or from a vector of CorpusRef's
+##########################################################################################
 mutable struct Corpora{T,D} <: AbstractCorpora
     corpus::Dict{T, Corpus{D}}   # hash=>corpus
     enabled::Dict{T, Bool}       # whether to use the corpus in search or not
     refs::Dict{T, CorpusRef}     # Dict(hash=>corpus name)
     index::Dict{T, Dict{Symbol, Dict{String, Vector{Int}}}}  # document and metadata inverse index
+    termimp::Dict{T, Dict{Symbol, TermImportances}}
     search_trees::Dict{T, Dict{Symbol, BKTree{String}}}  # search trees
 end
 
@@ -48,6 +71,7 @@ Corpora{T,D}() where {T<:AbstractId, D<:AbstractDocument} =
             Dict{T, Bool}(),
             Dict{T, CorpusRef}(),
             Dict{T, Dict{Symbol, Dict{String, Vector{Int}}}}(),
+            Dict{T, Dict{Symbol, TermImportances}}(),
             Dict{T, Dict{Symbol, BKTree{String}}}()
            )
 
@@ -157,55 +181,76 @@ function load_corpora(crefs::Vector{CorpusRef};
     for cref in crefs
         add_corpus!(crpra, cref)  # load and add corpus
     end
-    add_search_trees!(crpra, :all)  # add both metadata and index trees
 	return crpra
 end
 
+   ###  crps = Corpus(documents)
+   ###  crps_meta = Corpus(documents_meta)
+   ###  for (c, flags) in zip((crps, crps_meta),
+   ###                        (TEXT_STRIP_FLAGS, METADATA_STRIP_FLAGS))
+   ###      prepare!(c, flags)       # preprocess
+   ###      #update_lexicon!(c)       # create lexicon
+   ###      update_inverse_index!(c) # create inverse index
+   ###  end
+   ###  return Corpus(crps.documents), inverse_index(crps), inverse_index(crps_meta)
 
 
 # Load corpora using a single corpus reference
 function add_corpus!(crpra::Corpora{T,D}, cref::CorpusRef) where
         {T<:AbstractId, D<:AbstractDocument}
     # Parse file
-    crps, index, index_meta = cref.parser(cref.path)
+    crps, crps_meta = cref.parser(cref.path)
     # Calculate hash
     _hash = HashId(hash(hash(abspath(cref.path))+
                         hash(cref.name)))
+    # Prepare
+    prepare!(crps, TEXT_STRIP_FLAGS)
+    prepare!(crps_meta, METADATA_STRIP_FLAGS)
+    # Update lexicons
+    update_lexicon!(crps)
+    update_lexicon!(crps_meta)
+    # Update inverse indices
+    update_inverse_index!(crps)
+    update_inverse_index!(crps_meta)
+    # Calculate term importances
+    dtm = DocumentTermMatrix(crps)
+    dtm_meta = DocumentTermMatrix(crps_meta)
+    # Get document importance calculation function
+    if cref.termimp == :tf
+        imp_func = TextAnalysis.tf
+    elseif cref.termimp == :tfidf
+        imp_func = TextAnalysis.tf_idf
+    else
+        @warn "Unknown document importance :$(cref.termimp); defaulting to frequency."
+    end
+    # Calculate doc importances
+    term_imp = TermImportances(dtm.column_indices, imp_func(dtm))
+    term_imp_meta = TermImportances(dtm_meta.column_indices, imp_func(dtm_meta))
     # Update Corpora fields
     push!(crpra.corpus, _hash=>crps)
     push!(crpra.enabled, _hash=>cref.enabled) # all corpora enabled by default
     push!(crpra.refs, _hash=>cref)
     push!(crpra.index, _hash=>Dict{Symbol, Dict{String,Vector{Int}}}())
-    push!(crpra.index[_hash], :index=>index)
-    push!(crpra.index[_hash], :metadata=>index_meta)
-	return crpra
-end
-
-
-
-function add_search_trees!(crpra::Corpora{T,D},
-                           search_type::Symbol;
-                           heuristic::Symbol=DEFAULT_HEURISTIC) where
-        {T<:AbstractId, D<:AbstractDocument}
-    # Checks
-    @assert search_type in [:index, :metadata, :all]
+    push!(crpra.index[_hash], :index=>crps.inverse_index)
+    push!(crpra.index[_hash], :metadata=>crps_meta.inverse_index)
+    push!(crpra.termimp, _hash=>Dict{Symbol, TermImportances}())
+    push!(crpra.termimp[_hash], :index=>term_imp)
+    push!(crpra.termimp[_hash], :metadata=>term_imp_meta)
+	# Add search trees
+    search_type = :all
+    heuristic = DEFAULT_HEURISTIC
     distance = get(HEURISTIC_TO_DISTANCE, heuristic, DEFAULT_DISTANCE)
-    # Create search vocabulary
-    words = String[]
-    for _hash in keys(crpra.corpus)
-        # Add an empty entry
-        push!(crpra.search_trees, _hash=>Dict{Symbol, BKTree{String}}())
-        # Construct and push relevant trees
-        if search_type != :metadata
-            words = collect(keys(crpra.index[_hash][:index]))
-            push!(crpra.search_trees[_hash],
-                  :index=>BKTree((x,y)->evaluate(distance, x, y), words))
-        end
-        if search_type != :index
-            words = collect(keys(crpra.index[_hash][:metadata]))
-            push!(crpra.search_trees[_hash],
-                  :metadata=>BKTree((x,y)->evaluate(distance, x, y), words))
-        end
+    words = String[]  # search vocabulary
+    push!(crpra.search_trees, _hash=>Dict{Symbol, BKTree{String}}())
+    if search_type != :metadata
+        words = collect(keys(crps.inverse_index))
+        push!(crpra.search_trees[_hash],
+            :index=>BKTree((x,y)->evaluate(distance, x, y), words))
+    end
+    if search_type != :index
+        words = collect(keys(crps_meta.inverse_index))
+        push!(crpra.search_trees[_hash],
+            :metadata=>BKTree((x,y)->evaluate(distance, x, y), words))
     end
     return crpra
 end

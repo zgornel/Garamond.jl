@@ -90,6 +90,7 @@ function parse_corpora_configuration(filename::AbstractString)
             elseif occursin("=", _line) && counter > 0
                 # Property assignment (option = value)
                 opt, val = strip.(split(_line, "="))
+                # Assign value to corpus references
                 if opt == "parser" && !isempty(val)
                     last_parser = Symbol(val)
                     crefs[counter].parser =
@@ -102,6 +103,8 @@ function parse_corpora_configuration(filename::AbstractString)
                     last_header = Bool(Meta.parse(val))
                     crefs[counter].parser = get_parsing_function(
                         last_parser, header=last_header)
+                elseif opt == "term_importance" && !isempty(val)
+                    crefs[counter].termimp = Symbol(val)
                 else
                     @warn "Line \"$line\" in $(filename) is not valid. will skip"
                     continue
@@ -195,11 +198,5 @@ function __parser_csv_format_1(filename::AbstractString,
     # Create and post-process document/document metadata corpora
     crps = Corpus(documents)
     crps_meta = Corpus(documents_meta)
-    for (c, flags) in zip((crps, crps_meta),
-                          (TEXT_STRIP_FLAGS, METADATA_STRIP_FLAGS))
-        prepare!(c, flags)       # preprocess
-        #update_lexicon!(c)       # create lexicon
-        update_inverse_index!(c) # create inverse index
-    end
-    return Corpus(crps.documents), inverse_index(crps), inverse_index(crps_meta)
+    return crps, crps_meta
 end
