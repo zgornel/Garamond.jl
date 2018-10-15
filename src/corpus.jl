@@ -62,7 +62,7 @@ mutable struct Corpora{T,D} <: AbstractCorpora
     enabled::Dict{T, Bool}       # whether to use the corpus in search or not
     refs::Dict{T, CorpusRef}     # Dict(hash=>corpus name)
     index::Dict{T, Dict{Symbol, Dict{String, Vector{Int}}}}  # document and metadata inverse index
-    termimp::Dict{T, Dict{Symbol, TermImportances}}
+    term_importances::Dict{T, Dict{Symbol, TermImportances}}
     search_trees::Dict{T, Dict{Symbol, BKTree{String}}}  # search trees
 end
 
@@ -233,9 +233,9 @@ function add_corpus!(crpra::Corpora{T,D}, cref::CorpusRef) where
     push!(crpra.index, _hash=>Dict{Symbol, Dict{String,Vector{Int}}}())
     push!(crpra.index[_hash], :index=>crps.inverse_index)
     push!(crpra.index[_hash], :metadata=>crps_meta.inverse_index)
-    push!(crpra.termimp, _hash=>Dict{Symbol, TermImportances}())
-    push!(crpra.termimp[_hash], :index=>term_imp)
-    push!(crpra.termimp[_hash], :metadata=>term_imp_meta)
+    push!(crpra.term_importances, _hash=>Dict{Symbol, TermImportances}())
+    push!(crpra.term_importances[_hash], :index=>term_imp)
+    push!(crpra.term_importances[_hash], :metadata=>term_imp_meta)
 	# Add search trees
     search_type = :all
     heuristic = DEFAULT_HEURISTIC

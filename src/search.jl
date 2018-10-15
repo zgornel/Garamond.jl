@@ -5,13 +5,13 @@
 # Search results from a single corpus
 struct CorpusSearchResult
     query_matches::MultiDict{Float64, Int}  # score => document indices
-    needle_matches::Dict{String, Int}  # needle => number of matches
+    needle_matches::Dict{String, Float64}  # needle => sum of scores
     suggestions::MultiDict{String, Tuple{Float64,String}} # needle => tuples of (score,partial match)
 end
 
 CorpusSearchResult() = CorpusSearchResult(
     MultiDict{Float64, Int}(),
-    Dict{String, Int}(),
+    Dict{String, Float64}(),
     MultiDict{String, Tuple{Float64,String}}()
 )
 
@@ -230,6 +230,7 @@ function search(crpra::AbstractCorpora,
             _result = search(crps,
                              needles,
                              index=crpra.index[_hash],
+                             term_importances=crpra.term_importances[_hash],
                              search_trees=crpra.search_trees[_hash],
                              search_type=search_type,
                              search_method=search_method,
@@ -281,6 +282,8 @@ function search(crps::Corpus{D},
                 needles::Vector{String};
                 index::Dict{Symbol, Dict{String, Vector{Int}}}=
                     Dict{Symbol, Dict{String, Vector{Int}}}(),
+                term_importances::Dict{Symbol, TermImportances}=
+                    Dict{Symbol, TermImportances}(),
                 search_trees::Dict{Symbol,BKTree{String}}=Dict{Symbol,BKTree{String}}(),
                 search_type::Symbol=:metadata,
                 search_method::Symbol=:exact,
@@ -296,17 +299,29 @@ function search(crps::Corpus{D},
     local dtm::SparseMatrixCSC{Float64, Int64}
 	# Search
     if search_type != :all
-        dtm = search_index(index[search_type], needles, n_docs=n, search_method=search_method)
+        dtm = _search(needles,
+                      index[search_type],
+                      term_importances[search_type],
+                      n_docs=n,
+                      search_method=search_method)
     else
-        dtm = search_index(index[:index], needles, n_docs=n, search_method=search_method) +
-              search_index(index[:metadata], needles, n_docs=n, search_method=search_method)
+        dtm = _search(needles,
+                      index[:index],
+                      term_importances[search_type],
+                      n_docs=n,
+                      search_method=search_method) +  # plus
+              _search(needles,
+                      index[:metadata],
+                      term_importances[search_type],
+                      n_docs=n,
+                      search_method=search_method)
     end
     # Process finds
     document_scores = zeros(Float64, n)
     needle_popularity = zeros(Float64, p)
     @inbounds @simd for j in 1:p
          for i in 1:n
-            if dtm[i,j] != 0
+            if dtm[i,j] != 0.0
                 document_scores[i]+= dtm[i,j]
                 needle_popularity[j]+= dtm[i,j]
             end
@@ -348,15 +363,17 @@ end
 """
 	Search function for searching an inverse index associated to a corpus.
 """
-function search_index(index::Dict{String, Vector{Int}},
-                      needles::Vector{String};
-                      n_docs::Int=0,
-                      search_method::Symbol=:exact,
-                     ) where {T<:AbstractDocument}
+function _search(needles::Vector{String},
+                 index::Dict{String, Vector{Int}},
+                 term_importances::TermImportances;
+                 n_docs::Int=0,
+                 search_method::Symbol=:exact) where {T<:AbstractDocument}
     # Initializations
     @assert n_docs > 0 "Number of documents has to be > 0."
     p = length(needles)
     matches = spzeros(Float64, n_docs, p)
+    vti = term_importances.values
+    cidx = term_importances.column_indices
     # Get needle mutating and string matching functions
     if search_method == :exact
         needle_mutator = identity
@@ -376,14 +393,14 @@ function search_index(index::Dict{String, Vector{Int}},
         if search_method == :exact
             idxs = get(index, pattern, empty_vector) # fast!!
             @inbounds @simd for i in idxs
-                matches[i,j]+= 1.0
+                matches[i,j]+= vti[i,cidx[pattern]]
             end
         else
             # search_method==:regex
             for k in haystack
                 if matching_function(pattern, k)
                     @inbounds @simd for i in index[k]
-                        matches[i,j]+= 1.0
+                        matches[i,j]+= vti[i,cidx[k]]
                     end
                 end
             end
