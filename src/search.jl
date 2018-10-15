@@ -221,6 +221,13 @@ function search(crpra::AbstractCorpora,
                 max_matches::Int=DEFAULT_MAX_MATCHES,
                 max_suggestions::Int=DEFAULT_MAX_SUGGESTIONS,
                 max_corpus_suggestions::Int=DEFAULT_MAX_CORPUS_SUGGESTIONS)
+    # Checks
+    @assert search_type in [:index, :metadata, :all]
+    @assert search_method in [:exact, :regex]
+    @assert max_matches >= 0
+    @assert max_suggestions >= 0
+    @assert max_corpus_suggestions >=0
+    # Initializations
     result = CorporaSearchResult()
     n = length(crpra.corpus)
     max_corpus_suggestions = min(max_suggestions, max_corpus_suggestions)
@@ -290,13 +297,10 @@ function search(crps::Corpus{D},
                 max_matches::Int=10,
                 max_suggestions::Int=DEFAULT_MAX_CORPUS_SUGGESTIONS
                ) where {D<:AbstractDocument}
-    # Checks
-    @assert search_type in [:index, :metadata, :all]
-    @assert search_method in [:exact, :regex]
     # Initializations
     n = length(crps)		# Number of documents
     p = length(needles)		# Number of search terms
-    local M::Matrix{Float64}
+    local M
 	# Search
     if search_type != :all
         M = _search(needles, index[search_type], term_importances[search_type],
@@ -334,7 +338,7 @@ function search(crps::Corpus{D},
                           if needle_popularity[i] > 0)
     # Get suggestions
     suggestions = MultiDict{String, Tuple{Float64, String}}()
-    missing_needles = needle_popularity.==0
+    missing_needles = map(iszero, needle_popularity)
     if max_suggestions > 0 && any(missing_needles)
         needles_not_found = needles[missing_needles]
         where_to_search = ifelse(search_type == :all,
