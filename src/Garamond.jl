@@ -38,8 +38,6 @@ module Garamond
         prepare!,
         # Search related
         search,
-        search_metadata,
-        search_index,
         search_heuristically,
         print_search_results,
         # Command line (application) related
