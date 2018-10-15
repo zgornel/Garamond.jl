@@ -184,15 +184,18 @@ function load_corpora(crefs::Vector{CorpusRef};
 	return crpra
 end
 
-   ###  crps = Corpus(documents)
-   ###  crps_meta = Corpus(documents_meta)
-   ###  for (c, flags) in zip((crps, crps_meta),
-   ###                        (TEXT_STRIP_FLAGS, METADATA_STRIP_FLAGS))
-   ###      prepare!(c, flags)       # preprocess
-   ###      #update_lexicon!(c)       # create lexicon
-   ###      update_inverse_index!(c) # create inverse index
-   ###  end
-   ###  return Corpus(crps.documents), inverse_index(crps), inverse_index(crps_meta)
+
+
+# Function that returns a similar matrix with
+# a last column of zeros
+function add_final_zeros(a::A) where A<:AbstractMatrix
+    m, n = size(a)
+    new_a = similar(a, (m,n+1))
+    new_a[1:m,1:n] = a
+    new_a[:,n+1] .= 0.0
+    return new_a::A
+end
+
 
 
 # Load corpora using a single corpus reference
@@ -224,8 +227,8 @@ function add_corpus!(crpra::Corpora{T,D}, cref::CorpusRef) where
         @warn "Unknown document importance :$(cref.termimp); defaulting to frequency."
     end
     # Calculate doc importances
-    term_imp = TermImportances(dtm.column_indices, imp_func(dtm))
-    term_imp_meta = TermImportances(dtm_meta.column_indices, imp_func(dtm_meta))
+    term_imp = TermImportances(dtm.column_indices, add_final_zeros(imp_func(dtm)))
+    term_imp_meta = TermImportances(dtm_meta.column_indices, add_final_zeros(imp_func(dtm_meta)))
     # Update Corpora fields
     push!(crpra.corpus, _hash=>crps)
     push!(crpra.enabled, _hash=>cref.enabled) # all corpora enabled by default
