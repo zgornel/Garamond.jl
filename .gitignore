@@ -1,0 +1,12 @@
+*.jl.cov
+*.jl.*.cov
+*.jl.mem
+*~
+*.swp
+rawdata
+data/
+doc/
+config/
+dump/
+build/bin/
+benchmarks/
