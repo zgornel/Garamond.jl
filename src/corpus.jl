@@ -1,20 +1,24 @@
-##########
-# HashId #
-##########
-# Corpus ID (identifies a Corpus and associated structures)
+########################################################
+# Corpus Id's i.e. keys that uniquely identify corpora #
+########################################################
+
 struct HashId <: AbstractId
     id::UInt
 end
+
 
 struct StringId <: AbstractId
     id::String
 end
 
+
 show(io::IO, id::StringId) = print(io, "id=\"$(id.id)\"")
 show(io::IO, id::HashId) = print(io, "id=0x$(string(id.id, base=16))")
 
+
 random_id(::Type{HashId}) = HashId(hash(rand()))
 random_id(::Type{StringId}) = StringId(randstring())
+
 
 # Construct IDs
 make_id(::Type{HashId}, id::String) = HashId(parse(UInt, id))  # the id has to be parsable to UInt
@@ -40,11 +44,13 @@ mutable struct CorpusRef{T<:AbstractId}
     enabled::Bool       # whether to use the corpus in search or not
 end
 
+
 # Small function that returns 2 empty corpora
 _fake_parser(args...) = begin
     crps = Corpus(DEFAULT_DOC_TYPE(""))
     return crps, crps
 end
+
 
 CorpusRef(;path="",
           name="",
@@ -54,6 +60,7 @@ CorpusRef(;path="",
           heuristic=DEFAULT_HEURISTIC,
           enabled=false) =
     CorpusRef(path, name, id, parser, termimp, heuristic, enabled)
+
 
 Base.show(io::IO, cref::CorpusRef{T}) where T<:AbstractId = begin
     printstyled(io, "CorpusRef{$T} for $(cref.name)\n")
@@ -72,6 +79,7 @@ struct TermImportances
     column_indices::Dict{String, Int}
     values::SparseMatrixCSC{Float64, Int64}
 end
+
 
 Base.show(io::IO, ti::TermImportances) = begin
     m, n = size(ti.values)
@@ -95,6 +103,7 @@ mutable struct Corpora{T,D} <: AbstractCorpora
     search_trees::Dict{T, Dict{Symbol, BKTree{String}}}  # search trees
 end
 
+
 Corpora{T,D}() where {T<:AbstractId, D<:AbstractDocument} =
     Corpora(Dict{T, Corpus{D}}(),
             Dict{T, Bool}(),
@@ -104,11 +113,10 @@ Corpora{T,D}() where {T<:AbstractId, D<:AbstractDocument} =
             Dict{T, Dict{Symbol, BKTree{String}}}()
            )
 
-# Some useful constants
+
+# Partially and non-parametric constructors
 Corpora{T}() where T<:AbstractId = Corpora{T, DEFAULT_DOC_TYPE}()
-
 Corpora{D}() where D<:AbstractDocument = Corpora{DEFAULT_ID_TYPE, D}()
-
 Corpora() = Corpora{DEFAULT_ID_TYPE, DEFAULT_DOC_TYPE}()
 
 
@@ -126,7 +134,6 @@ show(io::IO, crpra::Corpora{T,D}) where
 end
 
 
-
 # Various iterators over parts of a Corpora
 getindex(crpra::Corpora{T,D}, key::T) where
         {T<:AbstractId, D<:AbstractDocument} = begin
@@ -137,9 +144,11 @@ getindex(crpra::Corpora{T,D}, key::T) where
     return new_crpra
 end
 
+
 getindex(crpra::Corpora{T,D}, key::UInt) where
         {T<:AbstractId, D<:AbstractDocument} =
     crpra[HashId(key)]
+
 
 delete!(crpra::Corpora{T,D}, key::T) where
         {T<:AbstractId, D<:AbstractDocument} = begin
@@ -149,12 +158,14 @@ delete!(crpra::Corpora{T,D}, key::T) where
     return crpra
 end
 
+
 disable!(crpra::Corpora{T,D}, key::T) where
         {T<:AbstractId, D<:AbstractDocument} = begin
     crpra.enabled[key] = false
     crpra.refs[key].enabled = false
     return crpra
 end
+
 
 disable!(crpra::Corpora{T,D}) where
         {T<:AbstractId, D<:AbstractDocument} = begin
@@ -164,12 +175,14 @@ disable!(crpra::Corpora{T,D}) where
     return crpra
 end
 
+
 enable!(crpra::Corpora{T,D}, key::T) where
         {T<:AbstractId, D<:AbstractDocument} = begin
     crpra.enabled[key] = true
     crpra.refs[key].enabled = true
     return crpra
 end
+
 
 enable!(crpra::Corpora{T,D}) where
         {T<:AbstractId, D<:AbstractDocument} = begin
@@ -179,17 +192,16 @@ enable!(crpra::Corpora{T,D}) where
     return crpra
 end
 
+
 keys(crpra::Corpora{T,D}) where {T<:AbstractId, D<:AbstractDocument} =
     keys(crpra.corpus)
 
-values(crpra::Corpora{T,D}) where {T<:AbstractId, D<:AbstractDocument} =
-    ((crpra.corpus[k],
-      crpra.enabled[k],
-      crpra.refs[k],
-      crpra.index[k],
-      crpra.index_meta[k],
-      crpra.search_trees[k]) for k in keys(crpra))
 
+values(crpra::Corpora{T,D}) where {T<:AbstractId, D<:AbstractDocument} =
+    (
+     Tuple(getfield(crpra, field)[key] for field in fieldnames(Corpora))
+     for key in keys(crpra)
+    )
 
 
 # Load corpora using a Garamond corpora config file
@@ -197,6 +209,7 @@ function load_corpora(filename::AbstractString)
 	corpus_refs = parse_corpora_configuration(filename)
 	load_corpora(corpus_refs)
 end
+
 
 # Load corpora using a vector of corpus references
 function load_corpora(crefs::Vector{CorpusRef};
@@ -209,7 +222,6 @@ function load_corpora(crefs::Vector{CorpusRef};
     end
 	return crpra
 end
-
 
 
 # Function that returns a similar matrix with

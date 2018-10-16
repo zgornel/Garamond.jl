@@ -58,6 +58,7 @@ module Garamond
     include("corpus.jl")
     include("parsers.jl")
     include("utils_text_lang.jl")
+    include("results.jl")
     include("search.jl")
     include("cmdline.jl")
     ###include("servers.jl")

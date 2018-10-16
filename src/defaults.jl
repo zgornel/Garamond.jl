@@ -7,17 +7,21 @@ const DEFAULT_MAX_SUGGESTIONS = 1  # maximum number of overall suggestions
 const DEFAULT_MAX_CORPUS_SUGGESTIONS = 1  # maximum number of suggestions for each corpus
 const MAX_EDIT_DISTANCE = 2  # maximum edit distance for which to return suggestions
 
+
 # Various document processing related constants
 const DEFAULT_DOC_TYPE = TextAnalysis.NGramDocument
 const DEFAULT_METADATA_FIELDS = [:author, :name]  # Default metadata fields for search
+
+
 # Search tree constants
-const DEFAULT_DISTANCE = StringDistances.Levenshtein()
-const DEFAULT_HEURISTIC = :hamming
 const HEURISTIC_TO_DISTANCE = Dict(  # heuristic to distance object mapping
     :levenshtein => StringDistances.Levenshtein(),
     :dameraulevenshtein => StringDistances.DamerauLevenshtein(),
     :hamming => StringDistances.Hamming(),
     :jaro => StringDistances.Jaro())
+const DEFAULT_HEURISTIC = :hamming
+const DEFAULT_DISTANCE = HEURISTIC_TO_DISTANCE[DEFAULT_HEURISTIC]
+
 
 # Text pre-processing flags (for the prepare! function)
 const TEXT_STRIP_FLAGS = strip_case +
@@ -29,16 +33,19 @@ const TEXT_STRIP_FLAGS = strip_case +
 			             strip_prepositions +
                          strip_whitespace +
                          strip_corrupt_utf8
+
 const QUERY_STRIP_FLAGS = strip_non_letters +
                           strip_punctuation +
                           strip_whitespace +
                           strip_corrupt_utf8
+
 const METADATA_STRIP_FLAGS = strip_punctuation +
                              strip_whitespace +
                              strip_case
 
-# String <=>Language dictionaries and
-# Languages.Languages <=> String conversion functions
+
+# Dictionaries for String <=>Languages.Language / Languages.Languages <=> String 
+# conversion
 const STR_TO_LANG = Dict("english"=>Languages.English(),
                          "french"=>Languages.French(),
                          "german"=>Languages.German(),

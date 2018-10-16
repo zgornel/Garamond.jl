@@ -51,7 +51,9 @@ function parse_corpora_configuration(filename::AbstractString)
     # Function that generated a parsing function from a parser configuration name
     # and header information (used in parsing the data configuration file for
     # generating a ParserConfig)
-    function get_parsing_function(parser_config::Symbol; header::Bool=false)
+    function get_parsing_function(parser_config::Symbol,
+                                  id_type::Type{T},
+                                  header::Bool=false) where T<:AbstractId
         PREFIX = :__parser_
         # Construct basic parsing function from parser option value
         _function  = eval(Symbol(PREFIX, parser_config))
@@ -60,7 +62,7 @@ function parse_corpora_configuration(filename::AbstractString)
         _config isa Nothing && @error ":$config_name parser configuration not found!"
         # Build parsing function (a nice closure)
         function parsing_function(filename::String,
-                                  id_type::Type{T}=DEFAULT_ID_TYPE,
+                                  id_type::Type{T}=id_type,
                                   doc_type::Type{D}=DEFAULT_DOC_TYPE) where
                 {T<:AbstractId, D<:AbstractDocument}
             return _function(filename,
@@ -75,6 +77,7 @@ function parse_corpora_configuration(filename::AbstractString)
     crefs = Vector{CorpusRef}()
     last_header = false
     last_parser = :indentity
+    local last_id_type
     # Start parsing
     open(filename, "r") do f
         counter = 0
@@ -94,19 +97,28 @@ function parse_corpora_configuration(filename::AbstractString)
                 if opt == "parser" && !isempty(val)
                     last_parser = Symbol(val)
                     crefs[counter].parser =
-                        get_parsing_function(last_parser, header=last_header)
+                        get_parsing_function(last_parser,
+                                             last_id_type,
+                                             last_header)
                 elseif opt == "path" && !isempty(val)
                     crefs[counter].path = val
                 elseif opt == "enabled" && !isempty(val)
                     crefs[counter].enabled = Bool(Meta.parse(val))
                 elseif opt == "header" && !isempty(val)
                     last_header = Bool(Meta.parse(val))
-                    crefs[counter].parser = get_parsing_function(
-                        last_parser, header=last_header)
+                    crefs[counter].parser = get_parsing_function(last_parser,
+                                                                 last_id_type,
+                                                                 last_header)
                 elseif opt == "term_importance" && !isempty(val)
                     crefs[counter].termimp = Symbol(val)
                 elseif opt == "id" && !isempty(val)
-                    crefs[counter].id = make_id(DEFAULT_ID_TYPE, val)
+                    if startswith(val, "'") && endswith(val, "'")
+                        last_id_type = StringId
+                        val = replace(val, "'"=>"")
+                    else
+                        last_id_type = HashId
+                    end
+                    crefs[counter].id = make_id(last_id_type, val)
                 elseif opt == "heuristic" && !isempty(val)
                     crefs[counter].heuristic = Symbol(val)
                 else
