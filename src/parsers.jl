@@ -105,6 +105,10 @@ function parse_corpora_configuration(filename::AbstractString)
                         last_parser, header=last_header)
                 elseif opt == "term_importance" && !isempty(val)
                     crefs[counter].termimp = Symbol(val)
+                elseif opt == "id" && !isempty(val)
+                    crefs[counter].id = make_id(DEFAULT_ID_TYPE, val)
+                elseif opt == "heuristic" && !isempty(val)
+                    crefs[counter].heuristic = Symbol(val)
                 else
                     @warn "Line \"$line\" in $(filename) is not valid. will skip"
                     continue
@@ -113,6 +117,17 @@ function parse_corpora_configuration(filename::AbstractString)
                 # Un-parsable line (skip)
                 continue
             end
+        end
+    end
+    # Checks
+    for cref in crefs
+        if !(cref.termimp in [:tf, :tfidf])
+            @warn "Unknown term importance $(cref.termimp), revering to default."
+            cref.termimp = DEFAULT_TERM_IMPORTANCE
+        end
+        if !(cref.heuristic in keys(HEURISTIC_TO_DISTANCE))
+            @warn "Unknown heuristic $(cref.heuristic), revering to default."
+            cref.heuristic = DEFAULT_HEURISTIC
         end
     end
     return crefs

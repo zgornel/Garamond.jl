@@ -1,33 +1,62 @@
-#########################
-# Interface for Corpora #
-#########################
-
+##########
+# HashId #
+##########
 # Corpus ID (identifies a Corpus and associated structures)
 struct HashId <: AbstractId
     id::UInt
 end
 
+struct StringId <: AbstractId
+    id::String
+end
+
+show(io::IO, id::StringId) = print(io, "id=\"$(id.id)\"")
 show(io::IO, id::HashId) = print(io, "id=0x$(string(id.id, base=16))")
-#print(io::IO, id::HashId) = print(io, "id=0x$(string(id.id, base=16))")
-#println(io::IO, id::HashId) = println(io, "id=0x$(string(id.id, base=16))")
+
+random_id(::Type{HashId}) = HashId(hash(rand()))
+random_id(::Type{StringId}) = StringId(randstring())
+
+# Construct IDs
+make_id(::Type{HashId}, id::String) = HashId(parse(UInt, id))  # the id has to be parsable to UInt
+make_id(::Type{HashId}, id::T) where T<:Integer = HashId(UInt(abs(id)))
+make_id(::Type{StringId}, id::T) where T<:AbstractString = StringId(String(id))
+make_id(::Type{StringId}, id::T) where T<:Number = StringId(String(id))
+
+const DEFAULT_ID_TYPE = StringId
 
 
 
+#############
+# CorpusRef #
+#############
 # CorpusRefs can be built from a data configuration file or manually
-mutable struct CorpusRef
-    path::String        # file/directory path
+mutable struct CorpusRef{T<:AbstractId}
+    path::String        # file/directory path (depends on what the parser accepts)
     name::String        # name of corpus
+    id::T
     parser::Function    # file/directory parser function used to obtain corpus
     termimp::Symbol     # term importance (can be :tf or :tfidf)
+    heuristic::Symbol   # search heuristic for recommendtations
     enabled::Bool       # whether to use the corpus in search or not
 end
 
-CorpusRef(;path="", name="", parser=identity,
-          termimp=DEFAULT_TERM_IMPORTANCE, enabled=false) =
-    CorpusRef(path, name, parser, termimp, enabled)
+# Small function that returns 2 empty corpora
+_fake_parser(args...) = begin
+    crps = Corpus(DEFAULT_DOC_TYPE(""))
+    return crps, crps
+end
 
-Base.show(io::IO, cref::CorpusRef) = begin
-    printstyled(io, "Corpus Reference for $(cref.name)\n")
+CorpusRef(;path="",
+          name="",
+          id=random_id(DEFAULT_ID_TYPE),
+          parser=_fake_parser,
+          termimp=DEFAULT_TERM_IMPORTANCE,
+          heuristic=DEFAULT_HEURISTIC,
+          enabled=false) =
+    CorpusRef(path, name, id, parser, termimp, heuristic, enabled)
+
+Base.show(io::IO, cref::CorpusRef{T}) where T<:AbstractId = begin
+    printstyled(io, "CorpusRef{$T} for $(cref.name)\n")
     _status = ifelse(cref.enabled, "Enabled", "Disabled")
     _status_color = ifelse(cref.enabled, :light_green, :light_black)
     printstyled(io, "`-[$_status] ", color=_status_color)
@@ -36,8 +65,9 @@ end
 
 
 
-# Term Importance structure
-###############################
+#############################
+# Term Importance structure #
+#############################
 struct TermImportances
     column_indices::Dict{String, Int}
     values::SparseMatrixCSC{Float64, Int64}
@@ -48,15 +78,14 @@ Base.show(io::IO, ti::TermImportances) = begin
     print("Term importances for $m documents, $n unique terms.")
 end
 
-getindex(ti::TermImportances, doc::Int, key::String) = begin
-    #TODO
-    return 0
-end
 
 
+#########################
+# Interface for Corpora #
+#########################
+# Remark: Corpora can be built from a .garamond configuration
+#         file or from a vector of CorpusRef's
 
-# Corpora can be built from a .garamond configuration file or from a vector of CorpusRef's
-##########################################################################################
 mutable struct Corpora{T,D} <: AbstractCorpora
     corpus::Dict{T, Corpus{D}}   # hash=>corpus
     enabled::Dict{T, Bool}       # whether to use the corpus in search or not
@@ -76,9 +105,6 @@ Corpora{T,D}() where {T<:AbstractId, D<:AbstractDocument} =
            )
 
 # Some useful constants
-const DEFAULT_ID_TYPE = HashId
-const DEFAULT_DOC_TYPE = TextAnalysis.NGramDocument
-
 Corpora{T}() where T<:AbstractId = Corpora{T, DEFAULT_DOC_TYPE}()
 
 Corpora{D}() where D<:AbstractDocument = Corpora{DEFAULT_ID_TYPE, D}()
@@ -89,12 +115,12 @@ Corpora() = Corpora{DEFAULT_ID_TYPE, DEFAULT_DOC_TYPE}()
 show(io::IO, crpra::Corpora{T,D}) where
         {T<:AbstractId, D<:AbstractDocument} = begin
     printstyled(io, "$(length(crpra.corpus))-element Corpora{$T,$D}:\n")
-    for (_hash, crps) in crpra.corpus
-        printstyled(io, "`-[$_hash] ", color=:cyan)  # hash
-        _status = ifelse(crpra.enabled[_hash], "Enabled", "Disabled")
-        _status_color = ifelse(crpra.enabled[_hash], :light_green, :light_black)
+    for (id, crps) in crpra.corpus
+        printstyled(io, "`-[$id] ", color=:cyan)  # hash
+        _status = ifelse(crpra.enabled[id], "Enabled", "Disabled")
+        _status_color = ifelse(crpra.enabled[id], :light_green, :light_black)
         printstyled(io, "[$_status] ", color=_status_color)
-        printstyled(io, "$(crpra.refs[_hash].name)", color=:normal) #corpus name
+        printstyled(io, "$(crpra.refs[id].name)", color=:normal) #corpus name
         printstyled(io, ", $(length(crps)) documents\n") 
     end
 end
@@ -197,15 +223,15 @@ function add_final_zeros(a::A) where A<:AbstractMatrix
 end
 
 
-
-# Load corpora using a single corpus reference
+```
+Adds a Corpus to a Corpora using a CorpusRef.
+```
 function add_corpus!(crpra::Corpora{T,D}, cref::CorpusRef) where
         {T<:AbstractId, D<:AbstractDocument}
     # Parse file
     crps, crps_meta = cref.parser(cref.path)
-    # Calculate hash
-    _hash = HashId(hash(hash(abspath(cref.path))+
-                        hash(cref.name)))
+    # get id
+    id = cref.id
     # Prepare
     prepare!(crps, TEXT_STRIP_FLAGS)
     prepare!(crps_meta, METADATA_STRIP_FLAGS)
@@ -230,29 +256,29 @@ function add_corpus!(crpra::Corpora{T,D}, cref::CorpusRef) where
     term_imp = TermImportances(dtm.column_indices, add_final_zeros(imp_func(dtm)))
     term_imp_meta = TermImportances(dtm_meta.column_indices, add_final_zeros(imp_func(dtm_meta)))
     # Update Corpora fields
-    push!(crpra.corpus, _hash=>crps)
-    push!(crpra.enabled, _hash=>cref.enabled) # all corpora enabled by default
-    push!(crpra.refs, _hash=>cref)
-    push!(crpra.index, _hash=>Dict{Symbol, Dict{String,Vector{Int}}}())
-    push!(crpra.index[_hash], :index=>crps.inverse_index)
-    push!(crpra.index[_hash], :metadata=>crps_meta.inverse_index)
-    push!(crpra.term_importances, _hash=>Dict{Symbol, TermImportances}())
-    push!(crpra.term_importances[_hash], :index=>term_imp)
-    push!(crpra.term_importances[_hash], :metadata=>term_imp_meta)
+    push!(crpra.corpus, id=>crps)
+    push!(crpra.enabled, id=>cref.enabled) # all corpora enabled by default
+    push!(crpra.refs, id=>cref)
+    push!(crpra.index, id=>Dict{Symbol, Dict{String,Vector{Int}}}())
+    push!(crpra.index[id], :index=>crps.inverse_index)
+    push!(crpra.index[id], :metadata=>crps_meta.inverse_index)
+    push!(crpra.term_importances, id=>Dict{Symbol, TermImportances}())
+    push!(crpra.term_importances[id], :index=>term_imp)
+    push!(crpra.term_importances[id], :metadata=>term_imp_meta)
 	# Add search trees
     search_type = :all
-    heuristic = DEFAULT_HEURISTIC
+    heuristic = cref.heuristic
     distance = get(HEURISTIC_TO_DISTANCE, heuristic, DEFAULT_DISTANCE)
     words = String[]  # search vocabulary
-    push!(crpra.search_trees, _hash=>Dict{Symbol, BKTree{String}}())
+    push!(crpra.search_trees, id=>Dict{Symbol, BKTree{String}}())
     if search_type != :metadata
         words = collect(keys(crps.inverse_index))
-        push!(crpra.search_trees[_hash],
+        push!(crpra.search_trees[id],
             :index=>BKTree((x,y)->evaluate(distance, x, y), words))
     end
     if search_type != :index
         words = collect(keys(crps_meta.inverse_index))
-        push!(crpra.search_trees[_hash],
+        push!(crpra.search_trees[id],
             :metadata=>BKTree((x,y)->evaluate(distance, x, y), words))
     end
     return crpra

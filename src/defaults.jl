@@ -8,6 +8,7 @@ const DEFAULT_MAX_CORPUS_SUGGESTIONS = 1  # maximum number of suggestions for ea
 const MAX_EDIT_DISTANCE = 2  # maximum edit distance for which to return suggestions
 
 # Various document processing related constants
+const DEFAULT_DOC_TYPE = TextAnalysis.NGramDocument
 const DEFAULT_METADATA_FIELDS = [:author, :name]  # Default metadata fields for search
 # Search tree constants
 const DEFAULT_DISTANCE = StringDistances.Levenshtein()

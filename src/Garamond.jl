@@ -1,5 +1,6 @@
 module Garamond
 
+    using Random
     using Unicode
     using TextAnalysis, Languages
     using ConceptnetNumberbatch
@@ -28,8 +29,9 @@ module Garamond
         Corpora,
         AbstractId,
         HashId,
-        update_lexicon!,
-        update_inverse_index!,
+        StringId,
+        ###update_lexicon!,
+        ###update_inverse_index!,
         enable!,
         disable!,
         load_corpora,
@@ -53,8 +55,8 @@ module Garamond
 
     # Include section
     include("defaults.jl")
-    include("parsers.jl")
     include("corpus.jl")
+    include("parsers.jl")
     include("utils_text_lang.jl")
     include("search.jl")
     include("cmdline.jl")

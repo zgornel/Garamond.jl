@@ -77,8 +77,6 @@ CorporaSearchResult{T}() where T<:AbstractId =
         MultiDict{String, String}()
 )
 
-CorporaSearchResult() = CorporaSearchResult{HashId}()
-
 
 
 isempty(csr::T) where T<:CorporaSearchResult =
@@ -95,11 +93,11 @@ show(io::IO, csr::CorporaSearchResult) = begin
     nst = length(csr.suggestions)
     printstyled(io, "Search results for $(length(csr.corpus_results)) corpora: ")
     printstyled(io, "$nt hits, $nmt query terms, $nst suggestions.\n", bold=true)
-    for (_hash, _result) in csr.corpus_results
+    for (id, _result) in csr.corpus_results
         n = valength(_result.query_matches)
         nm = length(_result.needle_matches)
         ns = length(_result.suggestions)
-        printstyled(io, "`-[$_hash] ", color=:cyan)  # hash
+        printstyled(io, "`-[$id] ", color=:cyan)  # hash
         printstyled(io, "$n hits, $nm query terms, $ns suggestions\n")
     end
 end
@@ -111,10 +109,10 @@ print_search_results(corpora::Corpora, csr::CorporaSearchResult) = begin
     nt = mapreduce(x->valength(x[2].query_matches), +, csr.corpus_results)
     printstyled("$nt search results from $(length(csr.corpus_results)) corpora\n")
     ns = length(csr.suggestions)
-    for (_hash, _result) in csr.corpus_results
-        crps = corpora.corpus[_hash]
+    for (id, _result) in csr.corpus_results
+        crps = corpora.corpus[id]
         nm = valength(_result.query_matches)
-        printstyled("`-[$_hash] ", color=:cyan)  # hash
+        printstyled("`-[$id] ", color=:cyan)  # hash
         printstyled("$(nm) search results")
         ch = ifelse(nm==0, ".", ":"); printstyled("$ch\n")
         for score in sort(collect(keys(_result.query_matches)), rev=true)
@@ -214,13 +212,14 @@ end
 #  to be used as the metadata contains compound expressions which the exact method cannot match
 
 # Function that searches through several corpora
-function search(crpra::AbstractCorpora,
+function search(crpra::Corpora{T,D},
                 needles::Vector{String};
                 search_type::Symbol=DEFAULT_SEARCH_TYPE,
                 search_method::Symbol=DEFAULT_SEARCH_METHOD,
                 max_matches::Int=DEFAULT_MAX_MATCHES,
                 max_suggestions::Int=DEFAULT_MAX_SUGGESTIONS,
-                max_corpus_suggestions::Int=DEFAULT_MAX_CORPUS_SUGGESTIONS)
+                max_corpus_suggestions::Int=DEFAULT_MAX_CORPUS_SUGGESTIONS) where
+        {T<:AbstractId, D<:AbstractDocument}
     # Checks
     @assert search_type in [:index, :metadata, :all]
     @assert search_method in [:exact, :regex]
@@ -228,22 +227,24 @@ function search(crpra::AbstractCorpora,
     @assert max_suggestions >= 0
     @assert max_corpus_suggestions >=0
     # Initializations
-    result = CorporaSearchResult()
+    result = CorporaSearchResult{T}()
     n = length(crpra.corpus)
     max_corpus_suggestions = min(max_suggestions, max_corpus_suggestions)
     # Search
-    for (_hash, crps) in crpra.corpus
-        if crpra.enabled[_hash]
-            _result = search(crps,
-                             needles,
-                             index=crpra.index[_hash],
-                             term_importances=crpra.term_importances[_hash],
-                             search_trees=crpra.search_trees[_hash],
-                             search_type=search_type,
-                             search_method=search_method,
-                             max_matches=max_matches,
-                             max_suggestions=max_corpus_suggestions)
-            push!(result, _hash=>_result)
+    for (id, crps) in crpra.corpus
+        if crpra.enabled[id]
+            # Get corpus search results
+            search_result = search(crps,
+                                   needles,
+                                   index=crpra.index[id],
+                                   term_importances=crpra.term_importances[id],
+                                   search_trees=crpra.search_trees[id],
+                                   search_type=search_type,
+                                   search_method=search_method,
+                                   max_matches=max_matches,
+                                   max_suggestions=max_corpus_suggestions)
+            # Add corpus search results to the corpora search results
+            push!(result, id=>search_result)
         end
     end
     !isempty(result) && update_suggestions!(result, max_suggestions)
@@ -303,13 +304,10 @@ function search(crps::Corpus{D},
     local M
 	# Search
     if search_type != :all
-        M = _search(needles, index[search_type], term_importances[search_type],
-                    search_method=search_method)
+        M = _search_tf_idf(needles, term_importances[search_type], search_method=search_method)
     else
-        M = _search(needles, index[:index], term_importances[search_type],
-                    search_method=search_method) +  # plus
-            _search(needles, index[:metadata], term_importances[search_type],
-                    search_method=search_method)
+        M = _search_tf_idf(needles, term_importances[:index], search_method=search_method) +  # plus
+            _search_tf_idf(needles, term_importances[:metadata], search_method=search_method)
     end
     # Initializations of matched documents/needles
     document_scores = zeros(Float64, n)
@@ -358,12 +356,11 @@ end
 
 
 """
-	Search function for searching an inverse index associated to a corpus.
+	Search function for searching using the term imporatances associated to a corpus.
 """
-function _search(needles::Vector{String},
-                 index::Dict{String, Vector{Int}},
-                 term_importances::TermImportances;
-                 search_method::Symbol=:exact) where {T<:AbstractDocument}
+function _search_tf_idf(needles::Vector{String},
+                        term_importances::TermImportances;
+                        search_method::Symbol=:exact) where {T<:AbstractDocument}
     # Initializations
     p = length(needles)
     V = term_importances.values
@@ -380,8 +377,6 @@ function _search(needles::Vector{String},
     end
     # Mutate needles
     patterns = needle_mutator.(needles)
-    # Check that inverse index exists
-    @assert !isempty(index) "FATAL: The index is empty."
     # Search
     haystack = keys(I)
     empty_vector = Int[]
