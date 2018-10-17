@@ -4,6 +4,8 @@ module Garamond
     using Unicode
     using DelimitedFiles
     using SparseArrays
+    using Distributed
+    using SharedArrays
     using Statistics: mean
     using DataStructures: Set, MultiDict
     using TextAnalysis, Languages

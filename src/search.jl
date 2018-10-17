@@ -48,24 +48,24 @@ function search(crpra_searcher::CorporaSearcher{T,D,V},
     @assert max_suggestions >= 0
     @assert max_corpus_suggestions >=0
     # Initializations
-    result = CorporaSearchResult{T}()
     n = length(crpra_searcher.searchers)
+    result = SharedVector{CorporaSearchResult{T}}(n)
     max_corpus_suggestions = min(max_suggestions, max_corpus_suggestions)
     # Search
-    for (id, index) in crpra_searcher.idmap
+    @sync @distributed for index in 1:n
         if crpra_searcher.searchers[index].enabled
             # Get corpus search results
-            search_result = search(crpra_searcher.searchers[index],
+            id, search_result = search(crpra_searcher.searchers[index],
                                    needles,
                                    search_type=search_type,
                                    search_method=search_method,
                                    max_matches=max_matches,
                                    max_suggestions=max_corpus_suggestions)
+            result[index] = search_result
             # Add corpus search results to the corpora search results
-            push!(result, id=>search_result)
         end
     end
-    !isempty(result) && update_suggestions!(result, max_suggestions)
+    #!isempty(result) && update_suggestions!(result, max_suggestions)
     return result
 end
 
@@ -75,7 +75,8 @@ end
 
 Searches for needles (i.e. key terms) in a corpus' metadata, text or both and 
 returns information regarding the the documents that match best the query.
-The function returns an object of type CorpusSearchResult.
+The function returns an object of type CorpusSearchResult and the id of the
+CorpusSearcher.
 
 # Arguments
   * `crps_searcher::CorpusSearcher{T,D}` is the corpus searcher
@@ -159,7 +160,7 @@ function search(crps_searcher::CorpusSearcher{T,D},
                                   max_suggestions=max_suggestions)
         end
     end
-    return CorpusSearchResult(query_matches, needle_matches, suggestions)
+    return crps_searcher.id, CorpusSearchResult(query_matches, needle_matches, suggestions)
 end
 
 
