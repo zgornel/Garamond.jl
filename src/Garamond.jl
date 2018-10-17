@@ -4,7 +4,6 @@ module Garamond
     using Unicode
     using DelimitedFiles
     using SparseArrays
-    using Distributed
     using Base.Threads
     using Statistics: mean
     using DataStructures: Set, MultiDict

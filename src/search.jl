@@ -66,6 +66,7 @@ function search(crpra_searcher::CorporaSearcher{T,D,V},
             id_vector[index] = id
         else
             result_vector[index] = CorpusSearchResult()
+            id_vector[index] = random_id(T)
         end
     end
     # Add corpus search results to the corpora search results
