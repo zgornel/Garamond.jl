@@ -4,7 +4,7 @@ module Garamond
     using Unicode
     using DelimitedFiles
     using SparseArrays
-    using Statistics: mean  # can be removed if fuzzy matcher is removed
+    using Statistics: mean
     using DataStructures: Set, MultiDict
     using TextAnalysis, Languages
     using ConceptnetNumberbatch
@@ -21,22 +21,21 @@ module Garamond
            update_inverse_index!
 
     abstract type AbstractId end
-    abstract type AbstractCorpora end
+    abstract type AbstractSearcher end
 
     export
         # Corpora related
-        AbstractCorpora,
-        CorpusRef,
-        Corpora,
         AbstractId,
         HashId,
         StringId,
-        ###update_lexicon!,
-        ###update_inverse_index!,
+        CorpusRef,
+        AbstractSearcher,
+        CorpusSearcher,
+        CorporaSearcher,
+        corpora_searchers,
+        add_searcher!,
         enable!,
         disable!,
-        load_corpora,
-        add_corpus!,
         # Utils
         prepare!,
         # Search related
@@ -56,7 +55,7 @@ module Garamond
 
     # Include section
     include("defaults.jl")
-    include("corpus.jl")
+    include("corpora_searchers.jl")
     include("parsers.jl")
     include("utils_text_lang.jl")
     include("results.jl")

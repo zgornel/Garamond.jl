@@ -5,7 +5,7 @@
 #   1. Parse configuration file using `parse_corpora_configuration`
 #   2. The resulting Vector{CorpusRef} is passed to `load_corpora`
 #      (each CorpusRef contains the data filepath, corpus name etc.
-#   3. Parse the data file, obtain Corpus and add to Corpora (`add_corpora!`)
+#   3. Parse the data file, obtain Corpus and add to CorporaSearcher (`add_corpora!`)
 """
 Define the csv parser configuration. It maps the fields from a delimited file
 to document metadata fields and specifies whether a field is to be included

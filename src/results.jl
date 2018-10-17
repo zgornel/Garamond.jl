@@ -82,7 +82,11 @@ isempty(csr::T) where T<:CorporaSearchResult =
 
 # Show method
 show(io::IO, csr::CorporaSearchResult) = begin
-    nt = mapreduce(x->valength(x[2].query_matches), +, csr.corpus_results)
+    if !isempty(csr.corpus_results)
+        nt = mapreduce(x->valength(x[2].query_matches), +, csr.corpus_results)
+    else
+        nt=0
+    end
     matched_needles = unique(collect(needle for (_, _result) in csr.corpus_results
                                      for needle in keys(_result.needle_matches)))
     nmt = length(matched_needles)
@@ -100,12 +104,12 @@ end
 
 
 # Pretty printer of results
-print_search_results(corpora::Corpora, csr::CorporaSearchResult) = begin
+print_search_results(crpra_searcher::CorporaSearcher, csr::CorporaSearchResult) = begin
     nt = mapreduce(x->valength(x[2].query_matches), +, csr.corpus_results)
     printstyled("$nt search results from $(length(csr.corpus_results)) corpora\n")
     ns = length(csr.suggestions)
     for (id, _result) in csr.corpus_results
-        crps = corpora.corpus[id]
+        crps = crpra_searcher[id].corpus
         nm = valength(_result.query_matches)
         printstyled("`-[$id] ", color=:cyan)  # hash
         printstyled("$(nm) search results")
@@ -125,8 +129,8 @@ print_search_results(corpora::Corpora, csr::CorporaSearchResult) = begin
 end
 
 
-# Push method (useful for inserting Corpus search results
-# into Corpora search results)
+# Push method (useful for inserting CorpusSearcher search results
+# into CorporaSearcher search results)
 function push!(csr::CorporaSearchResult{T},
                sr::Pair{T, CorpusSearchResult}) where T<:AbstractId
     push!(csr.corpus_results, sr)
@@ -151,7 +155,7 @@ function update_suggestions!(csr::CorporaSearchResult{T},
                            for needle in keys(_result.needle_matches))
         missed_needles = intersect((keys(_result.suggestions)
                                     for _result in corpus_results)...)
-        # Construct suggestions for the whole Corpora
+        # Construct suggestions for the whole CorporaSearcher
         for needle in missed_needles
             _tmpvec = Vector{Tuple{Float64,String}}()
             for _result in corpus_results
