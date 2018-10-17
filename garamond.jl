@@ -12,7 +12,7 @@ using Garamond
 ########################
 # Main module function #
 ########################
-function garamond_julia()
+function main()
 
     # Parse command line arguments
     args = get_commandline_arguments(ARGS)
@@ -29,6 +29,6 @@ function garamond_julia()
     return 0
 end
 
-garamond_julia()
+main()
 
 end # RunGaramond
