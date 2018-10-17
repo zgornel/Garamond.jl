@@ -7,6 +7,7 @@ titleize(str::AbstractString) = begin
     join(map(uppercasefirst, strip.(split(str, "."))), ". ","")
 end
 
+
 show(io::IO, md::TextAnalysis.DocumentMetadata) = begin
     printstyled(io, "$(md.id)-[", color=:light_black)
     printstyled(io, "\"$(titleize(md.name))\"",
@@ -16,14 +17,15 @@ show(io::IO, md::TextAnalysis.DocumentMetadata) = begin
 end
 
 
-
 # Converts a String to Languages.Language (using STR_TO_LANG)
 convert(::Type{L}, lang::S) where {L<:Languages.Language, S<:AbstractString} =
     get(STR_TO_LANG, strip(lower(lang)), Languages.English())
 
+
 # Converts Languages.Language to String (using LANG_TO_STR)
 convert(::Type{S}, lang::L) where {L<:Languages.Language, S<:AbstractString} =
 	get(LANG_TO_STR, lang, "unknown")
+
 
 # Convert a TextAnalysis metadata structure to a Dict
 convert(::Type{Dict}, md::TextAnalysis.DocumentMetadata) =
@@ -31,14 +33,13 @@ convert(::Type{Dict}, md::TextAnalysis.DocumentMetadata) =
                          for field in fieldnames(TextAnalysis.DocumentMetadata))
 
 
-
 # Medatadata getter for documents
 metadata(document::D) where {D<:AbstractDocument} =
     document.metadata
 
+
 metadata(crps::C) where {C<:TextAnalysis.Corpus} =
     [doc.metadata for doc in crps]
-
 
 
 # Turn the document metadata into a string
@@ -47,12 +48,12 @@ function metastring(md::TextAnalysis.DocumentMetadata,
 	join([getfield(md, field) for field in fields]," ")
 end
 
+
 function metastring(document::D,
                     fields::Vector{Symbol}=DEFAULT_METADATA_FIELDS) where
         {D<: AbstractDocument}
 	metastring(metadata(document), fields)
 end
-
 
 
 ##########################################
@@ -63,9 +64,26 @@ end
 occursin(r::Regex, strings::T) where T<:AbstractArray{<:AbstractString} = 
     any(occursin(r, si) for si in sv);
 
+
 # Overload lowervase function to work with vectors of strings
 lowercase(v::T) where T<:AbstractArray{S} where S<:AbstractString =
     Base.lowercase.(v)
+
+
+function prepare!(input_string::AbstractString, flags::UInt32)
+	_sd = StringDocument(Unicode.normalize(input_string,
+                                           decompose=true,
+                                           compat=true,
+                                           casefold=true,
+                                           stripmark=true,
+                                           stripignore=true,
+                                           stripcc=true))
+	prepare!(_sd, flags)
+	return filter(x::AbstractString -> length(x) > 1,
+	              String.(split(text(_sd))))
+end
+
+
 
 ### # Useful regular expressions
 ### replace.(select(tt2,2),r"([A-Z]\s|[A-Z]\.\s)","")  # replace middle initial 
@@ -92,16 +110,3 @@ lowercase(v::T) where T<:AbstractArray{S} where S<:AbstractString =
 ### 	)
 ### ))	
 ### end
-
-function prepare!(input_string::AbstractString, flags::UInt32)
-	_sd = StringDocument(Unicode.normalize(input_string,
-                                           decompose=true,
-                                           compat=true,
-                                           casefold=true,
-                                           stripmark=true,
-                                           stripignore=true,
-                                           stripcc=true))
-	prepare!(_sd, flags)
-	return filter(x::AbstractString -> length(x) > 1,
-	              String.(split(text(_sd))))
-end
