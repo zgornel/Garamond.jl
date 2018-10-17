@@ -5,7 +5,7 @@ module Garamond
     using DelimitedFiles
     using SparseArrays
     using Distributed
-    using SharedArrays
+    using Base.Threads
     using Statistics: mean
     using DataStructures: Set, MultiDict
     using TextAnalysis, Languages

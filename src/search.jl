@@ -49,10 +49,11 @@ function search(crpra_searcher::CorporaSearcher{T,D,V},
     @assert max_corpus_suggestions >=0
     # Initializations
     n = length(crpra_searcher.searchers)
-    result = SharedVector{CorporaSearchResult{T}}(n)
     max_corpus_suggestions = min(max_suggestions, max_corpus_suggestions)
     # Search
-    @sync @distributed for index in 1:n
+    result_vector = Vector{CorpusSearchResult}(undef, n)
+    id_vector = Vector{T}(undef, n)
+    @threads for index in 1:n
         if crpra_searcher.searchers[index].enabled
             # Get corpus search results
             id, search_result = search(crpra_searcher.searchers[index],
@@ -61,11 +62,20 @@ function search(crpra_searcher::CorporaSearcher{T,D,V},
                                    search_method=search_method,
                                    max_matches=max_matches,
                                    max_suggestions=max_corpus_suggestions)
-            result[index] = search_result
-            # Add corpus search results to the corpora search results
+            result_vector[index] = search_result
+            id_vector[index] = id
+        else
+            result_vector[index] = CorpusSearchResult()
         end
     end
-    #!isempty(result) && update_suggestions!(result, max_suggestions)
+    # Add corpus search results to the corpora search results
+    result = CorporaSearchResult{T}()
+    for i in 1:n
+        if !isempty(result_vector[i])
+            push!(result, id_vector[i]=>result_vector[i])
+        end
+    end
+    !isempty(result_vector) && update_suggestions!(result, max_suggestions)
     return result
 end
 

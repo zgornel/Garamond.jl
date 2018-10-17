@@ -217,7 +217,7 @@ function corpora_searchers(crefs::Vector{CorpusRef{T}};
                            doc_type::Type{D}=DEFAULT_DOC_TYPE) where
         {T<:AbstractId, D<:AbstractDocument}
     n = length(crefs)
-    corpora_searcher = CorporaSearcher(SharedVector{CorpusSearcher{T,D}}(n),
+    corpora_searcher = CorporaSearcher(Vector{CorpusSearcher{T,D}}(undef, n),
                                        Dict{T,Int}())
     for (i, cref) in enumerate(crefs)
         add_searcher!(corpora_searcher, cref, i)
