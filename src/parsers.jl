@@ -52,7 +52,6 @@ function parse_corpora_configuration(filename::AbstractString)
     # and header information (used in parsing the data configuration file for
     # generating a ParserConfig)
     function get_parsing_function(parser_config::Symbol,
-                                  id_type::Type{T},
                                   header::Bool=false) where T<:AbstractId
         PREFIX = :__parser_
         # Construct basic parsing function from parser option value
@@ -62,7 +61,6 @@ function parse_corpora_configuration(filename::AbstractString)
         _config isa Nothing && @error ":$config_name parser configuration not found!"
         # Build parsing function (a nice closure)
         function parsing_function(filename::String,
-                                  id_type::Type{T}=id_type,
                                   doc_type::Type{D}=DEFAULT_DOC_TYPE) where
                 {T<:AbstractId, D<:AbstractDocument}
             return _function(filename,
@@ -74,7 +72,7 @@ function parse_corpora_configuration(filename::AbstractString)
         return parsing_function
     end
     #######
-    crefs = Vector{CorpusRef}()
+    crefs = Vector{CorpusRef{DEFAULT_ID_TYPE}}()
     last_header = false
     last_parser = :indentity
     local last_id_type
@@ -92,35 +90,27 @@ function parse_corpora_configuration(filename::AbstractString)
                 counter+= 1
             elseif occursin("=", _line) && counter > 0
                 # Property assignment (option = value)
-                opt, val = strip.(split(_line, "="))
+                option, value = strip.(split(_line, "="))
                 # Assign value to corpus references
-                if opt == "parser" && !isempty(val)
-                    last_parser = Symbol(val)
+                if option == "parser" && !isempty(value)
+                    last_parser = Symbol(value)
                     crefs[counter].parser =
                         get_parsing_function(last_parser,
-                                             last_id_type,
                                              last_header)
-                elseif opt == "path" && !isempty(val)
-                    crefs[counter].path = val
-                elseif opt == "enabled" && !isempty(val)
-                    crefs[counter].enabled = Bool(Meta.parse(val))
-                elseif opt == "header" && !isempty(val)
-                    last_header = Bool(Meta.parse(val))
+                elseif option == "path" && !isempty(value)
+                    crefs[counter].path = value
+                elseif option == "enabled" && !isempty(value)
+                    crefs[counter].enabled = Bool(Meta.parse(value))
+                elseif option == "header" && !isempty(value)
+                    last_header = Bool(Meta.parse(value))
                     crefs[counter].parser = get_parsing_function(last_parser,
-                                                                 last_id_type,
                                                                  last_header)
-                elseif opt == "term_importance" && !isempty(val)
-                    crefs[counter].termimp = Symbol(val)
-                elseif opt == "id" && !isempty(val)
-                    if startswith(val, "'") && endswith(val, "'")
-                        last_id_type = StringId
-                        val = replace(val, "'"=>"")
-                    else
-                        last_id_type = HashId
-                    end
-                    crefs[counter].id = make_id(last_id_type, val)
-                elseif opt == "heuristic" && !isempty(val)
-                    crefs[counter].heuristic = Symbol(val)
+                elseif option == "term_importance" && !isempty(value)
+                    crefs[counter].termimp = Symbol(value)
+                elseif option == "id" && !isempty(value)
+                    crefs[counter].id = make_id(DEFAULT_ID_TYPE, value)
+                elseif option == "heuristic" && !isempty(value)
+                    crefs[counter].heuristic = Symbol(value)
                 else
                     @warn "Line \"$line\" in $(filename) is not valid. will skip"
                     continue
@@ -172,55 +162,55 @@ function __parser_csv_format_1(filename::AbstractString,
     documents = Vector{doc_type}(undef, nlines)
     documents_meta = Vector{doc_type}(undef, nlines)
     metafields = fieldnames(TextAnalysis.DocumentMetadata)
-    # Parse
-    open(filename, "r") do f
-        # Select and sort the line fields which will be used as
-        # document text in the corpus
-        mask = sort!([k for k in keys(config.data) if config.data[k]])
-        # Progressbar
-        _nl = 10  # number of lines after wihich progress is updated
-        _filename = split(filename,"/")[end]
-        progressbar = Progress(div(nlines, _nl)+1,
-                               desc="Parsing $_filename...",
-                               color=:normal)
+    # Load the file
+    if header
+        string_matrix, _ = readdlm(filename, '\t', String, header=header)
+    else
+        string_matrix = readdlm(filename, '\t', String, header=header)
+    end
+    # Select and sort the line fields which will be used as document text in the corpus
+    mask = sort!([k for k in keys(config.data) if config.data[k]])
+    # Progressbar
+    _nl = 10  # number of lines after wihich progress is updated
+    _filename = split(filename,"/")[end]
+    progressbar = Progress(div(nlines, _nl)+1,
+                           desc="Parsing $_filename...",
+                           color=:normal)
+    @inbounds for il in 1:size(string_matrix,1)
         # Iterate and parse
-        lc = 0  # line counter
-        header && readline(f)  # skip header
-        for line in eachline(f)
-            vline = String.(strip.(split(line, delim, keepempty=false)))
-            lc += 1
-            iszero(mod(lc, _nl)) && next!(progressbar)
-            # Set document data
-            doc = doc_type(join(vline[mask]," "))
-            # Set document metadata
-            for (column, metafield) in config.metadata
-                local _language
-                if metafield in fieldnames(typeof(doc.metadata))
-                    if metafield == :language
-                        _lang = lowercase(vline[column])
-                        try
-                            #_language = STR_TO_LANG[_lang]
-                            # HACK, force Languages.English() as there is little
-                            # reason to use other languages. Preprocessing fails
-                            # as dictionaries are needed
-                            _language = STR_TO_LANG["english"]
-                        catch
-                            @warn "Language $_lang not supported. Using default."
-                            _language = Languages.English()
-                        end
-                        setfield!(doc.metadata, metafield, _language)
-                    else
-                        setfield!(doc.metadata, metafield, lowercase(vline[column]))
+        vline = strip.(view(string_matrix, il, :))
+        iszero(mod(il, _nl)) && next!(progressbar)
+        # Set document data
+        doc = doc_type(join(vline[mask]," "))
+        # Set document metadata
+        metadata_fields = fieldnames(TextAnalysis.DocumentMetadata)
+        for (column, metafield) in config.metadata
+            local _language
+            if metafield in metadata_fields
+                if metafield == :language
+                    _lang = lowercase(vline[column])
+                    try
+                        #_language = STR_TO_LANG[_lang]
+                        # HACK, force Languages.English() as there is little
+                        # reason to use other languages. Preprocessing fails
+                        # as dictionaries are needed
+                        _language = STR_TO_LANG["english"]
+                    catch
+                        @warn "Language $_lang not supported. Using default."
+                        _language = Languages.English()
                     end
+                    setfield!(doc.metadata, metafield, _language)
+                else
+                    setfield!(doc.metadata, metafield, lowercase(vline[column]))
                 end
             end
-            # Create metadata document vector
-            doc_meta = metastring(doc, collect(v for v in values(config.metadata)
-                                               if v in metafields))
-            documents_meta[lc] = doc_type(doc_meta)
-            # Create document vector
-            documents[lc] = doc
         end
+        # Create metadata document vector
+        doc_meta = metastring(doc, collect(v for v in values(config.metadata)
+                                           if v in metafields))
+        documents_meta[il] = doc_type(doc_meta)
+        # Create document vector
+        documents[il] = doc
     end
     # Create and post-process document/document metadata corpora
     crps = Corpus(documents)

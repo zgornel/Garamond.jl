@@ -146,8 +146,12 @@ end
 
 
 getindex(crpra::Corpora{T,D}, key::UInt) where
-        {T<:AbstractId, D<:AbstractDocument} =
+        {T<:HashId, D<:AbstractDocument} =
     crpra[HashId(key)]
+
+getindex(crpra::Corpora{T,D}, key::String) where
+        {T<:StringId, D<:AbstractDocument} =
+    crpra[StringId(key)]
 
 
 delete!(crpra::Corpora{T,D}, key::T) where
@@ -212,8 +216,7 @@ end
 
 
 # Load corpora using a vector of corpus references
-function load_corpora(crefs::Vector{CorpusRef};
-                      id_type::Type{T}=DEFAULT_ID_TYPE,
+function load_corpora(crefs::Vector{CorpusRef{T}};
                       doc_type::Type{D}=DEFAULT_DOC_TYPE) where
         {T<:AbstractId, D<:AbstractDocument}
     crpra = Corpora{T,D}()

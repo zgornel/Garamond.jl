@@ -2,14 +2,15 @@ module Garamond
 
     using Random
     using Unicode
+    using DelimitedFiles
+    using SparseArrays
+    using Statistics: mean  # can be removed if fuzzy matcher is removed
+    using DataStructures: Set, MultiDict
     using TextAnalysis, Languages
     using ConceptnetNumberbatch
     using StringDistances, BKTrees
     using ArgParse
     using ProgressMeter
-    using SparseArrays
-    using Statistics: mean  # can be removed if fuzzy matcher is removed
-    using DataStructures: Set, MultiDict
     ###using LightGraphs, NearestNeighbors, MLKernels
     ###using HttpServer, WebSockets, JSON
     #using JSON

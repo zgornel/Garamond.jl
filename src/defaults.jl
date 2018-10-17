@@ -44,7 +44,7 @@ const METADATA_STRIP_FLAGS = strip_punctuation +
                              strip_case
 
 
-# Dictionaries for String <=>Languages.Language / Languages.Languages <=> String 
+# Dictionaries for String <=>Languages.Language / Languages.Languages <=> String
 # conversion
 const STR_TO_LANG = Dict("english"=>Languages.English(),
                          "french"=>Languages.French(),

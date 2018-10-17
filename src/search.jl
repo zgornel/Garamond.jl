@@ -91,22 +91,23 @@ function search(crps::Corpus{D},
     # Initializations
     n = length(crps)		# Number of documents
     p = length(needles)		# Number of search terms
-    # Search
-    local M
-    if search_type != :all
-        M = search(needles, term_importances[search_type], search_method=search_method)
-    else
-        M = search(needles, term_importances[:index], search_method=search_method) +  # plus
-            search(needles, term_importances[:metadata], search_method=search_method)
-    end
-    # Initializations of matched documents/needles
-    document_scores = zeros(Float64, n)
-    needle_popularity = zeros(Float64, p)
-    @inbounds @simd for j in 1:p
-         for i in 1:n
-            if M[i,j] != 0.0
-                document_scores[i]+= M[i,j]
-                needle_popularity[j]+= M[i,j]
+    # Search metadata and/or index
+    where_to_search = ifelse(search_type==:all,
+                             [:index, :metadata],
+                             [search_type])
+    document_scores = zeros(Float64, n)  # document relevance
+    needle_popularity = zeros(Float64, p)  # needle relevance
+    for wts in where_to_search
+        # search
+        inds = search(needles, term_importances[wts], search_method=search_method)
+        # select term importance vectors
+        M = view(term_importances[wts].values, :, inds)
+        @inbounds @simd for j in 1:p
+             for i in 1:n
+                if M[i,j] != 0.0
+                    document_scores[i]+= M[i,j]
+                    needle_popularity[j]+= M[i,j]
+                end
             end
         end
     end
@@ -152,9 +153,9 @@ function search(needles::Vector{String},
                 search_method::Symbol=:exact) where {T<:AbstractDocument}
     # Initializations
     p = length(needles)
-    V = term_importances.values
     I = term_importances.column_indices
-    m, n = size(V)  # m - no. of documents, n - no. of terms+1
+    V = term_importances.values
+    m, n = size(term_importances.values)  # m - no. of documents, n - no. of terms+1
     inds = fill(n,p)  # default value n i.e. return 0-vector from V
     # Get needle mutating and string matching functions
     if search_method == :exact
@@ -182,7 +183,7 @@ function search(needles::Vector{String},
             end
         end
     end
-    return view(V, :, inds)
+    return inds
 end
 
 
