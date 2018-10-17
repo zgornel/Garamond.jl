@@ -16,6 +16,7 @@ git:
 matrix:
   allow_failures:
   - julia: nightly
+  - os: osx  # travis timing out
 
 codecov: true
 coveralls: true
