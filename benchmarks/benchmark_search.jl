@@ -9,7 +9,7 @@ using BenchmarkTools
 cs = corpora_searchers("./config/.cornel_data")
 
 _id = StringId("biglib")
-_id_disabled = StringId("techlib"); 
+_id_disabled = StringId("techlib");
 ST = :index
 SM = :exact
 needles = ["patteryn", "pattern", "clark", "sade"]
