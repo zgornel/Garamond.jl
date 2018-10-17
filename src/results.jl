@@ -105,7 +105,11 @@ end
 
 # Pretty printer of results
 print_search_results(crpra_searcher::CorporaSearcher, csr::CorporaSearchResult) = begin
-    nt = mapreduce(x->valength(x[2].query_matches), +, csr.corpus_results)
+    if !isempty(csr.corpus_results)
+        nt = mapreduce(x->valength(x[2].query_matches), +, csr.corpus_results)
+    else
+        nt = 0
+    end
     printstyled("$nt search results from $(length(csr.corpus_results)) corpora\n")
     ns = length(csr.suggestions)
     for (id, _result) in csr.corpus_results
