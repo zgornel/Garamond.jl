@@ -1,0 +1,26 @@
+[Fake test dataset 1]
+id=specific_id
+path = /tmp/garamond/test/test_file_1_csv_format_1.tsv
+parser = csv_format_1
+enabled = true
+header = false
+term_importance = tfidf
+heuristic = jaro
+
+[Fake test dataset 2]
+# random id
+path = /tmp/garamond/test/test_file_2_csv_format_1.tsv
+parser = csv_format_1
+enabled = true
+header = false
+term_importance = tf
+heuristic = levenshtein
+
+[Fake test dataset 3]
+id=disabled_id
+path = /tmp/garamond/test/test_file_2_csv_format_1.tsv
+parser = csv_format_1
+enabled = false
+header = false
+term_importance = tfidf
+heuristic = jaro

@@ -2,11 +2,41 @@ using Test
 using Random
 using Garamond
 
-@test true # Do not test anything yet
 
-@testset "Basic test..." begin
 
-    corpora_searcher = corpora_searchers("./data/.test_data_config")
+# Generates test files in temporary directory
+function generate_test_files(parser_config::Symbol)
+    # Make directories
+    tmp_path = tempdir()
+    test_filepath = abspath(joinpath(tmp_path, "garamond", "test"))
+    mkpath(test_filepath)
+    # Test for parser configuration option
+    if parser_config == :csv_config_1
+        nlines = rand([100, 300, 500], 3)  # 3 files, hard fixed by config
+        for i in 1:length(nlines)
+            filename = joinpath(test_filepath, "test_file_$(i)_csv_format_1.tsv")
+            open(filename, "w") do fid
+                for _ in 1:nlines[i]
+                    line = join([randstring(rand(1:10)) for _ in 1:10],"\t")*"\n"
+                    write(fid, line)
+                end
+            end
+        end
+    else
+        @error "Unknown config"
+    end
+    return test_filepath
+end
+
+
+
+@testset "Basic test... (csv_format_1)" begin
+    # Generate test files
+    test_filepath = generate_test_files(:csv_config_1)
+    # Create corpora searches
+    # TODO(Corneliu): write config as well
+    corpora_searcher = corpora_searchers("./test_configurations/.test_data_config")
+    # Initialize search parameters
     _id = StringId("specific_id")
     _id_disabled = "disabled_id"
     ST = [:index, :metadata, :all]
@@ -28,8 +58,11 @@ using Garamond
                     @test true
                 catch
                     @test false
+                    rm(test_filepath, recursive=true, force=true)
                 end
             end
         end
     end
+    # Cleanup
+    rm(test_filepath, recursive=true, force=true)
 end
