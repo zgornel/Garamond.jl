@@ -76,7 +76,7 @@ function search(crpra_searcher::CorporaSearcher{T,D,V},
             push!(result, id_vector[i]=>result_vector[i])
         end
     end
-    !isempty(result_vector) && update_suggestions!(result, max_suggestions)
+    squash_suggestions!(result, max_suggestions)
     return result
 end
 

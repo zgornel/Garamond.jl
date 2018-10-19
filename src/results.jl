@@ -142,8 +142,8 @@ function push!(csr::CorporaSearchResult{T},
 end
 
 
-# Update suggestions for multiple corpora search results
-function update_suggestions!(csr::CorporaSearchResult{T},
+# Squash suggestions for multiple corpora search results
+function squash_suggestions!(csr::CorporaSearchResult{T},
                              max_suggestions::Int=1) where T<:AbstractId
     # Quickly exit if no suggestions are sought
     max_suggestions <=0 && return MultiDict{String, String}()
@@ -161,30 +161,32 @@ function update_suggestions!(csr::CorporaSearchResult{T},
                                     for _result in corpus_results)...)
         # Construct suggestions for the whole CorporaSearcher
         for needle in missed_needles
-            _tmpvec = Vector{Tuple{Float64,String}}()
+            needle_suggestions_corpora = Vector{Tuple{Float64,String}}()
             for _result in corpus_results
                 if haskey(_result.suggestions, needle) &&
                    !(any(suggestion in matched_needles
                          for (_, suggestion) in _result.suggestions[needle]))
                    # Current key was not found and the suggestions
                    # for it are not found in the matched needles
-                    _tmpvec = vcat(_tmpvec, _result.suggestions[needle])
+                   union!(needle_suggestions_corpora,
+                          _result.suggestions[needle])
                 end
             end
-            if !isempty(_tmpvec)
-                sort!(_tmpvec, by=x->x[1])  # sort vector of tuples by distance
+            if !isempty(needle_suggestions_corpora)
+                sort!(needle_suggestions_corpora, by=x->x[1])  # sort vector of tuples by distance
                 # Keep results with the same distance even if the number is
                 # larger than the maximum
-                n = min(max_suggestions, length(_tmpvec))
+                n = min(max_suggestions, length(needle_suggestions_corpora))
                 nn = 0
                 d = -1.0
-                for (i, (dist, _)) in enumerate(_tmpvec)
+                for (i, (dist, _)) in enumerate(needle_suggestions_corpora)
                     if i <= n || d == dist
                         d = dist
                         nn = i
                     end
                 end
-                push!(csr.suggestions, needle=>map(x->x[2],_tmpvec)[1:nn])
+                push!(csr.suggestions,
+                      needle=>map(x->x[2], needle_suggestions_corpora)[1:nn])
             end
         end
     else
