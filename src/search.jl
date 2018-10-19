@@ -51,28 +51,25 @@ function search(crpra_searcher::CorporaSearcher{T,D,V},
     n = length(crpra_searcher.searchers)
     max_corpus_suggestions = min(max_suggestions, max_corpus_suggestions)
     # Search
-    result_vector = Vector{CorpusSearchResult}(undef, n)
-    id_vector = Vector{T}(undef, n)
-    @threads for index in 1:n
-        if crpra_searcher.searchers[index].enabled
+    result_vector = [CorpusSearchResult() for _ in 1:n]
+    id_vector = [random_id(T) for _ in 1:n]
+    @threads for i in 1:n
+        if crpra_searcher.searchers[i].enabled
             # Get corpus search results
-            id, search_result = search(crpra_searcher.searchers[index],
+            id, search_result = search(crpra_searcher.searchers[i],
                                    needles,
                                    search_type=search_type,
                                    search_method=search_method,
                                    max_matches=max_matches,
                                    max_suggestions=max_corpus_suggestions)
-            result_vector[index] = search_result
-            id_vector[index] = id
-        else
-            result_vector[index] = CorpusSearchResult()
-            id_vector[index] = random_id(T)
+            result_vector[i] = search_result
+            id_vector[i] = id
         end
     end
     # Add corpus search results to the corpora search results
     result = CorporaSearchResult{T}()
     for i in 1:n
-        if !isempty(result_vector[i])
+        if crpra_searcher.searchers[i].enabled
             push!(result, id_vector[i]=>result_vector[i])
         end
     end
