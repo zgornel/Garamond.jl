@@ -29,9 +29,8 @@ module Garamond
     using StringDistances, BKTrees
     using ArgParse
     using ProgressMeter
-    ###using LightGraphs, NearestNeighbors, MLKernels
+    using LightGraphs, NearestNeighbors, MLKernels
     ###using HttpServer, WebSockets, JSON
-    #using JSON
 
     import Base: show, keys, values, push!, delete!, getindex,
            names, convert, lowercase, occursin, isempty

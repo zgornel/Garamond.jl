@@ -16,6 +16,12 @@ git-tree-sha1 = "37159c768f28ae52ef9af1e70669d25a68ba7d61"
 uuid = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"
 version = "0.6.1"
 
+[[ArnoldiMethod]]
+deps = ["DelimitedFiles", "LinearAlgebra", "Pkg", "Random", "SparseArrays", "StaticArrays", "Test"]
+git-tree-sha1 = "2b6845cea546604fb4dca4e31414a6a59d39ddcd"
+uuid = "ec485272-7323-5ecc-a04f-4719b315124d"
+version = "0.0.4"
+
 [[BKTrees]]
 deps = ["DataStructures", "Pkg", "Random", "Test"]
 git-tree-sha1 = "85fea78936ddf31e24b08a3151eb996ddbd2479e"
@@ -43,11 +49,29 @@ git-tree-sha1 = "9930c1a6cd49d9fcd7218df6be417e6ae4f1468a"
 uuid = "b99e7846-7c00-51b0-8f62-c81ae34c0232"
 version = "0.5.2"
 
+[[Blosc]]
+deps = ["BinaryProvider", "CMakeWrapper", "Compat", "Libdl"]
+git-tree-sha1 = "71fb23581e1f0b0ae7be8ccf0ebfb3600e23ca41"
+uuid = "a74b3585-a348-5f62-a45c-50e91977d574"
+version = "0.5.1"
+
 [[BufferedStreams]]
 deps = ["Compat", "Pkg", "Test"]
 git-tree-sha1 = "5d55b9486590fdda5905c275bb21ce1f0754020f"
 uuid = "e1450e63-4bb3-523b-b2a4-4ffa8c0fd77d"
 version = "1.0.0"
+
+[[CMake]]
+deps = ["BinDeps", "Libdl", "Pkg", "Test"]
+git-tree-sha1 = "74853a75c26a4a73ac391ee26ee29ebeb5583d9f"
+uuid = "631607c0-34d2-5d66-819e-eb0f9aa2061a"
+version = "1.1.0"
+
+[[CMakeWrapper]]
+deps = ["BinDeps", "CMake", "Libdl", "Parameters", "Pkg", "Test"]
+git-tree-sha1 = "2b43d451639984e3571951cc687b8509b0a86c6d"
+uuid = "d5fb7624-851a-54ee-a528-d3f3bac0b4a0"
+version = "0.2.2"
 
 [[CategoricalArrays]]
 deps = ["Compat", "Future", "JSON", "Missings", "Printf", "Reexport"]
@@ -84,6 +108,14 @@ deps = ["Base64", "Dates", "DelimitedFiles", "Distributed", "InteractiveUtils", 
 git-tree-sha1 = "2d9e14d19bad3f9ad5cc5e4cffabc3cfa59de825"
 uuid = "34da2185-b29b-5c13-b0c7-acf172513d20"
 version = "1.3.0"
+
+[[ConceptnetNumberbatch]]
+deps = ["CodecZlib", "HDF5", "Languages", "NearestNeighbors", "StringDistances", "Test", "TranscodingStreams"]
+git-tree-sha1 = "98e3b295b2487c2e179bc638c34bfec04a0bfb6a"
+repo-rev = "latest"
+repo-url = "https://github.com/zgornel/ConceptnetNumberbatch.jl"
+uuid = "2d1d9008-b762-11e8-11f1-375fdd6dca71"
+version = "0.1.0"
 
 [[DataFrames]]
 deps = ["CategoricalArrays", "CodecZlib", "Compat", "DataStreams", "Dates", "InteractiveUtils", "IteratorInterfaceExtensions", "LinearAlgebra", "Missings", "Pkg", "Printf", "Random", "Reexport", "SortingAlgorithms", "Statistics", "StatsBase", "TableTraits", "Tables", "Test", "TranscodingStreams", "Unicode", "WeakRefStrings"]
@@ -155,11 +187,29 @@ version = "0.10.0"
 deps = ["Random"]
 uuid = "9fa8497b-333b-5362-9e8d-4d0656e87820"
 
+[[HDF5]]
+deps = ["BinDeps", "Blosc", "Distributed", "Homebrew", "Libdl", "LinearAlgebra", "Mmap", "Pkg", "Test", "WinRPM"]
+git-tree-sha1 = "8c3bcdb44db436cd20106e2381e1c1ac96aa0ee3"
+uuid = "f67ccb44-e63f-5c2f-98bd-6dc0ccc4ba2f"
+version = "0.10.2"
+
 [[HTTPClient]]
 deps = ["Compat", "LibCURL"]
 git-tree-sha1 = "161d5776ae8e585ac0b8c20fb81f17ab755b3671"
 uuid = "0862f596-cf2d-50af-8ef4-f2be67dfa83f"
 version = "0.2.1"
+
+[[Homebrew]]
+deps = ["BinDeps", "InteractiveUtils", "JSON", "Libdl", "Test", "Unicode"]
+git-tree-sha1 = "5582ec74f735cf8d12e562a2e65c47f34063bd51"
+uuid = "d9be37ee-ecc9-5288-90f1-b9ca67657a75"
+version = "0.7.0"
+
+[[Inflate]]
+deps = ["Pkg", "Printf", "Random", "Test"]
+git-tree-sha1 = "b7ec91c153cf8bff9aff58b39497925d133ef7fd"
+uuid = "d25df0c9-e2be-5dd7-82c8-3ad0b3e990b9"
+version = "0.1.1"
 
 [[InteractiveUtils]]
 deps = ["LinearAlgebra", "Markdown"]
@@ -219,12 +269,26 @@ git-tree-sha1 = "d405194ffc0293c3519d4f7251ce51baac9cc871"
 uuid = "2ec943e9-cfe8-584d-b93d-64dcb6d567b7"
 version = "1.0.0"
 
+[[LightGraphs]]
+deps = ["ArnoldiMethod", "Base64", "DataStructures", "DelimitedFiles", "Distributed", "Inflate", "LinearAlgebra", "Markdown", "Pkg", "Random", "SharedArrays", "SimpleTraits", "SparseArrays", "Statistics", "Test"]
+git-tree-sha1 = "c7222c370d5cf6d4e08ae40bddd8c0db6852dfb1"
+uuid = "093fc24a-ae57-5d10-9952-331d41423f4d"
+version = "1.2.0"
+
 [[LinearAlgebra]]
 deps = ["Libdl"]
 uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 
 [[Logging]]
 uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
+
+[[MLKernels]]
+deps = ["LinearAlgebra", "SpecialFunctions", "Statistics", "Test"]
+git-tree-sha1 = "caae621fdb2061483c57311d37c9dc4cbe97920e"
+repo-rev = "master"
+repo-url = "https://github.com/trthatcher/MLKernels.jl.git"
+uuid = "48eadcf2-8ff1-11e8-289d-f103432a0bb3"
+version = "0.4.0"
 
 [[MacroTools]]
 deps = ["Compat"]
@@ -263,6 +327,12 @@ git-tree-sha1 = "ce3b85e484a5d4c71dd5316215069311135fa9f2"
 uuid = "77ba4419-2d1f-58cd-9bb1-8ffee604a2e3"
 version = "0.3.2"
 
+[[NearestNeighbors]]
+deps = ["Distances", "LinearAlgebra", "Mmap", "Pkg", "StaticArrays", "Test"]
+git-tree-sha1 = "aab46b96ae5c2a9c08146188016d6312276094e5"
+uuid = "b8a86587-4115-5ab1-83bc-aa920d37bbce"
+version = "0.4.2"
+
 [[OrderedCollections]]
 deps = ["Pkg", "Random", "Serialization", "Test"]
 git-tree-sha1 = "85619a3f3e17bb4761fe1b1fd47f0e979f964d5b"
@@ -274,6 +344,12 @@ deps = ["ArgParse", "Libdl", "Pkg", "Serialization", "SnoopCompile", "Test", "Wi
 git-tree-sha1 = "58ae9646b6a25bb2ebd1ed1e74e22aa02375c3a7"
 uuid = "9b87118b-4619-50d2-8e1e-99f35a4d4d9d"
 version = "0.5.0"
+
+[[Parameters]]
+deps = ["Markdown", "OrderedCollections", "Pkg", "REPL", "Test"]
+git-tree-sha1 = "40f540ec96e50c0b2b9efdb11b5e4d0c63f90923"
+uuid = "d96e819e-fc66-5662-9728-84c9c7592b0a"
+version = "0.10.1"
 
 [[Pkg]]
 deps = ["Dates", "LibGit2", "Markdown", "Printf", "REPL", "Random", "SHA", "UUIDs"]
@@ -322,6 +398,12 @@ uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
 [[SharedArrays]]
 deps = ["Distributed", "Mmap", "Random", "Serialization"]
 uuid = "1a1011a3-84de-559e-8e89-a11a2f7dc383"
+
+[[SimpleTraits]]
+deps = ["InteractiveUtils", "MacroTools", "Pkg", "Test"]
+git-tree-sha1 = "c0a542b8d5e369b179ccd296b2ca987f6da5da0a"
+uuid = "699a6c99-e7fa-54fc-8d76-47d257e15c1d"
+version = "0.8.0"
 
 [[SnoopCompile]]
 deps = ["Pkg", "Serialization", "Test"]
