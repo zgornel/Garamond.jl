@@ -79,7 +79,7 @@ module Garamond
     include("results.jl")
     include("search.jl")
     include("cmdline.jl")
+    include("semantic_search.jl")
     ###include("servers.jl")
-    ###include("word_model_utils.jl")
 
 end # module
