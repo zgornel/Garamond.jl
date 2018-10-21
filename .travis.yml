@@ -18,5 +18,8 @@ matrix:
   - julia: nightly
   - os: osx  # travis timing out
 
-codecov: true
-coveralls: true
+#codecov: true
+#coveralls: true
+after_success:
+  # push coverage results to Coveralls
+  - julia -e '(VERSION >= v"0.7" && using Pkg); Pkg.add("Coverage"); cd(Pkg.dir("Garamond")); using Coverage; Coveralls.submit(process_folder()); Codecov.submit(process_folder())'
