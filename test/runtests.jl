@@ -35,7 +35,10 @@ end
     test_filepath = generate_test_files(:csv_config_1)
     # Create corpora searches
     # TODO(Corneliu): write config as well
-    corpora_searcher = corpora_searchers("./test_configurations/.test_data_config")
+    config_filepath = abspath(joinpath(@__DIR__,
+                                       "test_configurations",
+                                       ".test_data_config"))
+    corpora_searcher = corpora_searchers(config_filepath)
     # Initialize search parameters
     _id = StringId("specific_id")
     _id_disabled = "disabled_id"

@@ -25,7 +25,6 @@ module Garamond
     using Statistics: mean
     using DataStructures: Set, MultiDict
     using TextAnalysis, Languages
-    using ConceptnetNumberbatch
     using StringDistances, BKTrees
     using ArgParse
     using ProgressMeter
