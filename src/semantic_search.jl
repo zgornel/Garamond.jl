@@ -1,136 +1,205 @@
+#TODO(Corneliu) EmbeddedDocument Interface
+#   - EmbeddedDocument <:AbstractDocument
+#   - two fiedls: metadata and embeddings (a single vector of numbers)
+#   - constructor: EmbeddedDocument(<:ConceptNet, (string/tokens/ngrams), embedding_method::Symbol
+#   - methods to convert any existing AbstractDocument to EmbeddedDocument
+#   - A corpus of N embedded documents can be dumped as a vector of metadata and a matrix N×m (m - embedding dim)
+#   - Semantic search in this case would embed the query (using embedding_method)
+#     and multiply it by the matrix: N×m⋅m×1 --> a vector N×1 which after sorting represents the matches
+# ------------------------------------------------------------------------------------------------------------
+#
+# Things to investigate here:
+#  - methods to construct the embedding for a Document
+#  - methods to get as many words as possible given the fact that mispellings may occur
+#  - what words can be safely removed from document/metadata/query without losing match quality
+#  - performance increases through dimensionality reduction and using SparseArrays with vector component
+#    clamping and renormalization
+
+
+# Searcher structures
+mutable struct SemanticCorpusSearcher{T<:AbstractId,
+                                      D<:AbstractDocument,
+                                      U<:AbstractVector} <: AbstractSearcher
+    id::T
+    enabled::Bool
+    ref::CorpusRef{T}
+    embeddings::Dict{Symbol, Vector{U}}
+end
+
+show(io::IO, semantic_corpus_searcher::SemanticCorpusSearcher{T,D,U}) where
+        {T<:AbstractId, D<:AbstractDocument, U<:AbstractVector} = begin
+    printstyled(io, "SemanticCorpusSearcher{$T,$D,$U}, ")
+    printstyled(io, "[$(semantic_corpus_searcher.id)] ", color=:cyan)
+    _status = ifelse(semantic_corpus_searcher.enabled, "Enabled", "Disabled")
+    _status_color = ifelse(semantic_corpus_searcher.enabled, :light_green, :light_black)
+    printstyled(io, "[$_status] ", color=_status_color)
+    printstyled(io, "$(semantic_corpus_searcher.ref.name)", color=:normal)
+    printstyled(io, ", $(length(semantic_corpus_searcher.corpus)) documents\n")
+end
+
+
+mutable struct SemanticCorporaSearcher{T,D,U,
+        V<:AbstractVector{SemanticCorpusSearcher{T,D,U}}} <: AbstractSearcher
+    searchers::V
+    idmap::Dict{T, Int}
+end
+
+
+show(io::IO, semantic_corpora_searcher::SemanticCorporaSearcher) = begin
+    printstyled(io, "$(length(semantic_corpora_searcher.searchers))"*
+                "-element SemanticCorporaSearcher:\n")
+    for (id, idx) in semantic_corpora_searcher.idmap
+        print(io, "`-", semantic_corpora_searcher.searchers[idx])
+    end
+end
 
 
 
+# Function to create a semantic search structure from corpus refs' similar to corpora_searchers
+function semantic_corpora_searchers(filename::AbstractString)
+    crefs = parse_corpora_configuration(filename)
+    cptnet = load_embeddings("../_conceptnet/mini.h5",
+                             languages=[Languages.English()])
+    semantic_corpora_searchers(crefs, cptnet)
+end
 
-### function find_cluster_mean(clmodel, model, treemodel, word::String, n::Int)  
-### 	# Get word cluster
-### 	c::Int = get_cluster(clmodel, word)
-### 
-###         # Calculate cluster mean
-### 	vc = Vector{Float64}(size(model.vectors,1))
-### 	cc::Vector{Int} = clmodel.clusters
-### 	mask = falses(vc)
-### 	mask = cc .== c
-### 	vc = vec(mean(view(model.vectors,:, mask),2))
-### 
-### 	# Return most similar word to mean cluster
-### 	idx, _ = knn(treemodel, vc, n+1, true)
-### 	return model.vocab[idx[1:end]]
-### end
-### 
-### 
-### 
-### function get_cluster_matrix!(Mc, clmodel, model)
-### 	# Pre-allocate
-### 	uc = unique(clmodel.clusters)
-### 
-### 	# Fill matrix with mean vector of every cluster
-### 	for (i,ic) in enumerate(uc)
-### 		mask = clmodel.clusters .== ic
-### 		Mc[:,i] = mean(view(model.vectors, :,mask),2)
-### 	end
-### 	return Mc
-### end
-### 
-### function get_cluster_matrix(clmodel, model)
-### 	m = size(model.vectors,1)
-### 	n = length(unique(clmodel.clusters))
-### 	Mc = zeros(m,n)
-### 	get_cluster_matrix!(Mc, clmodel, model)
-### 	return Mc
-### end
-### 
-### 
-### 
-### function find_close_clusters(clmodel, model, word, n)
-### 	# Find mean of all clusters
-### 	m = size(model.vectors,1)
-### 	uc = unique(clmodel.clusters)
-### 	mcm = zeros(m, length(uc))
-### 	get_cluster_matrix!(mcm, clmodel, model)
-### 	
-### 	# Find closest clusters
-### 	wm = Matrix(get_vector(model, word)')'
-### 	close_clusters = sortperm(vec(pairwise(Euclidean(), mcm, wm)))
-### 	return uc[close_clusters[1:n]]
-### end
-### 
-### 
-### function path(clmodel, model, fv, Mc, word1, word2; κ::Float64=1.0, δ::Int=1 )
-### 	#Mc = get_cluster_matrix(clmodel,model)
-### 	D = 1-(MLKernels.kernelmatrix(MLKernels.ColumnMajor(),MLKernels.LinearKernel(), Mc)-1.0);
-### 	minD = minimum(D)
-### 	maxD = maximum(D)
-### 	D = (D.-minD)./(maxD-minD)
-### 	D[D.<=κ] = 0
-### 	G = Graph(D)
-### 	src_c = get_cluster(clmodel,word1)
-### 	dst_c = get_cluster(clmodel,word2)
-### 	if src_c == dst_c 
-### 		info("Words in the same cluster.")
-### 		path = [src_c]
-### 		return nothing
-### 	else
-### 		@time path_graph = LightGraphs.a_star(G, src_c, dst_c, D)
-### 	end
-### 
-### 	if isempty(path_graph)
-### 		info("No connection found.")
-### 	else
-### 		nv = length(path_graph)
-### 		path = Vector{Int}(nv+1)
-### 		path[1] = path_graph[1].src
-### 		if nv > 1
-### 			for i in 2:length(path_graph)
-### 				path[i] = path_graph[i].src
-### 			end
-### 		end
-### 		path[end] = path_graph[end].dst
-### 		# Print path
-### 		println("[BEGIN] $word1 --\\")
-### 		t = "\t"
-### 		for cl in path
-### 			pos_cl = find(clmodel.clusters .== cl)
-### 			descriptors = model.vocab[pos_cl][sortperm(fv[pos_cl],rev=true)]
-### 			#descriptors = filter(x->!isupper(x[1]), descriptors)
-### 			println("$t [$cl] --> $(descriptors[1:min(δ, length(descriptors))])")
-### 			t*="\t"
-### 		end
-### 		println("$t [END] \\--$word2")
-### 	end
-### 	return nothing
-### end
-### 
-### 
-### 
-### 
-### 
-### 
-### #freqs = zeros(Int,length(model.vocab));
-### #for i in 1:length(model.vocab)
-### #	freqs[i] = try getindex(frequencies, model.vocab[i]) catch 0 end
-### #	#@show i
-### #end
-### 
-### 
-### # Example
-### #
-### #kandinsky_clusters = find_close_clusters(clmodel, model, "Kandinsky", 5)^C
-### #
-### #for cl in kandinsky_clusters
-### #	pos_cl = find(clmodel.clusters .== cl)
-### #	descriptors = model.vocab[pos_cl][sortperm(freqs[pos_cl],rev=true)]
-### #	descriptors = filter(x->!isupper(x[1]), descriptors)[1:5]
-### #	println("Cluster $cl, descriptor: $descriptors")
-### #end
-### #"""
-### 
-### # Functional example for word vector path finding:
-### # 1-billion-words folder
-### #using NearestNeighbors
-### #wv_model = wordvectors("./model_skipgram_wordvectors_1bil_words",kind=:text);
-### #wc_model = wordclusters("./model_skipgram_wordclusters_500_1bil_words");
-### #tree_model = KDTree(wv_model.vectors);
-### #fv = open(deserialize, "./frequencies_processed.bin");
-### #Mc = Garamond.get_cluster_matrix(wc_model, wv_model)
-### #Garamond.path(wc_model, wv_model, fv, Mc, "jesus", "Kubrick", κ=.3, δ = 15)
+function semantic_corpora_searchers(crefs::Vector{CorpusRef{T}},
+                                    cptnet::ConceptNet{L,K,U};
+                                    doc_type::Type{D}=DEFAULT_DOC_TYPE) where
+        {T<:AbstractId, D<:AbstractDocument, L<:Languages.Language,
+         K<:AbstractString, U<:AbstractVector}
+    n = length(crefs)
+    semantic_corpora_searcher = SemanticCorporaSearcher(
+        Vector{SemanticCorpusSearcher{T,D,U}}(), Dict{T,Int}())
+    for (i, cref) in enumerate(crefs)
+        add_semantic_searcher!(semantic_corpora_searcher, cref, cptnet, i)
+    end
+	return corpora_searcher
+end
+
+
+function get_document_embedding(cptnet::ConceptNet{L,K,U}, doc::NGramDocument) where
+        {L<:Languages.Language, K<:AbstractString, U<:AbstractVector}
+    # Function to get from multiple word-embeddings to a document embedding
+    function squash_embeddings(embs::Matrix)
+        tmp = vec(mean(embs,2))
+    end
+    doc_embs = embed_document(cptnet,
+                              collect(keys(doc.ngrams)),
+                              keep_size=false,
+                              max_compound_word_length=1,
+                              search_mismatches=:no,
+                              show_words=false)
+    # Return embeddings
+    embedding = squash_embeddings(doc_embs)
+    return embedding
+end
+
+function add_semantic_searcher!(semantic_corpora_searcher, cref,
+                                cptnet::ConceptNet{L,K,U}, index::Int) where
+        {L<:Languages.Language, K<:AbstractString, U<:AbstractVector}
+    # Parse file
+    crps, crps_meta = cref.parser(cref.path)
+    # get id
+    id = cref.id
+    # Prepare
+    prepare!(crps, TEXT_STRIP_FLAGS)
+    prepare!(crps_meta, METADATA_STRIP_FLAGS)
+    ### # Update lexicons
+    ### update_lexicon!(crps)
+    ### update_lexicon!(crps_meta)
+    ### # Update inverse indices
+    ### update_inverse_index!(crps)
+    ### update_inverse_index!(crps_meta)
+    
+    _scs = SemanticCorpusSearcher(id,
+                                  cref.enabled,
+                                  cref,
+                                  Dict{Symbol, Vector{U}}()
+                                 )
+    # Update CorpusSearcher
+    push!(_scs.embeddings, :index=>[get_document_embedding(cptnet, doc)
+                                    for doc in crps])
+    push!(_scs.embeddings, :metadata=>[get_document_embedding(cptnet, doc)
+                                       for doc in crps_meta])
+end
+
+
+# Function that searches a query through the semantic search structures
+function search(semantic_crpra_searcher::SemanticCorporaSearcher{T,D,V},
+                query::AbstractString;
+                search_type::Symbol=DEFAULT_SEARCH_TYPE,
+                max_matches::Int=DEFAULT_MAX_MATCHES) where
+        {T<:AbstractId, D<:AbstractDocument, V<:AbstractVector}
+    # Checks
+    @assert search_type in [:index, :metadata, :all]
+    @assert max_matches >= 0
+    # Initializations
+    n = length(semantic_crpra_searcher.searchers)
+    max_corpus_suggestions = min(max_suggestions, max_corpus_suggestions)
+    # Search
+    result_vector = [SemanticCorpusSearchResult() for _ in 1:n]
+    id_vector = [random_id(T) for _ in 1:n]
+    @threads for i in 1:n
+        if semantic_crpra_searcher.searchers[i].enabled
+            # Get corpus search results
+            id, search_result = search(semantic_crpra_searcher.searchers[i],
+                                       query,
+                                       cptnet,
+                                       search_type=search_type,
+                                       max_matches=max_matches)
+            result_vector[i] = search_result
+            id_vector[i] = id
+        end
+    end
+    # Add corpus search results to the corpora search results
+    result = CorporaSearchResult{T}()
+    for i in 1:n
+        if semantic_crpra_searcher.searchers[i].enabled
+            push!(result, id_vector[i]=>result_vector[i])
+        end
+    end
+    return result
+end
+
+function search(semantic_crps_searcher::SemanticCorpusSearcher{T,D},
+                query::AbstractString,
+                search_type::Symbol=:metadata,
+                max_matches::Int=10,
+               ) where {T<:AbstractId, D<:AbstractDocument}
+    # Initializations
+    n = length(semantic_crps_searcher.corpus)    # number of documents
+    # Search metadata and/or index
+    where_to_search = ifelse(search_type==:all,
+                             [:index, :metadata],
+                             [search_type])
+    document_scores = zeros(Float64, n)     # document relevance
+    _query = get_document_embedding(cptnet, query)
+    for wts in where_to_search
+        # search
+        document_scores += search(_query, semantic_crps_searcher.embeddings[wts])
+    end
+    # Process documents found (sort by score)
+    documents_ordered::Vector{Tuple{Float64, Int}} =
+        [(score, i) for (i, score) in enumerate(document_scores) if score > 0]
+    sort!(documents_ordered, by=x->x[1], rev=true)
+    query_matches = MultiDict{Float64, Int}()
+    @inbounds for i in 1:min(max_matches, length(documents_ordered))
+        push!(query_matches, document_scores[documents_ordered[i][2]]=>
+                             documents_ordered[i][2])
+    end
+    # Get suggestions
+    suggestions = MultiDict{String, Tuple{Float64, String}}()
+    needle_matches = Dict{String, Float64}()
+    return semantic_crps_searcher.id, CorpusSearchResult(query_matches, needle_matches, suggestions)
+end
+
+
+function search(query, embeddings)
+    n = length(embeddings)
+    similarity = Vector{Float64}(undef, n)
+    for (i, doc_embedding) in embeddings
+        similarity[i] = query'*doc_embedding
+    end
+    return similarity
+end

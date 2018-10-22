@@ -110,8 +110,8 @@ uuid = "34da2185-b29b-5c13-b0c7-acf172513d20"
 version = "1.3.0"
 
 [[ConceptnetNumberbatch]]
-deps = ["CodecZlib", "HDF5", "Languages", "NearestNeighbors", "StringDistances", "Test", "TranscodingStreams"]
-git-tree-sha1 = "98e3b295b2487c2e179bc638c34bfec04a0bfb6a"
+deps = ["CodecZlib", "HDF5", "Languages", "StringDistances", "Test", "TranscodingStreams"]
+git-tree-sha1 = "eedf7d22d633f1892d95f5a905cf54d6c9f02b7b"
 repo-rev = "latest"
 repo-url = "https://github.com/zgornel/ConceptnetNumberbatch.jl"
 uuid = "2d1d9008-b762-11e8-11f1-375fdd6dca71"
