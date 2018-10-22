@@ -21,6 +21,7 @@ mutable struct SemanticCorpusSearcher{T<:AbstractId,
                                       D<:AbstractDocument,
                                       U<:AbstractVector} <: AbstractSearcher
     id::T
+    corpus::Corpus{D}
     enabled::Bool
     ref::CorpusRef{T}
     embeddings::Dict{Symbol, Vector{U}}
@@ -38,9 +39,8 @@ show(io::IO, semantic_corpus_searcher::SemanticCorpusSearcher{T,D,U}) where
 end
 
 
-mutable struct SemanticCorporaSearcher{T,D,U,
-        V<:AbstractVector{SemanticCorpusSearcher{T,D,U}}} <: AbstractSearcher
-    searchers::V
+mutable struct SemanticCorporaSearcher{T,D,U}
+    searchers::Vector{SemanticCorpusSearcher{T,D,U}}
     idmap::Dict{T, Int}
 end
 
@@ -56,36 +56,39 @@ end
 
 
 # Function to create a semantic search structure from corpus refs' similar to corpora_searchers
-function semantic_corpora_searchers(filename::AbstractString)
+function semantic_corpora_searchers(filename::AbstractString,
+                                    cptnetpath::AbstractString;
+                                    languages=[Languages.English()])
     crefs = parse_corpora_configuration(filename)
-    cptnet = load_embeddings("../_conceptnet/mini.h5",
-                             languages=[Languages.English()])
+    cptnet = ConceptnetNumberbatch.load_embeddings(cptnetpath, languages=languages)
     semantic_corpora_searchers(crefs, cptnet)
 end
 
 function semantic_corpora_searchers(crefs::Vector{CorpusRef{T}},
-                                    cptnet::ConceptNet{L,K,U};
+                                    conceptnet::ConceptNet{L,K,U};
                                     doc_type::Type{D}=DEFAULT_DOC_TYPE) where
         {T<:AbstractId, D<:AbstractDocument, L<:Languages.Language,
          K<:AbstractString, U<:AbstractVector}
     n = length(crefs)
     semantic_corpora_searcher = SemanticCorporaSearcher(
-        Vector{SemanticCorpusSearcher{T,D,U}}(), Dict{T,Int}())
+        Vector{SemanticCorpusSearcher{T,D,U}}(undef, n), Dict{T,Int}())
     for (i, cref) in enumerate(crefs)
-        add_semantic_searcher!(semantic_corpora_searcher, cref, cptnet, i)
+        semantic_corpora_searcher.searchers[i] = semantic_corpus_searcher(cref, conceptnet)
+        push!(semantic_corpora_searcher.idmap, cref.id=>i)
     end
-	return corpora_searcher
+	return semantic_corpora_searcher
 end
 
 
-function get_document_embedding(cptnet::ConceptNet{L,K,U}, doc::NGramDocument) where
+# Function to get from multiple word-embeddings to a document embedding
+function get_document_embedding(conceptnet::ConceptNet{L,K,U}, doc) where
         {L<:Languages.Language, K<:AbstractString, U<:AbstractVector}
-    # Function to get from multiple word-embeddings to a document embedding
-    function squash_embeddings(embs::Matrix)
-        tmp = vec(mean(embs,2))
-    end
-    doc_embs = embed_document(cptnet,
-                              collect(keys(doc.ngrams)),
+    preprocess(doc::NGramDocument) = collect(keys(doc.ngrams))
+    preprocess(doc::StringDocument) = doc.text
+    preprocess(doc::AbstractString) = doc
+    _doc = preprocess(doc)
+    doc_embs = embed_document(conceptnet,
+                              _doc,
                               keep_size=false,
                               max_compound_word_length=1,
                               search_mismatches=:no,
@@ -95,13 +98,26 @@ function get_document_embedding(cptnet::ConceptNet{L,K,U}, doc::NGramDocument) w
     return embedding
 end
 
-function add_semantic_searcher!(semantic_corpora_searcher, cref,
-                                cptnet::ConceptNet{L,K,U}, index::Int) where
+function squash_embeddings(embs::Matrix{N}) where N<:Real
+    # Post-processing functions
+    postprocess(v::Vector, ::Type{T}) where T<:Integer = T.(round.(v))
+    postprocess(v::Vector, ::Type{T}) where T<:AbstractFloat = T.(v)
+
+    # Calculate document embedding
+    ##############################
+    if size(embs, 2) == 0
+        mv = zeros(N, size(embs,1))
+    else
+        mv = vec(mean(embs, dims=2))
+    end
+    return postprocess(mv, N)
+end
+
+
+function semantic_corpus_searcher(cref, conceptnet::ConceptNet{L,K,U}) where
         {L<:Languages.Language, K<:AbstractString, U<:AbstractVector}
     # Parse file
     crps, crps_meta = cref.parser(cref.path)
-    # get id
-    id = cref.id
     # Prepare
     prepare!(crps, TEXT_STRIP_FLAGS)
     prepare!(crps_meta, METADATA_STRIP_FLAGS)
@@ -112,40 +128,42 @@ function add_semantic_searcher!(semantic_corpora_searcher, cref,
     ### update_inverse_index!(crps)
     ### update_inverse_index!(crps_meta)
     
-    _scs = SemanticCorpusSearcher(id,
-                                  cref.enabled,
-                                  cref,
-                                  Dict{Symbol, Vector{U}}()
-                                 )
+    scs = SemanticCorpusSearcher(cref.id,
+                                 crps,
+                                 cref.enabled,
+                                 cref,
+                                 Dict{Symbol, Vector{U}}())
     # Update CorpusSearcher
-    push!(_scs.embeddings, :index=>[get_document_embedding(cptnet, doc)
+    push!(scs.embeddings, :index=>[get_document_embedding(conceptnet, doc)
                                     for doc in crps])
-    push!(_scs.embeddings, :metadata=>[get_document_embedding(cptnet, doc)
+    push!(scs.embeddings, :metadata=>[get_document_embedding(conceptnet, doc)
                                        for doc in crps_meta])
+    return scs
 end
 
 
 # Function that searches a query through the semantic search structures
-function search(semantic_crpra_searcher::SemanticCorporaSearcher{T,D,V},
+function search(semantic_crpra_searcher::SemanticCorporaSearcher{T,D,U},
+                conceptnet::ConceptNet{L,K,U},
                 query::AbstractString;
                 search_type::Symbol=DEFAULT_SEARCH_TYPE,
-                max_matches::Int=DEFAULT_MAX_MATCHES) where
-        {T<:AbstractId, D<:AbstractDocument, V<:AbstractVector}
+                max_matches::Int=DEFAULT_MAX_MATCHES
+                ) where
+        {T<:AbstractId, D<:AbstractDocument, U<:AbstractVector,
+         L<:Languages.Language, K<:AbstractString}
     # Checks
     @assert search_type in [:index, :metadata, :all]
     @assert max_matches >= 0
     # Initializations
     n = length(semantic_crpra_searcher.searchers)
-    max_corpus_suggestions = min(max_suggestions, max_corpus_suggestions)
-    # Search
-    result_vector = [SemanticCorpusSearchResult() for _ in 1:n]
+    result_vector = [CorpusSearchResult() for _ in 1:n]
     id_vector = [random_id(T) for _ in 1:n]
-    @threads for i in 1:n
+    for i in 1:n
         if semantic_crpra_searcher.searchers[i].enabled
             # Get corpus search results
             id, search_result = search(semantic_crpra_searcher.searchers[i],
+                                       conceptnet,
                                        query,
-                                       cptnet,
                                        search_type=search_type,
                                        max_matches=max_matches)
             result_vector[i] = search_result
@@ -162,11 +180,13 @@ function search(semantic_crpra_searcher::SemanticCorporaSearcher{T,D,V},
     return result
 end
 
-function search(semantic_crps_searcher::SemanticCorpusSearcher{T,D},
-                query::AbstractString,
+function search(semantic_crps_searcher::SemanticCorpusSearcher{T,D,U},
+                conceptnet::ConceptNet{L,K,U},
+                query::AbstractString;
                 search_type::Symbol=:metadata,
-                max_matches::Int=10,
-               ) where {T<:AbstractId, D<:AbstractDocument}
+                max_matches::Int=10) where
+        {T<:AbstractId, D<:AbstractDocument, U<:AbstractVector,
+         L<:Languages.Language, K<:AbstractString}
     # Initializations
     n = length(semantic_crps_searcher.corpus)    # number of documents
     # Search metadata and/or index
@@ -174,7 +194,7 @@ function search(semantic_crps_searcher::SemanticCorpusSearcher{T,D},
                              [:index, :metadata],
                              [search_type])
     document_scores = zeros(Float64, n)     # document relevance
-    _query = get_document_embedding(cptnet, query)
+    _query = get_document_embedding(conceptnet, query)
     for wts in where_to_search
         # search
         document_scores += search(_query, semantic_crps_searcher.embeddings[wts])
@@ -195,11 +215,40 @@ function search(semantic_crps_searcher::SemanticCorpusSearcher{T,D},
 end
 
 
-function search(query, embeddings)
+function search(query::Vector{N}, embeddings::Vector{Vector{N}}) where N
     n = length(embeddings)
-    similarity = Vector{Float64}(undef, n)
-    for (i, doc_embedding) in embeddings
+    similarity = Vector{N}(undef, n)
+    for (i, doc_embedding) in enumerate(embeddings)
         similarity[i] = query'*doc_embedding
     end
     return similarity
+end
+
+# Pretty printer of results
+print_search_results(crpra_searcher::SemanticCorporaSearcher, csr::CorporaSearchResult) = begin
+    if !isempty(csr.corpus_results)
+        nt = mapreduce(x->valength(x[2].query_matches), +, csr.corpus_results)
+    else
+        nt = 0
+    end
+    printstyled("$nt semantic search results from $(length(csr.corpus_results)) corpora\n")
+    ns = length(csr.suggestions)
+    for (id, _result) in csr.corpus_results
+        crps = crpra_searcher.searchers[crpra_searcher.idmap[id]].corpus
+        nm = valength(_result.query_matches)
+        printstyled("`-[$id] ", color=:cyan)  # hash
+        printstyled("$(nm) search results")
+        ch = ifelse(nm==0, ".", ":"); printstyled("$ch\n")
+        for score in sort(collect(keys(_result.query_matches)), rev=true)
+            for doc in (crps[i] for i in _result.query_matches[score])
+                printstyled("  $score ~ ", color=:normal, bold=true)
+                printstyled("$(metadata(doc))\n", color=:normal)
+            end
+        end
+    end
+    ns > 0 && printstyled("$ns suggestions:\n")
+    for (keyword, suggestions) in csr.suggestions
+        printstyled("  \"$keyword\": ", color=:normal, bold=true)
+        printstyled("$(join(suggestions, ", "))\n", color=:normal)
+    end
 end

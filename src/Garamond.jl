@@ -73,13 +73,14 @@ module Garamond
 
     # Include section
     include("defaults.jl")
+    include("cmdline.jl")
     include("logging.jl")
     include("corpora_searchers.jl")
     include("parsers.jl")
     include("utils_text_lang.jl")
+    include("corpora_searchers.jl")
     include("results.jl")
     include("search.jl")
-    include("cmdline.jl")
     include("semantic_search.jl")
     ###include("servers.jl")
 
