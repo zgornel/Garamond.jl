@@ -29,6 +29,7 @@ module Garamond
     using StringDistances, BKTrees
     using ArgParse
     using ProgressMeter
+    using ConceptnetNumberbatch
     using LightGraphs, NearestNeighbors, MLKernels
     ###using HttpServer, WebSockets, JSON
 
@@ -50,7 +51,7 @@ module Garamond
         CorpusSearcher,
         CorporaSearcher,
         corpora_searchers,
-        add_searcher!,
+        corpus_searcher,
         enable!,
         disable!,
         # Utils

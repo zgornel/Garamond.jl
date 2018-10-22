@@ -10,7 +10,7 @@ information regarding the documents that match best the query.
 The function returns an object of type CorporaSearchResult.
 
 # Arguments
-  * `crps_searcher::CorpusSearcher{T,D}` is the corpus searcher
+  * `crpra_searcher::CorporaSearcher{T,D}` is the corpora searcher
   * `needles::Vector{String}` is a vector of key terms representing the query
 
 # Keyword arguments
@@ -33,14 +33,14 @@ The function returns an object of type CorporaSearchResult.
 	...
 ```
 """
-function search(crpra_searcher::CorporaSearcher{T,D,V},
+function search(crpra_searcher::CorporaSearcher{T,D},
                 needles::Vector{String};
                 search_type::Symbol=DEFAULT_SEARCH_TYPE,
                 search_method::Symbol=DEFAULT_SEARCH_METHOD,
                 max_matches::Int=DEFAULT_MAX_MATCHES,
                 max_suggestions::Int=DEFAULT_MAX_SUGGESTIONS,
                 max_corpus_suggestions::Int=DEFAULT_MAX_CORPUS_SUGGESTIONS) where
-        {T<:AbstractId, D<:AbstractDocument, V<:AbstractVector}
+        {T<:AbstractId, D<:AbstractDocument}
     # Checks
     @assert search_type in [:index, :metadata, :all]
     @assert search_method in [:exact, :regex]
