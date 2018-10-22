@@ -42,13 +42,13 @@ end
 
 
 # Pretty printer of results
-print_search_results(crps::Corpus, csr::CorpusSearchResult) = begin
+print_search_results(cs::CorpusSearcher, csr::CorpusSearchResult) = begin
     nm = valength(csr.query_matches)
     ns = length(csr.suggestions)
     printstyled("$nm search results")
     ch = ifelse(nm==0, ".", ":"); printstyled("$ch\n")
     for score in sort(collect(keys(csr.query_matches)), rev=true)
-        for doc in (crps[i] for i in csr.query_matches[score])
+        for doc in (cs.corpus[i] for i in csr.query_matches[score])
             printstyled("  $score ~ ", color=:normal, bold=true)
             printstyled("$(metadata(doc))\n", color=:normal)
         end
