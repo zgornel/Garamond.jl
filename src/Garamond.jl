@@ -21,6 +21,7 @@ module Garamond
     using Random
     using Unicode
     using DelimitedFiles
+    using LinearAlgebra
     using SparseArrays
     using Base.Threads
     using Statistics: mean
