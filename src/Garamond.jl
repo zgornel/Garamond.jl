@@ -17,6 +17,7 @@
 ##################################################################################################################
 module Garamond
 
+    using Logging
     using Random
     using Unicode
     using DelimitedFiles
@@ -72,6 +73,7 @@ module Garamond
 
     # Include section
     include("defaults.jl")
+    include("logging.jl")
     include("corpora_searchers.jl")
     include("parsers.jl")
     include("utils_text_lang.jl")
