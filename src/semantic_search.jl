@@ -87,13 +87,16 @@ function get_document_embedding(conceptnet::ConceptNet{L,K,U}, doc) where
     preprocess(doc::StringDocument) = doc.text
     preprocess(doc::AbstractString) = doc
     _doc = preprocess(doc)
-    doc_embs = embed_document(conceptnet,
-                              _doc,
-                              keep_size=true,
-                              max_compound_word_length=3,
-                              search_mismatches=:no,
-                              show_words=false)
+    doc_embs, _ = embed_document(conceptnet,
+                                 _doc,
+                                 keep_size=false,
+                                 max_compound_word_length=2,
+                                 wildcard_matching=true,
+                                 print_matched_words=true)
     # Return embeddings
+    if isempty(doc_embs)
+        doc_embs = zeros(eltype(U), size(conceptnet))
+    end
     embedding = squash_embeddings(doc_embs)
     return embedding
 end
@@ -212,14 +215,15 @@ end
 
 
 function search(query::Vector{N}, embeddings::Vector{Vector{N}}) where N
+    _q = Float64.(query)
+    _q = _q./(norm(_q)+eps())
+    @debug _q
     n = length(embeddings)
     similarity = Vector{Float64}(undef, n)
     for (i, doc_embedding) in enumerate(embeddings)
-        _q = Float64.(query)
-        _q = _q./norm(_q)
         _de = Float64.(doc_embedding)
-        _de = _de./norm(_de)
-        similarity[i] = _q'*_de
+        _de = _de./(norm(_de)+eps())
+        similarity[i] = (_q')*_de
     end
     return similarity
 end
