@@ -31,8 +31,8 @@ module Garamond
     using ArgParse
     using ProgressMeter
     using ConceptnetNumberbatch
-    using LightGraphs, NearestNeighbors, MLKernels
-    ###using HttpServer, WebSockets, JSON
+    ### using LightGraphs, NearestNeighbors, MLKernels
+    ### using HttpServer, WebSockets, JSON
 
     import Base: show, keys, values, push!, delete!, getindex,
            names, convert, lowercase, occursin, isempty
@@ -79,7 +79,6 @@ module Garamond
     include("corpora_searchers.jl")
     include("parsers.jl")
     include("utils_text_lang.jl")
-    include("corpora_searchers.jl")
     include("results.jl")
     include("search.jl")
     include("semantic_search.jl")

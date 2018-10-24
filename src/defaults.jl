@@ -10,7 +10,7 @@ const MAX_EDIT_DISTANCE = 2  # maximum edit distance for which to return suggest
 
 # Various document processing related constants
 const DEFAULT_DOC_TYPE = TextAnalysis.NGramDocument
-const DEFAULT_METADATA_FIELDS = [:author, :name]  # Default metadata fields for search
+const DEFAULT_METADATA_FIELDS = [:author, :name, :note]  # Default metadata fields for search
 
 
 # Search tree constants

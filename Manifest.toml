@@ -6,21 +6,15 @@ version = "0.2.0"
 
 [[Adapt]]
 deps = ["LinearAlgebra", "Test"]
-git-tree-sha1 = "036ce44a518b912c43df728bfae274f8d8de9059"
+git-tree-sha1 = "a1245c11af6876245c32f82f2067bf67f7da8cee"
 uuid = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
-version = "0.3.1"
+version = "0.4.0"
 
 [[ArgParse]]
 deps = ["Compat", "Pkg", "Test", "TextWrap"]
 git-tree-sha1 = "37159c768f28ae52ef9af1e70669d25a68ba7d61"
 uuid = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"
 version = "0.6.1"
-
-[[ArnoldiMethod]]
-deps = ["DelimitedFiles", "LinearAlgebra", "Pkg", "Random", "SparseArrays", "StaticArrays", "Test"]
-git-tree-sha1 = "2b6845cea546604fb4dca4e31414a6a59d39ddcd"
-uuid = "ec485272-7323-5ecc-a04f-4719b315124d"
-version = "0.0.4"
 
 [[BKTrees]]
 deps = ["DataStructures", "Pkg", "Random", "Test"]
@@ -110,12 +104,10 @@ uuid = "34da2185-b29b-5c13-b0c7-acf172513d20"
 version = "1.3.0"
 
 [[ConceptnetNumberbatch]]
-deps = ["CodecZlib", "HDF5", "Languages", "StringDistances", "Test", "TranscodingStreams"]
+deps = ["CodecZlib", "HDF5", "Languages", "Pkg", "Random", "Serialization", "StringDistances", "Test", "TranscodingStreams"]
 git-tree-sha1 = "0704733d71166a1fdce619a125faa2c3a5bca9f1"
-repo-rev = "master"
-repo-url = "https://github.com/zgornel/ConceptnetNumberbatch.jl.git"
-uuid = "2d1d9008-b762-11e8-11f1-375fdd6dca71"
-version = "0.1.0"
+uuid = "6bdbf80b-0969-53f9-8443-f41591bd656e"
+version = "0.1.1"
 
 [[DataFrames]]
 deps = ["CategoricalArrays", "CodecZlib", "Compat", "DataStreams", "Dates", "InteractiveUtils", "IteratorInterfaceExtensions", "LinearAlgebra", "Missings", "Pkg", "Printf", "Random", "Reexport", "SortingAlgorithms", "Statistics", "StatsBase", "TableTraits", "Tables", "Test", "TranscodingStreams", "Unicode", "WeakRefStrings"]
@@ -173,9 +165,9 @@ version = "0.5.3"
 
 [[Flux]]
 deps = ["AbstractTrees", "Adapt", "CodecZlib", "Colors", "DiffRules", "ForwardDiff", "Juno", "LinearAlgebra", "MacroTools", "NNlib", "NaNMath", "Pkg", "Printf", "Random", "Reexport", "Requires", "SpecialFunctions", "Statistics", "StatsBase", "Test", "ZipFile"]
-git-tree-sha1 = "b9fc47f3eeb8062c9dac3a74bca9fd83f7e0fbf5"
+git-tree-sha1 = "e5c6ddad1db787ef4b75f04a314d6033e653fb43"
 uuid = "587475ba-b771-5e3f-ad9e-33799f191a9c"
-version = "0.6.7"
+version = "0.6.8"
 
 [[ForwardDiff]]
 deps = ["CommonSubexpressions", "DiffResults", "DiffRules", "InteractiveUtils", "LinearAlgebra", "NaNMath", "Pkg", "Random", "SparseArrays", "SpecialFunctions", "StaticArrays", "Test"]
@@ -204,12 +196,6 @@ deps = ["BinDeps", "InteractiveUtils", "JSON", "Libdl", "Test", "Unicode"]
 git-tree-sha1 = "5582ec74f735cf8d12e562a2e65c47f34063bd51"
 uuid = "d9be37ee-ecc9-5288-90f1-b9ca67657a75"
 version = "0.7.0"
-
-[[Inflate]]
-deps = ["Pkg", "Printf", "Random", "Test"]
-git-tree-sha1 = "b7ec91c153cf8bff9aff58b39497925d133ef7fd"
-uuid = "d25df0c9-e2be-5dd7-82c8-3ad0b3e990b9"
-version = "0.1.1"
 
 [[InteractiveUtils]]
 deps = ["LinearAlgebra", "Markdown"]
@@ -269,26 +255,12 @@ git-tree-sha1 = "d405194ffc0293c3519d4f7251ce51baac9cc871"
 uuid = "2ec943e9-cfe8-584d-b93d-64dcb6d567b7"
 version = "1.0.0"
 
-[[LightGraphs]]
-deps = ["ArnoldiMethod", "Base64", "DataStructures", "DelimitedFiles", "Distributed", "Inflate", "LinearAlgebra", "Markdown", "Pkg", "Random", "SharedArrays", "SimpleTraits", "SparseArrays", "Statistics", "Test"]
-git-tree-sha1 = "c7222c370d5cf6d4e08ae40bddd8c0db6852dfb1"
-uuid = "093fc24a-ae57-5d10-9952-331d41423f4d"
-version = "1.2.0"
-
 [[LinearAlgebra]]
 deps = ["Libdl"]
 uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 
 [[Logging]]
 uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
-
-[[MLKernels]]
-deps = ["LinearAlgebra", "SpecialFunctions", "Statistics", "Test"]
-git-tree-sha1 = "caae621fdb2061483c57311d37c9dc4cbe97920e"
-repo-rev = "master"
-repo-url = "https://github.com/trthatcher/MLKernels.jl.git"
-uuid = "48eadcf2-8ff1-11e8-289d-f103432a0bb3"
-version = "0.4.0"
 
 [[MacroTools]]
 deps = ["Compat"]
@@ -326,12 +298,6 @@ deps = ["Compat"]
 git-tree-sha1 = "ce3b85e484a5d4c71dd5316215069311135fa9f2"
 uuid = "77ba4419-2d1f-58cd-9bb1-8ffee604a2e3"
 version = "0.3.2"
-
-[[NearestNeighbors]]
-deps = ["Distances", "LinearAlgebra", "Mmap", "Pkg", "StaticArrays", "Test"]
-git-tree-sha1 = "aab46b96ae5c2a9c08146188016d6312276094e5"
-uuid = "b8a86587-4115-5ab1-83bc-aa920d37bbce"
-version = "0.4.2"
 
 [[OrderedCollections]]
 deps = ["Pkg", "Random", "Serialization", "Test"]
@@ -399,12 +365,6 @@ uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
 deps = ["Distributed", "Mmap", "Random", "Serialization"]
 uuid = "1a1011a3-84de-559e-8e89-a11a2f7dc383"
 
-[[SimpleTraits]]
-deps = ["InteractiveUtils", "MacroTools", "Pkg", "Test"]
-git-tree-sha1 = "c0a542b8d5e369b179ccd296b2ca987f6da5da0a"
-uuid = "699a6c99-e7fa-54fc-8d76-47d257e15c1d"
-version = "0.8.0"
-
 [[SnoopCompile]]
 deps = ["Pkg", "Serialization", "Test"]
 git-tree-sha1 = "bf278fd3d9ec1d8183dcf81291c1994561b66c93"
@@ -432,9 +392,9 @@ version = "0.7.1"
 
 [[StaticArrays]]
 deps = ["InteractiveUtils", "LinearAlgebra", "Pkg", "Random", "Statistics", "Test"]
-git-tree-sha1 = "c268a7d13e0af233f44911c4a3e92b532e85b724"
+git-tree-sha1 = "e4b174b7b0ad75ebfadb659dea43c56361b96ec8"
 uuid = "90137ffa-7385-5640-81b9-e52037218182"
-version = "0.9.0"
+version = "0.9.1"
 
 [[Statistics]]
 deps = ["LinearAlgebra", "SparseArrays"]
@@ -460,9 +420,9 @@ version = "0.4.0"
 
 [[Tables]]
 deps = ["Pkg", "Requires", "Test"]
-git-tree-sha1 = "7b7e95a34c2c2504f1403aa9005399e239f461b9"
+git-tree-sha1 = "be3a3a28a1e6c4fdd838bdf21e796f7a592c565c"
 uuid = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
-version = "0.1.9"
+version = "0.1.10"
 
 [[Test]]
 deps = ["Distributed", "InteractiveUtils", "Logging", "Random"]
@@ -470,7 +430,7 @@ uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [[TextAnalysis]]
 deps = ["BSON", "BinaryProvider", "DataFrames", "Flux", "JSON", "Languages", "Libdl", "LinearAlgebra", "Printf", "SparseArrays", "Test", "WordTokenizers"]
-git-tree-sha1 = "31648f6cd1668c8d94898b8af7ae8eb256d0169e"
+git-tree-sha1 = "1e3a516d5e9b624dc70abae4286ed1be38bbb7fc"
 repo-rev = "additional_metadata"
 repo-url = "https://github.com/zgornel/TextAnalysis.jl"
 uuid = "a2db99b7-8b79-58f8-94bf-bbc811eef33d"

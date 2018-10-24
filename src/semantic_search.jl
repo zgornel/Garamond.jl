@@ -18,18 +18,17 @@
 
 # Searcher structures
 mutable struct SemanticCorpusSearcher{T<:AbstractId,
-                                      D<:AbstractDocument,
-                                      U<:AbstractVector} <: AbstractSearcher
+                                      D<:AbstractDocument} <: AbstractSearcher
     id::T
     corpus::Corpus{D}
     enabled::Bool
     ref::CorpusRef{T}
-    embeddings::Dict{Symbol, Vector{U}}
+    embeddings::Dict{Symbol, Matrix{Float64}}
 end
 
-show(io::IO, semantic_corpus_searcher::SemanticCorpusSearcher{T,D,U}) where
-        {T<:AbstractId, D<:AbstractDocument, U<:AbstractVector} = begin
-    printstyled(io, "SemanticCorpusSearcher{$T,$D,$U}, ")
+show(io::IO, semantic_corpus_searcher::SemanticCorpusSearcher{T,D}) where
+        {T<:AbstractId, D<:AbstractDocument} = begin
+    printstyled(io, "$(typeof(semantic_corpus_searcher)), ")
     printstyled(io, "[$(semantic_corpus_searcher.id)] ", color=:cyan)
     _status = ifelse(semantic_corpus_searcher.enabled, "Enabled", "Disabled")
     _status_color = ifelse(semantic_corpus_searcher.enabled, :light_green, :light_black)
@@ -39,8 +38,8 @@ show(io::IO, semantic_corpus_searcher::SemanticCorpusSearcher{T,D,U}) where
 end
 
 
-mutable struct SemanticCorporaSearcher{T,D,U}
-    searchers::Vector{SemanticCorpusSearcher{T,D,U}}
+mutable struct SemanticCorporaSearcher{T,D}
+    searchers::Vector{SemanticCorpusSearcher{T,D}}
     idmap::Dict{T, Int}
 end
 
@@ -71,7 +70,7 @@ function semantic_corpora_searchers(crefs::Vector{CorpusRef{T}},
          K<:AbstractString, U<:AbstractVector}
     n = length(crefs)
     semantic_corpora_searcher = SemanticCorporaSearcher(
-        Vector{SemanticCorpusSearcher{T,D,U}}(undef, n), Dict{T,Int}())
+        Vector{SemanticCorpusSearcher{T,D}}(undef, n), Dict{T,Int}())
     for (i, cref) in enumerate(crefs)
         semantic_corpora_searcher.searchers[i] = semantic_corpus_searcher(cref, conceptnet)
         push!(semantic_corpora_searcher.idmap, cref.id=>i)
@@ -83,33 +82,37 @@ end
 # Function to get from multiple word-embeddings to a document embedding
 function get_document_embedding(conceptnet::ConceptNet{L,K,U}, doc) where
         {L<:Languages.Language, K<:AbstractString, U<:AbstractVector}
-    preprocess(doc::NGramDocument) = collect(keys(doc.ngrams))
-    preprocess(doc::StringDocument) = doc.text
-    preprocess(doc::AbstractString) = doc
-    _doc = preprocess(doc)
+    # Text extraction methods various types of documents
+    extract_text(doc::NGramDocument) = collect(keys(doc.ngrams))
+    extract_text(doc::StringDocument) = doc.text
+    extract_text(doc::AbstractString) = doc
+
     doc_embs, _ = embed_document(conceptnet,
-                                 _doc,
+                                 extract_text(doc),
                                  keep_size=false,
                                  max_compound_word_length=2,
                                  wildcard_matching=true,
-                                 print_matched_words=true)
-    # Return embeddings
+                                 print_matched_words=false)
+
+    # TODO: Language detection wold go here :)
+
+    # Return a single document vector
     if isempty(doc_embs)
-        doc_embs = zeros(eltype(U), size(conceptnet))
-    end
-    embedding = squash_embeddings(doc_embs)
-    return embedding
+        return zeros(size(conceptnet))
+    else 
+        return squash_embeddings(float(doc_embs))
+    end 
 end
 
-function squash_embeddings(embs::Matrix{N}) where N<:Real
-    # Post-processing functions
-    postprocess(v::Vector, ::Type{T}) where T<:Integer = T.(round.(v))
-    postprocess(v::Vector, ::Type{T}) where T<:AbstractFloat = T.(v)
-
+function squash_embeddings(embs::V) where V<:AbstractArray{<:Real}
     # Calculate document embedding
     ##############################
-    v = vec(sum(embs, dims=2))
-    return postprocess(v, N)
+    #@inbounds @simd for i in 1:size(embs,2)
+    #    col = view(embs, :, i)
+    #    embs[:,i] = col./(norm(col,1)+eps())
+    #end
+    v = vec(mean(embs, dims=2))
+    return v./(norm(v,1)+eps())
 end
 
 
@@ -126,23 +129,23 @@ function semantic_corpus_searcher(cref, conceptnet::ConceptNet{L,K,U}) where
     ### # Update inverse indices
     ### update_inverse_index!(crps)
     ### update_inverse_index!(crps_meta)
-    
+
     scs = SemanticCorpusSearcher(cref.id,
                                  crps,
                                  cref.enabled,
                                  cref,
-                                 Dict{Symbol, Vector{U}}())
+                                 Dict{Symbol, Matrix{Float64}}())
     # Update CorpusSearcher
-    push!(scs.embeddings, :index=>[get_document_embedding(conceptnet, doc)
-                                    for doc in crps])
-    push!(scs.embeddings, :metadata=>[get_document_embedding(conceptnet, doc)
-                                       for doc in crps_meta])
+    push!(scs.embeddings, :index=>hcat((get_document_embedding(conceptnet, doc)
+                                        for doc in crps)...))
+    push!(scs.embeddings, :metadata=>hcat((get_document_embedding(conceptnet, doc)
+                                           for doc in crps_meta)...))
     return scs
 end
 
 
 # Function that searches a query through the semantic search structures
-function search(semantic_crpra_searcher::SemanticCorporaSearcher{T,D,U},
+function search(semantic_crpra_searcher::SemanticCorporaSearcher{T,D},
                 conceptnet::ConceptNet{L,K,U},
                 query::AbstractString;
                 search_type::Symbol=DEFAULT_SEARCH_TYPE,
@@ -179,7 +182,7 @@ function search(semantic_crpra_searcher::SemanticCorporaSearcher{T,D,U},
     return result
 end
 
-function search(semantic_crps_searcher::SemanticCorpusSearcher{T,D,U},
+function search(semantic_crps_searcher::SemanticCorpusSearcher{T,D},
                 conceptnet::ConceptNet{L,K,U},
                 query::AbstractString;
                 search_type::Symbol=:metadata,
@@ -213,20 +216,11 @@ function search(semantic_crps_searcher::SemanticCorpusSearcher{T,D,U},
     return semantic_crps_searcher.id, CorpusSearchResult(query_matches, needle_matches, suggestions)
 end
 
-
-function search(query::Vector{N}, embeddings::Vector{Vector{N}}) where N
-    _q = Float64.(query)
-    _q = _q./(norm(_q)+eps())
-    @debug _q
-    n = length(embeddings)
-    similarity = Vector{Float64}(undef, n)
-    for (i, doc_embedding) in enumerate(embeddings)
-        _de = Float64.(doc_embedding)
-        _de = _de./(norm(_de)+eps())
-        similarity[i] = (_q')*_de
-    end
-    return similarity
+function search(query::Vector{N}, embeddings::Matrix{N}) where N<:AbstractFloat
+    embeddings'*query
 end
+
+
 
 # Pretty printer of results
 print_search_results(crpra_searcher::SemanticCorporaSearcher, csr::CorporaSearchResult) = begin
