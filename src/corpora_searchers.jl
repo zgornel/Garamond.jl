@@ -62,8 +62,8 @@ CorpusRef(;path="",
     CorpusRef(path, name, id, parser, termimp, heuristic, enabled)
 
 
-Base.show(io::IO, cref::CorpusRef{T}) where T<:AbstractId = begin
-    printstyled(io, "CorpusRef{$T} for $(cref.name)\n")
+Base.show(io::IO, cref::CorpusRef) = begin
+    printstyled(io, "$(typeof(cref)) for $(cref.name)\n")
     _status = ifelse(cref.enabled, "Enabled", "Disabled")
     _status_color = ifelse(cref.enabled, :light_green, :light_black)
     printstyled(io, "`-[$_status] ", color=_status_color)
@@ -91,7 +91,8 @@ end
 #################################
 # Interface for CorpusSearcher #
 #################################
-mutable struct CorpusSearcher{T,D} <: AbstractSearcher
+mutable struct CorpusSearcher{T<:AbstractId,
+                              D<:AbstractDocument} <: AbstractSearcher
     id::T
     corpus::Corpus{D}
     enabled::Bool
@@ -102,9 +103,8 @@ mutable struct CorpusSearcher{T,D} <: AbstractSearcher
 end
 
 
-show(io::IO, corpus_searcher::CorpusSearcher{T,D}) where
-        {T<:AbstractId, D<:AbstractDocument} = begin
-    printstyled(io, "CorpusSearcher{$T,$D}, ")
+show(io::IO, corpus_searcher::CorpusSearcher) = begin
+    printstyled(io, "$(typeof(corpus_searcher)), ")
     printstyled(io, "[$(corpus_searcher.id)] ", color=:cyan)
     _status = ifelse(corpus_searcher.enabled, "Enabled", "Disabled")
     _status_color = ifelse(corpus_searcher.enabled, :light_green, :light_black)
@@ -118,14 +118,13 @@ end
 #################################
 # Interface for CorporaSearcher #
 #################################
-mutable struct CorporaSearcher{T, D, V<:AbstractVector{CorpusSearcher{T,D}}} <: AbstractSearcher
-    searchers::V
+mutable struct CorporaSearcher{T<:AbstractId, D<:AbstractDocument}
+    searchers::Vector{CorpusSearcher{T,D}}
     idmap::Dict{T, Int}
 end
 
 
-show(io::IO, corpora_searcher::CorporaSearcher{T,D,V}) where
-        {T<:AbstractId, D<:AbstractDocument, V<:AbstractVector} = begin
+show(io::IO, corpora_searcher::CorporaSearcher) = begin
     printstyled(io, "$(length(corpora_searcher.searchers))-element CorporaSearcher:\n")
     for (id, idx) in corpora_searcher.idmap
         print(io, "`-", corpora_searcher.searchers[idx])
@@ -134,47 +133,47 @@ end
 
 
 # Indexing
-getindex(corpora_searcher::CorporaSearcher{T,D,V}, id::T) where
-        {T<:AbstractId, D<:AbstractDocument, V<:AbstractVector} =
+getindex(corpora_searcher::CorporaSearcher{T,D}, id::T) where
+        {T<:AbstractId, D<:AbstractDocument} =
     return corpora_searcher.searchers[corpora_searcher.idmap[id]]
 
-getindex(corpora_searcher::CorporaSearcher{T,D,V}, id::UInt) where
-        {T<:HashId, D<:AbstractDocument, V<:AbstractVector} =
+getindex(corpora_searcher::CorporaSearcher{T,D}, id::UInt) where
+        {T<:HashId, D<:AbstractDocument} =
     corpora_searcher[HashId(id)]
 
-getindex(corpora_searcher::CorporaSearcher{T,D,V}, id::String) where
-        {T<:StringId, D<:AbstractDocument, V<:AbstractVector} =
+getindex(corpora_searcher::CorporaSearcher{T,D}, id::String) where
+        {T<:StringId, D<:AbstractDocument} =
     corpora_searcher[StringId(id)]
 
 
-delete!(corpora_searcher::CorporaSearcher{T,D,V}, id::T) where
-        {T<:AbstractId, D<:AbstractDocument, V<:AbstractVector} = begin
+delete!(corpora_searcher::CorporaSearcher{T,D}, id::T) where
+        {T<:AbstractId, D<:AbstractDocument} = begin
     deleteat!(corpora_searcher.searchers, corpora_searcher.idmap[id])
     delete!(corpora_searcher.idmap, id)
     return corpora_searcher
 end
 
 
-delete!(corpora_searcher::CorporaSearcher{T,D,V}, id::Union{String, UInt}) where
-        {T<:AbstractId, D<:AbstractDocument, V<:AbstractVector} =
+delete!(corpora_searcher::CorporaSearcher{T,D}, id::Union{String, UInt}) where
+        {T<:AbstractId, D<:AbstractDocument} =
     delete!(corpora_searcher, T(id))
 
 
-disable!(corpora_searcher::CorporaSearcher{T,D,V}, id::T) where
-        {T<:AbstractId, D<:AbstractDocument, V<:AbstractVector} = begin
+disable!(corpora_searcher::CorporaSearcher{T,D}, id::T) where
+        {T<:AbstractId, D<:AbstractDocument} = begin
     corpora_searcher[id].enabled = false
     corpora_searcher[id].ref.enabled = false
     return corpora_searcher
 end
 
 
-disable!(corpora_searcher::CorporaSearcher{T,D,V}, id::Union{String, UInt}) where
-        {T<:AbstractId, D<:AbstractDocument, V<:AbstractVector} =
+disable!(corpora_searcher::CorporaSearcher{T,D}, id::Union{String, UInt}) where
+        {T<:AbstractId, D<:AbstractDocument} =
     disable!(corpora_searcher, T(id))
 
 
-disable!(corpora_searcher::CorporaSearcher{T,D,V}) where
-        {T<:AbstractId, D<:AbstractDocument, V<:AbstractVector} = begin
+disable!(corpora_searcher::CorporaSearcher{T,D}) where
+        {T<:AbstractId, D<:AbstractDocument} = begin
     for id in keys(corpora_searcher.idmap)
         disable!(corpora_searcher, id)
     end
@@ -182,21 +181,21 @@ disable!(corpora_searcher::CorporaSearcher{T,D,V}) where
 end
 
 
-enable!(corpora_searcher::CorporaSearcher{T,D,V}, id::T) where
-        {T<:AbstractId, D<:AbstractDocument, V<:AbstractVector} = begin
+enable!(corpora_searcher::CorporaSearcher{T,D}, id::T) where
+        {T<:AbstractId, D<:AbstractDocument} = begin
     corpora_searcher[id].enabled = true
     corpora_searcher[id].ref.enabled = true
     return corpora_searcher
 end
 
 
-enable!(corpora_searcher::CorporaSearcher{T,D,V}, id::Union{String, UInt}) where
-        {T<:AbstractId, D<:AbstractDocument, V<:AbstractVector} =
+enable!(corpora_searcher::CorporaSearcher{T,D}, id::Union{String, UInt}) where
+        {T<:AbstractId, D<:AbstractDocument} =
     enable!(corpora_searcher, T(id))
 
 
-enable!(corpora_searcher::CorporaSearcher{T,D,V}) where
-        {T<:AbstractId, D<:AbstractDocument, V<:AbstractVector} = begin
+enable!(corpora_searcher::CorporaSearcher{T,D}) where
+        {T<:AbstractId, D<:AbstractDocument} = begin
     for id in keys(corpora_searcher.idmap)
         enable!(corpora_searcher, id)
     end
@@ -217,12 +216,13 @@ function corpora_searchers(crefs::Vector{CorpusRef{T}};
                            doc_type::Type{D}=DEFAULT_DOC_TYPE) where
         {T<:AbstractId, D<:AbstractDocument}
     n = length(crefs)
-    corpora_searcher = CorporaSearcher(Vector{CorpusSearcher{T,D}}(undef, n),
-                                       Dict{T,Int}())
+    crpra_searcher = CorporaSearcher(Vector{CorpusSearcher{T,D}}(undef, n),
+                                     Dict{T,Int}())
     for (i, cref) in enumerate(crefs)
-        add_searcher!(corpora_searcher, cref, i)
+        crpra_searcher.searchers[i] = corpus_searcher(cref)
+        push!(crpra_searcher.idmap, cref.id=>i)
     end
-	return corpora_searcher
+	return crpra_searcher
 end
 
 
@@ -240,8 +240,7 @@ end
 ```
 Adds a CorpusSearcher to a CorporaSearcher using a CorpusRef.
 ```
-function add_searcher!(corpora_searcher::S, cref::R, index::Int) where
-        {S<:CorporaSearcher, R<:CorpusRef}
+function corpus_searcher(cref::R) where R<:CorpusRef
     # Parse file
     crps, crps_meta = cref.parser(cref.path)
     # get id
@@ -270,28 +269,25 @@ function add_searcher!(corpora_searcher::S, cref::R, index::Int) where
     term_imp = TermImportances(dtm.column_indices, add_final_zeros(imp_func(dtm)))
     term_imp_meta = TermImportances(dtm_meta.column_indices, add_final_zeros(imp_func(dtm_meta)))
     # Initialize CorpusSearcher
-    _cs = CorpusSearcher(id,
-                         crps,
-                         cref.enabled,
-                         cref,
-                         Dict{Symbol, Dict{String, Vector{Int}}}(),
-                         Dict{Symbol, TermImportances}(),
-                         Dict{Symbol, BKTree{String}}()
-                        )
+    cs = CorpusSearcher(id,
+                        crps,
+                        cref.enabled,
+                        cref,
+                        Dict{Symbol, Dict{String, Vector{Int}}}(),
+                        Dict{Symbol, TermImportances}(),
+                        Dict{Symbol, BKTree{String}}())
     # Update CorpusSearcher
-    push!(_cs.index, :index=>crps.inverse_index)
-    push!(_cs.index, :metadata=>crps_meta.inverse_index)
-    push!(_cs.term_importances, :index=>term_imp)
-    push!(_cs.term_importances, :metadata=>term_imp_meta)
+    push!(cs.index, :index=>crps.inverse_index)
+    push!(cs.index, :metadata=>crps_meta.inverse_index)
+    push!(cs.term_importances, :index=>term_imp)
+    push!(cs.term_importances, :metadata=>term_imp_meta)
     distance = get(HEURISTIC_TO_DISTANCE, cref.heuristic, DEFAULT_DISTANCE)
-    push!(_cs.search_trees, :index=>BKTree((x,y)->evaluate(distance, x, y),
+    push!(cs.search_trees, :index=>BKTree((x,y)->evaluate(distance, x, y),
                                            collect(keys(crps.inverse_index))
                                           ))
-    push!(_cs.search_trees, :metadata=>BKTree((x,y)->evaluate(distance, x, y),
+    push!(cs.search_trees, :metadata=>BKTree((x,y)->evaluate(distance, x, y),
                                               collect(keys(crps_meta.inverse_index))
                                              ))
     # Add CorpusSearcher to CorporaSearcher
-    corpora_searcher.searchers[index] = _cs
-    push!(corpora_searcher.idmap, _cs.id=>index)
-    return corpora_searcher
+    return cs
 end

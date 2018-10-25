@@ -31,10 +31,10 @@ PARSER_CONFIGS = Dict(
         Dict(1=>:id, 2=>:author, 3=>:name,
              4=>:publisher, 5=>:edition_year, 6=>:published_year,
              7=>:language,
-             8=>:documenttype, 9=>:characteristics, 10=>:location),
+             8=>:note, 9=>:location),
         Dict(1=>false, 2=>true, 3=>true,
              4=>false, 5=>false, 6=>false,
-             7=>false, 8=>false, 9=>false, 10=>false)
+             7=>false, 8=>true, 9=>false)
        )
 )
 
@@ -54,7 +54,7 @@ function parse_corpora_configuration(filename::AbstractString)
     function get_parsing_function(parser_config::Symbol,
                                   header::Bool=false) where T<:AbstractId
         PREFIX = :__parser_
-        # Construct basic parsing function from parser option value
+        # Construct basic parsing function from parser option value ie. __parser_<option> function
         _function  = eval(Symbol(PREFIX, parser_config))
         # Get parser config
         _config = get(PARSER_CONFIGS, parser_config, nothing)
@@ -66,7 +66,7 @@ function parse_corpora_configuration(filename::AbstractString)
             return _function(filename,
                              _config,
                              doc_type,
-                             delim='\t',
+                             delim='|',
                              header=header)
         end
         return parsing_function
@@ -155,7 +155,7 @@ end
 function __parser_csv_format_1(filename::AbstractString,
                                config::ParserConfig,
                                doc_type::Type{T}=DEFAULT_DOC_TYPE;
-                               delim::Char = ',',
+                               delim::Char = '|',
                                header::Bool = false) where T<:AbstractDocument
     # Initializations
     nlines = linecount(filename) - ifelse(header,1,0)
@@ -164,9 +164,9 @@ function __parser_csv_format_1(filename::AbstractString,
     metafields = fieldnames(TextAnalysis.DocumentMetadata)
     # Load the file
     if header
-        string_matrix, _ = readdlm(filename, '\t', String, header=header)
+        string_matrix, _ = readdlm(filename, delim, String, header=header)
     else
-        string_matrix = readdlm(filename, '\t', String, header=header)
+        string_matrix = readdlm(filename, delim, String, header=header)
     end
     # Select and sort the line fields which will be used as document text in the corpus
     mask = sort!([k for k in keys(config.data) if config.data[k]])
@@ -206,7 +206,7 @@ function __parser_csv_format_1(filename::AbstractString,
             end
         end
         # Create metadata document vector
-        doc_meta = metastring(doc, collect(v for v in values(config.metadata)
+        doc_meta = metastring(doc, collect(v for v in DEFAULT_METADATA_FIELDS
                                            if v in metafields))
         documents_meta[il] = doc_type(doc_meta)
         # Create document vector

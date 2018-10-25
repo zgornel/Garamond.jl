@@ -21,6 +21,7 @@ module Garamond
     using Random
     using Unicode
     using DelimitedFiles
+    using LinearAlgebra
     using SparseArrays
     using Base.Threads
     using Statistics: mean
@@ -29,9 +30,9 @@ module Garamond
     using StringDistances, BKTrees
     using ArgParse
     using ProgressMeter
-    ###using LightGraphs, NearestNeighbors, MLKernels
-    ###using HttpServer, WebSockets, JSON
-    #using JSON
+    using ConceptnetNumberbatch
+    ### using LightGraphs, NearestNeighbors, MLKernels
+    ### using HttpServer, WebSockets, JSON
 
     import Base: show, keys, values, push!, delete!, getindex,
            names, convert, lowercase, occursin, isempty
@@ -51,7 +52,7 @@ module Garamond
         CorpusSearcher,
         CorporaSearcher,
         corpora_searchers,
-        add_searcher!,
+        corpus_searcher,
         enable!,
         disable!,
         # Utils
@@ -73,14 +74,14 @@ module Garamond
 
     # Include section
     include("defaults.jl")
+    include("cmdline.jl")
     include("logging.jl")
     include("corpora_searchers.jl")
     include("parsers.jl")
     include("utils_text_lang.jl")
     include("results.jl")
     include("search.jl")
-    include("cmdline.jl")
+    include("semantic_search.jl")
     ###include("servers.jl")
-    ###include("word_model_utils.jl")
 
 end # module

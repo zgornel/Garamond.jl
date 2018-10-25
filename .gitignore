@@ -10,3 +10,4 @@ config/
 dump/
 build/bin/
 benchmarks/
+notebooks/
