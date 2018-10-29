@@ -3,9 +3,9 @@
 ###################################################
 # Parsing flow:
 #   1. Parse configuration file using `parse_corpora_configuration`
-#   2. The resulting Vector{CorpusRef} is passed to `load_corpora`
-#      (each CorpusRef contains the data filepath, corpus name etc.
-#   3. Parse the data file, obtain Corpus and add to CorporaSearcher (`add_corpora!`)
+#   2. The resulting Vector{SearchConfig} is passed to `load_corpora`
+#      (each SearchConfig contains the data filepath, corpus name etc.
+#   3. Parse the data file, obtain Corpus and add to AggregateSearcher (`add_corpora!`)
 """
 Define the csv parser configuration. It maps the fields from a delimited file
 to document metadata fields and specifies whether a field is to be included
@@ -41,7 +41,7 @@ PARSER_CONFIGS = Dict(
 
 
 """
-Function that creates corpus references i.e. CorpusRef,
+Function that creates corpus references i.e. SearchConfig,
 using a Garamond corpora config file. The corpus reference
 links a Corpus object to its file representation and is
 used to load the corpus.
@@ -72,7 +72,7 @@ function parse_corpora_configuration(filename::AbstractString)
         return parsing_function
     end
     #######
-    crefs = Vector{CorpusRef{DEFAULT_ID_TYPE}}()
+    crefs = Vector{SearchConfig{DEFAULT_ID_TYPE}}()
     last_header = false
     last_parser = :indentity
     local last_id_type
@@ -86,7 +86,7 @@ function parse_corpora_configuration(filename::AbstractString)
                 # Comment
                 continue
             elseif startswith(_line, "[")
-                push!(crefs, CorpusRef(name=replace(line, r"(\[|\])"=>"")))
+                push!(crefs, SearchConfig(name=replace(line, r"(\[|\])"=>"")))
                 counter+= 1
             elseif occursin("=", _line) && counter > 0
                 # Property assignment (option = value)

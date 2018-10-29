@@ -3,21 +3,21 @@
 #################################################
 
 # Search results from a single corpus
-struct CorpusSearchResult
+struct SearchResult
     query_matches::MultiDict{Float64, Int}  # score => document indices
     needle_matches::Dict{String, Float64}  # needle => sum of scores
     suggestions::MultiDict{String, Tuple{Float64,String}} # needle => tuples of (score,partial match)
 end
 
 
-CorpusSearchResult() = CorpusSearchResult(
+SearchResult() = SearchResult(
     MultiDict{Float64, Int}(),
     Dict{String, Float64}(),
     MultiDict{String, Tuple{Float64,String}}()
 )
 
 
-isempty(csr::T) where T<:CorpusSearchResult =
+isempty(csr::T) where T<:SearchResult =
     all(isempty(getfield(csr, field)) for field in fieldnames(T))
 
 # Calculate the length of a MultiDict as the number
@@ -32,7 +32,7 @@ end
 
 
 # Show method
-show(io::IO, csr::CorpusSearchResult) = begin
+show(io::IO, csr::SearchResult) = begin
     n = valength(csr.query_matches)
     nm = length(csr.needle_matches)
     ns = length(csr.suggestions)
@@ -42,7 +42,7 @@ end
 
 
 # Pretty printer of results
-print_search_results(cs::CorpusSearcher, csr::CorpusSearchResult) = begin
+print_search_results(cs::AbstractSearcher, csr::SearchResult) = begin
     nm = valength(csr.query_matches)
     ns = length(csr.suggestions)
     printstyled("$nm search results")
@@ -63,25 +63,25 @@ end
 
 
 # Search results for multiple corpora
-struct CorporaSearchResult{T}
-    corpus_results::Dict{T, CorpusSearchResult}  # Dict(score=>metadata)
+struct AggregateSearchResult{T}
+    corpus_results::Dict{T, SearchResult}  # Dict(score=>metadata)
     suggestions::MultiDict{String, String}
 end
 
 
-CorporaSearchResult{T}() where T<:AbstractId =
-    CorporaSearchResult(
-        Dict{T, CorpusSearchResult}(),
+AggregateSearchResult{T}() where T<:AbstractId =
+    AggregateSearchResult(
+        Dict{T, SearchResult}(),
         MultiDict{String, String}()
 )
 
 
-isempty(csr::T) where T<:CorporaSearchResult =
+isempty(csr::T) where T<:AggregateSearchResult =
     all(isempty(getfield(csr, field)) for field in fieldnames(T))
 
 
 # Show method
-show(io::IO, csr::CorporaSearchResult) = begin
+show(io::IO, csr::AggregateSearchResult) = begin
     if !isempty(csr.corpus_results)
         nt = mapreduce(x->valength(x[2].query_matches), +, csr.corpus_results)
     else
@@ -104,7 +104,7 @@ end
 
 
 # Pretty printer of results
-print_search_results(crpra_searcher::CorporaSearcher, csr::CorporaSearchResult) = begin
+print_search_results(crpra_searcher::AggregateSearcher, csr::AggregateSearchResult) = begin
     if !isempty(csr.corpus_results)
         nt = mapreduce(x->valength(x[2].query_matches), +, csr.corpus_results)
     else
@@ -133,17 +133,17 @@ print_search_results(crpra_searcher::CorporaSearcher, csr::CorporaSearchResult) 
 end
 
 
-# Push method (useful for inserting CorpusSearcher search results
-# into CorporaSearcher search results)
-function push!(csr::CorporaSearchResult{T},
-               sr::Pair{T, CorpusSearchResult}) where T<:AbstractId
+# Push method (useful for inserting AbstractSearcher search results
+# into AggregateSearcher search results)
+function push!(csr::AggregateSearchResult{T},
+               sr::Pair{T, SearchResult}) where T<:AbstractId
     push!(csr.corpus_results, sr)
     return csr
 end
 
 
 # Squash suggestions for multiple corpora search results
-function squash_suggestions!(csr::CorporaSearchResult{T},
+function squash_suggestions!(csr::AggregateSearchResult{T},
                              max_suggestions::Int=1) where T<:AbstractId
     # Quickly exit if no suggestions are sought
     max_suggestions <=0 && return MultiDict{String, String}()
@@ -159,7 +159,7 @@ function squash_suggestions!(csr::CorporaSearchResult{T},
                            for needle in keys(_result.needle_matches))
         missed_needles = intersect((keys(_result.suggestions)
                                     for _result in corpus_results)...)
-        # Construct suggestions for the whole CorporaSearcher
+        # Construct suggestions for the whole AggregateSearcher
         for needle in missed_needles
             needle_suggestions_corpora = Vector{Tuple{Float64,String}}()
             for _result in corpus_results

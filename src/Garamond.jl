@@ -43,20 +43,28 @@ module Garamond
     abstract type AbstractSearcher end
 
     export
-        # Corpora related
+        # Utils
+        prepare!,
+        get_document_embedding,
+        # Ids
         AbstractId,
         HashId,
         StringId,
-        CorpusRef,
+        # Search config structure
+        SearchConfig,
+        # Searchers
         AbstractSearcher,
-        CorpusSearcher,
-        CorporaSearcher,
-        corpora_searchers,
-        corpus_searcher,
+        AggregateSearcher,
+        aggregate_searcher,
+        ClassicSearcher,
+        classic_searcher,
+        SemanticSearcher,
+        semantic_searcher,
         enable!,
         disable!,
-        # Utils
-        prepare!,
+        # Results
+        SearchResult,
+        AggregateSearchResult,
         # Search related
         search,
         search_heuristically,
@@ -65,20 +73,17 @@ module Garamond
         get_commandline_arguments
         #HTTP server
         ###start_http_server,
-        # Word embeddings
-        ###find_cluster_mean,
-        ###get_cluster_matrix,
-        ###get_cluster_matrix!,
-        ###find_close_clusters,
-        ###path
 
     # Include section
     include("defaults.jl")
     include("cmdline.jl")
     include("logging.jl")
-    include("corpora_searchers.jl")
-    include("parsers.jl")
     include("utils_text_lang.jl")
+    include("utils_embeddings.jl")
+    include("ids.jl")
+    include("search_config.jl")
+    include("search_structures.jl")
+    include("parsers.jl")
     include("results.jl")
     include("search.jl")
     include("semantic_search.jl")

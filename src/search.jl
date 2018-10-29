@@ -7,10 +7,10 @@
 
 Searches for needles (i.e. key terms) in a multiple corpora and returns
 information regarding the documents that match best the query.
-The function returns an object of type CorporaSearchResult.
+The function returns an object of type AggregateSearchResult.
 
 # Arguments
-  * `crpra_searcher::CorporaSearcher{T,D}` is the corpora searcher
+  * `crpra_searcher::AggregateSearcher{T,D}` is the corpora searcher
   * `needles::Vector{String}` is a vector of key terms representing the query
 
 # Keyword arguments
@@ -33,7 +33,7 @@ The function returns an object of type CorporaSearchResult.
 	...
 ```
 """
-function search(crpra_searcher::CorporaSearcher{T,D},
+function search(crpra_searcher::AggregateSearcher{T,D},
                 needles::Vector{String};
                 search_type::Symbol=DEFAULT_SEARCH_TYPE,
                 search_method::Symbol=DEFAULT_SEARCH_METHOD,
@@ -51,7 +51,7 @@ function search(crpra_searcher::CorporaSearcher{T,D},
     n = length(crpra_searcher.searchers)
     max_corpus_suggestions = min(max_suggestions, max_corpus_suggestions)
     # Search
-    result_vector = [CorpusSearchResult() for _ in 1:n]
+    result_vector = [SearchResult() for _ in 1:n]
     id_vector = [random_id(T) for _ in 1:n]
     @threads for i in 1:n
         if crpra_searcher.searchers[i].enabled
@@ -67,7 +67,7 @@ function search(crpra_searcher::CorporaSearcher{T,D},
         end
     end
     # Add corpus search results to the corpora search results
-    result = CorporaSearchResult{T}()
+    result = AggregateSearchResult{T}()
     for i in 1:n
         if crpra_searcher.searchers[i].enabled
             push!(result, id_vector[i]=>result_vector[i])
@@ -83,11 +83,11 @@ end
 
 Searches for needles (i.e. key terms) in a corpus' metadata, text or both and 
 returns information regarding the the documents that match best the query.
-The function returns an object of type CorpusSearchResult and the id of the
-CorpusSearcher.
+The function returns an object of type SearchResult and the id of the
+ClassicSearcher.
 
 # Arguments
-  * `crps_searcher::CorpusSearcher{T,D}` is the corpus searcher
+  * `crps_searcher::ClassicSearcher{T,D}` is the corpus searcher
   * `needles::Vector{String}` is a vector of key terms representing the query
 
 # Keyword arguments
@@ -108,7 +108,7 @@ CorpusSearcher.
 ```
 """
 # Function that searches in a corpus'a metdata or metadata + content for needles (i.e. keyterms) 
-function search(crps_searcher::CorpusSearcher{T,D},
+function search(crps_searcher::ClassicSearcher{T,D},
                 needles::Vector{String};
                 search_type::Symbol=:metadata,
                 search_method::Symbol=:exact,
@@ -168,7 +168,7 @@ function search(crps_searcher::CorpusSearcher{T,D},
                                   max_suggestions=max_suggestions)
         end
     end
-    return crps_searcher.id, CorpusSearchResult(query_matches, needle_matches, suggestions)
+    return crps_searcher.id, SearchResult(query_matches, needle_matches, suggestions)
 end
 
 
@@ -238,4 +238,86 @@ function search_heuristically!(suggestions::MultiDict{String, Tuple{Float64, Str
         end
     end
     return suggestions
+end
+
+
+
+# Function that searches a query through the semantic search structures
+function search(semantic_crpra_searcher::AggregateSearcher{T,D},
+                conceptnet::ConceptNet{L,K,U},
+                query::AbstractString;
+                search_type::Symbol=DEFAULT_SEARCH_TYPE,
+                max_matches::Int=DEFAULT_MAX_MATCHES
+                ) where
+        {T<:AbstractId, D<:AbstractDocument, U<:AbstractVector,
+         L<:Languages.Language, K<:AbstractString}
+    # Checks
+    @assert search_type in [:index, :metadata, :all]
+    @assert max_matches >= 0
+    # Initializations
+    n = length(semantic_crpra_searcher.searchers)
+    result_vector = [SearchResult() for _ in 1:n]
+    id_vector = [random_id(T) for _ in 1:n]
+    for i in 1:n
+        if semantic_crpra_searcher.searchers[i].enabled
+            # Get corpus search results
+            id, search_result = search(semantic_crpra_searcher.searchers[i],
+                                       conceptnet,
+                                       query,
+                                       search_type=search_type,
+                                       max_matches=max_matches)
+            result_vector[i] = search_result
+            id_vector[i] = id
+        end
+    end
+    # Add corpus search results to the corpora search results
+    result = AggregateSearchResult{T}()
+    for i in 1:n
+        if semantic_crpra_searcher.searchers[i].enabled
+            push!(result, id_vector[i]=>result_vector[i])
+        end
+    end
+    return result
+end
+
+function search(semantic_crps_searcher::SemanticSearcher{T,D},
+                conceptnet::ConceptNet{L,K,U},
+                query::AbstractString;
+                search_type::Symbol=:metadata,
+                max_matches::Int=10) where
+        {T<:AbstractId, D<:AbstractDocument, U<:AbstractVector,
+         L<:Languages.Language, K<:AbstractString}
+    # Initializations
+    n = length(semantic_crps_searcher.corpus)    # number of documents
+    # Search metadata and/or index
+    where_to_search = ifelse(search_type==:all,
+                             [:index, :metadata],
+                             [search_type])
+    document_scores = zeros(Float64, n)     # document relevance
+    query_embedding = get_document_embedding(conceptnet,
+                                    semantic_crps_searcher.corpus.lexicon,
+                                    query)
+    for wts in where_to_search
+        # search
+        document_scores += search(query_embedding,
+                                  semantic_crps_searcher.embeddings[wts])
+    end
+    # Process documents found (sort by score)
+    documents_ordered::Vector{Tuple{Float64, Int}} =
+        [(score, i) for (i, score) in enumerate(document_scores) if score > 0]
+    sort!(documents_ordered, by=x->x[1], rev=true)
+    query_matches = MultiDict{Float64, Int}()
+    @inbounds for i in 1:min(max_matches, length(documents_ordered))
+        push!(query_matches, document_scores[documents_ordered[i][2]]=>
+                             documents_ordered[i][2])
+    end
+    # Get suggestions
+    suggestions = MultiDict{String, Tuple{Float64, String}}()
+    needle_matches = Dict{String, Float64}()
+    return semantic_crps_searcher.id, SearchResult(query_matches, needle_matches, suggestions)
+end
+
+function search(query::Vector{N}, embeddings::Matrix{N}) where N<:AbstractFloat
+    # Cosine similarity
+    embeddings'*query
 end
