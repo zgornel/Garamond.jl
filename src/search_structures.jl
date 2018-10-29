@@ -140,11 +140,9 @@ end
 ######################################
 abstract type AbstractEmbeddingModel end
 
-mutable struct NaiveEmbeddingModel<:AbstractEmbeddingModel
-    data::Matrix{Float64}
+mutable struct NaiveEmbeddingModel{N<:AbstractFloat}<:AbstractEmbeddingModel
+    data::Matrix{N}
 end
-
-size(m::NaiveEmbeddingModel) = size(m.data)
 
 #TODO (Corneliu): Add kd-trees, hnsw models
 
@@ -163,7 +161,7 @@ mutable struct SemanticSearcher{T<:AbstractId,
     enabled::Bool
     config::SearchConfig{T}
     embeddings::E
-    model::Dict{Symbol,  M}
+    model::Dict{Symbol, M}
 end
 
 show(io::IO, semsrcher::SemanticSearcher) = begin
@@ -171,7 +169,7 @@ show(io::IO, semsrcher::SemanticSearcher) = begin
     printstyled(io, "[$(semsrcher.id)] ", color=:cyan)
     _status = ifelse(semsrcher.enabled, "enabled", "disabled")
     _status_color = ifelse(semsrcher.enabled, :light_green, :light_black)
-    printstyled(io, "[$_status] ", color=_status_color)
+    printstyled(io, "[$_status]", color=_status_color)
     # Get embeddings type string
     if semsrcher.embeddings isa WordVectors
         _embs_type = "word2vec"
@@ -186,9 +184,9 @@ show(io::IO, semsrcher::SemanticSearcher) = begin
     else
         _model_type = "unknown model"
     end
-    printstyled(io, "-[$_embs_type, $_model_type] ", color=_status_color)
+    printstyled(io, "-[$_embs_type, $_model_type] ")
     printstyled(io, "$(semsrcher.config.name)", color=:normal)
-    printstyled(io, ", $(size(semsrcher.model, 2)) embedded documents\n")
+    printstyled(io, ", $(size(semsrcher.model[:data].data, 2)) embedded documents\n")
 end
 
 
@@ -314,7 +312,7 @@ function semantic_searcher(sconf::SearchConfig)
     if sconf.embedding_search_model == :naive
         model_type = NaiveEmbeddingModel
     else
-        @error "$(sconf.embedding_search_model) embeddings not yet supported!"
+        @error "$(sconf.embedding_search_model) embedding model not yet supported!"
     end
     # Build semantic searcher
     semsrcher = SemanticSearcher(sconf.id,
@@ -327,12 +325,12 @@ function semantic_searcher(sconf::SearchConfig)
     data_embeddings = hcat(
         (get_document_embedding(word_embeddings, crps.lexicon, doc)
          for doc in crps)...)
-    push!(semsrcher.embeddings, :data=>model_type(data_embeddings))
+    push!(semsrcher.model, :data=>model_type(data_embeddings))
     # Construct document metadata model
     metadata_embeddings = hcat(
         (get_document_embedding(word_embeddings, crps_meta.lexicon, doc)
          for doc in crps_meta)...)
-    push!(semsrcher.embeddings, :metadata=>model_type(metadata_embeddings))
+    push!(semsrcher.model, :metadata=>model_type(metadata_embeddings))
     # Return searcher
     return semsrcher
 end

@@ -263,7 +263,7 @@ function search(searcher::SemanticSearcher{T,D,E,M},
     # Tokenize
     needles = extract_tokens(query)
     # Initializations
-    n = size(searcher.model, 2)    # number of documents
+    n = size(searcher.model[:data].data, 2)    # number of documents
     # Search metadata and/or data
     where_to_search = ifelse(search_type==:all,
                              [:data, :metadata],
@@ -275,7 +275,7 @@ function search(searcher::SemanticSearcher{T,D,E,M},
     for wts in where_to_search
         # search
         document_scores += search(query_embedding,
-                                  searcher.embeddings[wts])
+                                  searcher.model[wts])
     end
     # Process documents found (sort by score)
     documents_ordered::Vector{Tuple{Float64, Int}} =
@@ -292,7 +292,7 @@ function search(searcher::SemanticSearcher{T,D,E,M},
     return searcher.id, SearchResult(query_matches, needle_matches, suggestions)
 end
 
-function search(query_embedding::Vector{N}, embeddings::Matrix{N}) where N<:AbstractFloat
+function search(query_embedding::Vector{N}, model::NaiveEmbeddingModel{N}) where N<:AbstractFloat
     # Cosine similarity
-    embeddings'*query_embedding
+    (model.data)'*query_embedding
 end
