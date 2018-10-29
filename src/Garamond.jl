@@ -34,7 +34,7 @@ module Garamond
     ### using LightGraphs, NearestNeighbors, MLKernels
     ### using HttpServer, WebSockets, JSON
 
-    import Base: show, keys, values, push!, delete!, getindex,
+    import Base: size, show, keys, values, push!, delete!, getindex,
            names, convert, lowercase, occursin, isempty
     import TextAnalysis: prepare!, update_lexicon!,
            update_inverse_index!
@@ -80,10 +80,8 @@ module Garamond
     include("logging.jl")
     include("utils_text_lang.jl")
     include("utils_embeddings.jl")
-    include("ids.jl")
     include("search_structures.jl")
     include("parsers.jl")
-    include("search_config.jl")
     include("search.jl")
     include("results.jl")
     ###include("servers.jl")

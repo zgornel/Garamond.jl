@@ -24,7 +24,7 @@ random_id(::Type{StringId}) = StringId(randstring())
 make_id(::Type{HashId}, id::String) = HashId(parse(UInt, id))  # the id has to be parsable to UInt
 make_id(::Type{HashId}, id::T) where T<:Integer = HashId(UInt(abs(id)))
 make_id(::Type{StringId}, id::T) where T<:AbstractString = StringId(String(id))
-make_id(::Type{StringId}, id::T) where T<:Number = StringId(String(id))
+make_id(::Type{StringId}, id::T) where T<:Number = StringId(string(id))
 
 const DEFAULT_ID_TYPE = StringId
 
@@ -85,10 +85,10 @@ Base.show(io::IO, sconf::SearchConfig) = begin
     printstyled(io, "SearchConfig for $(sconf.name)\n")
     _status = ifelse(sconf.enabled, "enabled", "disabled")
     _status_color = ifelse(sconf.enabled, :light_green, :light_black)
-    printstyled(io, "`-[$_status] ", color=_status_color)
+    printstyled(io, "`-[$_status]", color=_status_color)
     _search_color = ifelse(sconf.search==:classic, :cyan, :light_cyan)
-    printstyled(io, "-[$_search] ", color=_search_color)
-    printstyled(io, "$(sconf.path)\n")
+    printstyled(io, "-[$(sconf.search)] ", color=_search_color)
+    printstyled(io, "$(sconf.data_path)\n")
 end
 
 
@@ -102,7 +102,7 @@ struct TermCounts
 end
 
 
-Base.show(io::IO, tc::TermCounts) = begin
+show(io::IO, tc::TermCounts) = begin
     m, n = size(tc.values)
     print("Term importances for $m documents, $n unique terms.")
 end
@@ -130,7 +130,7 @@ show(io::IO, clsrcher::ClassicSearcher) = begin
     _status_color = ifelse(clsrcher.enabled, :light_green, :light_black)
     printstyled(io, "[$_status] ", color=_status_color)
     printstyled(io, "$(clsrcher.config.name)", color=:normal)
-    printstyled(io, ", $(size(clsrcher.term_counts[:data],1)) documents\n")
+    printstyled(io, ", $(size(clsrcher.term_counts[:data].values, 1)) documents\n")
 end
 
 
@@ -243,12 +243,12 @@ function add_final_zeros(a::A) where A<:AbstractMatrix
 end
 
 
-```
-Adds a ClassicSearcher to a AggregateSearcher using a SearchConfig.
-```
+"""
+Creates a ClassicSearcher from a SearchConfig.
+"""
 function classic_searcher(sconf::SearchConfig)
     # Parse file
-    crps, crps_meta = sconf.parser(sconf.path)
+    crps, crps_meta = sconf.parser(sconf.data_path)
     # get id
     id = sconf.id
     # Prepare
@@ -262,21 +262,20 @@ function classic_searcher(sconf::SearchConfig)
     dtm_meta = DocumentTermMatrix(crps_meta)
     # Get document importance calculation function
     if sconf.count_type == :tf
-        imp_func = TextAnalysis.tf
+        count_func = TextAnalysis.tf
     elseif sconf.count_type == :tfidf
-        imp_func = TextAnalysis.tf_idf
+        count_func = TextAnalysis.tf_idf
     else
         @warn "Unknown document importance :$(sconf.count_type); defaulting to frequency."
     end
     # Calculate doc importances
-    term_cnt = TermCounts(dtm.column_indices, add_final_zeros(imp_func(dtm)))
-    term_cnt_meta = TermCounts(dtm_meta.column_indices, add_final_zeros(imp_func(dtm_meta)))
+    term_cnt = TermCounts(dtm.column_indices, add_final_zeros(count_func(dtm)))
+    term_cnt_meta = TermCounts(dtm_meta.column_indices, add_final_zeros(count_func(dtm_meta)))
     # Initialize ClassicSearcher
     clsrcher = ClassicSearcher(id,
                                crps,
                                sconf.enabled,
                                sconf,
-                               Dict{Symbol, Dict{String, Vector{Int}}}(),
                                Dict{Symbol, TermCounts}(),
                                Dict{Symbol, BKTree{String}}())
     # Update ClassicSearcher
@@ -284,18 +283,20 @@ function classic_searcher(sconf::SearchConfig)
     push!(clsrcher.term_counts, :metadata=>term_cnt_meta)
     distance = get(HEURISTIC_TO_DISTANCE, sconf.heuristic, DEFAULT_DISTANCE)
     push!(clsrcher.search_trees, :data=>BKTree((x,y)->evaluate(distance, x, y),
-                                    collect(keys(crps.inverse_index))))
+                                    collect(keys(crps.lexicon))))
     push!(clsrcher.search_trees, :metadata=>BKTree((x,y)->evaluate(distance, x, y),
-                                    collect(keys(crps_meta.inverse_index))))
+                                    collect(keys(crps_meta.lexicon))))
     # Add ClassicSearcher to AggregateSearcher
     return clsrcher
 end
 
 
-
+"""
+Creates a ClassicSearcher from a SearchConfig.
+"""
 function semantic_searcher(sconf::SearchConfig)
     # Parse file
-    crps, crps_meta = sconf.parser(sconf.path)
+    crps, crps_meta = sconf.parser(sconf.data_path)
     # Prepare
     prepare!(crps, TEXT_STRIP_FLAGS)
     prepare!(crps_meta, METADATA_STRIP_FLAGS)

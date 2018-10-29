@@ -3,19 +3,19 @@
 ##################
 
 """
-	search(crpra_searcher, needles [;kwargs])
+	search(searcher, query [;kwargs])
 
-Searches for needles (i.e. key terms) in a multiple corpora and returns
+Searches for query (i.e. key terms) in a multiple corpora and returns
 information regarding the documents that match best the query.
 The function returns an object of type AggregateSearchResult.
 
 # Arguments
-  * `crpra_searcher::AggregateSearcher{T,D}` is the corpora searcher
-  * `needles::Vector{String}` is a vector of key terms representing the query
+  * `searcher::AggregateSearcher{T,D}` is the corpora searcher
+  * `query` the query
 
 # Keyword arguments
   * `search_type::Symbol` is the type of the search; can be `:metadata`,
-     `:data` or `:all`; the options specify that the needles can be found in
+     `:data` or `:all`; the options specify that the query can be found in
      the metadata of the documents of the corpus, the document content or both
      respectively
   * `search_method::Symbol` controls the type of matching: `:exact`
@@ -33,35 +33,36 @@ The function returns an object of type AggregateSearchResult.
 	...
 ```
 """
-function search(crpra_searcher::AggregateSearcher{T,D},
-                needles::Vector{String};
+function search(searcher::AggregateSearcher{T,S},
+                query;
                 search_type::Symbol=DEFAULT_SEARCH_TYPE,
                 search_method::Symbol=DEFAULT_SEARCH_METHOD,
                 max_matches::Int=DEFAULT_MAX_MATCHES,
                 max_suggestions::Int=DEFAULT_MAX_SUGGESTIONS,
                 max_corpus_suggestions::Int=DEFAULT_MAX_CORPUS_SUGGESTIONS) where
-        {T<:AbstractId, D<:AbstractDocument}
+        {T<:AbstractId, S<:AbstractSearcher}
     # Checks
+    # TODO(Corneliu) Adapt checks and options to individual searcher types
     @assert search_type in [:data, :metadata, :all]
     @assert search_method in [:exact, :regex]
     @assert max_matches >= 0
     @assert max_suggestions >= 0
     @assert max_corpus_suggestions >=0
     # Initializations
-    n = length(crpra_searcher.searchers)
+    n = length(searcher.searchers)
     max_corpus_suggestions = min(max_suggestions, max_corpus_suggestions)
     # Search
     result_vector = [SearchResult() for _ in 1:n]
     id_vector = [random_id(T) for _ in 1:n]
     @threads for i in 1:n
-        if crpra_searcher.searchers[i].enabled
+        if searcher.searchers[i].enabled
             # Get corpus search results
-            id, search_result = search(crpra_searcher.searchers[i],
-                                   needles,
-                                   search_type=search_type,
-                                   search_method=search_method,
-                                   max_matches=max_matches,
-                                   max_suggestions=max_corpus_suggestions)
+            id, search_result = search(searcher.searchers[i],
+                                       query,
+                                       search_type=search_type,
+                                       search_method=search_method,
+                                       max_matches=max_matches,
+                                       max_suggestions=max_corpus_suggestions)
             result_vector[i] = search_result
             id_vector[i] = id
         end
@@ -69,7 +70,7 @@ function search(crpra_searcher::AggregateSearcher{T,D},
     # Add corpus search results to the corpora search results
     result = AggregateSearchResult{T}()
     for i in 1:n
-        if crpra_searcher.searchers[i].enabled
+        if searcher.searchers[i].enabled
             push!(result, id_vector[i]=>result_vector[i])
         end
     end
@@ -78,21 +79,25 @@ function search(crpra_searcher::AggregateSearcher{T,D},
 end
 
 
-"""
-	search(crps_searcher, needles [;kwargs])
 
-Searches for needles (i.e. key terms) in a corpus' metadata, text or both and 
+##################
+# Classic search #
+##################
+"""
+	search(searcher, query [;kwargs])
+
+Searches for query (i.e. key terms) in a corpus' metadata, text or both and 
 returns information regarding the the documents that match best the query.
 The function returns an object of type SearchResult and the id of the
 ClassicSearcher.
 
 # Arguments
-  * `crps_searcher::ClassicSearcher{T,D}` is the corpus searcher
-  * `needles::Vector{String}` is a vector of key terms representing the query
+  * `searcher::ClassicSearcher{T,D}` is the corpus searcher
+  * `query` the query
 
 # Keyword arguments
   * `search_type::Symbol` is the type of the search; can be `:metadata`,
-     `:data` or `:all`; the options specify that the needles can be found in
+     `:data` or `:all`; the options specify that the query can be found in
      the metadata of the documents of the corpus, the document content or both
      respectively
   * `search_method::Symbol` controls the type of matching: `:exact`
@@ -107,16 +112,18 @@ ClassicSearcher.
 	...
 ```
 """
-# Function that searches in a corpus'a metdata or metadata + content for needles (i.e. keyterms) 
-function search(crps_searcher::ClassicSearcher{T,D},
-                needles::Vector{String};
+# Function that searches in a corpus'a metdata or metadata + content for query (i.e. keyterms) 
+function search(searcher::ClassicSearcher{T,D},
+                query;
                 search_type::Symbol=:metadata,
                 search_method::Symbol=:exact,
                 max_matches::Int=10,
                 max_suggestions::Int=DEFAULT_MAX_CORPUS_SUGGESTIONS
                ) where {T<:AbstractId, D<:AbstractDocument}
+    # Tokenize
+    needles = extract_tokens(query)
     # Initializations
-    n = length(crps_searcher.corpus)    # number of documents
+    n = size(searcher.term_counts[:data].values, 1)    # number of documents
     p = length(needles)                 # number of search terms
     # Search metadata and/or data
     where_to_search = ifelse(search_type==:all,
@@ -126,9 +133,9 @@ function search(crps_searcher::ClassicSearcher{T,D},
     needle_popularity = zeros(Float64, p)   # needle relevance
     for wts in where_to_search
         # search
-        inds = search(needles, crps_searcher.term_importances[wts], search_method=search_method)
+        inds = search(needles, searcher.term_counts[wts], search_method=search_method)
         # select term importance vectors
-        M = view(crps_searcher.term_importances[wts].values, :, inds)
+        M = view(searcher.term_counts[wts].values, :, inds)
         @inbounds @simd for j in 1:p
              for i in 1:n
                 if M[i,j] != 0.0
@@ -142,9 +149,9 @@ function search(crps_searcher::ClassicSearcher{T,D},
     documents_ordered::Vector{Tuple{Float64, Int}} =
         [(score, i) for (i, score) in enumerate(document_scores) if score > 0]
     sort!(documents_ordered, by=x->x[1], rev=true)
-    query_matches = MultiDict{Float64, Int}()
+    needles_matches = MultiDict{Float64, Int}()
     @inbounds for i in 1:min(max_matches, length(documents_ordered))
-        push!(query_matches, document_scores[documents_ordered[i][2]]=>
+        push!(needles_matches, document_scores[documents_ordered[i][2]]=>
                              documents_ordered[i][2])
     end
     # Process needles (search heuristically for missing ones,
@@ -163,33 +170,33 @@ function search(crps_searcher::ClassicSearcher{T,D},
         # Get suggestions
         for wts in where_to_search
             search_heuristically!(suggestions,
-                                  crps_searcher.search_trees[wts],
+                                  searcher.search_trees[wts],
                                   needles_not_found,
                                   max_suggestions=max_suggestions)
         end
     end
-    return crps_searcher.id, SearchResult(query_matches, needle_matches, suggestions)
+    return searcher.id, SearchResult(needles_matches, needle_matches, suggestions)
 end
 
 
 """
 	Search function for searching using the term imporatances associated to a corpus.
 """
-function search(needles::Vector{String},
-                term_importances::TermImportances;
-                search_method::Symbol=:exact) where {T<:AbstractDocument}
+function search(needles::Vector{S},
+                term_counts::TermCounts;
+                search_method::Symbol=:exact) where S<:AbstractString
     # Initializations
     p = length(needles)
-    I = term_importances.column_indices
-    V = term_importances.values
-    m, n = size(term_importances.values)  # m - no. of documents, n - no. of terms+1
+    I = term_counts.column_indices
+    V = term_counts.values
+    m, n = size(term_counts.values)  # m - no. of documents, n - no. of terms+1
     inds = fill(n,p)  # default value n i.e. return 0-vector from V
     # Get needle mutating and string matching functions
     if search_method == :exact
         needle_mutator = identity
         matching_function = isequal
     else  # search_method == :regex
-        needle_mutator = (arg::String)->Regex(arg)
+        needle_mutator = (arg::S)->Regex(arg)
         matching_function = occursin
     end
     # Mutate needles
@@ -218,16 +225,16 @@ end
     Search in the search tree for matches.
 """
 function search_heuristically!(suggestions::MultiDict{String, Tuple{Float64, String}},
-                              search_tree::BKTree{String},
-                              needles::Vector{String};
-                              max_suggestions::Int=1)
+                               search_tree::BKTree{String},
+                               needles::Vector{S};
+                               max_suggestions::Int=1) where S<:AbstractString
     if isempty(needles)
         return suggestions
     else  # there are terms that have not been found
         # Checks
         @assert !BKTrees.is_empty_node(search_tree.root) "FATAL: empty search tree."
         for needle in needles
-            _suggestions = sort!(find(search_tree, needle,
+            _suggestions = sort!(find(search_tree, String(needle),
                                       MAX_EDIT_DISTANCE,
                                       k=max_suggestions),
                                  by=x->x[1])
@@ -242,65 +249,33 @@ end
 
 
 
-# Function that searches a query through the semantic search structures
-function search(semantic_crpra_searcher::AggregateSearcher{T,D},
-                conceptnet::ConceptNet{L,K,U},
-                query::AbstractString;
-                search_type::Symbol=DEFAULT_SEARCH_TYPE,
-                max_matches::Int=DEFAULT_MAX_MATCHES
-                ) where
-        {T<:AbstractId, D<:AbstractDocument, U<:AbstractVector,
-         L<:Languages.Language, K<:AbstractString}
-    # Checks
-    @assert search_type in [:data, :metadata, :all]
-    @assert max_matches >= 0
-    # Initializations
-    n = length(semantic_crpra_searcher.searchers)
-    result_vector = [SearchResult() for _ in 1:n]
-    id_vector = [random_id(T) for _ in 1:n]
-    for i in 1:n
-        if semantic_crpra_searcher.searchers[i].enabled
-            # Get corpus search results
-            id, search_result = search(semantic_crpra_searcher.searchers[i],
-                                       conceptnet,
-                                       query,
-                                       search_type=search_type,
-                                       max_matches=max_matches)
-            result_vector[i] = search_result
-            id_vector[i] = id
-        end
-    end
-    # Add corpus search results to the corpora search results
-    result = AggregateSearchResult{T}()
-    for i in 1:n
-        if semantic_crpra_searcher.searchers[i].enabled
-            push!(result, id_vector[i]=>result_vector[i])
-        end
-    end
-    return result
-end
-
-function search(semantic_crps_searcher::SemanticSearcher{T,D},
-                conceptnet::ConceptNet{L,K,U},
-                query::AbstractString;
+###################
+# Semantic search #
+###################
+function search(searcher::SemanticSearcher{T,D,E,M},
+                query;  # can be either a string or vector of strings
                 search_type::Symbol=:metadata,
-                max_matches::Int=10) where
-        {T<:AbstractId, D<:AbstractDocument, U<:AbstractVector,
-         L<:Languages.Language, K<:AbstractString}
+                search_method::Symbol=Symbol(),  #not used
+                max_matches::Int=10,
+                max_suggestions::Int=DEFAULT_MAX_CORPUS_SUGGESTIONS  # not used
+                ) where
+        {T<:AbstractId, D<:AbstractDocument, E, M<:AbstractEmbeddingModel}
+    # Tokenize
+    needles = extract_tokens(query)
     # Initializations
-    n = length(semantic_crps_searcher.corpus)    # number of documents
+    n = size(searcher.model, 2)    # number of documents
     # Search metadata and/or data
     where_to_search = ifelse(search_type==:all,
                              [:data, :metadata],
                              [search_type])
     document_scores = zeros(Float64, n)     # document relevance
-    query_embedding = get_document_embedding(conceptnet,
-                                    semantic_crps_searcher.corpus.lexicon,
-                                    query)
+    query_embedding = get_document_embedding(searcher.embeddings,
+                                             searcher.corpus.lexicon,
+                                             query)
     for wts in where_to_search
         # search
         document_scores += search(query_embedding,
-                                  semantic_crps_searcher.embeddings[wts])
+                                  searcher.embeddings[wts])
     end
     # Process documents found (sort by score)
     documents_ordered::Vector{Tuple{Float64, Int}} =
@@ -314,10 +289,10 @@ function search(semantic_crps_searcher::SemanticSearcher{T,D},
     # Get suggestions
     suggestions = MultiDict{String, Tuple{Float64, String}}()
     needle_matches = Dict{String, Float64}()
-    return semantic_crps_searcher.id, SearchResult(query_matches, needle_matches, suggestions)
+    return searcher.id, SearchResult(query_matches, needle_matches, suggestions)
 end
 
-function search(query::Vector{N}, embeddings::Matrix{N}) where N<:AbstractFloat
+function search(query_embedding::Vector{N}, embeddings::Matrix{N}) where N<:AbstractFloat
     # Cosine similarity
-    embeddings'*query
+    embeddings'*query_embedding
 end

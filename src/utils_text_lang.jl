@@ -21,11 +21,9 @@ end
 convert(::Type{L}, lang::S) where {L<:Languages.Language, S<:AbstractString} =
     get(STR_TO_LANG, strip(lower(lang)), Languages.English())
 
-
 # Converts Languages.Language to String (using LANG_TO_STR)
 convert(::Type{S}, lang::L) where {L<:Languages.Language, S<:AbstractString} =
 	get(LANG_TO_STR, lang, "unknown")
-
 
 # Convert a TextAnalysis metadata structure to a Dict
 convert(::Type{Dict}, md::TextAnalysis.DocumentMetadata) =
@@ -82,6 +80,17 @@ function prepare!(input_string::AbstractString, flags::UInt32)
 	return filter(x::AbstractString -> length(x) > 1,
 	              String.(split(text(_sd))))
 end
+
+
+
+# Text extraction methods various types of documents
+extract_tokens(doc::NGramDocument) = collect(keys(doc.ngrams))
+
+extract_tokens(doc::StringDocument) = tokenize_for_conceptnet(doc.text)
+
+extract_tokens(doc::AbstractString) = tokenize_for_conceptnet(doc)
+
+extract_tokens(doc::Vector{S} where S<:AbstractString) = doc
 
 
 

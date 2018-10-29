@@ -28,7 +28,7 @@ DEFAULT_DISTANCE = HEURISTIC_TO_DISTANCE[DEFAULT_HEURISTIC]
 # Semantic search related
 DEFAULT_EMBEDDING_METHOD = :bow  # can be :bow or :arora
 DEFAULT_EMBEDDINGS_TYPE = :conceptnet  # can be :word2vec or :conceptnet
-DEFAULT_SEARCH_MODEL = :naive  # can be :naive, :kdtree or :hnsw
+DEFAULT_EMBEDDING_SEARCH_MODEL = :naive  # can be :naive, :kdtree or :hnsw
 
 
 # Various document processing related constants

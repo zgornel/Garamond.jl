@@ -30,7 +30,7 @@ end
 
 
 
-@testset "Basic test... (csv_format_1)" begin
+@testset "Classic search test... (csv_format_1)" begin
     # Generate test files
     test_filepath = generate_test_files(:csv_config_1)
     # Create corpora searches
@@ -42,7 +42,7 @@ end
     # Initialize search parameters
     _id = StringId("specific_id")
     _id_disabled = "disabled_id"
-    ST = [:index, :metadata, :all]
+    ST = [:data, :metadata, :all]
     SM = [:exact, :regex]
     needles = [randstring(rand([1,2,3])) for _ in 1:5]
     MAX_SUGGESTIONS=[0, 5]

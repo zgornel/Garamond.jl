@@ -1,10 +1,3 @@
-# Text extraction methods various types of documents
-extract_tokens(doc::NGramDocument) = collect(keys(doc.ngrams))
-extract_tokens(doc::StringDocument) = tokenize_for_conceptnet(doc.text)
-extract_tokens(doc::AbstractString) = tokenize_for_conceptnet(doc)
-
-
-
 # Function that creates a single mean vector from a vector or matrix
 squash(m) = begin
     # Calculate document embedding
@@ -23,7 +16,9 @@ end
 #   :arora - algorithm from [1] "A simple but tough-to-beat baseline for sentence embeddings",
 #           Arora et al. ICLR 2017 (https://openreview.net/pdf?id=SyK00v5xx)
 #           [not working properly unless full documents are used]
-function get_document_embedding(conceptnet::ConceptNet, lexicon, doc;
+function get_document_embedding(conceptnet::ConceptNet,
+                                lexicon,
+                                doc;
                                 embedding_method::Symbol=DEFAULT_EMBEDDING_METHOD)
     # Tokenize
     tokens = extract_tokens(doc)
@@ -44,6 +39,7 @@ function get_document_embedding(conceptnet::ConceptNet, lexicon, doc;
     n = size(conceptnet,1)
     isempty(doc_embs) && return zeros(n)
     em = float(doc_embs)
+    # TODO(Corneliu): Split into separate processing method
     if embedding_method ==:arora
         # Calculate term frequency vector p
         tt = sum(values(lexicon))
