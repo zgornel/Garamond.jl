@@ -15,8 +15,8 @@ The function returns an object of type AggregateSearchResult.
 
 # Keyword arguments
   * `search_type::Symbol` is the type of the search; can be `:metadata`,
-     `:index` or `:all`; the options specify that the needles can be found in
-     the metadata of the documents of the corpus, their inverse index or both
+     `:data` or `:all`; the options specify that the needles can be found in
+     the metadata of the documents of the corpus, the document content or both
      respectively
   * `search_method::Symbol` controls the type of matching: `:exact`
      searches for the very same string while `:regex` searches for a string
@@ -42,7 +42,7 @@ function search(crpra_searcher::AggregateSearcher{T,D},
                 max_corpus_suggestions::Int=DEFAULT_MAX_CORPUS_SUGGESTIONS) where
         {T<:AbstractId, D<:AbstractDocument}
     # Checks
-    @assert search_type in [:index, :metadata, :all]
+    @assert search_type in [:data, :metadata, :all]
     @assert search_method in [:exact, :regex]
     @assert max_matches >= 0
     @assert max_suggestions >= 0
@@ -92,8 +92,8 @@ ClassicSearcher.
 
 # Keyword arguments
   * `search_type::Symbol` is the type of the search; can be `:metadata`,
-     `:index` or `:all`; the options specify that the needles can be found in
-     the metadata of the documents of the corpus, their inverse index or both 
+     `:data` or `:all`; the options specify that the needles can be found in
+     the metadata of the documents of the corpus, the document content or both
      respectively
   * `search_method::Symbol` controls the type of matching: `:exact`
      searches for the very same string while `:regex` searches for a string
@@ -118,9 +118,9 @@ function search(crps_searcher::ClassicSearcher{T,D},
     # Initializations
     n = length(crps_searcher.corpus)    # number of documents
     p = length(needles)                 # number of search terms
-    # Search metadata and/or index
+    # Search metadata and/or data
     where_to_search = ifelse(search_type==:all,
-                             [:index, :metadata],
+                             [:data, :metadata],
                              [search_type])
     document_scores = zeros(Float64, n)     # document relevance
     needle_popularity = zeros(Float64, p)   # needle relevance
@@ -158,7 +158,7 @@ function search(crps_searcher::ClassicSearcher{T,D},
     if max_suggestions > 0 && any(missing_needles)
         needles_not_found = needles[missing_needles]
         where_to_search = ifelse(search_type == :all,
-                                 [:index, :metadata],
+                                 [:data, :metadata],
                                  [search_type])
         # Get suggestions
         for wts in where_to_search
@@ -252,7 +252,7 @@ function search(semantic_crpra_searcher::AggregateSearcher{T,D},
         {T<:AbstractId, D<:AbstractDocument, U<:AbstractVector,
          L<:Languages.Language, K<:AbstractString}
     # Checks
-    @assert search_type in [:index, :metadata, :all]
+    @assert search_type in [:data, :metadata, :all]
     @assert max_matches >= 0
     # Initializations
     n = length(semantic_crpra_searcher.searchers)
@@ -289,9 +289,9 @@ function search(semantic_crps_searcher::SemanticSearcher{T,D},
          L<:Languages.Language, K<:AbstractString}
     # Initializations
     n = length(semantic_crps_searcher.corpus)    # number of documents
-    # Search metadata and/or index
+    # Search metadata and/or data
     where_to_search = ifelse(search_type==:all,
-                             [:index, :metadata],
+                             [:data, :metadata],
                              [search_type])
     document_scores = zeros(Float64, n)     # document relevance
     query_embedding = get_document_embedding(conceptnet,

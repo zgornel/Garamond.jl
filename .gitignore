@@ -6,7 +6,6 @@
 rawdata
 data/
 doc/
-config/
 dump/
 build/bin/
 benchmarks/

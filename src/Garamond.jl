@@ -30,7 +30,7 @@ module Garamond
     using StringDistances, BKTrees
     using ArgParse
     using ProgressMeter
-    using ConceptnetNumberbatch
+    using ConceptnetNumberbatch, Word2Vec
     ### using LightGraphs, NearestNeighbors, MLKernels
     ### using HttpServer, WebSockets, JSON
 
@@ -54,12 +54,12 @@ module Garamond
         SearchConfig,
         # Searchers
         AbstractSearcher,
-        AggregateSearcher,
-        aggregate_searcher,
         ClassicSearcher,
-        classic_searcher,
         SemanticSearcher,
+        AggregateSearcher,
+        classic_searcher,
         semantic_searcher,
+        aggregate_searcher,
         enable!,
         disable!,
         # Results
@@ -81,12 +81,11 @@ module Garamond
     include("utils_text_lang.jl")
     include("utils_embeddings.jl")
     include("ids.jl")
-    include("search_config.jl")
     include("search_structures.jl")
     include("parsers.jl")
-    include("results.jl")
+    include("search_config.jl")
     include("search.jl")
-    include("semantic_search.jl")
+    include("results.jl")
     ###include("servers.jl")
 
 end # module

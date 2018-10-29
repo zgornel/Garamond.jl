@@ -14,17 +14,17 @@ squash(m) = begin
 end
 
 
+# TODO(Corneliu) Make an embed_document function for Word2Vec
 
 # Function to get from multiple word-embeddings to a document embedding
 # Through the embedding method, the algorithm for combining multiple word wmbeddings
 # into a single document embedding is controlled. Avalilable options:
-#   :mean - calculate document embedding as the mean of the word embeddings
+#   :bow - calculate document embedding as the mean of the word embeddings
 #   :arora - algorithm from [1] "A simple but tough-to-beat baseline for sentence embeddings",
 #           Arora et al. ICLR 2017 (https://openreview.net/pdf?id=SyK00v5xx)
 #           [not working properly unless full documents are used]
-function get_document_embedding(conceptnet::ConceptNet{L,K,U}, lexicon, doc;
-                                embedding_method::Symbol=:mean) where
-        {L<:Languages.Language, K<:AbstractString, U<:AbstractVector}
+function get_document_embedding(conceptnet::ConceptNet, lexicon, doc;
+                                embedding_method::Symbol=DEFAULT_EMBEDDING_METHOD)
     # Tokenize
     tokens = extract_tokens(doc)
     # Get word embeddings
@@ -62,10 +62,9 @@ function get_document_embedding(conceptnet::ConceptNet{L,K,U}, lexicon, doc;
     return squash(em)
 end
 
-
-
-
-
-
-
-
+function get_document_embedding(word_vectors::WordVectors, lexicon, doc;
+                                embedding_method::Symbol=DEFAULT_EMBEDDING_METHOD)
+    @warn "Word2Vec document embedding not supported, return zero vector..."
+    # TODO(Corneliu) Implement
+    return zeros(size(word_vectors.vectors, 1))
+end

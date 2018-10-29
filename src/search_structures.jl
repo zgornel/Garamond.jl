@@ -1,14 +1,109 @@
-#############################
-# Term Importance structure #
-#############################
-struct TermImportances
+########################################################
+# Corpus Id's i.e. keys that uniquely identify corpora #
+########################################################
+
+struct HashId <: AbstractId
+    id::UInt
+end
+
+
+struct StringId <: AbstractId
+    id::String
+end
+
+
+show(io::IO, id::StringId) = print(io, "id=\"$(id.id)\"")
+show(io::IO, id::HashId) = print(io, "id=0x$(string(id.id, base=16))")
+
+
+random_id(::Type{HashId}) = HashId(hash(rand()))
+random_id(::Type{StringId}) = StringId(randstring())
+
+
+# Construct IDs
+make_id(::Type{HashId}, id::String) = HashId(parse(UInt, id))  # the id has to be parsable to UInt
+make_id(::Type{HashId}, id::T) where T<:Integer = HashId(UInt(abs(id)))
+make_id(::Type{StringId}, id::T) where T<:AbstractString = StringId(String(id))
+make_id(::Type{StringId}, id::T) where T<:Number = StringId(String(id))
+
+const DEFAULT_ID_TYPE = StringId
+
+
+
+################
+# SearchConfig #
+################
+# SearchConfigs can be built from a data configuration file or manually
+mutable struct SearchConfig{I<:AbstractId}
+    # general
+    id::I                           # searcher/corpus id
+    search::Symbol                  # search type i.e. :classic, :semantic
+    name::String                    # name of the searcher.corpus
+    enabled::Bool                   # whether to use the corpus in search or not
+    data_path::String               # file/directory path for the data (depends on what the parser accepts)
+    parser::Function                # parser function used to obtain corpus
+    # classic search
+    count_type::Symbol              # search term counting type i.e. :tf, :tfidf etc (classic search)
+    heuristic::Symbol               # search heuristic for recommendtations (classic search)
+    # semantic search
+    embeddings_path::String         # path to the embeddings file
+    embeddings_type::Symbol         # type of the embeddings i.e. :conceptnet, :word2vec (semantic search)
+    embedding_method::Symbol        # How to arrive at a single embedding from multiple i.e. :bow, :arora (semantic search)
+    embedding_search_model::Symbol  # type of the search model i.e. :naive, :kdtree, :hnsw (semantic search)
+end
+
+
+# Small function that returns 2 empty corpora
+_fake_parser(args...) = begin
+    crps = Corpus(DEFAULT_DOC_TYPE(""))
+    return crps, crps
+end
+
+
+# Keyword argument constructor; all arguments sho
+SearchConfig(;
+          id=random_id(DEFAULT_ID_TYPE),
+          search=DEFAULT_SEARCH,
+          name="",
+          enabled=false,
+          data_path="",
+          parser=_fake_parser,
+          count_type=DEFAULT_COUNT_TYPE,
+          heuristic=DEFAULT_HEURISTIC,
+          embeddings_path="",
+          embeddings_type=DEFAULT_EMBEDDINGS_TYPE,
+          embedding_method=DEFAULT_EMBEDDING_METHOD,
+          embedding_search_model=DEFAULT_EMBEDDING_SEARCH_MODEL) =
+    # Call normal constructor
+    SearchConfig(id, search, name, enabled, data_path, parser,
+                 count_type, heuristic,
+                 embeddings_path, embeddings_type,
+                 embedding_method, embedding_search_model)
+
+
+Base.show(io::IO, sconf::SearchConfig) = begin
+    printstyled(io, "SearchConfig for $(sconf.name)\n")
+    _status = ifelse(sconf.enabled, "enabled", "disabled")
+    _status_color = ifelse(sconf.enabled, :light_green, :light_black)
+    printstyled(io, "`-[$_status] ", color=_status_color)
+    _search_color = ifelse(sconf.search==:classic, :cyan, :light_cyan)
+    printstyled(io, "-[$_search] ", color=_search_color)
+    printstyled(io, "$(sconf.path)\n")
+end
+
+
+
+###########################
+# Term Counting structure #
+###########################
+struct TermCounts
     column_indices::Dict{String, Int}
     values::SparseMatrixCSC{Float64, Int64}
 end
 
 
-Base.show(io::IO, ti::TermImportances) = begin
-    m, n = size(ti.values)
+Base.show(io::IO, tc::TermCounts) = begin
+    m, n = size(tc.values)
     print("Term importances for $m documents, $n unique terms.")
 end
 
@@ -18,27 +113,40 @@ end
 # Interface for ClassicSearcher #
 #################################
 mutable struct ClassicSearcher{T<:AbstractId,
-                              D<:AbstractDocument} <: AbstractSearcher
+                               D<:AbstractDocument} <: AbstractSearcher
     id::T
     corpus::Corpus{D}
     enabled::Bool
-    ref::SearchConfig
-    index::Dict{Symbol, Dict{String, Vector{Int}}}
-    term_importances::Dict{Symbol, TermImportances}
+    config::SearchConfig
+    term_counts::Dict{Symbol, TermCounts}
     search_trees::Dict{Symbol, BKTree{String}}
 end
 
 
 show(io::IO, clsrcher::ClassicSearcher) = begin
-    printstyled(io, "$(typeof(clsrcher)), ")
+    printstyled(io, "ClassicSearcher, ")
     printstyled(io, "[$(clsrcher.id)] ", color=:cyan)
-    _status = ifelse(clsrcher.enabled, "Enabled", "Disabled")
+    _status = ifelse(clsrcher.enabled, "enabled", "disabled")
     _status_color = ifelse(clsrcher.enabled, :light_green, :light_black)
     printstyled(io, "[$_status] ", color=_status_color)
-    printstyled(io, "$(clsrcher.ref.name)", color=:normal)
-    printstyled(io, ", $(length(clsrcher.corpus)) documents\n")
+    printstyled(io, "$(clsrcher.config.name)", color=:normal)
+    printstyled(io, ", $(size(clsrcher.term_counts[:data],1)) documents\n")
 end
 
+
+
+######################################
+# Word embeddings related structures #
+######################################
+abstract type AbstractEmbeddingModel end
+
+mutable struct NaiveEmbeddingModel<:AbstractEmbeddingModel
+    data::Matrix{Float64}
+end
+
+size(m::NaiveEmbeddingModel) = size(m.data)
+
+#TODO (Corneliu): Add kd-trees, hnsw models
 
 
 ##################################
@@ -47,58 +155,48 @@ end
 
 # Searcher structures
 mutable struct SemanticSearcher{T<:AbstractId,
-                                      D<:AbstractDocument} <: AbstractSearcher
+                                D<:AbstractDocument,
+                                E,  # can be ConceptNet or WordVectors etc.
+                                M<:AbstractEmbeddingModel} <: AbstractSearcher
     id::T
     corpus::Corpus{D}
     enabled::Bool
-    ref::SearchConfig{T}
-    embeddings::Dict{Symbol, Matrix{Float64}}
+    config::SearchConfig{T}
+    embeddings::E
+    model::Dict{Symbol,  M}
 end
 
-show(io::IO, semsrcher::SemanticSearcher{T,D}) where
-        {T<:AbstractId, D<:AbstractDocument} = begin
-    printstyled(io, "$(typeof(semsrcher)), ")
+show(io::IO, semsrcher::SemanticSearcher) = begin
+    printstyled(io, "SemanticSearcher, ")
     printstyled(io, "[$(semsrcher.id)] ", color=:cyan)
-    _status = ifelse(semsrcher.enabled, "Enabled", "Disabled")
+    _status = ifelse(semsrcher.enabled, "enabled", "disabled")
     _status_color = ifelse(semsrcher.enabled, :light_green, :light_black)
     printstyled(io, "[$_status] ", color=_status_color)
-    printstyled(io, "$(semsrcher.ref.name)", color=:normal)
-    printstyled(io, ", $(length(semsrcher.corpus)) documents\n")
-end
-
-
-# Function to create a semantic search structure from corpus refs' similar to corpora_searchers
-function semantic_corpora_searchers(filename::AbstractString,
-                                    cptnetpath::AbstractString;
-                                    languages=[Languages.English()])
-    crefs = parse_corpora_configuration(filename)
-    cptnet = load_embeddings(cptnetpath, languages=languages)
-    semantic_corpora_searchers(crefs, cptnet)
-end
-
-function semantic_corpora_searchers(crefs::Vector{SearchConfig{T}},
-                                    conceptnet::ConceptNet{L,K,U};
-                                    doc_type::Type{D}=DEFAULT_DOC_TYPE) where
-        {T<:AbstractId, D<:AbstractDocument, L<:Languages.Language,
-         K<:AbstractString, U<:AbstractVector}
-    n = length(crefs)
-    semantic_corpora_searcher = AggregateSearcher(
-        Vector{SemanticSearcher{T,D}}(undef, n), Dict{T,Int}())
-    for (i, cref) in enumerate(crefs)
-        semantic_corpora_searcher.searchers[i] = sematic_searcher(cref, conceptnet)
-        push!(semantic_corpora_searcher.idmap, cref.id=>i)
+    # Get embeddings type string
+    if semsrcher.embeddings isa WordVectors
+        _embs_type = "word2vec"
+    elseif semsrcher.embeddings isa ConceptNet
+        _embs_type = "conceptnet"
+    else
+        _embs_type = "unknown embeddings"
     end
-	return semantic_corpora_searcher
+    # Get model type string
+    if semsrcher.model isa NaiveEmbeddingModel
+        _model_type = "naive model"
+    else
+        _model_type = "unknown model"
+    end
+    printstyled(io, "-[$_embs_type, $_model_type] ", color=_status_color)
+    printstyled(io, "$(semsrcher.config.name)", color=:normal)
+    printstyled(io, ", $(size(semsrcher.model, 2)) embedded documents\n")
 end
-
-
 
 
 ###################################
 # Interface for AggregateSearcher #
 ###################################
-mutable struct AggregateSearcher{T<:AbstractId, D<:AbstractDocument}
-    searchers::Vector{ClassicSearcher{T,D}}
+mutable struct AggregateSearcher{T<:AbstractId, S<:AbstractSearcher}
+    searchers::Vector{S}
     idmap::Dict{T, Int}
 end
 
@@ -111,98 +209,27 @@ show(io::IO, aggsrcher::AggregateSearcher) = begin
 end
 
 
-# Indexing
-getindex(aggsrcher::AggregateSearcher{T,D}, id::T) where
-        {T<:AbstractId, D<:AbstractDocument} =
-    return aggsrcher.searchers[aggsrcher.idmap[id]]
-
-getindex(aggsrcher::AggregateSearcher{T,D}, id::UInt) where
-        {T<:HashId, D<:AbstractDocument} =
-    aggsrcher[HashId(id)]
-
-getindex(aggsrcher::AggregateSearcher{T,D}, id::String) where
-        {T<:StringId, D<:AbstractDocument} =
-    aggsrcher[StringId(id)]
-
-
-delete!(aggsrcher::AggregateSearcher{T,D}, id::T) where
-        {T<:AbstractId, D<:AbstractDocument} = begin
-    deleteat!(aggsrcher.searchers, aggsrcher.idmap[id])
-    delete!(aggsrcher.idmap, id)
-    return aggsrcher
+# Function to create a semantic search structure from corpus configs' similar to corpora_searchers
+function aggregate_searcher(data_config_path::AbstractString)
+    sconfs = parse_data_config(data_config_path)
+    aggregate_searcher(sconfs)
 end
 
-
-delete!(aggsrcher::AggregateSearcher{T,D}, id::Union{String, UInt}) where
-        {T<:AbstractId, D<:AbstractDocument} =
-    delete!(aggsrcher, T(id))
-
-
-disable!(aggsrcher::AggregateSearcher{T,D}, id::T) where
-        {T<:AbstractId, D<:AbstractDocument} = begin
-    aggsrcher[id].enabled = false
-    aggsrcher[id].ref.enabled = false
-    return aggsrcher
-end
-
-
-disable!(aggsrcher::AggregateSearcher{T,D}, id::Union{String, UInt}) where
-        {T<:AbstractId, D<:AbstractDocument} =
-    disable!(aggsrcher, T(id))
-
-
-disable!(aggsrcher::AggregateSearcher{T,D}) where
-        {T<:AbstractId, D<:AbstractDocument} = begin
-    for id in keys(aggsrcher.idmap)
-        disable!(aggsrcher, id)
-    end
-    return aggsrcher
-end
-
-
-enable!(aggsrcher::AggregateSearcher{T,D}, id::T) where
-        {T<:AbstractId, D<:AbstractDocument} = begin
-    aggsrcher[id].enabled = true
-    aggsrcher[id].ref.enabled = true
-    return aggsrcher
-end
-
-
-enable!(aggsrcher::AggregateSearcher{T,D}, id::Union{String, UInt}) where
-        {T<:AbstractId, D<:AbstractDocument} =
-    enable!(aggsrcher, T(id))
-
-
-enable!(aggsrcher::AggregateSearcher{T,D}) where
-        {T<:AbstractId, D<:AbstractDocument} = begin
-    for id in keys(aggsrcher.idmap)
-        enable!(aggsrcher, id)
-    end
-    return aggsrcher
-end
-
-
-
-# Construct corpora searchers using a Garamond corpora config file
-function aggregate_searcher(filename::AbstractString)
-	crefs = parse_corpora_configuration(filename)
-	aggregate_searcher(crefs)
-end
-
-
-# Construct corpora searchers using a vector of corpus references
-function aggregate_searcher(crefs::Vector{SearchConfig{T}};
-                           doc_type::Type{D}=DEFAULT_DOC_TYPE) where
-        {T<:AbstractId, D<:AbstractDocument}
-    n = length(crefs)
-    aggsrcher = AggregateSearcher(Vector{ClassicSearcher{T,D}}(undef, n),
-                                     Dict{T,Int}())
-    for (i, cref) in enumerate(crefs)
-        aggsrcher.searchers[i] = classic_searcher(cref)
-        push!(aggsrcher.idmap, cref.id=>i)
+function aggregate_searcher(sconfs::Vector{SearchConfig{T}}) where T<:AbstractId
+    n = length(sconfs)
+    aggsrcher = AggregateSearcher(Vector{AbstractSearcher}(undef, n),
+                                  Dict{T,Int}())
+    for (i, sconf) in enumerate(sconfs)
+        if sconf.search == :classic
+            aggsrcher.searchers[i] = classic_searcher(sconf)
+        else
+            aggsrcher.searchers[i] = semantic_searcher(sconf)
+        end
+        push!(aggsrcher.idmap, sconf.id=>i)
     end
 	return aggsrcher
 end
+
 
 
 # Function that returns a similar matrix with
@@ -219,85 +246,167 @@ end
 ```
 Adds a ClassicSearcher to a AggregateSearcher using a SearchConfig.
 ```
-function classic_searcher(cref::R) where R<:SearchConfig
+function classic_searcher(sconf::SearchConfig)
     # Parse file
-    crps, crps_meta = cref.parser(cref.path)
+    crps, crps_meta = sconf.parser(sconf.path)
     # get id
-    id = cref.id
+    id = sconf.id
     # Prepare
     prepare!(crps, TEXT_STRIP_FLAGS)
     prepare!(crps_meta, METADATA_STRIP_FLAGS)
     # Update lexicons
     update_lexicon!(crps)
     update_lexicon!(crps_meta)
-    # Update inverse indices
-    update_inverse_index!(crps)
-    update_inverse_index!(crps_meta)
     # Calculate term importances
     dtm = DocumentTermMatrix(crps)
     dtm_meta = DocumentTermMatrix(crps_meta)
     # Get document importance calculation function
-    if cref.termimp == :tf
+    if sconf.count_type == :tf
         imp_func = TextAnalysis.tf
-    elseif cref.termimp == :tfidf
+    elseif sconf.count_type == :tfidf
         imp_func = TextAnalysis.tf_idf
     else
-        @warn "Unknown document importance :$(cref.termimp); defaulting to frequency."
+        @warn "Unknown document importance :$(sconf.count_type); defaulting to frequency."
     end
     # Calculate doc importances
-    term_imp = TermImportances(dtm.column_indices, add_final_zeros(imp_func(dtm)))
-    term_imp_meta = TermImportances(dtm_meta.column_indices, add_final_zeros(imp_func(dtm_meta)))
+    term_cnt = TermCounts(dtm.column_indices, add_final_zeros(imp_func(dtm)))
+    term_cnt_meta = TermCounts(dtm_meta.column_indices, add_final_zeros(imp_func(dtm_meta)))
     # Initialize ClassicSearcher
-    cs = ClassicSearcher(id,
-                        crps,
-                        cref.enabled,
-                        cref,
-                        Dict{Symbol, Dict{String, Vector{Int}}}(),
-                        Dict{Symbol, TermImportances}(),
-                        Dict{Symbol, BKTree{String}}())
+    clsrcher = ClassicSearcher(id,
+                               crps,
+                               sconf.enabled,
+                               sconf,
+                               Dict{Symbol, Dict{String, Vector{Int}}}(),
+                               Dict{Symbol, TermCounts}(),
+                               Dict{Symbol, BKTree{String}}())
     # Update ClassicSearcher
-    push!(cs.index, :index=>crps.inverse_index)
-    push!(cs.index, :metadata=>crps_meta.inverse_index)
-    push!(cs.term_importances, :index=>term_imp)
-    push!(cs.term_importances, :metadata=>term_imp_meta)
-    distance = get(HEURISTIC_TO_DISTANCE, cref.heuristic, DEFAULT_DISTANCE)
-    push!(cs.search_trees, :index=>BKTree((x,y)->evaluate(distance, x, y),
-                                           collect(keys(crps.inverse_index))
-                                          ))
-    push!(cs.search_trees, :metadata=>BKTree((x,y)->evaluate(distance, x, y),
-                                              collect(keys(crps_meta.inverse_index))
-                                             ))
+    push!(clsrcher.term_counts, :data=>term_cnt)
+    push!(clsrcher.term_counts, :metadata=>term_cnt_meta)
+    distance = get(HEURISTIC_TO_DISTANCE, sconf.heuristic, DEFAULT_DISTANCE)
+    push!(clsrcher.search_trees, :data=>BKTree((x,y)->evaluate(distance, x, y),
+                                    collect(keys(crps.inverse_index))))
+    push!(clsrcher.search_trees, :metadata=>BKTree((x,y)->evaluate(distance, x, y),
+                                    collect(keys(crps_meta.inverse_index))))
     # Add ClassicSearcher to AggregateSearcher
-    return cs
+    return clsrcher
 end
 
 
 
-function sematic_searcher(cref, conceptnet::ConceptNet{L,K,U}) where
-        {L<:Languages.Language, K<:AbstractString, U<:AbstractVector}
+function semantic_searcher(sconf::SearchConfig)
     # Parse file
-    crps, crps_meta = cref.parser(cref.path)
+    crps, crps_meta = sconf.parser(sconf.path)
     # Prepare
     prepare!(crps, TEXT_STRIP_FLAGS)
     prepare!(crps_meta, METADATA_STRIP_FLAGS)
     ### # Update lexicons
     update_lexicon!(crps)
     update_lexicon!(crps_meta)
-    ### # Update inverse indices
-    ### update_inverse_index!(crps)
-    ### update_inverse_index!(crps_meta)
-
-    scs = SemanticSearcher(cref.id,
+    # Read word embeddings
+    if sconf.embeddings_type == :conceptnet
+        word_embeddings = load_embeddings(sconf.embeddings_path, languages=[Languages.English()])
+    elseif sconf.embeddings_type == :word2vec
+        word_embeddings = wordvectors(sconf.embeddings_path, kind=:binary)
+    else
+        @error "$(sconf.embeddings_type) embeddings not yet supported!"
+    end
+    if sconf.embedding_search_model == :naive
+        model_type = NaiveEmbeddingModel
+    else
+        @error "$(sconf.embedding_search_model) embeddings not yet supported!"
+    end
+    # Build semantic searcher
+    semsrcher = SemanticSearcher(sconf.id,
                                  crps,
-                                 cref.enabled,
-                                 cref,
-                                 Dict{Symbol, Matrix{Float64}}())
-    # Update SemanticSearcher
-    push!(scs.embeddings, :index=>hcat((get_document_embedding(
-                                            conceptnet, crps.lexicon, doc)
-                                        for doc in crps)...))
-    push!(scs.embeddings, :metadata=>hcat((get_document_embedding(
-                                                conceptnet, crps_meta.lexicon, doc)
-                                           for doc in crps_meta)...))
-    return scs
+                                 sconf.enabled,
+                                 sconf,
+                                 word_embeddings,
+                                 Dict{Symbol, model_type}())
+    # Construct document data model
+    data_embeddings = hcat(
+        (get_document_embedding(word_embeddings, crps.lexicon, doc)
+         for doc in crps)...)
+    push!(semsrcher.embeddings, :data=>model_type(data_embeddings))
+    # Construct document metadata model
+    metadata_embeddings = hcat(
+        (get_document_embedding(word_embeddings, crps_meta.lexicon, doc)
+         for doc in crps_meta)...)
+    push!(semsrcher.embeddings, :metadata=>model_type(metadata_embeddings))
+    # Return searcher
+    return semsrcher
+end
+
+
+
+#################################
+# Utils for Aggregate searchers #
+#################################
+# Indexing
+getindex(aggsrcher::AggregateSearcher{T,S}, id::T) where
+        {T<:AbstractId, S<:AbstractSearcher} =
+    return aggsrcher.searchers[aggsrcher.idmap[id]]
+
+getindex(aggsrcher::AggregateSearcher{T,S}, id::UInt) where
+        {T<:HashId, S<:AbstractSearcher} =
+    aggsrcher[HashId(id)]
+
+getindex(aggsrcher::AggregateSearcher{T,S}, id::String) where
+        {T<:StringId, S<:AbstractSearcher} =
+    aggsrcher[StringId(id)]
+
+
+delete!(aggsrcher::AggregateSearcher{T,S}, id::T) where
+        {T<:AbstractId, S<:AbstractSearcher} = begin
+    deleteat!(aggsrcher.searchers, aggsrcher.idmap[id])
+    delete!(aggsrcher.idmap, id)
+    return aggsrcher
+end
+
+
+delete!(aggsrcher::AggregateSearcher{T,S}, id::Union{String, UInt}) where
+        {T<:AbstractId, S<:AbstractSearcher} =
+    delete!(aggsrcher, T(id))
+
+
+disable!(aggsrcher::AggregateSearcher{T,S}, id::T) where
+        {T<:AbstractId, S<:AbstractSearcher} = begin
+    aggsrcher[id].enabled = false
+    aggsrcher[id].config.enabled = false
+    return aggsrcher
+end
+
+
+disable!(aggsrcher::AggregateSearcher{T,S}, id::Union{String, UInt}) where
+        {T<:AbstractId, S<:AbstractSearcher} =
+    disable!(aggsrcher, T(id))
+
+
+disable!(aggsrcher::AggregateSearcher{T,S}) where
+        {T<:AbstractId, S<:AbstractSearcher} = begin
+    for id in keys(aggsrcher.idmap)
+        disable!(aggsrcher, id)
+    end
+    return aggsrcher
+end
+
+
+enable!(aggsrcher::AggregateSearcher{T,S}, id::T) where
+        {T<:AbstractId, S<:AbstractSearcher} = begin
+    aggsrcher[id].enabled = true
+    aggsrcher[id].config.enabled = true
+    return aggsrcher
+end
+
+
+enable!(aggsrcher::AggregateSearcher{T,S}, id::Union{String, UInt}) where
+        {T<:AbstractId, S<:AbstractSearcher} =
+    enable!(aggsrcher, T(id))
+
+
+enable!(aggsrcher::AggregateSearcher{T,S}) where
+        {T<:AbstractId, S<:AbstractSearcher} = begin
+    for id in keys(aggsrcher.idmap)
+        enable!(aggsrcher, id)
+    end
+    return aggsrcher
 end
