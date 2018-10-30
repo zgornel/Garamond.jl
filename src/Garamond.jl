@@ -38,6 +38,7 @@ module Garamond
            names, convert, lowercase, occursin, isempty
     import TextAnalysis: prepare!, update_lexicon!,
            update_inverse_index!
+    import ConceptnetNumberbatch: embed_document
 
     abstract type AbstractId end
     abstract type AbstractSearcher end

@@ -83,17 +83,6 @@ end
 
 
 
-# Text extraction methods various types of documents
-extract_tokens(doc::NGramDocument) = collect(keys(doc.ngrams))
-
-extract_tokens(doc::StringDocument) = tokenize_for_conceptnet(doc.text)
-
-extract_tokens(doc::AbstractString) = tokenize_for_conceptnet(doc)
-
-extract_tokens(doc::Vector{S} where S<:AbstractString) = doc
-
-
-
 ### # Useful regular expressions
 ### replace.(select(tt2,2),r"([A-Z]\s|[A-Z]\.\s)","")  # replace middle initial 
 ### replace.(select(tt2,2),r"[\s]+$","")  # replace end spaces 
