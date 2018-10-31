@@ -52,26 +52,24 @@ function search(searcher::AggregateSearcher{T,S},
     n = length(searcher.searchers)
     max_corpus_suggestions = min(max_suggestions, max_corpus_suggestions)
     # Search
-    result_vector = [SearchResult() for _ in 1:n]
-    id_vector = [random_id(T) for _ in 1:n]
+    results = [SearchResult() for _ in 1:n]
+    ids = [random_id(T) for _ in 1:n]
     @threads for i in 1:n
         if searcher.searchers[i].enabled
             # Get corpus search results
-            id, search_result = search(searcher.searchers[i],
-                                       query,
-                                       search_type=search_type,
-                                       search_method=search_method,
-                                       max_matches=max_matches,
-                                       max_suggestions=max_corpus_suggestions)
-            result_vector[i] = search_result
-            id_vector[i] = id
+            ids[i], results[i] = search(searcher.searchers[i],
+                                        query,
+                                        search_type=search_type,
+                                        search_method=search_method,
+                                        max_matches=max_matches,
+                                        max_suggestions=max_corpus_suggestions)
         end
     end
     # Add corpus search results to the corpora search results
     result = AggregateSearchResult{T}()
     for i in 1:n
         if searcher.searchers[i].enabled
-            push!(result, id_vector[i]=>result_vector[i])
+            push!(result, ids[i]=>results[i])
         end
     end
     squash_suggestions!(result, max_suggestions)
