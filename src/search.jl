@@ -84,7 +84,7 @@ end
 """
 	search(searcher, query [;kwargs])
 
-Searches for query (i.e. key terms) in a corpus' metadata, text or both and 
+Searches for query (i.e. key terms) in a corpus' metadata, text or both and
 returns information regarding the the documents that match best the query.
 The function returns an object of type SearchResult and the id of the
 ClassicSearcher.
@@ -110,7 +110,8 @@ ClassicSearcher.
 	...
 ```
 """
-# Function that searches in a corpus'a metdata or metadata + content for query (i.e. keyterms) 
+# Function that searches in a corpus'a metdata or
+# metadata + content for query (i.e. keyterms)
 function search(searcher::ClassicSearcher{T,D},
                 query;
                 search_type::Symbol=:metadata,
@@ -250,6 +251,34 @@ end
 ###################
 # Semantic search #
 ###################
+"""
+	search(searcher, query [;kwargs])
+
+Searches semantically for the query in a corpus' metadata, text or both and
+returns information regarding the the documents that match best the query.
+The function returns an object of type SearchResult and the id of the
+SemanticSearcher.
+
+# Note: there are dummy parameters for the signature to be identical to
+        the classic search function
+# Arguments
+  * `searcher::SemanticSearcher{T,D,E,M}` is the corpus semantic searcher
+  * `query` the query
+
+# Keyword arguments
+  * `search_type::Symbol` is the type of the search; can be `:metadata`,
+     `:data` or `:all`; the options specify that the query can be found in
+     the metadata of the documents of the corpus, the document content or both
+     respectively
+  * `search_method::Symbol` dummy parameter, not used
+  * `max_matches::Int` is the maximum number of search results to return
+  * `max_suggestions::Int` dummy parameter, not used
+
+# Examples
+```
+	...
+```
+"""
 function search(searcher::SemanticSearcher{T,D,E,M},
                 query;  # can be either a string or vector of strings
                 search_type::Symbol=:metadata,
@@ -271,12 +300,41 @@ function search(searcher::SemanticSearcher{T,D,E,M},
                         searcher.corpus.lexicon,
                         query,
                         embedding_method=searcher.config.embedding_method)
-    local idxs, scores
+    idxs = Int[]
+    scores = Float64[]
+
+    # Small function that processes two vectors a and b where
+    # a is assumed to be a vector of document idices (with possible
+    # duplicates and b the corresponding scores)
+    # TODO(Corneliu): Simplify this bit.
+    function _merge_indices_and_scores!(idxs, scores, k)
+        duplicate_pos = Int[]
+        for idx in idxs
+            pos = findall(x->x==idx, idxs)
+            scores[pos[1]] = mean(scores[pos])
+            if length(pos) > 1
+                # We know there can be max 1 other duplicate!
+                push!(duplicate_pos, maximum(pos))
+            end
+		end
+        sort!(unique!(duplicate_pos))
+        deleteat!(idxs, duplicate_pos)
+        deleteat!(scores, duplicate_pos)
+        order = sortperm(scores)
+        scores = scores[order][1:k]
+        idxs = idxs[order][1:k]
+        return idxs, scores
+	end
+
+    k = min(n, max_matches)
     for wts in where_to_search
         # search
-        idxs, scores = knn(searcher.model[wts],
-                           query_embedding,
-                           min(n, max_matches))
+        _idxs, _scores = knn(searcher.model[wts], query_embedding, k)
+        push!(idxs, _idxs...)
+        push!(scores, _scores...)
+        if search_type == :all
+            _merge_indices_and_scores!(idxs, scores, k)
+        end
     end
     # Process documents found (sort by score)
     query_matches = MultiDict(zip(scores, idxs))
