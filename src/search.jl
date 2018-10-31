@@ -266,9 +266,11 @@ function search(searcher::SemanticSearcher{T,D,E,M},
     where_to_search = ifelse(search_type==:all,
                              [:data, :metadata],
                              [search_type])
+    # Embed query
     query_embedding = get_document_embedding(searcher.embeddings,
-                                             searcher.corpus.lexicon,
-                                             query)
+                        searcher.corpus.lexicon,
+                        query,
+                        embedding_method=searcher.config.embedding_method)
     local idxs, scores
     for wts in where_to_search
         # search

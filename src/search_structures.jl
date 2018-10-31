@@ -317,12 +317,14 @@ function semantic_searcher(sconf::SearchConfig)
                                  Dict{Symbol, model_type}())
     # Construct document data model
     data_embeddings = hcat(
-        (get_document_embedding(word_embeddings, crps.lexicon, doc)
+        (get_document_embedding(word_embeddings, crps.lexicon, doc,
+                                embedding_method=sconf.embedding_method)
          for doc in crps)...)
     push!(semsrcher.model, :data=>model_type(data_embeddings))
     # Construct document metadata model
     metadata_embeddings = hcat(
-        (get_document_embedding(word_embeddings, crps_meta.lexicon, doc)
+        (get_document_embedding(word_embeddings, crps_meta.lexicon, doc,
+                                embedding_method=sconf.embedding_method)
          for doc in crps_meta)...)
     push!(semsrcher.model, :metadata=>model_type(metadata_embeddings))
     # Return searcher

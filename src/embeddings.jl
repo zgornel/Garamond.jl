@@ -108,7 +108,8 @@ function get_document_embedding(embeddings_library,
     n = size(embeddings_library)[1]  # number of vector components
     isempty(doc_embs) && return zeros(n)
     em = float(doc_embs)
-    embedding_method ==:arora && preprocess_arora_style!(em, tokens, lexicon)
+    embedding_method ==:arora && preprocess_arora_style!(em,
+                                    tokens, missing_tokens, lexicon)
     return squash(em)
 end
 
@@ -122,7 +123,10 @@ occur.
 [1] "A simple but tough-to-beat baseline for sentence embeddings", Arora et al. ICLR 2017
     (https://openreview.net/pdf?id=SyK00v5xx)
 """
-function preprocess_arora_style!(em::Matrix{T}, tokens::Vector{S}, lexicon::Dict{String, Int}) where
+function preprocess_arora_style!(em::Matrix{T},
+                                 tokens::Vector{S},
+                                 missing_tokens::Vector{Int},
+                                 lexicon::Dict{String, Int}) where
             {T<:AbstractFloat, S<:AbstractString}
     # Calculate term frequency vector p
     tt = sum(values(lexicon))
