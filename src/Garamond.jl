@@ -41,7 +41,6 @@ module Garamond
     import TextAnalysis: prepare!, update_lexicon!,
            update_inverse_index!
     import ConceptnetNumberbatch: embed_document
-    import NearestNeighbors: knn
 
     # Abstract types
     abstract type AbstractId end

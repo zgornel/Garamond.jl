@@ -185,7 +185,7 @@ function parse_data_config(filename::AbstractString)
                 sconf.embedding_method = DEFAULT_EMBEDDING_METHOD
             end
             # type of search model
-            if !(sconf.embedding_search_model in [:naive, :kdtree, :hnsw])
+            if !(sconf.embedding_search_model in [:naive, :brutetree, :kdtree, :hnsw])
                 @warn "id=$(sconf.id) Forcing embedding_search_model=$DEFAULT_EMBEDDING_SEARCH_MODEL."
                 sconf.embedding_search_model = DEFAULT_EMBEDDING_SEARCH_MODEL
             end

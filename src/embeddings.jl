@@ -10,19 +10,21 @@ struct BruteTreeEmbeddingModel{A,D} <: AbstractEmbeddingModel
     tree::BruteTree{A,D}  # Array, Distance and Element types
 end
 
-BruteTreeEmbeddingModel(data::AbstractMatrix) = KDTreeEmbeddingModel(KDTree(data))
+BruteTreeEmbeddingModel(data::AbstractMatrix) =
+    BruteTreeEmbeddingModel(BruteTree(data))
 
 
 struct KDTreeEmbeddingModel{A,D} <: AbstractEmbeddingModel
     tree::KDTree{A,D}
 end
 
-KDTreeEmbeddingModel(data::AbstractMatrix) = KDTreeEmbeddingModel(KDTree(data))
+KDTreeEmbeddingModel(data::AbstractMatrix) =
+    KDTreeEmbeddingModel(KDTree(data))
 
 
 
-# Nearest neighbor search function
-function knn(model::NaiveEmbeddingModel{E}, point::Vector{E}, k::Int) where
+# Nearest neighbor search methods
+function search(model::NaiveEmbeddingModel{E}, point::Vector{E}, k::Int) where
         E<:AbstractFloat
     # Cosine similarity
     scores = 1 .- ((model.data)'*point)
@@ -30,13 +32,13 @@ function knn(model::NaiveEmbeddingModel{E}, point::Vector{E}, k::Int) where
     return (idxs, scores[idxs])
 end
 
-function knn(model::BruteTreeEmbeddingModel{A,D}, point::AbstractVector, k::Int) where
+function search(model::BruteTreeEmbeddingModel{A,D}, point::AbstractVector, k::Int) where
         {A<:AbstractArray, D<:Metric}
     # Uses Euclidean distance by default
     return knn(model.tree, point, k, true)
 end
 
-function knn(model::KDTreeEmbeddingModel{A,D}, point::AbstractVector, k::Int) where
+function search(model::KDTreeEmbeddingModel{A,D}, point::AbstractVector, k::Int) where
         {A<:AbstractArray, D<:Metric}
     # Uses Euclidean distance by default
     return knn(model.tree, point, k, true)

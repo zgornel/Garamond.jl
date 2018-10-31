@@ -329,7 +329,7 @@ function search(searcher::SemanticSearcher{T,D,E,M},
     k = min(n, max_matches)
     for wts in where_to_search
         # search
-        _idxs, _scores = knn(searcher.model[wts], query_embedding, k)
+        _idxs, _scores = search(searcher.model[wts], query_embedding, k)
         push!(idxs, _idxs...)
         push!(scores, _scores...)
         if search_type == :all

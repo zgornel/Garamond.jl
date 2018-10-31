@@ -300,6 +300,8 @@ function semantic_searcher(sconf::SearchConfig)
     # Create model
     if sconf.embedding_search_model == :naive
         model_type = NaiveEmbeddingModel
+    elseif sconf.embedding_search_model == :brutetree
+        model_type = BruteTreeEmbeddingModel
     elseif sconf.embedding_search_model == :kdtree
         model_type = KDTreeEmbeddingModel
     elseif sconf.embedding_search_model == :hnsw
