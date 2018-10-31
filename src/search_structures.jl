@@ -135,18 +135,6 @@ end
 
 
 
-######################################
-# Word embeddings related structures #
-######################################
-abstract type AbstractEmbeddingModel end
-
-mutable struct NaiveEmbeddingModel{N<:AbstractFloat}<:AbstractEmbeddingModel
-    data::Matrix{N}
-end
-
-#TODO (Corneliu): Add kd-trees, hnsw models
-
-
 ##################################
 # Interface for SemanticSearcher #
 ##################################
@@ -309,10 +297,16 @@ function semantic_searcher(sconf::SearchConfig)
     else
         @error "$(sconf.embeddings_type) embeddings not yet supported!"
     end
+    # Create model
     if sconf.embedding_search_model == :naive
         model_type = NaiveEmbeddingModel
+    elseif sconf.embedding_search_model == :kdtree
+        model_type = KDTreeEmbeddingModel
+    elseif sconf.embedding_search_model == :hnsw
+        @error "HSNW embedding model not yet supported!"
+        #model_type = HNSWEmbeddingModel
     else
-        @error "$(sconf.embedding_search_model) embedding model not yet supported!"
+        @error "$(sconf.embedding_search_model) embedding model is not supported."
     end
     # Build semantic searcher
     semsrcher = SemanticSearcher(sconf.id,

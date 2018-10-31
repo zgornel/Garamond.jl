@@ -17,6 +17,7 @@
 ##################################################################################################################
 module Garamond
 
+    # Using section
     using Logging
     using Random
     using Unicode
@@ -31,18 +32,23 @@ module Garamond
     using ArgParse
     using ProgressMeter
     using ConceptnetNumberbatch, Word2Vec
-    ### using LightGraphs, NearestNeighbors, MLKernels
-    ### using HttpServer, WebSockets, JSON
+    using NearestNeighbors, Distances
 
-    import Base: size, show, keys, values, push!, delete!, getindex,
-           names, convert, lowercase, occursin, isempty
+    # Import section (extendable methods)
+    import Base: size, length, show, keys, values, push!,
+                 delete!, getindex, names, convert, lowercase,
+                 occursin, isempty
     import TextAnalysis: prepare!, update_lexicon!,
            update_inverse_index!
     import ConceptnetNumberbatch: embed_document
+    import NearestNeighbors: knn
 
+    # Abstract types
     abstract type AbstractId end
     abstract type AbstractSearcher end
+    abstract type AbstractEmbeddingModel end
 
+    # Exports
     export
         # Utils
         prepare!,
@@ -80,7 +86,7 @@ module Garamond
     include("cmdline.jl")
     include("logging.jl")
     include("utils_text_lang.jl")
-    include("utils_embeddings.jl")
+    include("embeddings.jl")
     include("search_structures.jl")
     include("parsers.jl")
     include("search.jl")

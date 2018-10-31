@@ -1,3 +1,57 @@
+######################################
+# Word embeddings related structures #
+######################################
+struct NaiveEmbeddingModel{E} <: AbstractEmbeddingModel
+    data::Matrix{E}
+end
+
+
+struct BruteTreeEmbeddingModel{A,D} <: AbstractEmbeddingModel
+    tree::BruteTree{A,D}  # Array, Distance and Element types
+end
+
+BruteTreeEmbeddingModel(data::AbstractMatrix) = KDTreeEmbeddingModel(KDTree(data))
+
+
+struct KDTreeEmbeddingModel{A,D} <: AbstractEmbeddingModel
+    tree::KDTree{A,D}
+end
+
+KDTreeEmbeddingModel(data::AbstractMatrix) = KDTreeEmbeddingModel(KDTree(data))
+
+
+
+# Nearest neighbor search function
+function knn(model::NaiveEmbeddingModel{E}, point::Vector{E}, k::Int) where
+        E<:AbstractFloat
+    # Cosine similarity
+    scores = 1 .- ((model.data)'*point)
+    idxs = sortperm(scores)[1:k]
+    return (idxs, scores[idxs])
+end
+
+function knn(model::BruteTreeEmbeddingModel{A,D}, point::AbstractVector, k::Int) where
+        {A<:AbstractArray, D<:Metric}
+    # Uses Euclidean distance by default
+    return knn(model.tree, point, k, true)
+end
+
+function knn(model::KDTreeEmbeddingModel{A,D}, point::AbstractVector, k::Int) where
+        {A<:AbstractArray, D<:Metric}
+    # Uses Euclidean distance by default
+    return knn(model.tree, point, k, true)
+end
+
+
+# Length methods
+length(model::NaiveEmbeddingModel) = size(model.data, 2)
+length(model::BruteTreeEmbeddingModel) = length(model.tree.data)
+length(model::KDTreeEmbeddingModel) = length(model.tree.data)
+
+
+######################
+# Document Embedding #
+######################
 """
 Function that creates a single mean vector from a vector or matrix.
 """

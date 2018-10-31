@@ -118,7 +118,7 @@ print_search_results(crpra_searcher::AggregateSearcher, csr::AggregateSearchResu
         printstyled("`-[$id] ", color=:cyan)  # hash
         printstyled("$(nm) search results")
         ch = ifelse(nm==0, ".", ":"); printstyled("$ch\n")
-        for score in sort(collect(keys(_result.query_matches)), rev=true)
+        for score in sort(collect(keys(_result.query_matches)))
             for doc in (crps[i] for i in _result.query_matches[score])
                 printstyled("  $score ~ ", color=:normal, bold=true)
                 printstyled("$(metadata(doc))\n", color=:normal)

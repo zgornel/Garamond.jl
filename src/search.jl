@@ -261,36 +261,25 @@ function search(searcher::SemanticSearcher{T,D,E,M},
     # Tokenize
     needles = extract_tokens(query)
     # Initializations
-    n = size(searcher.model[:data].data, 2)    # number of documents
+    n = length(searcher.model[:data]) # number of embedded documents
     # Search metadata and/or data
     where_to_search = ifelse(search_type==:all,
                              [:data, :metadata],
                              [search_type])
-    document_scores = zeros(Float64, n)     # document relevance
     query_embedding = get_document_embedding(searcher.embeddings,
                                              searcher.corpus.lexicon,
                                              query)
+    local idxs, scores
     for wts in where_to_search
         # search
-        document_scores += search(query_embedding,
-                                  searcher.model[wts])
+        idxs, scores = knn(searcher.model[wts],
+                           query_embedding,
+                           min(n, max_matches))
     end
     # Process documents found (sort by score)
-    documents_ordered::Vector{Tuple{Float64, Int}} =
-        [(score, i) for (i, score) in enumerate(document_scores) if score > 0]
-    sort!(documents_ordered, by=x->x[1], rev=true)
-    query_matches = MultiDict{Float64, Int}()
-    @inbounds for i in 1:min(max_matches, length(documents_ordered))
-        push!(query_matches, document_scores[documents_ordered[i][2]]=>
-                             documents_ordered[i][2])
-    end
+    query_matches = MultiDict(zip(scores, idxs))
     # Get suggestions
     suggestions = MultiDict{String, Tuple{Float64, String}}()
     needle_matches = Dict{String, Float64}()
     return searcher.id, SearchResult(query_matches, needle_matches, suggestions)
-end
-
-function search(query_embedding::Vector{N}, model::NaiveEmbeddingModel{N}) where N<:AbstractFloat
-    # Cosine similarity
-    (model.data)'*query_embedding
 end
