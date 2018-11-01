@@ -17,8 +17,8 @@ SearchResult() = SearchResult(
 )
 
 
-isempty(csr::T) where T<:SearchResult =
-    all(isempty(getfield(csr, field)) for field in fieldnames(T))
+isempty(sr::T) where T<:SearchResult =
+    all(isempty(getfield(sr, field)) for field in fieldnames(T))
 
 # Calculate the length of a MultiDict as the number
 # of values considering all keys
@@ -32,29 +32,29 @@ end
 
 
 # Show method
-show(io::IO, csr::SearchResult) = begin
-    n = valength(csr.query_matches)
-    nm = length(csr.needle_matches)
-    ns = length(csr.suggestions)
+show(io::IO, sr::SearchResult) = begin
+    n = valength(sr.query_matches)
+    nm = length(sr.needle_matches)
+    ns = length(sr.suggestions)
     printstyled(io, "Search results for a corpus: ")
     printstyled(io, " $n hits, $nm query terms, $ns suggestions.", bold=true)
 end
 
 
 # Pretty printer of results
-print_search_results(cs::AbstractSearcher, csr::SearchResult) = begin
-    nm = valength(csr.query_matches)
-    ns = length(csr.suggestions)
+print_search_results(cs::AbstractSearcher, sr::SearchResult) = begin
+    nm = valength(sr.query_matches)
+    ns = length(sr.suggestions)
     printstyled("$nm search results")
     ch = ifelse(nm==0, ".", ":"); printstyled("$ch\n")
-    for score in sort(collect(keys(csr.query_matches)), rev=true)
-        for doc in (cs.corpus[i] for i in csr.query_matches[score])
+    for score in sort(collect(keys(sr.query_matches)))
+        for doc in (cs.corpus[i] for i in sr.query_matches[score])
             printstyled("  $score ~ ", color=:normal, bold=true)
             printstyled("$(metadata(doc))\n", color=:normal)
         end
     end
     ns > 0 && printstyled("$ns suggestions:\n")
-    for (keyword, suggestions) in csr.suggestions
+    for (keyword, suggestions) in sr.suggestions
         printstyled("  \"$keyword\": ", color=:normal, bold=true)
         printstyled("$(join(map(x->x[2], suggestions), ", "))\n", color=:normal)
     end
@@ -76,24 +76,25 @@ AggregateSearchResult{T}() where T<:AbstractId =
 )
 
 
-isempty(csr::T) where T<:AggregateSearchResult =
-    all(isempty(getfield(csr, field)) for field in fieldnames(T))
+isempty(sr::T) where T<:AggregateSearchResult =
+    all(isempty(getfield(sr, field)) for field in fieldnames(T))
 
 
 # Show method
-show(io::IO, csr::AggregateSearchResult) = begin
-    if !isempty(csr.corpus_results)
-        nt = mapreduce(x->valength(x[2].query_matches), +, csr.corpus_results)
+show(io::IO, sr::AggregateSearchResult) = begin
+    if !isempty(sr.corpus_results)
+        nt = mapreduce(x->valength(x[2].query_matches), +, sr.corpus_results)
     else
         nt=0
     end
-    matched_needles = unique(collect(needle for (_, _result) in csr.corpus_results
-                                     for needle in keys(_result.needle_matches)))
+    matched_needles = unique(
+        collect(needle for (_, _result) in sr.corpus_results
+        for needle in keys(_result.needle_matches)))
     nmt = length(matched_needles)
-    nst = length(csr.suggestions)
-    printstyled(io, "Search results for $(length(csr.corpus_results)) corpora: ")
+    nst = length(sr.suggestions)
+    printstyled(io, "Search results for $(length(sr.corpus_results)) corpora: ")
     printstyled(io, "$nt hits, $nmt query terms, $nst suggestions.\n", bold=true)
-    for (id, _result) in csr.corpus_results
+    for (id, _result) in sr.corpus_results
         n = valength(_result.query_matches)
         nm = length(_result.needle_matches)
         ns = length(_result.suggestions)
@@ -104,16 +105,17 @@ end
 
 
 # Pretty printer of results
-print_search_results(crpra_searcher::AggregateSearcher, csr::AggregateSearchResult) = begin
-    if !isempty(csr.corpus_results)
-        nt = mapreduce(x->valength(x[2].query_matches), +, csr.corpus_results)
+print_search_results(agg_searcher::AggregateSearcher,
+                     sr::AggregateSearchResult) = begin
+    if !isempty(sr.corpus_results)
+        nt = mapreduce(x->valength(x[2].query_matches), +, sr.corpus_results)
     else
         nt = 0
     end
-    printstyled("$nt search results from $(length(csr.corpus_results)) corpora\n")
-    ns = length(csr.suggestions)
-    for (id, _result) in csr.corpus_results
-        crps = crpra_searcher[id].corpus
+    printstyled("$nt search results from $(length(sr.corpus_results)) corpora\n")
+    ns = length(sr.suggestions)
+    for (id, _result) in sr.corpus_results
+        crps = agg_searcher[id].corpus
         nm = valength(_result.query_matches)
         printstyled("`-[$id] ", color=:cyan)  # hash
         printstyled("$(nm) search results")
@@ -126,7 +128,7 @@ print_search_results(crpra_searcher::AggregateSearcher, csr::AggregateSearchResu
         end
     end
     ns > 0 && printstyled("$ns suggestions:\n")
-    for (keyword, suggestions) in csr.suggestions
+    for (keyword, suggestions) in sr.suggestions
         printstyled("  \"$keyword\": ", color=:normal, bold=true)
         printstyled("$(join(suggestions, ", "))\n", color=:normal)
     end
@@ -135,26 +137,26 @@ end
 
 # Push method (useful for inserting AbstractSearcher search results
 # into AggregateSearcher search results)
-function push!(csr::AggregateSearchResult{T},
+function push!(agg_sr::AggregateSearchResult{T},
                sr::Pair{T, SearchResult}) where T<:AbstractId
-    push!(csr.corpus_results, sr)
-    return csr
+    push!(agg_sr.corpus_results, sr)
+    return agg_sr
 end
 
 
 # Squash suggestions for multiple corpora search results
-function squash_suggestions!(csr::AggregateSearchResult{T},
+function squash_suggestions!(sr::AggregateSearchResult{T},
                              max_suggestions::Int=1) where T<:AbstractId
     # Quickly exit if no suggestions are sought
     max_suggestions <=0 && return MultiDict{String, String}()
-    if length(csr.corpus_results) > 1
+    if length(sr.corpus_results) > 1
         # Results from multiple corpora, suggestions have to
         # be processed somewhat:
         #  - keep only needles not found across all corpora
         #  - remove suggestions that correspond to found needles
 
         # Get the needles not found across all corpus results
-        corpus_results = values(csr.corpus_results)
+        corpus_results = values(sr.corpus_results)
         matched_needles = (needle for _result in corpus_results
                            for needle in keys(_result.needle_matches))
         missed_needles = intersect((keys(_result.suggestions)
@@ -185,21 +187,21 @@ function squash_suggestions!(csr::AggregateSearchResult{T},
                         nn = i
                     end
                 end
-                push!(csr.suggestions,
+                push!(sr.suggestions,
                       needle=>map(x->x[2], needle_suggestions_corpora)[1:nn])
             end
         end
     else
         # Results from one corpus, easy situation, just copy the suggestions
-        for (_, _result) in csr.corpus_results
+        for (_, _result) in sr.corpus_results
             for (needle, vs) in _result.suggestions
                 # vs is a Vector{Tuple{Float64, String}},
                 # sorted by distance i.e. the float
                 for v in vs
-                    push!(csr.suggestions, needle=>v[2])
+                    push!(sr.suggestions, needle=>v[2])
                 end
             end
         end
     end
-    return csr
+    return sr
 end
