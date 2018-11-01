@@ -1,0 +1,107 @@
+[Fake test dataset 1]
+id = specific_id
+search = semantic
+data_path = /tmp/garamond/test/test_file_1_csv_format_1.tsv
+parser = csv_format_1
+enabled = true
+header = false
+embeddings_path = ./models/word2vec/sample_model.bin
+embeddings_type = word2vec
+embedding_method = bow
+embedding_search_model = naive
+
+[Fake test dataset 2]
+# random id
+search = semantic
+data_path = /tmp/garamond/test/test_file_1_csv_format_1.tsv
+parser = csv_format_1
+enabled = true
+header = false
+embeddings_path = ./models/word2vec/sample_model.bin
+embeddings_type = word2vec
+embedding_method = bow
+embedding_search_model = brutetree
+
+[Fake test dataset 3]
+# random id
+search = semantic
+data_path = /tmp/garamond/test/test_file_1_csv_format_1.tsv
+parser = csv_format_1
+enabled = true
+header = false
+embeddings_path = ./models/word2vec/sample_model.bin
+embeddings_type = word2vec
+embedding_method = bow
+embedding_search_model = kdtree
+
+[Fake test dataset 4]
+# random id
+search = semantic
+data_path = /tmp/garamond/test/test_file_1_csv_format_1.tsv
+parser = csv_format_1
+enabled = true
+header = false
+embeddings_path = ./models/word2vec/sample_model.bin
+embeddings_type = word2vec
+embedding_method = bow
+embedding_search_model = hnsw
+
+[Fake test dataset 5]
+# random id
+search = semantic
+data_path = /tmp/garamond/test/test_file_1_csv_format_1.tsv
+parser = csv_format_1
+enabled = true
+header = false
+embeddings_path = ./models/conceptnet/sample_model.txt
+embeddings_type = conceptnet
+embedding_method = bow
+embedding_search_model = naive
+
+[Fake test dataset 6]
+# random id
+search = semantic
+data_path = /tmp/garamond/test/test_file_1_csv_format_1.tsv
+parser = csv_format_1
+enabled = true
+header = false
+embeddings_path = ./models/conceptnet/sample_model.txt
+embeddings_type = conceptnet
+embedding_method = bow
+embedding_search_model = brutetree
+
+[Fake test dataset 7]
+# random id
+search = semantic
+data_path = /tmp/garamond/test/test_file_1_csv_format_1.tsv
+parser = csv_format_1
+enabled = true
+header = false
+embeddings_path = ./models/conceptnet/sample_model.txt
+embeddings_type = conceptnet
+embedding_method = bow
+embedding_search_model = kdtree
+
+[Fake test dataset 8]
+# random id
+search = semantic
+data_path = /tmp/garamond/test/test_file_1_csv_format_1.tsv
+parser = csv_format_1
+enabled = true
+header = false
+embeddings_path = ./models/conceptnet/sample_model.txt
+embeddings_type = conceptnet
+embedding_method = bow
+embedding_search_model = hnsw
+
+[Fake test dataset (disabled)]
+id = disabled_id
+search = semantic
+data_path = /tmp/garamond/test/test_file_1_csv_format_1.tsv
+parser = csv_format_1
+enabled = false
+header = false
+embeddings_path = ./models/conceptnet/sample_model.txt
+embeddings_type = conceptnet
+embedding_method = bow
+embedding_search_model = naive

@@ -1,7 +1,7 @@
 [Fake test dataset 1]
 id = specific_id
 search = classic
-path = /tmp/garamond/test/test_file_1_csv_format_1.tsv
+data_path = /tmp/garamond/test/test_file_1_csv_format_1.tsv
 parser = csv_format_1
 enabled = true
 header = false
@@ -11,17 +11,17 @@ heuristic = jaro
 [Fake test dataset 2]
 # random id
 search = classic
-path = /tmp/garamond/test/test_file_2_csv_format_1.tsv
+data_path = /tmp/garamond/test/test_file_2_csv_format_1.tsv
 parser = csv_format_1
 enabled = true
 header = false
 count_type = tf
 heuristic = levenshtein
 
-[Fake test dataset 3]
+[Fake test dataset (disabled)]
 id=disabled_id
 search = classic
-path = /tmp/garamond/test/test_file_2_csv_format_1.tsv
+data_path = /tmp/garamond/test/test_file_2_csv_format_1.tsv
 parser = csv_format_1
 enabled = false
 header = false
