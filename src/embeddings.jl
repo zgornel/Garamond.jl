@@ -88,8 +88,7 @@ squash(m::AbstractArray) = begin
 end
 
 
-#TODO (corneliu) Remove splitter once Conceptnet v0.1.2 is registered
-const splitter = r"(,|\n|\r|\:|\\|\/|;|\.|\[|\]|\{|\}|\'|\`|\"|\"|\?|\!|\=|\~|\&|\s+)"
+
 """
     extract_tokens(doc)
 
@@ -97,8 +96,8 @@ Tokenizes various types of documents. Works for `AbstractString`,
 Vector{AbstractString} and `TextAnalysis.jl` documents.
 """
 extract_tokens(doc::NGramDocument) = collect(keys(doc.ngrams))
-extract_tokens(doc::StringDocument) = tokenize_for_conceptnet(doc.text, splitter)
-extract_tokens(doc::AbstractString) = tokenize_for_conceptnet(doc, splitter)
+extract_tokens(doc::StringDocument) = tokenize_for_conceptnet(doc.text)
+extract_tokens(doc::AbstractString) = tokenize_for_conceptnet(doc)
 extract_tokens(doc::Vector{S} where S<:AbstractString) = doc
 
 
