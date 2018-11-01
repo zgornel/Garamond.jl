@@ -2,10 +2,10 @@
 function get_commandline_arguments(args::Vector{String})
 	s = ArgParseSettings()
 	@add_arg_table s begin
-		"--data-config", "-d"
+		"--data-config"
 			help = "data configuration file"
 			default = ""
-		"--config", "-e"
+		"--engine-config"
 			help = "search engine configuration file"
 			default = ""
 		### "--webpage", "-w"

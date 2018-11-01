@@ -12,3 +12,7 @@ A small corpus search engine written in Julia.
 
 Garamond is under development and not yet ready for use. Feel free to have a look while you're at it ;)
 For more information, please leave a message at cornel@oxoaresearch.com
+
+
+## Notes
+The following exports: `OPENBLAS_NUM_THREADS=1` and `JULIA_NUM_THREADS=<n>` have to be performed for multi-threading to work efficiently.
