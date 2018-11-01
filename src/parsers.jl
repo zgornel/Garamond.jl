@@ -1,11 +1,15 @@
+#TODO (Corneliu) Move defaults to configuration file
+
+
+
 ###################################################
 # Data Loading - related functions and structures #
 ###################################################
 # Parsing flow:
-#   1. Parse configuration file using `parse_corpora_configuration`
-#   2. The resulting Vector{CorpusRef} is passed to `load_corpora`
-#      (each CorpusRef contains the data filepath, corpus name etc.
-#   3. Parse the data file, obtain Corpus and add to CorporaSearcher (`add_corpora!`)
+#   1. Parse configuration file using `parse_data_config`
+#   2. The resulting Vector{SearchConfig} is passed to `aggregate_searcher`
+#      (each SearchConfig contains the data filepath, corpus name etc.
+#   3. Parse the data file, obtain Corpus and create specified Searcher
 """
 Define the csv parser configuration. It maps the fields from a delimited file
 to document metadata fields and specifies whether a field is to be included
@@ -41,12 +45,12 @@ PARSER_CONFIGS = Dict(
 
 
 """
-Function that creates corpus references i.e. CorpusRef,
+Function that creates corpus references i.e. SearchConfig,
 using a Garamond corpora config file. The corpus reference
 links a Corpus object to its file representation and is
 used to load the corpus.
 """
-function parse_corpora_configuration(filename::AbstractString)
+function parse_data_config(filename::AbstractString)
     #######
     # Function that generated a parsing function from a parser configuration name
     # and header information (used in parsing the data configuration file for
@@ -72,7 +76,7 @@ function parse_corpora_configuration(filename::AbstractString)
         return parsing_function
     end
     #######
-    crefs = Vector{CorpusRef{DEFAULT_ID_TYPE}}()
+    sconfs = Vector{SearchConfig{DEFAULT_ID_TYPE}}()
     last_header = false
     last_parser = :indentity
     local last_id_type
@@ -85,34 +89,47 @@ function parse_corpora_configuration(filename::AbstractString)
             if startswith(_line, "#")
                 # Comment
                 continue
-            elseif startswith(_line, "[")
-                push!(crefs, CorpusRef(name=replace(line, r"(\[|\])"=>"")))
+            elseif startswith(_line, "[") && endswith(_line, "]")
+                # Create a search configuration
+                push!(sconfs, SearchConfig(name=replace(line, r"(\[|\])"=>"")))
                 counter+= 1
             elseif occursin("=", _line) && counter > 0
                 # Property assignment (option = value)
+                ###
                 option, value = strip.(split(_line, "="))
-                # Assign value to corpus references
-                if option == "parser" && !isempty(value)
+                ###
+                # Get search options
+                if option == "id" && !isempty(value)
+                    sconfs[counter].id = make_id(DEFAULT_ID_TYPE, value)
+                elseif option == "search" && !isempty(value)
+                    sconfs[counter].search = Symbol(value)
+                elseif option == "enabled" && !isempty(value)
+                    sconfs[counter].enabled = Bool(Meta.parse(value))
+                elseif option == "data_path" && !isempty(value)
+                    sconfs[counter].data_path = value
+                elseif option == "parser" && !isempty(value)
                     last_parser = Symbol(value)
-                    crefs[counter].parser =
+                    sconfs[counter].parser =
                         get_parsing_function(last_parser,
                                              last_header)
-                elseif option == "path" && !isempty(value)
-                    crefs[counter].path = value
-                elseif option == "enabled" && !isempty(value)
-                    crefs[counter].enabled = Bool(Meta.parse(value))
+                elseif option == "count_type" && !isempty(value)
+                    sconfs[counter].count_type = Symbol(value)
+                elseif option == "heuristic" && !isempty(value)
+                    sconfs[counter].heuristic = Symbol(value)
+                elseif option == "embeddings_path" && !isempty(value)
+                    sconfs[counter].embeddings_path = value
+                elseif option == "embeddings_type" && !isempty(value)
+                    sconfs[counter].embeddings_type = Symbol(value)
+                elseif option == "embedding_method" && !isempty(value)
+                    sconfs[counter].embedding_method = Symbol(value)
+                elseif option == "embedding_search_model" && !isempty(value)
+                    sconfs[counter].embedding_search_model = Symbol(value)
                 elseif option == "header" && !isempty(value)
                     last_header = Bool(Meta.parse(value))
-                    crefs[counter].parser = get_parsing_function(last_parser,
-                                                                 last_header)
-                elseif option == "term_importance" && !isempty(value)
-                    crefs[counter].termimp = Symbol(value)
-                elseif option == "id" && !isempty(value)
-                    crefs[counter].id = make_id(DEFAULT_ID_TYPE, value)
-                elseif option == "heuristic" && !isempty(value)
-                    crefs[counter].heuristic = Symbol(value)
+                    sconfs[counter].parser = get_parsing_function(last_parser,
+                                                                  last_header)
                 else
-                    @warn "Line \"$line\" in $(filename) is not valid. will skip"
+                    @debug "Line \"$line\" in $(filename) is not valid. will skip"
                     continue
                 end
             else
@@ -122,17 +139,61 @@ function parse_corpora_configuration(filename::AbstractString)
         end
     end
     # Checks
-    for cref in crefs
-        if !(cref.termimp in [:tf, :tfidf])
-            @warn "Unknown term importance $(cref.termimp), revering to default."
-            cref.termimp = DEFAULT_TERM_IMPORTANCE
+    removable = Int[]
+    for (i, sconf) in enumerate(sconfs)
+        # No checks for the id, name, enabled, parser
+        # search
+        if !(sconf.search in [:classic, :semantic])
+            @warn "id=$(sconf.id) Forcing search=$DEFAULT_SEARCH."
+            sconf.search = DEFAULT_SEARCH
         end
-        if !(cref.heuristic in keys(HEURISTIC_TO_DISTANCE))
-            @warn "Unknown heuristic $(cref.heuristic), revering to default."
-            cref.heuristic = DEFAULT_HEURISTIC
+        # data path
+        if !isfile(sconf.data_path) && !ispath(sconf.data_path)
+            @warn "id=$(sconf.id) Missing data, ignoring search configuration..."
+            push!(removable, i)  # if there is no data file, cannot search
+            continue
+        end
+        # Classic search specific options
+        if sconf.search == :classic
+            # count type
+            if !(sconf.count_type in [:tf, :tfidf])
+                @warn "id=$(sconf.id) Forcing count_type=$DEFAULT_COUNT_TYPE."
+                sconf.count_type = DEFAULT_COUNT_TYPE
+            end
+            # heuristic
+            if !(sconf.heuristic in keys(HEURISTIC_TO_DISTANCE))
+                @warn "id=$(sconf.id) Forcing heuristic=$DEFAULT_HEURISTIC."
+                sconf.heuristic = DEFAULT_HEURISTIC
+            end
+        end
+        # Semantic search specific options
+        if sconf.search == :semantic
+            # word embeddings library path
+            if !isfile(sconf.embeddings_path)
+                @warn "id=$(sconf.id) Missing embeddings, ignoring search configuration..."
+                push!(removable, i)  # if there is are no word embeddings, cannot search
+                continue
+            end
+            # type of embeddings
+            if !(sconf.embeddings_type in [:word2vec, :conceptnet])
+                @warn "id=$(sconf.id) Forcing embeddings_type=$DEFAULT_EMBEDDINGS_TYPE."
+                sconf.embeddings_type = DEFAULT_EMBEDDINGS_TYPE
+            end
+            # embedding method
+            if !(sconf.embedding_method in [:bow, :arora])
+                @warn "id=$(sconf.id) Forcing embedding_method=$DEFAULT_EMBEDDING_METHOD."
+                sconf.embedding_method = DEFAULT_EMBEDDING_METHOD
+            end
+            # type of search model
+            if !(sconf.embedding_search_model in [:naive, :brutetree, :kdtree, :hnsw])
+                @warn "id=$(sconf.id) Forcing embedding_search_model=$DEFAULT_EMBEDDING_SEARCH_MODEL."
+                sconf.embedding_search_model = DEFAULT_EMBEDDING_SEARCH_MODEL
+            end
         end
     end
-    return crefs
+    # Remove search configs that have missing files
+    deleteat!(sconfs, removable)
+    return sconfs
 end
 
 
@@ -151,7 +212,7 @@ end
 
 
 
-# Parser for "csv_format-1"
+# Parser for "csv_format_1"
 function __parser_csv_format_1(filename::AbstractString,
                                config::ParserConfig,
                                doc_type::Type{T}=DEFAULT_DOC_TYPE;

@@ -17,6 +17,7 @@
 ##################################################################################################################
 module Garamond
 
+    # Using section
     using Logging
     using Random
     using Unicode
@@ -30,33 +31,46 @@ module Garamond
     using StringDistances, BKTrees
     using ArgParse
     using ProgressMeter
-    using ConceptnetNumberbatch
-    ### using LightGraphs, NearestNeighbors, MLKernels
-    ### using HttpServer, WebSockets, JSON
+    using ConceptnetNumberbatch, Word2Vec
+    using HNSW, NearestNeighbors, Distances
 
-    import Base: show, keys, values, push!, delete!, getindex,
-           names, convert, lowercase, occursin, isempty
+    # Import section (extendable methods)
+    import Base: size, length, show, keys, values, push!,
+                 delete!, getindex, names, convert, lowercase,
+                 occursin, isempty
     import TextAnalysis: prepare!, update_lexicon!,
            update_inverse_index!
+    import ConceptnetNumberbatch: embed_document
 
+    # Abstract types
     abstract type AbstractId end
     abstract type AbstractSearcher end
+    abstract type AbstractEmbeddingModel end
 
+    # Exports
     export
-        # Corpora related
+        # Utils
+        prepare!,
+        get_document_embedding,
+        # Ids
         AbstractId,
         HashId,
         StringId,
-        CorpusRef,
+        # Search config structure
+        SearchConfig,
+        # Searchers
         AbstractSearcher,
-        CorpusSearcher,
-        CorporaSearcher,
-        corpora_searchers,
-        corpus_searcher,
+        ClassicSearcher,
+        SemanticSearcher,
+        AggregateSearcher,
+        classic_searcher,
+        semantic_searcher,
+        aggregate_searcher,
         enable!,
         disable!,
-        # Utils
-        prepare!,
+        # Results
+        SearchResult,
+        AggregateSearchResult,
         # Search related
         search,
         search_heuristically,
@@ -65,23 +79,17 @@ module Garamond
         get_commandline_arguments
         #HTTP server
         ###start_http_server,
-        # Word embeddings
-        ###find_cluster_mean,
-        ###get_cluster_matrix,
-        ###get_cluster_matrix!,
-        ###find_close_clusters,
-        ###path
 
     # Include section
     include("defaults.jl")
     include("cmdline.jl")
     include("logging.jl")
-    include("corpora_searchers.jl")
-    include("parsers.jl")
     include("utils_text_lang.jl")
-    include("results.jl")
+    include("embeddings.jl")
+    include("search_structures.jl")
+    include("parsers.jl")
     include("search.jl")
-    include("semantic_search.jl")
+    include("results.jl")
     ###include("servers.jl")
 
 end # module
