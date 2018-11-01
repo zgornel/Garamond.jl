@@ -54,6 +54,14 @@ function search(searcher::AggregateSearcher{T,S},
     # Search
     results = [SearchResult() for _ in 1:n]
     ids = [random_id(T) for _ in 1:n]
+    ###################################################################
+    # The `@threads` statement in front of the for loop here idicates
+    # the use of multi-threading. If multi-threading is used,
+    # OPENBLAS multi-threading support has to be disabled by using:
+    #   `export OPENBLAS_NUM_THREADS=1` in the shell
+    # or start julia with:
+    #   `env OPENBLAS_NUM_THREADS=1 julia`
+    ###################################################################
     @threads for i in 1:n
         if searcher.searchers[i].enabled
             # Get corpus search results
@@ -300,32 +308,34 @@ function search(searcher::SemanticSearcher{T,D,E,M},
                         searcher.corpus.lexicon,
                         query,
                         embedding_method=searcher.config.embedding_method)
-    idxs = Int[]
-    scores = Float64[]
-
+    ###
     # Small function that processes two vectors a and b where
     # a is assumed to be a vector of document idices (with possible
     # duplicates and b the corresponding scores)
-    # TODO(Corneliu): Simplify this bit.
-    function _merge_indices_and_scores!(idxs, scores, k)
-        duplicate_pos = Int[]
-        for idx in idxs
-            pos = findall(x->x==idx, idxs)
-            scores[pos[1]] = mean(scores[pos])
-            if length(pos) > 1
-                # We know there can be max 1 other duplicate!
-                push!(duplicate_pos, maximum(pos))
+    function _merge_indices_and_scores(idxs, scores, k)
+        seen = Dict{Int,Int}()  # idx=>i
+        removable = Int[]
+        for (i, idx) in enumerate(idxs)
+            if !(idx in keys(seen))
+                push!(seen, idx=>i)
+            else
+                # Already seen (duplicate)
+                scores[[i, seen[idx]]] .= (scores[i] + scores[seen[idx]])/2
+                push!(removable, i)
             end
-		end
-        sort!(unique!(duplicate_pos))
-        deleteat!(idxs, duplicate_pos)
-        deleteat!(scores, duplicate_pos)
-        order = sortperm(scores)
-        scores = scores[order][1:k]
-        idxs = idxs[order][1:k]
-        return idxs, scores
-	end
-
+        end
+        deleteat!(idxs, removable)
+        deleteat!(scores, removable)
+        # Precaution for HSNW which may not return
+        # an *exact* number of neighbors
+        k = min(k, length(idxs))
+        # Sort, take first k neighbors and return
+        order = sortperm(scores)[1:k]
+        return idxs[order], scores[order]
+    end
+    ###
+    idxs = Int[]
+    scores = Float64[]
     k = min(n, max_matches)
     for wts in where_to_search
         # search
@@ -333,7 +343,7 @@ function search(searcher::SemanticSearcher{T,D,E,M},
         push!(idxs, _idxs...)
         push!(scores, _scores...)
         if search_type == :all
-            _merge_indices_and_scores!(idxs, scores, k)
+            idxs, scores = _merge_indices_and_scores(idxs, scores, k)
         end
     end
     # Process documents found (sort by score)
