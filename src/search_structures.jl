@@ -169,6 +169,12 @@ show(io::IO, semsrcher::SemanticSearcher) = begin
     # Get model type string
     if semsrcher.model isa NaiveEmbeddingModel
         _model_type = "naive model"
+    elseif semsrcher.model isa BruteTreeEmbeddingModel
+        _model_type = "brute tree model"
+    elseif semsrcher.model isa KDTreeEmbeddingModel
+        _model_type = "kd-tree model"
+    elseif semsrcher.model isa HNSWEmbeddingModel
+        _model_type = "hnsw model"
     else
         _model_type = "unknown model"
     end
@@ -305,8 +311,7 @@ function semantic_searcher(sconf::SearchConfig)
     elseif sconf.embedding_search_model == :kdtree
         model_type = KDTreeEmbeddingModel
     elseif sconf.embedding_search_model == :hnsw
-        @error "HSNW embedding model not yet supported!"
-        #model_type = HNSWEmbeddingModel
+        model_type = HNSWEmbeddingModel
     else
         @error "$(sconf.embedding_search_model) embedding model is not supported."
     end

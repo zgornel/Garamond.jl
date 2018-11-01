@@ -21,6 +21,20 @@ end
 KDTreeEmbeddingModel(data::AbstractMatrix) =
     KDTreeEmbeddingModel(KDTree(data))
 
+struct HNSWEmbeddingModel{I,E,A,D} <: AbstractEmbeddingModel
+    tree::HierarchicalNSW{I,E,A,D}
+end
+
+HNSWEmbeddingModel(data::AbstractMatrix) = begin
+    _data = [data[:,i] for i in 1:size(data,2)]
+    hnsw = HierarchicalNSW(_data;
+                           efConstruction=100,
+                           M=16,
+                           ef=50)
+    add_to_graph!(hnsw)
+    return HNSWEmbeddingModel(hnsw)
+end
+
 
 
 # Nearest neighbor search methods
@@ -44,11 +58,20 @@ function search(model::KDTreeEmbeddingModel{A,D}, point::AbstractVector, k::Int)
     return knn(model.tree, point, k, true)
 end
 
+function search(model::HNSWEmbeddingModel{I,E,A,D}, point::AbstractVector, k::Int) where
+        {I<:Unsigned, E<:Real, A<:AbstractArray, D<:Metric}
+    # Uses Euclidean distance by default
+    idxs, scores = knn_search(model.tree, point, k)
+    return Int.(idxs), scores
+end
+
+
 
 # Length methods
 length(model::NaiveEmbeddingModel) = size(model.data, 2)
 length(model::BruteTreeEmbeddingModel) = length(model.tree.data)
 length(model::KDTreeEmbeddingModel) = length(model.tree.data)
+length(model::HNSWEmbeddingModel) = length(model.tree.data)
 
 
 ######################

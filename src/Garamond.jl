@@ -32,7 +32,7 @@ module Garamond
     using ArgParse
     using ProgressMeter
     using ConceptnetNumberbatch, Word2Vec
-    using NearestNeighbors, Distances
+    using HNSW, NearestNeighbors, Distances
 
     # Import section (extendable methods)
     import Base: size, length, show, keys, values, push!,
