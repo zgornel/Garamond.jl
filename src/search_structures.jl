@@ -180,7 +180,7 @@ show(io::IO, semsrcher::SemanticSearcher) = begin
     end
     printstyled(io, "-[$_embs_type, $_model_type] ")
     printstyled(io, "$(semsrcher.config.name)", color=:normal)
-    printstyled(io, ", $(size(semsrcher.model[:data].data, 2)) embedded documents\n")
+    printstyled(io, ", $(length(semsrcher.model[:data])) embedded documents\n")
 end
 
 
