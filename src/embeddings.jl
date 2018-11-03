@@ -183,9 +183,7 @@ function embed_document(word_vectors::WordVectors,
                         compound_word_separator::String="_",    # not used
                         max_compound_word_length::Int=1,        # not used
                         wildcard_matching::Bool=false,          # not used
-                        search_mismatches::Symbol=:no,          # not used
                         print_matched_words::Bool=false,
-                        distance=Levenshtein()                  # not used
                        ) where S<:AbstractString
     # Initializations
     n = size(word_vectors)[1]

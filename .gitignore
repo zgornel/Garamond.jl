@@ -4,9 +4,7 @@
 *~
 *.swp
 rawdata
-data/
-doc/
 dump/
 build/bin/
 benchmarks/
-notebooks/
+scripts/
