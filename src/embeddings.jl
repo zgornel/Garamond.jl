@@ -1,6 +1,9 @@
 ######################################
 # Word embeddings related structures #
 ######################################
+abstract type AbstractEmbeddingModel <: AbstractSearchData
+end
+
 struct NaiveEmbeddingModel{E} <: AbstractEmbeddingModel
     data::Matrix{E}
 end
@@ -41,28 +44,30 @@ end
 function search(model::NaiveEmbeddingModel{E}, point::Vector{E}, k::Int) where
         E<:AbstractFloat
     # Cosine similarity
-    scores = 1 .- ((model.data)'*point)
-    idxs = sortperm(scores)[1:k]
+    scores = (model.data)'*point
+    idxs = sortperm(scores, rev=true)[1:k]
     return (idxs, scores[idxs])
 end
 
 function search(model::BruteTreeEmbeddingModel{A,D}, point::AbstractVector, k::Int) where
         {A<:AbstractArray, D<:Metric}
     # Uses Euclidean distance by default
-    return knn(model.tree, point, k, true)
+    idxs, scores = knn(model.tree, point, k, true)
+    return idxs, 1 ./ (scores .+ eps())
 end
 
 function search(model::KDTreeEmbeddingModel{A,D}, point::AbstractVector, k::Int) where
         {A<:AbstractArray, D<:Metric}
     # Uses Euclidean distance by default
-    return knn(model.tree, point, k, true)
+    idxs, scores = knn(model.tree, point, k, true)
+    return idxs, 1 ./ (scores .+ eps())
 end
 
 function search(model::HNSWEmbeddingModel{I,E,A,D}, point::AbstractVector, k::Int) where
         {I<:Unsigned, E<:Real, A<:AbstractArray, D<:Metric}
     # Uses Euclidean distance by default
     idxs, scores = knn_search(model.tree, point, k)
-    return Int.(idxs), scores
+    return Int.(idxs), 1 ./ (scores .+ eps())
 end
 
 
@@ -95,24 +100,26 @@ end
 Tokenizes various types of documents. Works for `AbstractString`,
 Vector{AbstractString} and `TextAnalysis.jl` documents.
 """
-extract_tokens(doc::NGramDocument) = collect(keys(doc.ngrams))
-extract_tokens(doc::StringDocument) = tokenize_for_conceptnet(doc.text)
-extract_tokens(doc::AbstractString) = tokenize_for_conceptnet(doc)
-extract_tokens(doc::Vector{S} where S<:AbstractString) = doc
+extract_tokens(doc::NGramDocument) = String.(collect(keys(doc.ngrams)))
+extract_tokens(doc::StringDocument) = String.(tokenize_for_conceptnet(doc.text))
+extract_tokens(doc::AbstractString) = String.(tokenize_for_conceptnet(doc))
+extract_tokens(doc::Vector{S} where S<:AbstractString) = String.(doc)
 
 
 
 """
+    embed_document(embeddings_library, lexicon, doc[; embeddings_method])
+
 Function to get from multiple word-embeddings to a document embedding.
 The `embedding_method` option controls how multiple word embeddings
 are combined into a single document embedding. Avalilable options:
     :bow - calculate document embedding as the mean of the word embeddings
     :arora - subtract paragraph/phrase vector [not working properly unless full documents are used]
 """
-function get_document_embedding(embeddings_library,
-                                lexicon::Dict{String, Int},
-                                doc;
-                                embedding_method::Symbol=DEFAULT_EMBEDDING_METHOD)
+function embed_document(embeddings_library,
+                        lexicon::Dict{String, Int},
+                        doc;
+                        embedding_method::Symbol=DEFAULT_EMBEDDING_METHOD)
     # Tokenize
     tokens = extract_tokens(doc)
     # Get word embeddings

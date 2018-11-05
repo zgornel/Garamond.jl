@@ -1,7 +1,7 @@
 name = "Garamond"
 uuid = "eb85711a-c571-11e8-1cba-d10fb99b73c5"
 authors = ["Corneliu Cofaru <cornel@oxoaresearch.com>"]
-version = "0.1.0"
+version = "0.0.0"
 
 [deps]
 ArgParse = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"

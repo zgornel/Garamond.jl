@@ -38,47 +38,33 @@ module Garamond
     import Base: size, length, show, keys, values, push!,
                  delete!, getindex, names, convert, lowercase,
                  occursin, isempty
-    import TextAnalysis: prepare!, update_lexicon!,
-           update_inverse_index!
+    import TextAnalysis: prepare!, id
     import ConceptnetNumberbatch: embed_document
 
     # Abstract types
     abstract type AbstractId end
     abstract type AbstractSearcher end
-    abstract type AbstractEmbeddingModel end
+    abstract type AbstractSearchData end
 
     # Exports
     export
-        # Utils
-        prepare!,
-        get_document_embedding,
-        # Ids
+        search,
+        searcher,
+        load_searchers,
+        embed_document,
         AbstractId,
         HashId,
         StringId,
-        # Search config structure
         SearchConfig,
-        # Searchers
         AbstractSearcher,
-        ClassicSearcher,
-        SemanticSearcher,
-        AggregateSearcher,
-        classic_searcher,
-        semantic_searcher,
-        aggregate_searcher,
+        Searcher,
+        SearchResult,
+        id,
         enable!,
         disable!,
-        # Results
-        SearchResult,
-        AggregateSearchResult,
-        # Search related
-        search,
-        search_heuristically,
-        print_search_results,
-        # Command line (application) related
-        get_commandline_arguments
-        #HTTP server
-        ###start_http_server,
+        prepare!,
+        isenabled,
+        print_search_results
 
     # Include section
     include("defaults.jl")

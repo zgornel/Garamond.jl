@@ -4,31 +4,31 @@
 # Note: What is marked as constant cannot be changed in the search configuration
 
 # Search approach
-DEFAULT_SEARCH = :classic
+const DEFAULT_SEARCH = :classic
 
 
 # Classic seatch defaults
-DEFAULT_COUNT_TYPE = :tfidf  # can be :tf or :tfidf
-DEFAULT_SEARCH_TYPE = :data  # can be :data or :metadata
-DEFAULT_SEARCH_METHOD = :exact  #can be :exact or :regex
-DEFAULT_MAX_MATCHES = 1_000  # maximum number of matches that can be retrned
-DEFAULT_MAX_SUGGESTIONS = 1  # maximum number of overall suggestions
-DEFAULT_MAX_CORPUS_SUGGESTIONS = 1  # maximum number of suggestions for each corpus
-MAX_EDIT_DISTANCE = 2  # maximum edit distance for which to return suggestions
+const DEFAULT_COUNT_TYPE = :tfidf  # can be :tf or :tfidf
+const DEFAULT_SEARCH_TYPE = :data  # can be :data or :metadata
+const DEFAULT_SEARCH_METHOD = :exact  #can be :exact or :regex
+const DEFAULT_MAX_MATCHES = 1_000  # maximum number of matches that can be retrned
+const DEFAULT_MAX_SUGGESTIONS = 1  # maximum number of overall suggestions
+const DEFAULT_MAX_CORPUS_SUGGESTIONS = 1  # maximum number of suggestions for each corpus
+const MAX_EDIT_DISTANCE = 2  # maximum edit distance for which to return suggestions
 # Search tree constants
-DEFAULT_HEURISTIC = :hamming
+const DEFAULT_HEURISTIC = :hamming
 const HEURISTIC_TO_DISTANCE = Dict(  # heuristic to distance object mapping
     :levenshtein => StringDistances.Levenshtein(),
     :dameraulevenshtein => StringDistances.DamerauLevenshtein(),
     :hamming => StringDistances.Hamming(),
     :jaro => StringDistances.Jaro())
-DEFAULT_DISTANCE = HEURISTIC_TO_DISTANCE[DEFAULT_HEURISTIC]
+const DEFAULT_DISTANCE = HEURISTIC_TO_DISTANCE[DEFAULT_HEURISTIC]
 
 
 # Semantic search related
-DEFAULT_EMBEDDING_METHOD = :bow  # can be :bow or :arora
-DEFAULT_EMBEDDINGS_TYPE = :conceptnet  # can be :word2vec or :conceptnet
-DEFAULT_EMBEDDING_SEARCH_MODEL = :naive  # can be :naive, :kdtree or :hnsw
+const DEFAULT_EMBEDDING_METHOD = :bow  # can be :bow or :arora
+const DEFAULT_EMBEDDINGS_TYPE = :conceptnet  # can be :word2vec or :conceptnet
+const DEFAULT_EMBEDDING_SEARCH_MODEL = :naive  # can be :naive, :kdtree or :hnsw
 
 
 # Various document processing related constants
