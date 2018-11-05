@@ -38,11 +38,8 @@ function search(srchers::V,
                 search_method::Symbol=DEFAULT_SEARCH_METHOD,
                 max_matches::Int=DEFAULT_MAX_MATCHES,
                 max_corpus_suggestions::Int=DEFAULT_MAX_CORPUS_SUGGESTIONS) where
-    {V<:Vector{<:Searcher{I,D,E,M}
-                   where I<:AbstractId
-                   where D<:AbstractDocument
-                   where E
-                   where M<:AbstractSearchData}}
+    {V<:Vector{<:Searcher{I,D,E,M} where I<:AbstractId where D<:AbstractDocument
+               where E where M<:AbstractSearchData}}
     # Checks
     @assert search_type in [:data, :metadata, :all]
     @assert search_method in [:exact, :regex]

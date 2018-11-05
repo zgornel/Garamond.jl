@@ -309,8 +309,9 @@ function load_searchers(sconfs::Vector{SearchConfig{T}}) where T<:AbstractId
 end
 
 # Indexing for vectors of searchers
-getindex(srchers::Vector{Searcher{I,D,E,M}}, an_id::I) where
-        {I<:AbstractId, D<:AbstractDocument,E, M<:AbstractSearchData} = begin
+getindex(srchers::V, an_id::AbstractId) where {V<:Vector{<:Searcher{I,D,E,M}
+        where I<:AbstractId where D<:AbstractDocument where E
+        where M<:AbstractSearchData}} = begin
     idxs = Int[]
 	for (i, srcher) in enumerate(srchers)
 		id(srcher) == an_id && push!(idxs, i)
@@ -318,10 +319,12 @@ getindex(srchers::Vector{Searcher{I,D,E,M}}, an_id::I) where
 	return srchers[idxs]
 end
 
-getindex(srchers::Vector{Searcher{I,D,E,M}}, an_id::UInt) where
-        {I<:AbstractId, D<:AbstractDocument,E, M<:AbstractSearchData} =
+getindex(srchers::V, an_id::UInt) where{V<:Vector{<:Searcher{I,D,E,M}
+        where I<:AbstractId where D<:AbstractDocument where E
+        where M<:AbstractSearchData}} =
 	srchers[HashId(an_id)]
 
-getindex(srchers::Vector{Searcher{I,D,E,M}}, an_id::String) where
-        {I<:AbstractId, D<:AbstractDocument,E, M<:AbstractSearchData} =
+getindex(srchers::V, an_id::String) where {V<:Vector{<:Searcher{I,D,E,M}
+        where I<:AbstractId where D<:AbstractDocument where E
+        where M<:AbstractSearchData}} =
 	srchers[StringId(an_id)]
