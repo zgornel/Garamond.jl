@@ -42,13 +42,13 @@ end
 
 
 # Pretty printer of results
-print_search_results(cs::AbstractSearcher, sr::SearchResult) = begin
+print_search_results(srcher::AbstractSearcher, sr::SearchResult) = begin
     nm = valength(sr.query_matches)
     ns = length(sr.suggestions)
     printstyled("$nm search results")
     ch = ifelse(nm==0, ".", ":"); printstyled("$ch\n")
-    for score in sort(collect(keys(sr.query_matches)))
-        for doc in (cs.corpus[i] for i in sr.query_matches[score])
+    for score in sort(collect(keys(sr.query_matches)), rev=true)
+        for doc in (srcher.corpus[i] for i in sr.query_matches[score])
             printstyled("  $score ~ ", color=:normal, bold=true)
             printstyled("$(metadata(doc))\n", color=:normal)
         end
@@ -105,7 +105,7 @@ end
 
 
 # Pretty printer of results
-print_search_results(agg_searcher::AggregateSearcher,
+print_search_results(agg_srcher::AggregateSearcher,
                      sr::AggregateSearchResult) = begin
     if !isempty(sr.corpus_results)
         nt = mapreduce(x->valength(x[2].query_matches), +, sr.corpus_results)
@@ -115,12 +115,12 @@ print_search_results(agg_searcher::AggregateSearcher,
     printstyled("$nt search results from $(length(sr.corpus_results)) corpora\n")
     ns = length(sr.suggestions)
     for (id, _result) in sr.corpus_results
-        crps = agg_searcher[id].corpus
+        crps = agg_srcher[id].corpus
         nm = valength(_result.query_matches)
         printstyled("`-[$id] ", color=:cyan)  # hash
         printstyled("$(nm) search results")
         ch = ifelse(nm==0, ".", ":"); printstyled("$ch\n")
-        for score in sort(collect(keys(_result.query_matches)))
+        for score in sort(collect(keys(_result.query_matches)), rev=true)
             for doc in (crps[i] for i in _result.query_matches[score])
                 printstyled("  $score ~ ", color=:normal, bold=true)
                 printstyled("$(metadata(doc))\n", color=:normal)

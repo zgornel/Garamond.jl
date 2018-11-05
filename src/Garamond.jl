@@ -45,40 +45,28 @@ module Garamond
     # Abstract types
     abstract type AbstractId end
     abstract type AbstractSearcher end
-    abstract type AbstractEmbeddingModel end
+    abstract type AbstractSearchData end
 
     # Exports
     export
-        # Utils
-        prepare!,
-        get_document_embedding,
-        # Ids
+        search,
+        embed_document,
         AbstractId,
         HashId,
         StringId,
-        # Search config structure
         SearchConfig,
-        # Searchers
         AbstractSearcher,
-        ClassicSearcher,
-        SemanticSearcher,
+        Searcher,
         AggregateSearcher,
-        classic_searcher,
-        semantic_searcher,
+        SearchResult,
+        AggregateSearchResult,
+        searcher,
         aggregate_searcher,
         enable!,
         disable!,
-        # Results
-        SearchResult,
-        AggregateSearchResult,
-        # Search related
-        search,
-        search_heuristically,
-        print_search_results,
-        # Command line (application) related
-        get_commandline_arguments
-        #HTTP server
-        ###start_http_server,
+        prepare!,
+        isenabled,
+        print_search_results
 
     # Include section
     include("defaults.jl")
