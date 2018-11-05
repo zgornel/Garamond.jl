@@ -5,12 +5,13 @@
 """
 	search(srcher, query [;kwargs])
 
-Searches for query (i.e. key terms) in a multiple corpora and returns
+Searches for query (i.e. key terms) in multiple corpora and returns
 information regarding the documents that match best the query.
-The function returns an object of type AggregateSearchResult.
+The function returns the search results in the form of
+a `Vector{SearchResult}`.
 
 # Arguments
-  * `srcher::AggregateSearcher{T,D}` is the corpora searcher
+  * `srcher::AbstractVector{AbstractSearcher}` is the corpora searcher
   * `query` the query
 
 # Keyword arguments
@@ -23,8 +24,6 @@ The function returns an object of type AggregateSearchResult.
      in the corpus that includes the needle
   * `max_matches::Int` is the maximum number of search results to return from
      each corpus
-  * `max_suggestions::Int` is the maximum number of suggestions to return for
-     each missing needle for all searched corpora
   * `max_corpus_suggestions::Int` is the maximum number of suggestions to return for
      each missing needle from the search in a corpus
 
@@ -33,27 +32,28 @@ The function returns an object of type AggregateSearchResult.
 	...
 ```
 """
-function search(srcher::AggregateSearcher{T,S},
+function search(srchers::V,
                 query;
                 search_type::Symbol=DEFAULT_SEARCH_TYPE,
                 search_method::Symbol=DEFAULT_SEARCH_METHOD,
                 max_matches::Int=DEFAULT_MAX_MATCHES,
-                max_suggestions::Int=DEFAULT_MAX_SUGGESTIONS,
                 max_corpus_suggestions::Int=DEFAULT_MAX_CORPUS_SUGGESTIONS) where
-        {T<:AbstractId, S<:AbstractSearcher}
+    {V<:Vector{<:Searcher{I,D,E,M}
+                   where I<:AbstractId
+                   where D<:AbstractDocument
+                   where E
+                   where M<:AbstractSearchData}}
     # Checks
-    # TODO(Corneliu) Adapt checks and options to individual searcher types
     @assert search_type in [:data, :metadata, :all]
     @assert search_method in [:exact, :regex]
     @assert max_matches >= 0
-    @assert max_suggestions >= 0
     @assert max_corpus_suggestions >=0
     # Initializations
-    n = length(srcher.searchers)
-    max_corpus_suggestions = min(max_suggestions, max_corpus_suggestions)
+    n = length(srchers)
+    enabled_searchers = [i for i in 1:n if isenabled(srchers[i])]
+    n_enabled = length(enabled_searchers)
     # Search
-    results = [SearchResult() for _ in 1:n]
-    ids = [random_id(T) for _ in 1:n]
+    results = Vector{SearchResult}(undef, length(enabled_searchers))
     ###################################################################
     # The `@threads` statement in front of the for loop here idicates
     # the use of multi-threading. If multi-threading is used,
@@ -62,26 +62,17 @@ function search(srcher::AggregateSearcher{T,S},
     # or start julia with:
     #   `env OPENBLAS_NUM_THREADS=1 julia`
     ###################################################################
-    @threads for i in 1:n
-        if isenabled(srcher.searchers[i])
-            # Get corpus search results
-            ids[i], results[i] = search(srcher.searchers[i],
-                                        query,
-                                        search_type=search_type,
-                                        search_method=search_method,
-                                        max_matches=max_matches,
-                                        max_suggestions=max_corpus_suggestions)
-        end
+    @threads for i in 1:n_enabled
+        # Get corpus search results
+        results[i] = search(srchers[enabled_searchers[i]],
+                            query,
+                            search_type=search_type,
+                            search_method=search_method,
+                            max_matches=max_matches,
+                            max_suggestions=max_corpus_suggestions)
     end
-    # Add corpus search results to the corpora search results
-    result = AggregateSearchResult{T}()
-    for i in 1:n
-        if isenabled(srcher.searchers[i])
-            push!(result, ids[i]=>results[i])
-        end
-    end
-    squash_suggestions!(result, max_suggestions)
-    return result
+    # Return vector of tuples, each tuple containing the id and search results
+    return results::Vector{SearchResult}  # not necessary without `@threads`
 end
 
 
@@ -116,13 +107,13 @@ The function returns an object of type SearchResult and the id of the searcher.
 """
 # Function that searches in a corpus'a metdata or
 # metadata + content for query (i.e. keyterms)
-function search(srcher::Searcher{T,D,E,M},
+function search(srcher::Searcher{I,D,E,M},
                 query;
                 search_type::Symbol=:metadata,
                 search_method::Symbol=:exact,
                 max_matches::Int=10,
                 max_suggestions::Int=DEFAULT_MAX_CORPUS_SUGGESTIONS) where
-        {T<:AbstractId, D<:AbstractDocument, E, M<:AbstractDocumentCount}
+        {I<:AbstractId, D<:AbstractDocument, E, M<:AbstractDocumentCount}
     # Tokenize
     needles = extract_tokens(query)
     # Initializations
@@ -136,7 +127,7 @@ function search(srcher::Searcher{T,D,E,M},
     needle_popularity = zeros(Float64, p)   # needle relevance
     for wts in where_to_search
         # search
-        inds = search(needles, srcher.search_data[wts], search_method=search_method)
+        inds = search(srcher.search_data[wts], needles, search_method=search_method)
         # select term importance vectors
         _M = view(srcher.search_data[wts].values, :, inds)
         @inbounds @simd for j in 1:p
@@ -152,9 +143,9 @@ function search(srcher::Searcher{T,D,E,M},
     documents_ordered::Vector{Tuple{Float64, Int}} =
         [(score, i) for (i, score) in enumerate(document_scores) if score > 0]
     sort!(documents_ordered, by=x->x[1], rev=true)
-    needles_matches = MultiDict{Float64, Int}()
+    query_matches = MultiDict{Float64, Int}()
     @inbounds for i in 1:min(max_matches, length(documents_ordered))
-        push!(needles_matches, document_scores[documents_ordered[i][2]]=>
+        push!(query_matches, document_scores[documents_ordered[i][2]]=>
                              documents_ordered[i][2])
     end
     # Process needles (search heuristically for missing ones,
@@ -178,15 +169,15 @@ function search(srcher::Searcher{T,D,E,M},
                                   max_suggestions=max_suggestions)
         end
     end
-    return id(srcher), SearchResult(needles_matches, needle_matches, suggestions)
+    return SearchResult(id(srcher), query_matches, needle_matches, suggestions)
 end
 
 
 """
 	Search function for searching using the term imporatances associated to a corpus.
 """
-function search(needles::Vector{S},
-                search_data::TermCounts;
+function search(search_data::TermCounts,
+                needles::Vector{S};
                 search_method::Symbol=:exact) where S<:AbstractString
     # Initializations
     p = length(needles)
@@ -252,14 +243,14 @@ end
 
 
 # Semantic search method (M<:AbstractEmbeddingModel)
-function search(srcher::Searcher{T,D,E,M},
+function search(srcher::Searcher{I,D,E,M},
                 query;  # can be either a string or vector of strings
                 search_type::Symbol=:metadata,
                 search_method::Symbol=Symbol(),  #not used
                 max_matches::Int=10,
                 max_suggestions::Int=DEFAULT_MAX_CORPUS_SUGGESTIONS  # not used
                 ) where
-        {T<:AbstractId, D<:AbstractDocument, E, M<:AbstractEmbeddingModel}
+        {I<:AbstractId, D<:AbstractDocument, E, M<:AbstractEmbeddingModel}
     # Tokenize
     needles = extract_tokens(query)
     # Initializations
@@ -290,7 +281,7 @@ function search(srcher::Searcher{T,D,E,M},
     # Get suggestions
     suggestions = MultiDict{String, Tuple{Float64, String}}()
     needle_matches = Dict{String, Float64}()
-    return id(srcher), SearchResult(query_matches, needle_matches, suggestions)
+    return SearchResult(id(srcher), query_matches, needle_matches, suggestions)
 end
 
 

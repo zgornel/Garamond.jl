@@ -38,8 +38,7 @@ module Garamond
     import Base: size, length, show, keys, values, push!,
                  delete!, getindex, names, convert, lowercase,
                  occursin, isempty
-    import TextAnalysis: prepare!, update_lexicon!,
-           update_inverse_index!
+    import TextAnalysis: prepare!, id
     import ConceptnetNumberbatch: embed_document
 
     # Abstract types
@@ -50,6 +49,8 @@ module Garamond
     # Exports
     export
         search,
+        searcher,
+        load_searchers,
         embed_document,
         AbstractId,
         HashId,
@@ -57,11 +58,8 @@ module Garamond
         SearchConfig,
         AbstractSearcher,
         Searcher,
-        AggregateSearcher,
         SearchResult,
-        AggregateSearchResult,
-        searcher,
-        aggregate_searcher,
+        id,
         enable!,
         disable!,
         prepare!,

@@ -120,11 +120,11 @@ end
 #################################################
 
 # Searcher structures
-mutable struct Searcher{T<:AbstractId,
+mutable struct Searcher{I<:AbstractId,
                         D<:AbstractDocument,
                         E,
                         M<:AbstractSearchData} <: AbstractSearcher
-    config::SearchConfig{T}                     # most of what is not actual data
+    config::SearchConfig{I}                     # most of what is not actual data
     corpus::Corpus{D}                           # corpus
     embeddings::E                               # needed to embed query
     search_data::Dict{Symbol, M}                # actual search data (classic and semantic)
@@ -133,14 +133,24 @@ end
 
 
 # Useful methods
-id(srcher::Searcher{T,D,E,M}) where {T,D,E,M} = srcher.config.id::T
+id(srcher::Searcher{I,D,E,M}) where {I,D,E,M} = srcher.config.id::I
 
-name(srcher::Searcher{T,D,E,M}) where {T,D,E,M} = srcher.config.name
+name(srcher::Searcher{I,D,E,M}) where {I,D,E,M} = srcher.config.name
 
-isenabled(srcher::Searcher{T,D,E,M}) where {T,D,E,M} = srcher.config.enabled
+isenabled(srcher::Searcher{I,D,E,M}) where {I,D,E,M} = srcher.config.enabled
+
+disable!(srcher::Searcher) = begin
+    srcher.config.enabled = false
+    return srcher
+end
+
+enable!(srcher::Searcher) = begin
+    srcher.config.enabled = true
+    return srcher
+end
 
 # Show method
-show(io::IO, srcher::Searcher{T,D,E,M}) where {T,D,E,M} = begin
+show(io::IO, srcher::Searcher{I,D,E,M}) where {I,D,E,M} = begin
     _srcher_type = ifelse(M<:AbstractDocumentCount,
                           "Classic Searcher",
                           "Semantic Searcher")
@@ -175,10 +185,8 @@ show(io::IO, srcher::Searcher{T,D,E,M}) where {T,D,E,M} = begin
     end
     printstyled(io, "-[$_embs_type]-[$_model_type] ")
     printstyled(io, "$(name(srcher))", color=:normal)
-    printstyled(io, ", $(length(srcher.search_data[:data])) embedded documents\n")
+    printstyled(io, ", $(length(srcher.search_data[:data])) embedded documents")
 end
-
-
 
 # Function that returns a similar matrix with
 # a last column of zeros
@@ -288,108 +296,32 @@ end
 
 
 ###################################
-# Interface for AggregateSearcher #
+# Interface for loading searchers #
 ###################################
-mutable struct AggregateSearcher{T<:AbstractId, S<:AbstractSearcher}
-    searchers::Vector{S}
-    idmap::Dict{T, Int}
-end
-
-
-show(io::IO, aggsrcher::AggregateSearcher) = begin
-    printstyled(io, "$(length(aggsrcher.searchers))-element AggregateSearcher:\n")
-    for (id, idx) in aggsrcher.idmap
-        print(io, "`-", aggsrcher.searchers[idx])
-    end
-end
-
-
-# Function to create a semantic search structure from corpus configs' similar to corpora_searchers
-function aggregate_searcher(data_config_path::AbstractString)
+function load_searchers(data_config_path::AbstractString)
     sconfs = parse_data_config(data_config_path)
-    aggregate_searcher(sconfs)
+    load_searchers(sconfs)
 end
 
-function aggregate_searcher(sconfs::Vector{SearchConfig{T}}) where T<:AbstractId
-    n = length(sconfs)
-    aggsrcher = AggregateSearcher(Vector{Searcher}(undef, n),
-                                  Dict{T,Int}())
-    for (i, sconf) in enumerate(sconfs)
-        aggsrcher.searchers[i] = searcher(sconf)
-        push!(aggsrcher.idmap, sconf.id=>i)
-    end
-	return aggsrcher
+function load_searchers(sconfs::Vector{SearchConfig{T}}) where T<:AbstractId
+    srchers = [searcher(sconf) for sconf in sconfs]
+	return srchers
 end
 
-
-
-#################################
-# Utils for Aggregate searchers #
-#################################
-# Indexing
-getindex(aggsrcher::AggregateSearcher{T,S}, id::T) where
-        {T<:AbstractId, S<:AbstractSearcher} =
-    return aggsrcher.searchers[aggsrcher.idmap[id]]
-
-getindex(aggsrcher::AggregateSearcher{T,S}, id::UInt) where
-        {T<:HashId, S<:AbstractSearcher} =
-    aggsrcher[HashId(id)]
-
-getindex(aggsrcher::AggregateSearcher{T,S}, id::String) where
-        {T<:StringId, S<:AbstractSearcher} =
-    aggsrcher[StringId(id)]
-
-
-delete!(aggsrcher::AggregateSearcher{T,S}, id::T) where
-        {T<:AbstractId, S<:AbstractSearcher} = begin
-    deleteat!(aggsrcher.searchers, aggsrcher.idmap[id])
-    delete!(aggsrcher.idmap, id)
-    return aggsrcher
+# Indexing for vectors of searchers
+getindex(srchers::Vector{Searcher{I,D,E,M}}, an_id::I) where
+        {I<:AbstractId, D<:AbstractDocument,E, M<:AbstractSearchData} = begin
+    idxs = Int[]
+	for (i, srcher) in enumerate(srchers)
+		id(srcher) == an_id && push!(idxs, i)
+	end
+	return srchers[idxs]
 end
 
+getindex(srchers::Vector{Searcher{I,D,E,M}}, an_id::UInt) where
+        {I<:AbstractId, D<:AbstractDocument,E, M<:AbstractSearchData} =
+	srchers[HashId(an_id)]
 
-delete!(aggsrcher::AggregateSearcher{T,S}, id::Union{String, UInt}) where
-        {T<:AbstractId, S<:AbstractSearcher} =
-    delete!(aggsrcher, T(id))
-
-
-disable!(aggsrcher::AggregateSearcher{T,S}, id::T) where
-        {T<:AbstractId, S<:AbstractSearcher} = begin
-    aggsrcher[id].config.enabled = false
-    return aggsrcher
-end
-
-
-disable!(aggsrcher::AggregateSearcher{T,S}, id::Union{String, UInt}) where
-        {T<:AbstractId, S<:AbstractSearcher} =
-    disable!(aggsrcher, T(id))
-
-
-disable!(aggsrcher::AggregateSearcher{T,S}) where
-        {T<:AbstractId, S<:AbstractSearcher} = begin
-    for id in keys(aggsrcher.idmap)
-        disable!(aggsrcher, id)
-    end
-    return aggsrcher
-end
-
-
-enable!(aggsrcher::AggregateSearcher{T,S}, id::T) where
-        {T<:AbstractId, S<:AbstractSearcher} = begin
-    aggsrcher[id].config.enabled = true
-    return aggsrcher
-end
-
-
-enable!(aggsrcher::AggregateSearcher{T,S}, id::Union{String, UInt}) where
-        {T<:AbstractId, S<:AbstractSearcher} =
-    enable!(aggsrcher, T(id))
-
-
-enable!(aggsrcher::AggregateSearcher{T,S}) where
-        {T<:AbstractId, S<:AbstractSearcher} = begin
-    for id in keys(aggsrcher.idmap)
-        enable!(aggsrcher, id)
-    end
-    return aggsrcher
-end
+getindex(srchers::Vector{Searcher{I,D,E,M}}, an_id::String) where
+        {I<:AbstractId, D<:AbstractDocument,E, M<:AbstractSearchData} =
+	srchers[StringId(an_id)]

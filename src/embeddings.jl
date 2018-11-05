@@ -100,10 +100,10 @@ end
 Tokenizes various types of documents. Works for `AbstractString`,
 Vector{AbstractString} and `TextAnalysis.jl` documents.
 """
-extract_tokens(doc::NGramDocument) = collect(keys(doc.ngrams))
-extract_tokens(doc::StringDocument) = tokenize_for_conceptnet(doc.text)
-extract_tokens(doc::AbstractString) = tokenize_for_conceptnet(doc)
-extract_tokens(doc::Vector{S} where S<:AbstractString) = doc
+extract_tokens(doc::NGramDocument) = String.(collect(keys(doc.ngrams)))
+extract_tokens(doc::StringDocument) = String.(tokenize_for_conceptnet(doc.text))
+extract_tokens(doc::AbstractString) = String.(tokenize_for_conceptnet(doc))
+extract_tokens(doc::Vector{S} where S<:AbstractString) = String.(doc)
 
 
 
