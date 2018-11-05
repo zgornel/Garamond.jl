@@ -3,8 +3,6 @@
 *.jl.mem
 *~
 *.swp
-rawdata
-dump/
 build/bin/
 benchmarks/
 scripts/
