@@ -201,11 +201,11 @@ end
 
 
 """
-    searcher(sconf)
+    make_searcher(sconf)
 
 Creates a Searcher from a SearchConfig.
 """
-function searcher(sconf::SearchConfig{T}) where T
+function make_searcher(sconf::SearchConfig{T}) where T
     # Parse file
     crps, crps_meta = sconf.parser(sconf.data_path)
     # Prepare
@@ -304,7 +304,7 @@ function load_searchers(data_config_path::AbstractString)
 end
 
 function load_searchers(sconfs::Vector{SearchConfig{T}}) where T<:AbstractId
-    srchers = [searcher(sconf) for sconf in sconfs]
+    srchers = [make_searcher(sconf) for sconf in sconfs]
 	return srchers
 end
 

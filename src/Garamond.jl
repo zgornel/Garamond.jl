@@ -49,7 +49,6 @@ module Garamond
     # Exports
     export
         search,
-        searcher,
         load_searchers,
         embed_document,
         AbstractId,
