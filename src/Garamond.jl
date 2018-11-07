@@ -33,6 +33,7 @@ module Garamond
     using ProgressMeter
     using ConceptnetNumberbatch, Word2Vec
     using HNSW, NearestNeighbors, Distances
+    using JSON
 
     # Import section (extendable methods)
     import Base: size, length, show, keys, values, push!,
@@ -49,7 +50,6 @@ module Garamond
     # Exports
     export
         search,
-        searcher,
         load_searchers,
         embed_document,
         AbstractId,
@@ -68,14 +68,15 @@ module Garamond
 
     # Include section
     include("defaults.jl")
-    include("cmdline.jl")
     include("logging.jl")
-    include("utils_text_lang.jl")
+    include("config.jl")
     include("embeddings.jl")
     include("search_structures.jl")
-    include("parsers.jl")
     include("search.jl")
     include("results.jl")
+    include("utils_text_lang.jl")
+    include("parsers/csv_format_1.jl")
+    include("cmdline.jl")
     ###include("servers.jl")
 
 end # module

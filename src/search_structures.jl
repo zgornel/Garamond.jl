@@ -1,98 +1,3 @@
-########################################################
-# Corpus Id's i.e. keys that uniquely identify corpora #
-########################################################
-
-struct HashId <: AbstractId
-    id::UInt
-end
-
-
-struct StringId <: AbstractId
-    id::String
-end
-
-
-show(io::IO, id::StringId) = print(io, "id=\"$(id.id)\"")
-show(io::IO, id::HashId) = print(io, "id=0x$(string(id.id, base=16))")
-
-
-random_id(::Type{HashId}) = HashId(hash(rand()))
-random_id(::Type{StringId}) = StringId(randstring())
-
-
-# Construct IDs
-make_id(::Type{HashId}, id::String) = HashId(parse(UInt, id))  # the id has to be parsable to UInt
-make_id(::Type{HashId}, id::T) where T<:Integer = HashId(UInt(abs(id)))
-make_id(::Type{StringId}, id::T) where T<:AbstractString = StringId(String(id))
-make_id(::Type{StringId}, id::T) where T<:Number = StringId(string(id))
-
-const DEFAULT_ID_TYPE = StringId
-
-
-
-################
-# SearchConfig #
-################
-# SearchConfigs can be built from a data configuration file or manually
-mutable struct SearchConfig{I<:AbstractId}
-    # general
-    id::I                           # searcher/corpus id
-    search::Symbol                  # search type i.e. :classic, :semantic
-    name::String                    # name of the searcher.corpus
-    enabled::Bool                   # whether to use the corpus in search or not
-    data_path::String               # file/directory path for the data (depends on what the parser accepts)
-    parser::Function                # parser function used to obtain corpus
-    # classic search
-    count_type::Symbol              # search term counting type i.e. :tf, :tfidf etc (classic search)
-    heuristic::Symbol               # search heuristic for recommendtations (classic search)
-    # semantic search
-    embeddings_path::String         # path to the embeddings file
-    embeddings_type::Symbol         # type of the embeddings i.e. :conceptnet, :word2vec (semantic search)
-    embedding_method::Symbol        # How to arrive at a single embedding from multiple i.e. :bow, :arora (semantic search)
-    embedding_search_model::Symbol  # type of the search model i.e. :naive, :kdtree, :hnsw (semantic search)
-end
-
-
-# Small function that returns 2 empty corpora
-_fake_parser(args...) = begin
-    crps = Corpus(DEFAULT_DOC_TYPE(""))
-    return crps, crps
-end
-
-
-# Keyword argument constructor; all arguments sho
-SearchConfig(;
-          id=random_id(DEFAULT_ID_TYPE),
-          search=DEFAULT_SEARCH,
-          name="",
-          enabled=false,
-          data_path="",
-          parser=_fake_parser,
-          count_type=DEFAULT_COUNT_TYPE,
-          heuristic=DEFAULT_HEURISTIC,
-          embeddings_path="",
-          embeddings_type=DEFAULT_EMBEDDINGS_TYPE,
-          embedding_method=DEFAULT_EMBEDDING_METHOD,
-          embedding_search_model=DEFAULT_EMBEDDING_SEARCH_MODEL) =
-    # Call normal constructor
-    SearchConfig(id, search, name, enabled, data_path, parser,
-                 count_type, heuristic,
-                 embeddings_path, embeddings_type,
-                 embedding_method, embedding_search_model)
-
-
-Base.show(io::IO, sconf::SearchConfig) = begin
-    printstyled(io, "SearchConfig for $(sconf.name)\n")
-    _status = ifelse(sconf.enabled, "enabled", "disabled")
-    _status_color = ifelse(sconf.enabled, :light_green, :light_black)
-    printstyled(io, "`-[$_status]", color=_status_color)
-    _search_color = ifelse(sconf.search==:classic, :cyan, :light_cyan)
-    printstyled(io, "-[$(sconf.search)] ", color=_search_color)
-    printstyled(io, "$(sconf.data_path)\n")
-end
-
-
-
 ###########################
 # Term Counting structure #
 ###########################
@@ -201,11 +106,11 @@ end
 
 
 """
-    searcher(sconf)
+    make_searcher(sconf)
 
 Creates a Searcher from a SearchConfig.
 """
-function searcher(sconf::SearchConfig{T}) where T
+function make_searcher(sconf::SearchConfig{T}) where T
     # Parse file
     crps, crps_meta = sconf.parser(sconf.data_path)
     # Prepare
@@ -295,18 +200,26 @@ end
 
 
 
-###################################
-# Interface for loading searchers #
-###################################
+##################
+# Load searchers #
+##################
+# Loadin process flow:
+#   1. Parse configuration file using `load_search_configs`
+#   2. The resulting Vector{SearchConfig} is passed to `load_searchers`
+#      (each SearchConfig contains the data filepath, corpus name etc.
+#   3. Parse the data file, obtain Corpus and create specified Searcher
 function load_searchers(data_config_path::AbstractString)
-    sconfs = parse_data_config(data_config_path)
-    load_searchers(sconfs)
+    sconfs = load_search_configs(data_config_path)
+    srchers = load_searchers(sconfs)
+    return srchers
 end
 
 function load_searchers(sconfs::Vector{SearchConfig{T}}) where T<:AbstractId
-    srchers = [searcher(sconf) for sconf in sconfs]
+    srchers = [make_searcher(sconf) for sconf in sconfs]
 	return srchers
 end
+
+
 
 # Indexing for vectors of searchers
 getindex(srchers::V, an_id::AbstractId) where {V<:Vector{<:Searcher{I,D,E,M}
