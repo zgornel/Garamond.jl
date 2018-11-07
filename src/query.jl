@@ -9,17 +9,18 @@ be wrapped (for processing) can be specified, in case the query
 is not already a `TextAnalysis.AbstractDocument`.
 """
 process_query(query::AbstractDocument;
-              prepare::Bool=true,
-              stem::Bool=true) = begin
+              prepare::Bool=false,
+              stem::Bool=false) = begin
+    # Note: preparation and stemming slow by hundreds of μs the search.
     prepare && prepare!(query, QUERY_STRIP_FLAGS)
     stem && stem!(query)
-    extract_tokens(query)
+    return extract_tokens(query)
 end
 
 process_query(query::AbstractString;
               doc_type::Type{T}=TextAnalysis.StringDocument
              ) where T<:TextAnalysis.AbstractDocument = begin
-    process_query(doc_type(doc))
+    process_query(doc_type(query))
 end
 
 process_query(query::V;
