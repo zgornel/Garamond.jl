@@ -103,7 +103,7 @@ end
     load_search_configs(filename)
 
 Function that creates search configurations from a data configuration file
-specified by `filename`. It returns a `Vector{SearchConfig}` that is used 
+specified by `filename`. It returns a `Vector{SearchConfig}` that is used
 to build the `Searcher` objects with wich search is performed.
 """
 function load_search_configs(filename::AbstractString)
