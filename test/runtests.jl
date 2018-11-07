@@ -66,7 +66,6 @@ function generate_test_configurations(config_type::Symbol)
     # Semantic search test configuration
     SEMANTIC_CONFIG = []
     dir = @__DIR__
-    @show dir
     _id = 1
     for _embs_type in ["conceptnet", "word2vec"]
         for _emb_method in ["bow", "arora"]

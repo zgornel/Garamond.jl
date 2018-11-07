@@ -39,23 +39,27 @@ const DEFAULT_METADATA_FIELDS = [:author, :name, :note]  # Default metadata fiel
 
 # Text pre-processing flags (for the prepare! function)
 const TEXT_STRIP_FLAGS = strip_case +
-                         strip_numbers +
                          strip_punctuation +
-			             strip_articles +
+                         strip_articles +
                          strip_non_letters +
-                         strip_stopwords +
-			             strip_prepositions +
+                         strip_prepositions +
                          strip_whitespace +
                          strip_corrupt_utf8
 
-const QUERY_STRIP_FLAGS = strip_non_letters +
+const QUERY_STRIP_FLAGS = strip_case +
                           strip_punctuation +
+                          strip_articles +
+                          strip_non_letters +
+                          strip_prepositions +
                           strip_whitespace +
                           strip_corrupt_utf8
 
-const METADATA_STRIP_FLAGS = strip_punctuation +
+const METADATA_STRIP_FLAGS = strip_case +
+                             strip_punctuation +
+                             strip_articles +
+                             strip_prepositions +
                              strip_whitespace +
-                             strip_case
+                             strip_corrupt_utf8
 
 
 # Dictionaries for String <=>Languages.Language / Languages.Languages <=> String

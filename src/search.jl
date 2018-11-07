@@ -112,7 +112,7 @@ function search(srcher::Searcher{I,D,E,M},
                 max_suggestions::Int=DEFAULT_MAX_CORPUS_SUGGESTIONS) where
         {I<:AbstractId, D<:AbstractDocument, E, M<:AbstractDocumentCount}
     # Tokenize
-    needles = extract_tokens(query)
+    needles = process_query(query)
     # Initializations
     n = length(srcher.search_data[:data])    # number of documents
     p = length(needles)                 # number of search terms
@@ -249,7 +249,7 @@ function search(srcher::Searcher{I,D,E,M},
                 ) where
         {I<:AbstractId, D<:AbstractDocument, E, M<:AbstractEmbeddingModel}
     # Tokenize
-    needles = extract_tokens(query)
+    needles = process_query(query)
     # Initializations
     n = length(srcher.search_data[:data])  # number of embedded documents
     # Search metadata and/or data
@@ -259,7 +259,7 @@ function search(srcher::Searcher{I,D,E,M},
     # Embed query
     query_embedding = embed_document(srcher.embeddings,
                         srcher.corpus.lexicon,
-                        query,
+                        needles,
                         embedding_method=srcher.config.embedding_method)
     idxs = Int[]
     scores = Float64[]

@@ -83,6 +83,19 @@ end
 
 
 
+"""
+    extract_tokens(doc)
+
+Tokenizes various types of documents. Works for `AbstractString`,
+Vector{AbstractString} and `TextAnalysis.jl` documents.
+"""
+extract_tokens(doc::NGramDocument) = String.(collect(keys(doc.ngrams)))
+extract_tokens(doc::StringDocument) = String.(tokenize_for_conceptnet(doc.text))
+extract_tokens(doc::AbstractString) = String.(tokenize_for_conceptnet(doc))
+extract_tokens(doc::Vector{S} where S<:AbstractString) = String.(doc)
+
+
+
 ### # Useful regular expressions
 ### replace.(select(tt2,2),r"([A-Z]\s|[A-Z]\.\s)","")  # replace middle initial 
 ### replace.(select(tt2,2),r"[\s]+$","")  # replace end spaces 

@@ -95,19 +95,6 @@ end
 
 
 """
-    extract_tokens(doc)
-
-Tokenizes various types of documents. Works for `AbstractString`,
-Vector{AbstractString} and `TextAnalysis.jl` documents.
-"""
-extract_tokens(doc::NGramDocument) = String.(collect(keys(doc.ngrams)))
-extract_tokens(doc::StringDocument) = String.(tokenize_for_conceptnet(doc.text))
-extract_tokens(doc::AbstractString) = String.(tokenize_for_conceptnet(doc))
-extract_tokens(doc::Vector{S} where S<:AbstractString) = String.(doc)
-
-
-
-"""
     embed_document(embeddings_library, lexicon, doc[; embeddings_method])
 
 Function to get from multiple word-embeddings to a document embedding.
