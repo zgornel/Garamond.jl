@@ -116,7 +116,10 @@ function make_searcher(sconf::SearchConfig{T}) where T
     # Prepare
     prepare!(crps, TEXT_STRIP_FLAGS)
     prepare!(crps_meta, METADATA_STRIP_FLAGS)
-    ### # Update lexicons
+    # Stemming
+    stem!(crps)
+    stem!(crps_meta)
+    # Update lexicons
     update_lexicon!(crps)
     update_lexicon!(crps_meta)
     # Classic search
