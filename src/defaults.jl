@@ -104,3 +104,19 @@ const STR_TO_LANG = Dict("english"=>Languages.English(),
                          "tamil"=>Languages.Tamil()
                         )
 const LANG_TO_STR = Dict((v=>k) for (k,v) in STR_TO_LANG)
+
+
+# Parser configurations; the keys of this dictionary have to appear in the
+# parsing configuration files; the name of the data parsing function is
+# created from them using the formula: `__parser_<key>` i.e.
+# `__parser_csv_format_1` corresponds to key `csv_format_1`
+const PARSER_CONFIGS = Dict(
+    :csv_format_1 => Dict(
+        :metadata=> Dict(1=>:id, 2=>:author, 3=>:name,
+                         4=>:publisher, 5=>:edition_year,
+                         6=>:published_year, 7=>:language,
+                         8=>:note, 9=>:location),
+        :data=> Dict(1=>false, 2=>true, 3=>true,
+                     4=>false, 5=>false, 6=>false,
+                     7=>false, 8=>true, 9=>false))
+)
