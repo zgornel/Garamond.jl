@@ -67,16 +67,16 @@ module Garamond
         print_search_results
 
     # Include section
-    include("logging.jl")
     include("defaults.jl")
+    include("logging.jl")
     include("config.jl")
-    include("cmdline.jl")
-    include("utils_text_lang.jl")
     include("embeddings.jl")
     include("search_structures.jl")
-    include("parsers.jl")
     include("search.jl")
     include("results.jl")
+    include("utils_text_lang.jl")
+    include("parsers/csv_format_1.jl")
+    include("cmdline.jl")
     ###include("servers.jl")
 
 end # module
