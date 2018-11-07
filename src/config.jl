@@ -22,7 +22,7 @@ random_id(::Type{StringId}) = StringId(randstring())
 
 # Construct IDs
 make_id(::Type{HashId}, id::String) = HashId(parse(UInt, id))  # the id has to be parsable to UInt
-make_id(::Type{HashId}, id::T) where T<:Integer = HashId(UInt(abs(id)))
+make_id(::Type{HashId}, id::T) where T<:Number = HashId(UInt(abs(id)))  # may fail for floats!
 make_id(::Type{StringId}, id::T) where T<:AbstractString = StringId(String(id))
 make_id(::Type{StringId}, id::T) where T<:Number = StringId(string(id))
 
@@ -116,19 +116,22 @@ function load_search_configs(filename::AbstractString)
     for (i, (sconfig, dconfig)) in enumerate(zip(search_configs, dict_configs))
         # Get search parameters accounting for missing values
         # by using default parameters where the case
-        has_header = dconfig["header"]
-        sconfig.id = make_id(DEFAULT_ID_TYPE, dconfig["id"])
+        has_header = get(dconfig, "header", false)
+        id = get(dconfig, "id", missing)
+        if !ismissing(id)
+            sconfig.id = make_id(DEFAULT_ID_TYPE, id)
+        end
         sconfig.search = Symbol(get(dconfig, "search", DEFAULT_SEARCH))
-        sconfig.name = dconfig["name"]
-        sconfig.enabled = dconfig["enabled"]
-        sconfig.data_path = dconfig["data_path"]
+        sconfig.name = get(dconfig, "name", "")
+        sconfig.enabled = get(dconfig, "enabled", false)
+        sconfig.data_path = get(dconfig, "data_path", "")
         sconfig.parser = get_parsing_function(Symbol(dconfig["parser"]),
                                               has_header)
-        sconfig.count_type = Symbol(get(dconfig, "count_type", 
+        sconfig.count_type = Symbol(get(dconfig, "count_type",
                                         DEFAULT_COUNT_TYPE))
         sconfig.heuristic = Symbol(get(dconfig, "heuristic",
                                        DEFAULT_HEURISTIC))
-        sconfig.embeddings_path = dconfig["embeddings_path"]
+        sconfig.embeddings_path = get(dconfig, "embeddings_path", "")
         sconfig.embeddings_type = Symbol(get(dconfig, "embeddings_type",
                                              DEFAULT_EMBEDDINGS_TYPE))
         sconfig.embedding_method = Symbol(get(dconfig, "embedding_method",
@@ -136,8 +139,8 @@ function load_search_configs(filename::AbstractString)
         sconfig.embedding_search_model = Symbol(get(dconfig,
                                                 "embedding_search_model",
                                                 DEFAULT_EMBEDDING_SEARCH_MODEL))
-        # Checks of the configuration parameter values; no checks 
-        # for the id (always works), name (has to be present),
+        # Checks of the configuration parameter values; no checks
+        # for the id (always works), name (always works),
         # enabled (must fail if wrong) and parser (must fail if wrong)
         # search
         if !(sconfig.search in [:classic, :semantic])
@@ -195,10 +198,10 @@ end
 
 
 
-""" 
+"""
     get_parsing_config(name, header)
 
-Function that generates a parsing function from a parser `name` and 
+Function that generates a parsing function from a parser `name` and
 whether a `header` should be used.
 Note: `name` must be in the keys of the `PARSER_CONFIGS` constant. The name
       of the data parsing function is created as: `:__parser_<name>` so,
