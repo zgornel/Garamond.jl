@@ -111,9 +111,9 @@ version = "1.3.0"
 
 [[ConceptnetNumberbatch]]
 deps = ["CodecZlib", "HDF5", "Languages", "Pkg", "Random", "Serialization", "Test", "TranscodingStreams"]
-git-tree-sha1 = "c556365c8cfb5d4ca29eaeb63d4d91dfe8535ec4"
+git-tree-sha1 = "b342d17e261dab661f17b08e493b5307618b0a7b"
 uuid = "6bdbf80b-0969-53f9-8443-f41591bd656e"
-version = "0.1.3"
+version = "0.1.4"
 
 [[DataFrames]]
 deps = ["CategoricalArrays", "CodecZlib", "Compat", "DataStreams", "Dates", "InteractiveUtils", "IteratorInterfaceExtensions", "LinearAlgebra", "Missings", "Printf", "Random", "Reexport", "SortingAlgorithms", "Statistics", "StatsBase", "TableTraits", "Tables", "Test", "TranscodingStreams", "Unicode", "WeakRefStrings"]
@@ -192,8 +192,8 @@ uuid = "f67ccb44-e63f-5c2f-98bd-6dc0ccc4ba2f"
 version = "0.10.2"
 
 [[HNSW]]
-deps = ["Distances", "LightGraphs", "LinearAlgebra"]
-git-tree-sha1 = "8a64d853dbecabdce68ca3b2b5fa7aa457f5c2ee"
+deps = ["Distances", "LightGraphs", "LinearAlgebra", "Reexport"]
+git-tree-sha1 = "ed331149592409b977bbd39193baa212092461b7"
 repo-rev = "master"
 repo-url = "https://github.com/zgornel/HNSW.jl"
 uuid = "540f64fa-c57e-11e8-081c-41422cda4629"
@@ -458,9 +458,9 @@ version = "0.4.0"
 
 [[Tables]]
 deps = ["Requires", "Test"]
-git-tree-sha1 = "be3a3a28a1e6c4fdd838bdf21e796f7a592c565c"
+git-tree-sha1 = "c7fb447deab835fa70ce6717e78c68b0f466a42c"
 uuid = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
-version = "0.1.10"
+version = "0.1.11"
 
 [[Test]]
 deps = ["Distributed", "InteractiveUtils", "Logging", "Random"]
