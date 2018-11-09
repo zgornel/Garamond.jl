@@ -23,12 +23,13 @@ const HEURISTIC_TO_DISTANCE = Dict(  # heuristic to distance object mapping
     :hamming => StringDistances.Hamming(),
     :jaro => StringDistances.Jaro())
 const DEFAULT_DISTANCE = HEURISTIC_TO_DISTANCE[DEFAULT_HEURISTIC]
-
+const DEFAULT_COUNT_ELEMENT_TYPE = Float32  # used in classic search
 
 # Semantic search related
 const DEFAULT_EMBEDDING_METHOD = :bow  # can be :bow or :arora
 const DEFAULT_EMBEDDINGS_TYPE = :conceptnet  # can be :word2vec or :conceptnet
 const DEFAULT_EMBEDDING_SEARCH_MODEL = :naive  # can be :naive, :kdtree or :hnsw
+const DEFAULT_EMBEDDING_ELEMENT_TYPE = :Float32  # can be :Float32, :Float64
 
 
 # Various document processing related constants

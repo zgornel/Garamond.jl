@@ -6,7 +6,7 @@ end
 
 struct TermCounts <: AbstractDocumentCount
     column_indices::Dict{String, Int}
-    values::SparseMatrixCSC{Float64, Int64}
+    values::SparseMatrixCSC{DEFAULT_COUNT_ELEMENT_TYPE, Int64}
 end
 
 # Useful methods
@@ -143,12 +143,15 @@ function make_searcher(sconf::SearchConfig{T}) where T
         _srchdata_meta = TermCounts(dtm_meta.column_indices,
                                     add_final_zeros(count_func(dtm_meta)))
     elseif sconf.search == :semantic
+        # Construct element type
+        _eltype = eval(sconf.embedding_element_type)
         # Read word embeddings
         if sconf.embeddings_type == :conceptnet
             word_embeddings = load_embeddings(sconf.embeddings_path,
-                                              languages=[Languages.English()])
+                                              languages=[Languages.English()],
+                                              data_type = _eltype)
         elseif sconf.embeddings_type == :word2vec
-            word_embeddings = wordvectors(sconf.embeddings_path,
+            word_embeddings = wordvectors(sconf.embeddings_path, _eltype,
                                           kind=:binary)
         else
             @error "$(sconf.embeddings_type) embeddings not supported."

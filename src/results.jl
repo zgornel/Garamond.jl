@@ -3,21 +3,11 @@
 #################################################
 
 # Search results from a single corpus
-struct SearchResult{I<:AbstractId}
+struct SearchResult{I<:AbstractId, T<:AbstractFloat}
     id::I
-    query_matches::MultiDict{Float64, Int}  # score => document indices
-    needle_matches::Dict{String, Float64}  # needle => sum of scores
-    suggestions::MultiDict{String, Tuple{Float64,String}} # needle => tuples of (score,partial match)
-end
-
-
-SearchResult{I}() where I<:AbstractId = begin
-    SearchResult(
-        random_id(I),
-        MultiDict{Float64, Int}(),
-        Dict{String, Float64}(),
-        MultiDict{String, Tuple{Float64,String}}()
-   )
+    query_matches::MultiDict{T, Int}  # score => document indices
+    needle_matches::Dict{String, T}  # needle => sum of scores
+    suggestions::MultiDict{String, Tuple{T,String}} # needle => tuples of (score,partial match)
 end
 
 
@@ -105,9 +95,8 @@ end
 
 
 # Squash suggestions for multiple corpora search results
-function squash_suggestions(results::T,
-                            max_suggestions::Int=1) where
-         T<:AbstractVector{<:SearchResult}
+function squash_suggestions(results::Vector{SearchResult},
+                            max_suggestions::Int=1)
     suggestions = MultiDict{String, String}()
     # Quickly exit if no suggestions are sought
     max_suggestions <=0 && return suggestions
@@ -124,7 +113,7 @@ function squash_suggestions(results::T,
                                     for _result in results)...)
         # Construct suggestions for the whole AggregateSearcher
         for needle in missed_needles
-            all_needle_suggestions = Vector{Tuple{Float64,String}}()
+            all_needle_suggestions = Vector{Tuple{AbstractFloat,String}}()
             for _result in results
                 if haskey(_result.suggestions, needle) &&
                    !(any(suggestion in matched_needles
@@ -156,7 +145,7 @@ function squash_suggestions(results::T,
         # Results from one corpus, easy situation, just copy the suggestions
         for _result in results
             for (needle, vs) in _result.suggestions
-                # vs is a Vector{Tuple{Float64, String}},
+                # vs is a Vector{Tuple{AbstractFloat, String}},
                 # sorted by distance i.e. the float
                 for v in vs
                     push!(suggestions, needle=>v[2])

@@ -50,6 +50,7 @@ mutable struct SearchConfig{I<:AbstractId}
     embeddings_type::Symbol         # type of the embeddings i.e. :conceptnet, :word2vec (semantic search)
     embedding_method::Symbol        # How to arrive at a single embedding from multiple i.e. :bow, :arora (semantic search)
     embedding_search_model::Symbol  # type of the search model i.e. :naive, :kdtree, :hnsw (semantic search)
+    embedding_element_type::Symbol  # Type of the embedding elements
 end
 
 
@@ -64,7 +65,7 @@ SearchConfig{I}() where I<:AbstractId =
         random_id(I), DEFAULT_SEARCH, "", false, "",
         fake_parser, DEFAULT_COUNT_TYPE, DEFAULT_HEURISTIC,
         "", DEFAULT_EMBEDDINGS_TYPE, DEFAULT_EMBEDDING_METHOD,
-        DEFAULT_EMBEDDING_SEARCH_MODEL)
+        DEFAULT_EMBEDDING_SEARCH_MODEL, DEFAULT_EMBEDDING_ELEMENT_TYPE)
 
 # Keyword argument constructor; all arguments sho
 SearchConfig(;
@@ -79,12 +80,14 @@ SearchConfig(;
           embeddings_path="",
           embeddings_type=DEFAULT_EMBEDDINGS_TYPE,
           embedding_method=DEFAULT_EMBEDDING_METHOD,
-          embedding_search_model=DEFAULT_EMBEDDING_SEARCH_MODEL) =
+          embedding_search_model=DEFAULT_EMBEDDING_SEARCH_MODEL,
+          embedding_element_type=DEFAULT_EMBEDDING_ELEMENT_TYPE) =
     # Call normal constructor
     SearchConfig(id, search, name, enabled, data_path, parser,
                  count_type, heuristic,
                  embeddings_path, embeddings_type,
-                 embedding_method, embedding_search_model)
+                 embedding_method, embedding_search_model,
+                 embedding_element_type)
 
 
 Base.show(io::IO, sconfig::SearchConfig) = begin
@@ -139,17 +142,20 @@ function load_search_configs(filename::AbstractString)
         sconfig.embedding_search_model = Symbol(get(dconfig,
                                                 "embedding_search_model",
                                                 DEFAULT_EMBEDDING_SEARCH_MODEL))
+        sconfig.embedding_element_type = Symbol(get(dconfig,
+                                                "embedding_element_type",
+                                                DEFAULT_EMBEDDING_SEARCH_MODEL))
         # Checks of the configuration parameter values; no checks
         # for the id (always works), name (always works),
         # enabled (must fail if wrong) and parser (must fail if wrong)
         # search
         if !(sconfig.search in [:classic, :semantic])
-            @warn "id=$(sconfig.id) Forcing search=$DEFAULT_SEARCH."
+            @warn "$(sconfig.id) Forcing search=$DEFAULT_SEARCH."
             sconfig.search = DEFAULT_SEARCH
         end
         # data path
         if !isfile(sconfig.data_path) && !ispath(sconfig.data_path)
-            @warn "id=$(sconfig.id) Missing data, ignoring search configuration..."
+            @warn "$(sconfig.id) Missing data, ignoring search configuration..."
             push!(removable, i)  # if there is no data file, cannot search
             continue
         end
@@ -157,12 +163,12 @@ function load_search_configs(filename::AbstractString)
         if sconfig.search == :classic
             # count type
             if !(sconfig.count_type in [:tf, :tfidf])
-                @warn "id=$(sconfig.id) Forcing count_type=$DEFAULT_COUNT_TYPE."
+                @warn "$(sconfig.id) Forcing count_type=$DEFAULT_COUNT_TYPE."
                 sconfig.count_type = DEFAULT_COUNT_TYPE
             end
             # heuristic
             if !(sconfig.heuristic in keys(HEURISTIC_TO_DISTANCE))
-                @warn "id=$(sconfig.id) Forcing heuristic=$DEFAULT_HEURISTIC."
+                @warn "$(sconfig.id) Forcing heuristic=$DEFAULT_HEURISTIC."
                 sconfig.heuristic = DEFAULT_HEURISTIC
             end
         end
@@ -170,24 +176,29 @@ function load_search_configs(filename::AbstractString)
         if sconfig.search == :semantic
             # word embeddings library path
             if !isfile(sconfig.embeddings_path)
-                @warn "id=$(sconfig.id) Missing embeddings, ignoring search configuration..."
+                @warn "$(sconfig.id) Missing embeddings, ignoring search configuration..."
                 push!(removable, i)  # if there is are no word embeddings, cannot search
                 continue
             end
             # type of embeddings
             if !(sconfig.embeddings_type in [:word2vec, :conceptnet])
-                @warn "id=$(sconfig.id) Forcing embeddings_type=$DEFAULT_EMBEDDINGS_TYPE."
+                @warn "$(sconfig.id) Forcing embeddings_type=$DEFAULT_EMBEDDINGS_TYPE."
                 sconfig.embeddings_type = DEFAULT_EMBEDDINGS_TYPE
             end
             # embedding method
             if !(sconfig.embedding_method in [:bow, :arora])
-                @warn "id=$(sconfig.id) Forcing embedding_method=$DEFAULT_EMBEDDING_METHOD."
+                @warn "$(sconfig.id) Forcing embedding_method=$DEFAULT_EMBEDDING_METHOD."
                 sconfig.embedding_method = DEFAULT_EMBEDDING_METHOD
             end
             # type of search model
             if !(sconfig.embedding_search_model in [:naive, :brutetree, :kdtree, :hnsw])
-                @warn "id=$(sconfig.id) Forcing embedding_search_model=$DEFAULT_EMBEDDING_SEARCH_MODEL."
+                @warn "$(sconfig.id) Forcing embedding_search_model=$DEFAULT_EMBEDDING_SEARCH_MODEL."
                 sconfig.embedding_search_model = DEFAULT_EMBEDDING_SEARCH_MODEL
+            end
+            # type of the embedding elements
+            if !(sconfig.embedding_element_type in [:Float32, :Float64])
+                @warn "$(sconfig.id) Forcing embedding_element_type=$DEFAULT_EMBEDDING_ELEMENT_TYPE."
+                sconfig.embedding_element_type = DEFAULT_EMBEDDING_ELEMENT_TYPE
             end
         end
     end

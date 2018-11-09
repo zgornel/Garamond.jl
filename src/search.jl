@@ -120,8 +120,8 @@ function search(srcher::Searcher{I,D,E,M},
     where_to_search = ifelse(search_type==:all,
                              [:data, :metadata],
                              [search_type])
-    document_scores = zeros(Float64, n)     # document relevance
-    needle_popularity = zeros(Float64, p)   # needle relevance
+    document_scores = zeros(DEFAULT_COUNT_ELEMENT_TYPE, n)     # document relevance
+    needle_popularity = zeros(DEFAULT_COUNT_ELEMENT_TYPE, p)   # needle relevance
     for wts in where_to_search
         # search
         inds = search(srcher.search_data[wts], needles, search_method=search_method)
@@ -137,10 +137,10 @@ function search(srcher::Searcher{I,D,E,M},
         end
     end
     # Process documents found (sort by score)
-    documents_ordered::Vector{Tuple{Float64, Int}} =
+    documents_ordered::Vector{Tuple{DEFAULT_COUNT_ELEMENT_TYPE, Int}} =
         [(score, i) for (i, score) in enumerate(document_scores) if score > 0]
     sort!(documents_ordered, by=x->x[1], rev=true)
-    query_matches = MultiDict{Float64, Int}()
+    query_matches = MultiDict{DEFAULT_COUNT_ELEMENT_TYPE, Int}()
     @inbounds for i in 1:min(max_matches, length(documents_ordered))
         push!(query_matches, document_scores[documents_ordered[i][2]]=>
                              documents_ordered[i][2])
@@ -151,7 +151,7 @@ function search(srcher::Searcher{I,D,E,M},
                           for (i, needle) in enumerate(needles)
                           if needle_popularity[i] > 0)
     # Get suggestions
-    suggestions = MultiDict{String, Tuple{Float64, String}}()
+    suggestions = MultiDict{String, Tuple{DEFAULT_COUNT_ELEMENT_TYPE, String}}()
     missing_needles = map(iszero, needle_popularity)
     if max_suggestions > 0 && any(missing_needles)
         needles_not_found = needles[missing_needles]
@@ -215,7 +215,8 @@ end
 """
     Search in the search tree for matches.
 """
-function search_heuristically!(suggestions::MultiDict{String, Tuple{Float64, String}},
+function search_heuristically!(suggestions::MultiDict{String,
+                                    Tuple{DEFAULT_COUNT_ELEMENT_TYPE, String}},
                                search_tree::BKTree{String},
                                needles::Vector{S};
                                max_suggestions::Int=1) where S<:AbstractString
@@ -237,6 +238,24 @@ function search_heuristically!(suggestions::MultiDict{String, Tuple{Float64, Str
     end
     return suggestions
 end
+
+
+
+"""
+    get_embedding_eltype(embeddings)
+
+Function that returns the type of the embeddings' elements. The type is useful to
+generate score vectors. If the element type is and `Int8` (ConceptNet compressed),
+the returned type is the DEFAULT_EMBEDDING_TYPE.
+"""
+# Get embedding element types
+get_embedding_eltype(::WordVectors{S,T,H}) where
+    {S<:AbstractString, T<:Real, H<:Integer} = T
+get_embedding_eltype(::ConceptNet{L,K,E}) where
+    {L<:Language, K<:AbstractString, E<:AbstractFloat} = E
+get_embedding_eltype(::ConceptNet{L,K,E}) where
+    {L<:Language, K<:AbstractString, E<:Integer} = DEFAULT_EMBEDDING_ELEMENT_TYPE
+
 
 
 # Semantic search method (M<:AbstractEmbeddingModel)
@@ -262,7 +281,8 @@ function search(srcher::Searcher{I,D,E,M},
                         needles,
                         embedding_method=srcher.config.embedding_method)
     idxs = Int[]
-    scores = Float64[]
+    score_type = get_embedding_eltype(srcher.embeddings)
+    scores = score_type[]
     k = min(n, max_matches)
     for wts in where_to_search
         # search
@@ -276,8 +296,8 @@ function search(srcher::Searcher{I,D,E,M},
     # Process documents found (sort by score)
     query_matches = MultiDict(zip(scores, idxs))
     # Get suggestions
-    suggestions = MultiDict{String, Tuple{Float64, String}}()
-    needle_matches = Dict{String, Float64}()
+    suggestions = MultiDict{String, Tuple{score_type, String}}()
+    needle_matches = Dict{String, score_type}()
     return SearchResult(id(srcher), query_matches, needle_matches, suggestions)
 end
 

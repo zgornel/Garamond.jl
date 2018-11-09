@@ -70,22 +70,25 @@ function generate_test_configurations(config_type::Symbol)
     for _embs_type in ["conceptnet", "word2vec"]
         for _emb_method in ["bow", "arora"]
             for _emb_model in ["naive", "brutetree", "kdtree", "hnsw"]
-                _embs_path = ifelse(_embs_type=="conceptnet",
-                        "$(@__DIR__)/embeddings/conceptnet/sample_model.txt",
-                        "$(@__DIR__)/embeddings/word2vec/sample_model.bin")
-                dconfig = Dict("id" => _id,
-                               "search"=> "semantic",
-                               "data_path" => joinpath(tempdir(),"garamond",
-                                   "test","test_file_1_csv_format_1.tsv"),
-                               "parser" => "csv_format_1",
-                               "enabled" => true,
-                               "header" => false,
-                               "embeddings_path" => _embs_path,
-                               "embeddings_type" => _embs_type,
-                               "embedding_method" => _emb_method,
-                               "embedding_search_model" => _emb_model)
-                push!(SEMANTIC_CONFIG, dconfig)
-                _id+= 1
+                for _emb_eltype in ["Float32","Float64"]
+                    _embs_path = ifelse(_embs_type=="conceptnet",
+                            "$(@__DIR__)/embeddings/conceptnet/sample_model.txt",
+                            "$(@__DIR__)/embeddings/word2vec/sample_model.bin")
+                    dconfig = Dict("id" => _id,
+                                   "search"=> "semantic",
+                                   "data_path" => joinpath(tempdir(),"garamond",
+                                       "test","test_file_1_csv_format_1.tsv"),
+                                   "parser" => "csv_format_1",
+                                   "enabled" => true,
+                                   "header" => false,
+                                   "embeddings_path" => _embs_path,
+                                   "embeddings_type" => _embs_type,
+                                   "embedding_method" => _emb_method,
+                                   "embedding_search_model" => _emb_model,
+                                   "embedding_element_type" => _emb_eltype)
+                    push!(SEMANTIC_CONFIG, dconfig)
+                    _id+= 1
+                end
             end
         end
     end
