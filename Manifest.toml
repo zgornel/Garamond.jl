@@ -185,6 +185,12 @@ version = "0.10.1"
 deps = ["Random"]
 uuid = "9fa8497b-333b-5362-9e8d-4d0656e87820"
 
+[[Glob]]
+deps = ["Compat", "Test"]
+git-tree-sha1 = "c72f1fcb7d17426de1e8af2e948dfb3de1116eed"
+uuid = "c27321d9-0574-5035-807b-f59d2c89b15c"
+version = "1.2.0"
+
 [[HDF5]]
 deps = ["BinDeps", "Blosc", "Distributed", "Homebrew", "Libdl", "LinearAlgebra", "Mmap", "Pkg", "Test", "WinRPM"]
 git-tree-sha1 = "8c3bcdb44db436cd20106e2381e1c1ac96aa0ee3"

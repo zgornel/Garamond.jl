@@ -154,7 +154,9 @@ function load_search_configs(filename::AbstractString)
             sconfig.search = DEFAULT_SEARCH
         end
         # data path
-        if !isfile(sconfig.data_path) && !ispath(sconfig.data_path)
+        if !isfile(sconfig.data_path) && !isdir(sconfig.data_path)
+            @show isfile(sconfig.data_path)
+            @show isdir(sconfig.data_path)
             @warn "$(sconfig.id) Missing data, ignoring search configuration..."
             push!(removable, i)  # if there is no data file, cannot search
             continue
@@ -216,7 +218,7 @@ Function that generates a parsing function from a parser `name` and
 whether a `header` should be used.
 Note: `name` must be in the keys of the `PARSER_CONFIGS` constant. The name
       of the data parsing function is created as: `:__parser_<name>` so,
-      the name `:__parser_csv_format_1` corresponds to the name `:csv_format_1`
+      the name `:__parser_delimited_format_1` corresponds to the name `:delimited_format_1`
 """
 function get_parsing_function(name::Symbol,
                               header::Bool=false) where T<:AbstractId

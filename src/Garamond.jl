@@ -33,7 +33,7 @@ module Garamond
     using ProgressMeter
     using ConceptnetNumberbatch, Word2Vec
     using HNSW, NearestNeighbors, Distances
-    using JSON
+    using JSON, Glob
 
     # Import section (extendable methods)
     import Base: size, length, show, keys, values, push!,
@@ -76,7 +76,8 @@ module Garamond
     include("query.jl")
     include("search.jl")
     include("results.jl")
-    include("parsers/csv_format_1.jl")
+    include("parsers/delimited_formats.jl")
+    include("parsers/directory_formats.jl")
     include("cmdline.jl")
     ###include("servers.jl")
 

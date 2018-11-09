@@ -12,10 +12,10 @@ function generate_test_files(parser_config::Symbol, sep::String="|")
     data_filepath = abspath(joinpath(tmp_path, "garamond", "test"))
     mkpath(data_filepath)
     # Test for parser configuration option
-    if parser_config == :csv_config_1
+    if parser_config == :delimited_config_1
         nlines = rand([100, 300, 500], 3)  # 3 files, hard fixed by config
         for i in 1:length(nlines)
-            filename = joinpath(data_filepath, "test_file_$(i)_csv_format_1.tsv")
+            filename = joinpath(data_filepath, "test_file_$(i)_delimited_format_1.tsv")
             open(filename, "w") do fid
                 for _ in 1:nlines[i]
                     line = join([randstring(rand(1:10)) for _ in 1:10], sep)*"\n"
@@ -38,8 +38,8 @@ function generate_test_configurations(config_type::Symbol)
         Dict("id"=> "specific_id",
              "search" => "classic",
              "data_path" => joinpath(tempdir(),"garamond",
-                                    "test","test_file_1_csv_format_1.tsv"),
-             "parser" => "csv_format_1",
+                                    "test","test_file_1_delimited_format_1.tsv"),
+             "parser" => "delimited_format_1",
              "enabled" => true,
              "header" => false,
              "count_type" => "tfidf",
@@ -47,8 +47,8 @@ function generate_test_configurations(config_type::Symbol)
         Dict(# random id
              "search" => "classic",
              "data_path" => joinpath(tempdir(),"garamond",
-                                    "test","test_file_1_csv_format_1.tsv"),
-             "parser" => "csv_format_1",
+                                    "test","test_file_1_delimited_format_1.tsv"),
+             "parser" => "delimited_format_1",
              "enabled" => true,
              "header" => false,
              "count_type" => "tf",
@@ -56,8 +56,8 @@ function generate_test_configurations(config_type::Symbol)
         Dict("id"=> "disabled_id",
              "search" => "classic",
              "data_path" => joinpath(tempdir(),"garamond",
-                                    "test","test_file_1_csv_format_1.tsv"),
-             "parser" => "csv_format_1",
+                                    "test","test_file_1_delimited_format_1.tsv"),
+             "parser" => "delimited_format_1",
              "enabled" => false,
              "header" => false,
              "count_type" => "tfidf",
@@ -77,8 +77,8 @@ function generate_test_configurations(config_type::Symbol)
                     dconfig = Dict("id" => _id,
                                    "search"=> "semantic",
                                    "data_path" => joinpath(tempdir(),"garamond",
-                                       "test","test_file_1_csv_format_1.tsv"),
-                                   "parser" => "csv_format_1",
+                                       "test","test_file_1_delimited_format_1.tsv"),
+                                   "parser" => "delimited_format_1",
                                    "enabled" => true,
                                    "header" => false,
                                    "embeddings_path" => _embs_path,
@@ -110,9 +110,9 @@ end
 
 
 
-@testset "Classic search test... (csv_format_1)" begin
+@testset "Classic search test... (delimited_format_1)" begin
     # Generate test files
-    data_filepath = generate_test_files(:csv_config_1)
+    data_filepath = generate_test_files(:delimited_config_1)
     config_filepath = generate_test_configurations(:classic)
     # Create corpora searches
     srchers = load_searchers(config_filepath)
@@ -147,9 +147,9 @@ end
 
 
 
-@testset "Semantic search test... (csv_format_1)" begin
+@testset "Semantic search test... (delimited_format_1)" begin
     # Generate test files
-    data_filepath = generate_test_files(:csv_config_1)
+    data_filepath = generate_test_files(:delimited_config_1)
     config_filepath = generate_test_configurations(:semantic)
     # Create corpora searches
     srchers = load_searchers(config_filepath)

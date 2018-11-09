@@ -12,17 +12,18 @@ end
 
 
 
-# Parser for "csv_format_1"
-function __parser_csv_format_1(filename::AbstractString,
-                               config::Dict,
-                               doc_type::Type{T}=DEFAULT_DOC_TYPE;
-                               delim::Char = '|',
-                               header::Bool = false) where T<:AbstractDocument
+# Parser for "delimited_format_1"
+function __parser_delimited_format_1(filename::AbstractString,
+                                     config::Dict,
+                                     doc_type::Type{T}=DEFAULT_DOC_TYPE;
+                                     delim::Char = '|',
+                                     header::Bool = false
+                                    ) where T<:AbstractDocument
     # Initializations
     nlines = linecount(filename) - ifelse(header,1,0)
     documents = Vector{doc_type}(undef, nlines)
     documents_meta = Vector{doc_type}(undef, nlines)
-    metafields = fieldnames(TextAnalysis.DocumentMetadata)
+    metadata_fields = fieldnames(TextAnalysis.DocumentMetadata)
     # Load the file
     if header
         string_matrix, _ = readdlm(filename, delim, String, header=header)
@@ -44,7 +45,6 @@ function __parser_csv_format_1(filename::AbstractString,
         # Set document data
         doc = doc_type(join(vline[mask]," "))
         # Set document metadata
-        metadata_fields = fieldnames(TextAnalysis.DocumentMetadata)
         for (column, metafield) in config[:metadata]
             local _language
             if metafield in metadata_fields
@@ -55,6 +55,7 @@ function __parser_csv_format_1(filename::AbstractString,
                         # HACK, force Languages.English() as there is little
                         # reason to use other languages. Preprocessing fails
                         # as dictionaries are needed
+                        # TODO(Corneliu): Remove hack when languages are supported.
                         _language = STR_TO_LANG["english"]
                     catch
                         @warn "Language $_lang not supported. Using default."
@@ -68,7 +69,7 @@ function __parser_csv_format_1(filename::AbstractString,
         end
         # Create metadata document vector
         doc_meta = metastring(doc, collect(v for v in DEFAULT_METADATA_FIELDS
-                                           if v in metafields))
+                                           if v in metadata_fields))
         documents_meta[il] = doc_type(doc_meta)
         # Create document vector
         documents[il] = doc
