@@ -36,7 +36,7 @@ const DEFAULT_EMBEDDING_ELEMENT_TYPE = :Float32  # can be :Float32, :Float64
 const DEFAULT_KEEP_CORPUS = true
 const DEFAULT_DOC_TYPE = TextAnalysis.NGramDocument
 const DEFAULT_METADATA_FIELDS = [:author, :name, :note]  # Default metadata fields for search
-
+const DEFAULT_GLOBBING_PATTERN = "*"  # Can be any regexp-like pattern
 
 # Text pre-processing flags (for the prepare! function)
 const TEXT_STRIP_FLAGS = strip_case +
@@ -122,7 +122,5 @@ const PARSER_CONFIGS = Dict(
         :data=> Dict(1=>false, 2=>true, 3=>true,
                      4=>false, 5=>false, 6=>false,
                      7=>false, 8=>true, 9=>false)),
-    :directory_format_1 => Dict(:globbing_pattern=>"*")
-    # TODO(Corneliu): Check whether it makes sense to move the globbing
-    # pattern to the config file. It probably does...
+    :directory_format_1 => Dict()
 )

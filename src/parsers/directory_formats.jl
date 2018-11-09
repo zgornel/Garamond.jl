@@ -32,12 +32,14 @@ function __parser_directory_format_1(directory::AbstractString,
                                      config::Dict,  # not used
                                      doc_type::Type{T}=DEFAULT_DOC_TYPE;
                                      delim::Char = '|',  # not used
-                                     header::Bool=false  # not used
+                                     header::Bool=false,  # not used
+                                     globbing_pattern::String=
+                                        DEFAULT_GLOBBING_PATTERN
                                     ) where T<:AbstractDocument
     # Initializations
-    pattern = config[:globbing_pattern]
-    files = recursive_glob(pattern, directory)
+    files = recursive_glob(globbing_pattern, directory)
     n = length(files)
+    n==0 && @error "No files found in $directory with glob: $globbing_pattern."
     documents = Vector{doc_type}(undef, n)
     documents_meta = Vector{doc_type}(undef, n)
     metadata_fields = fieldnames(TextAnalysis.DocumentMetadata)

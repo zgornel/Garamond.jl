@@ -17,10 +17,14 @@ function __parser_delimited_format_1(filename::AbstractString,
                                      config::Dict,
                                      doc_type::Type{T}=DEFAULT_DOC_TYPE;
                                      delim::Char = '|',
-                                     header::Bool = false
+                                     header::Bool = false,
+                                     globbing_pattern::String=
+                                        DEFAULT_GLOBBING_PATTERN  # not used
                                     ) where T<:AbstractDocument
     # Initializations
     nlines = linecount(filename) - ifelse(header,1,0)
+    nlines==0 &&
+        error("$filename contains no data lines.")
     documents = Vector{doc_type}(undef, nlines)
     documents_meta = Vector{doc_type}(undef, nlines)
     metadata_fields = fieldnames(TextAnalysis.DocumentMetadata)
