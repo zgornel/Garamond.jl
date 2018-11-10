@@ -16,7 +16,7 @@ end
 function __parser_delimited_format_1(filename::AbstractString,
                                      config::Dict,
                                      doc_type::Type{T}=DEFAULT_DOC_TYPE;
-                                     delim::Char = '|',
+                                     delimiter::Char = '|',
                                      header::Bool = false,
                                      globbing_pattern::String=
                                         DEFAULT_GLOBBING_PATTERN  # not used
@@ -28,11 +28,11 @@ function __parser_delimited_format_1(filename::AbstractString,
     documents = Vector{doc_type}(undef, nlines)
     documents_meta = Vector{doc_type}(undef, nlines)
     metadata_fields = fieldnames(TextAnalysis.DocumentMetadata)
-    # Load the file
+    # Read the file
     if header
-        string_matrix, _ = readdlm(filename, delim, String, header=header)
+        string_matrix, _ = readdlm(filename, delimiter, String, header=header)
     else
-        string_matrix = readdlm(filename, delim, String, header=header)
+        string_matrix = readdlm(filename, delimiter, String, header=header)
     end
     # Select and sort the line fields which will be used as document text in the corpus
     mask = sort!([k for k in keys(config[:data]) if config[:data][k]])

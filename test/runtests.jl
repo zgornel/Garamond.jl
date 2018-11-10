@@ -1,3 +1,6 @@
+####
+# TODO(Corneliu): Make proper tests.
+####
 using Test
 using Random
 using Garamond
@@ -6,7 +9,8 @@ using JSON
 
 
 # Generates test files in temporary directory
-function generate_test_files(parser_config::Symbol, sep::String="|")
+DELIMITER="|"
+function generate_test_files(parser_config::Symbol, sep::String=DELIMITER)
     # Make directories
     tmp_path = tempdir()
     data_filepath = abspath(joinpath(tmp_path, "garamond", "test"))
@@ -42,6 +46,7 @@ function generate_test_configurations(config_type::Symbol)
              "parser" => "delimited_format_1",
              "enabled" => true,
              "header" => false,
+             "delimiter" => DELIMITER,
              "count_type" => "tfidf",
              "heuristic" =>"jaro"),
         Dict(# random id
@@ -51,6 +56,7 @@ function generate_test_configurations(config_type::Symbol)
              "parser" => "delimited_format_1",
              "enabled" => true,
              "header" => false,
+             "delimiter" => DELIMITER,
              "count_type" => "tf",
              "heuristic" =>"levenshtein"),
         Dict("id"=> "disabled_id",
@@ -60,6 +66,7 @@ function generate_test_configurations(config_type::Symbol)
              "parser" => "delimited_format_1",
              "enabled" => false,
              "header" => false,
+             "delimiter" => DELIMITER,
              "count_type" => "tfidf",
              "heuristic" =>"jaro")
        ]
@@ -81,6 +88,7 @@ function generate_test_configurations(config_type::Symbol)
                                    "parser" => "delimited_format_1",
                                    "enabled" => true,
                                    "header" => false,
+                                   "delimiter" => DELIMITER,
                                    "embeddings_path" => _embs_path,
                                    "embeddings_type" => _embs_type,
                                    "embedding_method" => _emb_method,

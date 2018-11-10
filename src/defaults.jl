@@ -33,10 +33,12 @@ const DEFAULT_EMBEDDING_ELEMENT_TYPE = :Float32  # can be :Float32, :Float64
 
 
 # Various document processing related constants
-const DEFAULT_KEEP_CORPUS = true
+const DEFAULT_PARSER = :no_parse
+const DEFAULT_KEEP_CORPUS = true  #TODO(Corneliu) Actually use this thing.
 const DEFAULT_DOC_TYPE = TextAnalysis.NGramDocument
 const DEFAULT_METADATA_FIELDS = [:author, :name, :note]  # Default metadata fields for search
 const DEFAULT_GLOBBING_PATTERN = "*"  # Can be any regexp-like pattern
+const DEFAULT_DELIMITER = "|"  # For delimited files only (i.e. document is a line/record)
 
 # Text pre-processing flags (for the prepare! function)
 const TEXT_STRIP_FLAGS = strip_case +

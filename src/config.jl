@@ -54,16 +54,11 @@ mutable struct SearchConfig{I<:AbstractId}
 end
 
 
-# Small function that returns 2 empty corpora
-fake_parser(args...) = begin
-    crps = Corpus(DEFAULT_DOC_TYPE(""))
-    return crps, crps
-end
-
 SearchConfig{I}() where I<:AbstractId =
     SearchConfig{I}(
         random_id(I), DEFAULT_SEARCH, "", false, "",
-        fake_parser, DEFAULT_COUNT_TYPE, DEFAULT_HEURISTIC,
+        get_parsing_function(DEFAULT_PARSER, false, "", ' '),
+        DEFAULT_COUNT_TYPE, DEFAULT_HEURISTIC,
         "", DEFAULT_EMBEDDINGS_TYPE, DEFAULT_EMBEDDING_METHOD,
         DEFAULT_EMBEDDING_SEARCH_MODEL, DEFAULT_EMBEDDING_ELEMENT_TYPE)
 
@@ -74,7 +69,7 @@ SearchConfig(;
           name="",
           enabled=false,
           data_path="",
-          parser=fake_parser,
+          parser=get_parsing_function(DEFAULT_PARSER, false, "", ' '),
           count_type=DEFAULT_COUNT_TYPE,
           heuristic=DEFAULT_HEURISTIC,
           embeddings_path="",
@@ -126,13 +121,15 @@ function load_search_configs(filename::AbstractString)
         end
         globbing_pattern = get(dconfig, "globbing_pattern",
                                DEFAULT_GLOBBING_PATTERN)
+        delimiter = get(dconfig, "delimiter", DEFAULT_DELIMITER)[1]  # take 1'st char
         sconfig.search = Symbol(get(dconfig, "search", DEFAULT_SEARCH))
         sconfig.name = get(dconfig, "name", "")
         sconfig.enabled = get(dconfig, "enabled", false)
         sconfig.data_path = get(dconfig, "data_path", "")
         sconfig.parser = get_parsing_function(Symbol(dconfig["parser"]),
                                               has_header,
-                                              globbing_pattern)
+                                              globbing_pattern,
+                                              delimiter)
         sconfig.count_type = Symbol(get(dconfig, "count_type",
                                         DEFAULT_COUNT_TYPE))
         sconfig.heuristic = Symbol(get(dconfig, "heuristic",
@@ -150,8 +147,9 @@ function load_search_configs(filename::AbstractString)
                                                 DEFAULT_EMBEDDING_SEARCH_MODEL))
         # Checks of the configuration parameter values; no checks
         # for the id (always works), name (always works),
-        # enabled (must fail if wrong), parser (must fail if wrong) and
-        # globbing_pattern (must fail if wrong)
+        # enabled (must fail if wrong), parser (must fail if wrong),
+        # globbing_pattern (must fail if wrong) and delimiter (should fail
+        # for empty strings only)
         # search
         if !(sconfig.search in [:classic, :semantic])
             @warn "$(sconfig.id) Forcing search=$DEFAULT_SEARCH."
@@ -216,23 +214,29 @@ end
 
 
 """
-    get_parsing_config(name, header)
+    get_parsing_config(parser, header, globbing_pattern, delimiter)
 
-Function that generates a parsing function from a parser `name` and
-whether a `header` should be used.
-Note: `name` must be in the keys of the `PARSER_CONFIGS` constant. The name
-      of the data parsing function is created as: `:__parser_<name>` so,
-      the name `:__parser_delimited_format_1` corresponds to the name `:delimited_format_1`
+Function that generates a parsing function from a `parser` and
+whether a `header` should be used. `globbing_pattern` and `delimiter`
+are additional input parameters used by different parsers as outside
+parameters.
+
+Note: `parser` must be in the keys of the `PARSER_CONFIGS` constant. The name
+      of the data parsing function is created as: `:__parser_<parser>` so,
+      the function name `:__parser_delimited_format_1` corresponds to the
+      parser `:delimited_format_1`.
 """
-function get_parsing_function(name::Symbol,
+function get_parsing_function(parser::Symbol,
                               header::Bool,
-                              globbing_pattern::String) where T<:AbstractId
+                              globbing_pattern::String,
+                              delimiter::Char) where T<:AbstractId
     PREFIX = :__parser_
-    # Construct basic parsing function from parser option value ie. __parser_<option> function
-    _function  = eval(Symbol(PREFIX, name))
+    # Construct basic parsing function from parser name
+    _function  = eval(Symbol(PREFIX, parser))
     # Get parser config
-    _config = get(PARSER_CONFIGS, name, nothing)
-    _config isa Nothing && @error ":$config_name parser configuration not found!"
+    _config = get(PARSER_CONFIGS,
+                  parser,
+                  Dict())
     # Build parsing function (a nice closure)
     function parsing_function(filename::String,
                               doc_type::Type{D}=DEFAULT_DOC_TYPE) where
@@ -240,7 +244,7 @@ function get_parsing_function(name::Symbol,
         return _function(filename,
                          _config,
                          doc_type,
-                         delim='|',
+                         delimiter=delimiter,
                          header=header,
                          globbing_pattern=globbing_pattern)
     end

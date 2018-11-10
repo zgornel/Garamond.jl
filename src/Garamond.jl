@@ -78,6 +78,7 @@ module Garamond
     include("results.jl")
     include("parsers/delimited_formats.jl")
     include("parsers/directory_formats.jl")
+    include("parsers/no_parse.jl")
     include("cmdline.jl")
     ###include("servers.jl")
 
