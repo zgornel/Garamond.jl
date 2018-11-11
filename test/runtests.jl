@@ -1,5 +1,10 @@
 ####
-# TODO(Corneliu): Make proper tests.
+# TODO(Corneliu): Make proper tests:
+#   - test types (constructors)
+#   - test basic functions (the important stuff)
+#   - generate data and configs based on a set of single patameters
+#     the ouput of data generation is used (where possible) in the configs
+#   - test as exaustively as possible the search
 # TODO(Corneliu): Build a directory confiuration for testing the parsing of directories
 ####
 using Test
@@ -9,108 +14,118 @@ using JSON
 
 
 
-# Generates test files in temporary directory
+# Generates test files for delimited configurations
 DELIMITER="|"
-function generate_test_files(parser_config::Symbol, sep::String=DELIMITER)
+function generate_test_data(parser::Symbol)
     # Make directories
     tmp_path = tempdir()
-    data_filepath = abspath(joinpath(tmp_path, "garamond", "test"))
-    mkpath(data_filepath)
-    # Test for parser configuration option
-    if parser_config == :delimited_config_1
-        nlines = rand([100, 300, 500], 3)  # 3 files, hard fixed by config
-        for i in 1:length(nlines)
-            filename = joinpath(data_filepath, "test_file_$(i)_delimited_format_1.tsv")
-            open(filename, "w") do fid
-                for _ in 1:nlines[i]
-                    line = join([randstring(rand(1:10)) for _ in 1:10], sep)*"\n"
-                    write(fid, line)
-                end
+    data_path = abspath(joinpath(tmp_path, "garamond", "test", "data"))
+    mkpath(data_path)
+    if parser == :delimited_format_1
+        filename = joinpath(data_path, "file.tsv")
+        nlines = rand([10, 30, 50])
+        open(filename, "w") do fid
+            for _ in 1:nlines
+                line = join([randstring(rand(1:10)) for _ in 1:10], DELIMITER)*"\n"
+                write(fid, line)
             end
         end
+        return filename
+    elseif parser == :directory_format_1
+        directories = ["a","a/b","c"]
+        for (i, dir) in enumerate(directories)
+            file_path = joinpath(data_path, dir)
+            mkpath(file_path)
+            filename = joinpath(file_path, "file_$i.txt")
+            open(filename, "w") do fid
+                text = """this is text. this is another text. this text
+                          provides some data for testing purposes.
+                          the file name is $(filename) and this is all
+                          information provided."""
+                write(fid, text)
+            end
+        end
+        return data_path
     else
         @error "Unknown config"
     end
-    return data_filepath
+    return filename
 end
 
 
 
-# Generate search configurations
-function generate_test_configurations(config_type::Symbol)
+# Generate search configurations for directories
+GLOBBING_PATTERN = "*"
+function generate_test_configurations(data_path::String,
+                                      parser::Symbol,
+                                      search_approach::Symbol)
     # Classic search test configuration
-    CLASSIC_CONFIG = [
-        Dict("id"=> "specific_id",
-             "search" => "classic",
-             "data_path" => joinpath(tempdir(),"garamond",
-                                    "test","test_file_1_delimited_format_1.tsv"),
-             "parser" => "delimited_format_1",
-             "enabled" => true,
-             "header" => false,
-             "delimiter" => DELIMITER,
-             "count_type" => "tfidf",
-             "heuristic" =>"jaro"),
-        Dict(# random id
-             "search" => "classic",
-             "data_path" => joinpath(tempdir(),"garamond",
-                                    "test","test_file_1_delimited_format_1.tsv"),
-             "parser" => "delimited_format_1",
-             "enabled" => true,
-             "header" => false,
-             "delimiter" => DELIMITER,
-             "count_type" => "tf",
-             "heuristic" =>"levenshtein"),
-        Dict("id"=> "disabled_id",
-             "search" => "classic",
-             "data_path" => joinpath(tempdir(),"garamond",
-                                    "test","test_file_1_delimited_format_1.tsv"),
-             "parser" => "delimited_format_1",
-             "enabled" => false,
-             "header" => false,
-             "delimiter" => DELIMITER,
-             "count_type" => "tfidf",
-             "heuristic" =>"jaro")
-       ]
+    CLASSIC_CONFIGS = []
+    _id = 1
+    for _count_type in ["tf", "tfidf"]
+        for _heuristic in ["jaro", "levenshtein"]
+            for _build_summary in [false, true]
+                dconfig = Dict("id"=> _id,
+                               "search" => search_approach,
+                               "data_path" => data_path,
+                               "parser" => parser,
+                               "enabled" => true,
+                               "header" => false,
+                               "delimiter" => DELIMITER,
+                               "count_type" => _count_type,
+                               "heuristic" => _heuristic,
+                               "globbing_pattern" => GLOBBING_PATTERN,
+                               "build_summary" => _build_summary,
+                               "summary_ns" => 3)
+                push!(CLASSIC_CONFIGS, dconfig)
+                _id+= 1
+            end
+        end
+    end
     # Semantic search test configuration
-    SEMANTIC_CONFIG = []
+    SEMANTIC_CONFIGS = []
     dir = @__DIR__
     _id = 1
     for _embs_type in ["conceptnet", "word2vec"]
         for _emb_method in ["bow", "arora"]
             for _emb_model in ["naive", "brutetree", "kdtree", "hnsw"]
                 for _emb_eltype in ["Float32","Float64"]
-                    _embs_path = ifelse(_embs_type=="conceptnet",
-                            "$(@__DIR__)/embeddings/conceptnet/sample_model.txt",
-                            "$(@__DIR__)/embeddings/word2vec/sample_model.bin")
-                    dconfig = Dict("id" => _id,
-                                   "search"=> "semantic",
-                                   "data_path" => joinpath(tempdir(),"garamond",
-                                       "test","test_file_1_delimited_format_1.tsv"),
-                                   "parser" => "delimited_format_1",
-                                   "enabled" => true,
-                                   "header" => false,
-                                   "delimiter" => DELIMITER,
-                                   "embeddings_path" => _embs_path,
-                                   "embeddings_type" => _embs_type,
-                                   "embedding_method" => _emb_method,
-                                   "embedding_search_model" => _emb_model,
-                                   "embedding_element_type" => _emb_eltype)
-                    push!(SEMANTIC_CONFIG, dconfig)
-                    _id+= 1
+                    for _build_summary in [false, true]
+                        _embs_path = ifelse(_embs_type=="conceptnet",
+                                "$(@__DIR__)/embeddings/conceptnet/sample_model.txt",
+                                "$(@__DIR__)/embeddings/word2vec/sample_model.bin")
+                        dconfig = Dict("id" => _id,
+                                       "search"=> search_approach,
+                                       "data_path" => data_path,
+                                       "parser" => parser,
+                                       "enabled" => true,
+                                       "header" => false,
+                                       "delimiter" => DELIMITER,
+                                       "embeddings_path" => _embs_path,
+                                       "embeddings_type" => _embs_type,
+                                       "embedding_method" => _emb_method,
+                                       "embedding_search_model" => _emb_model,
+                                       "embedding_element_type" => _emb_eltype,
+                                       "globbing_pattern" => GLOBBING_PATTERN,
+                                       "build_summary" => _build_summary,
+                                       "summary_ns" => 3)
+                        push!(SEMANTIC_CONFIGS, dconfig)
+                        _id+= 1
+                    end
                 end
             end
         end
     end
     # Write configs to file
     tmp_path = tempdir()
-    config_filepath = abspath(joinpath(tmp_path, "garamond", "test", "configs"))
-    mkpath(config_filepath)
-    if config_type == :classic
-        config = CLASSIC_CONFIG
+    config_path = abspath(joinpath(tmp_path, "garamond", "test", "configs"))
+    mkpath(config_path)
+    if search_approach == :classic
+        config = CLASSIC_CONFIGS
     else
-        config = SEMANTIC_CONFIG
+        config = SEMANTIC_CONFIGS
     end
-    config_filename = joinpath(config_filepath, ".config.json")
+    config_filename = joinpath(config_path, ".config.json")
     open(config_filename, "w") do fid
         write(fid, JSON.json(config))
     end
@@ -119,69 +134,49 @@ end
 
 
 
-@testset "Classic search test... (delimited_format_1)" begin
+# Test search
+@testset "SEARCH" begin
     # Generate test files
-    data_filepath = generate_test_files(:delimited_config_1)
-    config_filepath = generate_test_configurations(:classic)
-    # Create corpora searches
-    srchers = load_searchers(config_filepath)
-    # Initialize search parameters
-    ST = [:data, :metadata, :all]
-    SM = [:exact, :regex]
-    needles = [randstring(rand([1,2,3])) for _ in 1:5]
-    MAX_SUGGESTIONS=[0, 5]
-    # Test that the whole thing does not crash
-    for search_type in ST
-        for search_method in SM
-            for max_suggestions in MAX_SUGGESTIONS
-                try
-                    search(srchers,
-                           needles,
-                           search_type=search_type,
-                           search_method=search_method,
-                           max_corpus_suggestions=max_suggestions)
-                    @test true
-                catch
-                    @test false
-                    rm(data_filepath, recursive=true, force=true)
-                    rm(config_filepath, recursive=true, force=true)
+    parsers = [:delimited_format_1, :directory_format_1]
+    # Loop over parsers and search types
+    for parser in parsers
+        for search_approach in [:classic, :semantic]
+            data_path = generate_test_data(parser)
+            config_path = generate_test_configurations(
+                            data_path, parser, search_approach)
+            # Create a distinct testset for each type of search
+            # i.e. classic, semantic and each parser
+            @testset "$search_approach, $parser" begin
+                # Create corpora searches
+                srchers = load_searchers(config_path)
+                # Initialize search parameters
+                ST = [:data, :metadata, :all]
+                SM = [:exact, :regex]
+                MAX_SUGGESTIONS=[0, 5]
+                needles = [randstring(rand([1,2,3])) for _ in 1:3]
+                # Test that the whole thing does not crash
+                for search_type in ST
+                    for search_method in SM
+                        for max_suggestions in MAX_SUGGESTIONS
+                            #try
+                                search(srchers,
+                                       needles,
+                                       search_type=search_type,
+                                       search_method=search_method,
+                                       max_corpus_suggestions=max_suggestions)
+                                @test true
+                            #catch
+                            #    @test false
+                            #    rm(data_path, recursive=true, force=true)
+                            #    rm(config_path, recursive=true, force=true)
+                            #end
+                        end
+                    end
                 end
+                # Cleanup
+                rm(data_path, recursive=true, force=true)
+                rm(config_path, recursive=true, force=true)
             end
         end
     end
-    # Cleanup
-    rm(data_filepath, recursive=true, force=true)
-    rm(config_filepath, recursive=true, force=true)
-end
-
-
-
-@testset "Semantic search test... (delimited_format_1)" begin
-    # Generate test files
-    data_filepath = generate_test_files(:delimited_config_1)
-    config_filepath = generate_test_configurations(:semantic)
-    # Create corpora searches
-    srchers = load_searchers(config_filepath)
-    # Initialize search parameters
-    ST = [:data, :metadata, :all]
-    needles = [randstring(rand([1,2,3])) for _ in 1:5]
-    max_suggestions=10
-    # Test that the whole thing does not crash
-    for search_type in ST
-        try
-            search(srchers,
-                   needles,
-                   search_type=search_type,
-                   search_method=:exact,  # not used
-                   max_corpus_suggestions=max_suggestions)
-            @test true
-        catch
-            @test false
-            rm(data_filepath, recursive=true, force=true)
-            rm(config_filepath, recursive=true, force=true)
-        end
-    end
-    # Cleanup
-    rm(data_filepath, recursive=true, force=true)
-    rm(config_filepath, recursive=true, force=true)
 end
