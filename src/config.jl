@@ -42,6 +42,8 @@ mutable struct SearchConfig{I<:AbstractId}
     enabled::Bool                   # whether to use the corpus in search or not
     data_path::String               # file/directory path for the data (depends on what the parser accepts)
     parser::Function                # parser function used to obtain corpus
+    build_summary::Bool             # whether to summarize or not the documents
+    summary_ns::Int                 # the number of sentences in the summary
     # classic search
     count_type::Symbol              # search term counting type i.e. :tf, :tfidf etc (classic search)
     heuristic::Symbol               # search heuristic for recommendtations (classic search)
@@ -57,7 +59,13 @@ end
 SearchConfig{I}() where I<:AbstractId =
     SearchConfig{I}(
         random_id(I), DEFAULT_SEARCH, "", false, "",
-        get_parsing_function(DEFAULT_PARSER, false, "", ' '),
+        get_parsing_function(DEFAULT_PARSER,
+                             false,
+                             DEFAULT_DELIMITER,
+                             DEFAULT_GLOBBING_PATTERN,
+                             DEFAULT_BUILD_SUMMARY,
+                             DEFAULT_SUMMARY_NS),
+        DEFAULT_BUILD_SUMMARY, DEFAULT_SUMMARY_NS,
         DEFAULT_COUNT_TYPE, DEFAULT_HEURISTIC,
         "", DEFAULT_EMBEDDINGS_TYPE, DEFAULT_EMBEDDING_METHOD,
         DEFAULT_EMBEDDING_SEARCH_MODEL, DEFAULT_EMBEDDING_ELEMENT_TYPE)
@@ -69,7 +77,14 @@ SearchConfig(;
           name="",
           enabled=false,
           data_path="",
-          parser=get_parsing_function(DEFAULT_PARSER, false, "", ' '),
+          parser=get_parsing_function(DEFAULT_PARSER,
+                                      false,
+                                      DEFAULT_DELIMITER,
+                                      DEFAULT_GLOBBING_PATTERN,
+                                      DEFAULT_BUILD_SUMMARY,
+                                      DEFAULT_SUMMARY_NS),
+          build_summary=DEFAULT_BUILD_SUMMARY,
+          summary_ns=DEFAULT_SUMMARY_NS,
           count_type=DEFAULT_COUNT_TYPE,
           heuristic=DEFAULT_HEURISTIC,
           embeddings_path="",
@@ -79,6 +94,7 @@ SearchConfig(;
           embedding_element_type=DEFAULT_EMBEDDING_ELEMENT_TYPE) =
     # Call normal constructor
     SearchConfig(id, search, name, enabled, data_path, parser,
+                 build_summary, summary_ns,
                  count_type, heuristic,
                  embeddings_path, embeddings_type,
                  embedding_method, embedding_search_model,
@@ -102,7 +118,7 @@ end
 
 Function that creates search configurations from a data configuration file
 specified by `filename`. It returns a `Vector{SearchConfig}` that is used
-to build the `Searcher` objects with wich search is performed.
+to build the `Searcher` objects with which search is performed.
 """
 function load_search_configs(filename::AbstractString)
     # Read config (this should fail if config not found)
@@ -114,26 +130,28 @@ function load_search_configs(filename::AbstractString)
     for (i, (sconfig, dconfig)) in enumerate(zip(search_configs, dict_configs))
         # Get search parameters accounting for missing values
         # by using default parameters where the case
-        has_header = get(dconfig, "header", false)
+        header = get(dconfig, "header", false)
         id = get(dconfig, "id", missing)
         if !ismissing(id)
             sconfig.id = make_id(DEFAULT_ID_TYPE, id)
         end
         globbing_pattern = get(dconfig, "globbing_pattern",
                                DEFAULT_GLOBBING_PATTERN)
-        delimiter = get(dconfig, "delimiter", DEFAULT_DELIMITER)[1]  # take 1'st char
+        delimiter = get(dconfig, "delimiter", DEFAULT_DELIMITER)
         sconfig.search = Symbol(get(dconfig, "search", DEFAULT_SEARCH))
         sconfig.name = get(dconfig, "name", "")
         sconfig.enabled = get(dconfig, "enabled", false)
         sconfig.data_path = get(dconfig, "data_path", "")
+        sconfig.build_summary = get(dconfig, "build_summary", DEFAULT_BUILD_SUMMARY)
+        sconfig.summary_ns = get(dconfig, "summary_ns", DEFAULT_SUMMARY_NS)
         sconfig.parser = get_parsing_function(Symbol(dconfig["parser"]),
-                                              has_header,
+                                              header,
+                                              delimiter,
                                               globbing_pattern,
-                                              delimiter)
-        sconfig.count_type = Symbol(get(dconfig, "count_type",
-                                        DEFAULT_COUNT_TYPE))
-        sconfig.heuristic = Symbol(get(dconfig, "heuristic",
-                                       DEFAULT_HEURISTIC))
+                                              sconfig.build_summary,
+                                              sconfig.summary_ns)
+        sconfig.count_type = Symbol(get(dconfig, "count_type", DEFAULT_COUNT_TYPE))
+        sconfig.heuristic = Symbol(get(dconfig, "heuristic", DEFAULT_HEURISTIC))
         sconfig.embeddings_path = get(dconfig, "embeddings_path", "")
         sconfig.embeddings_type = Symbol(get(dconfig, "embeddings_type",
                                              DEFAULT_EMBEDDINGS_TYPE))
@@ -146,10 +164,14 @@ function load_search_configs(filename::AbstractString)
                                                 "embedding_element_type",
                                                 DEFAULT_EMBEDDING_SEARCH_MODEL))
         # Checks of the configuration parameter values; no checks
-        # for the id (always works), name (always works),
-        # enabled (must fail if wrong), parser (must fail if wrong),
-        # globbing_pattern (must fail if wrong) and delimiter (should fail
-        # for empty strings only)
+        # for:
+        # - id (always works)
+        # - name (always works)
+        # - enabled (must fail if wrong)
+        # - parser (must fail if wrong)
+        # - globbing_pattern (must fail if wrong)
+        # - build_summary (should fail if wrong)
+        ###
         # search
         if !(sconfig.search in [:classic, :semantic])
             @warn "$(sconfig.id) Forcing search=$DEFAULT_SEARCH."
@@ -162,6 +184,16 @@ function load_search_configs(filename::AbstractString)
             @warn "$(sconfig.id) Missing data, ignoring search configuration..."
             push!(removable, i)  # if there is no data file, cannot search
             continue
+        end
+        # summary_ns i.e. the number of sentences in a summary
+        if !(typeof(sconfig.summary_ns) <: Integer) || sconfig.summary_ns <= 0
+            @warn "$(sconfig.id) Forcing summary_ns=$DEFAULT_SUMMARY_NS."
+            sconfig.summary_ns = DEFAULT_SUMMARY_NS
+        end
+        # delimiter
+        if !(typeof(delimiter) <: AbstractString) || length(delimiter) == 0
+            @warn "$(sconfig.id) Forcing delimiter=$DEFAULT_DELIMITER."
+            sconfig.delimiter = DEFAULT_DELIMITER
         end
         # Classic search specific options
         if sconfig.search == :classic
@@ -214,22 +246,33 @@ end
 
 
 """
-    get_parsing_config(parser, header, globbing_pattern, delimiter)
+    get_parsing_function(args...)
 
-Function that generates a parsing function from a `parser` and
-whether a `header` should be used. `globbing_pattern` and `delimiter`
-are additional input parameters used by different parsers as outside
-parameters.
+Function that generates a parsing function from its input arguments and
+returns it.
+
+# Arguments
+  * `parser::Symbol` is the name of the parser
+  * `header::Bool` whether the file has a header or not (for delimited files only)
+  * `delimiter::String` the delimiting character (for delimited files only)
+  * `globbing_pattern::String` globbing pattern for gathering file lists
+    from directories (for directory parsers only)
+  * `build_summary::Bool` whether to use a summary instead of the full document
+    (for directory parsers only)
+  * `summary_ns::Int` how many sentences to use in the summary (for directory
+    parsers only)
 
 Note: `parser` must be in the keys of the `PARSER_CONFIGS` constant. The name
       of the data parsing function is created as: `:__parser_<parser>` so,
       the function name `:__parser_delimited_format_1` corresponds to the
-      parser `:delimited_format_1`.
+      parser `:delimited_format_1`. The function must be defined apriori.
 """
 function get_parsing_function(parser::Symbol,
                               header::Bool,
+                              delimiter::String,
                               globbing_pattern::String,
-                              delimiter::Char) where T<:AbstractId
+                              build_summary::Bool,
+                              summary_ns::Int) where T<:AbstractId
     PREFIX = :__parser_
     # Construct basic parsing function from parser name
     _function  = eval(Symbol(PREFIX, parser))
@@ -244,9 +287,11 @@ function get_parsing_function(parser::Symbol,
         return _function(filename,
                          _config,
                          doc_type,
-                         delimiter=delimiter,
                          header=header,
-                         globbing_pattern=globbing_pattern)
+                         delimiter=delimiter,
+                         globbing_pattern=globbing_pattern,
+                         build_summary=build_summary,
+                         summary_ns=summary_ns)
     end
     return parsing_function
 end

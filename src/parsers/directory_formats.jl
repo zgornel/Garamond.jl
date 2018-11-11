@@ -31,10 +31,10 @@ end
 function __parser_directory_format_1(directory::AbstractString,
                                      config::Dict,  # not used
                                      doc_type::Type{T}=DEFAULT_DOC_TYPE;
-                                     delim::Char = '|',  # not used
-                                     header::Bool=false,  # not used
-                                     globbing_pattern::String=
-                                        DEFAULT_GLOBBING_PATTERN
+                                     globbing_pattern::String=DEFAULT_GLOBBING_PATTERN,
+                                     build_summary::Bool=DEFAULT_BUILD_SUMMARY,
+                                     summary_ns::Int=DEFAULT_SUMMARY_NS,
+                                     kwargs...  # unused kw arguments (used in other parsers)
                                     ) where T<:AbstractDocument
     # Initializations
     files = recursive_glob(globbing_pattern, directory)
@@ -51,7 +51,17 @@ function __parser_directory_format_1(directory::AbstractString,
     # the `config`; for now it is not used.                        #
     ################################################################
     for (i, file) in enumerate(files)
-        data = open(fid->read(fid, String), file)  # read data
+        # Read data
+        data = open(fid->read(fid, String), file)
+        # Create summary if the case
+        if build_summary
+            # TODO(Corneliu): Improve summarization
+            #   - faster textrank from LightGraphs.jl
+            #   - remove bug where summarizations fails if ns > number of sentences
+            _doc = StringDocument(data)
+            prepare!(_doc, strip_corrupt_utf8 | strip_non_letters)
+            data = join(summarize(_doc, ns=summary_ns))
+        end
         doc = doc_type(data)
         # Spoof metadata
         # Note: this bit is necessary in order not to pollute document

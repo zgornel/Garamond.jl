@@ -1,5 +1,6 @@
 ####
 # TODO(Corneliu): Make proper tests.
+# TODO(Corneliu): Build a directory confiuration for testing the parsing of directories
 ####
 using Test
 using Random

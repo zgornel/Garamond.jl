@@ -39,6 +39,8 @@ const DEFAULT_DOC_TYPE = TextAnalysis.NGramDocument
 const DEFAULT_METADATA_FIELDS = [:author, :name, :note]  # Default metadata fields for search
 const DEFAULT_GLOBBING_PATTERN = "*"  # Can be any regexp-like pattern
 const DEFAULT_DELIMITER = "|"  # For delimited files only (i.e. document is a line/record)
+const DEFAULT_BUILD_SUMMARY = false
+const DEFAULT_SUMMARY_NS = 1  # Default number of sentences for a summary
 
 # Text pre-processing flags (for the prepare! function)
 const TEXT_STRIP_FLAGS = strip_case +
