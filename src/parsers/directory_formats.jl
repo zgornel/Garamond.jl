@@ -55,12 +55,9 @@ function __parser_directory_format_1(directory::AbstractString,
         data = open(fid->read(fid, String), file)
         # Create summary if the case
         if build_summary
-            # TODO(Corneliu): Improve summarization
-            #   - faster textrank from LightGraphs.jl
-            #   - remove bug where summarizations fails if ns > number of sentences
-            _doc = StringDocument(data)
-            prepare!(_doc, strip_corrupt_utf8 | strip_non_letters)
-            data = join(summarize(_doc, ns=summary_ns))
+            # TODO(Corneliu): Optimize this bit for performance
+            #                 i.e. investigate PageRank parameters
+            data = summarize(data, ns=summary_ns, flags=SUMMARIZATION_FLAGS)
         end
         doc = doc_type(data)
         # Spoof metadata

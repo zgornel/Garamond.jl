@@ -43,28 +43,33 @@ const DEFAULT_BUILD_SUMMARY = false
 const DEFAULT_SUMMARY_NS = 1  # Default number of sentences for a summary
 
 # Text pre-processing flags (for the prepare! function)
-const TEXT_STRIP_FLAGS = strip_case +
-                         strip_punctuation +
-                         strip_articles +
-                         strip_non_letters +
-                         strip_prepositions +
-                         strip_whitespace +
+const TEXT_STRIP_FLAGS = strip_case |
+                         strip_punctuation |
+                         strip_articles |
+                         strip_non_letters |
+                         strip_prepositions |
+                         strip_whitespace |
                          strip_corrupt_utf8
 
-const QUERY_STRIP_FLAGS = strip_case +
-                          strip_punctuation +
-                          strip_articles +
-                          strip_non_letters +
-                          strip_prepositions +
-                          strip_whitespace +
+const QUERY_STRIP_FLAGS = strip_case |
+                          strip_punctuation |
+                          strip_articles |
+                          strip_non_letters |
+                          strip_prepositions |
+                          strip_whitespace |
                           strip_corrupt_utf8
 
-const METADATA_STRIP_FLAGS = strip_case +
-                             strip_punctuation +
-                             strip_articles +
-                             strip_prepositions +
-                             strip_whitespace +
+const METADATA_STRIP_FLAGS = strip_case |
+                             strip_punctuation |
+                             strip_articles |
+                             strip_prepositions |
+                             strip_whitespace |
                              strip_corrupt_utf8
+
+const SUMMARIZATION_FLAGS = strip_corrupt_utf8 |
+                            strip_case |
+                            strip_stopwords |
+                            strip_non_letters
 
 
 # Dictionaries for String <=>Languages.Language / Languages.Languages <=> String

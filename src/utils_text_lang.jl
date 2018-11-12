@@ -121,3 +121,51 @@ extract_tokens(doc::Vector{S} where S<:AbstractString) = String.(doc)
 ### 	)
 ### ))	
 ### end
+
+"""
+    detect_language(text)
+
+Detects the language of a piece of text.
+"""
+function detect_language(text::AbstractString)
+    detector = LanguageDetector()
+    l::Language = detector(text)[1]  # returns (language, script, confidence)
+    return l
+end
+
+
+
+"""
+    summarize(text [;ns=1, flags=SUMMARIZATION_FLAGS]
+
+Build a summary of the `text`. The resulting summary will be
+a `ns` sentence document; each sentence is pre-procesed using the
+`flags` option.
+"""
+function summarize(text::AbstractString;
+                   ns::Int=1,
+                   flags::UInt32=SUMMARIZATION_FLAGS,
+                   language::Language=detect_language(text))
+    # Tokenize
+    sentences = TextAnalysis.sentence_tokenize(language, text)  # language is not used
+    # Get document term matrix
+    s = StringDocument.(sentences)
+    c = Corpus(s)
+    prepare!(c, flags)
+    update_lexicon!(c)
+    t = tf_idf(dtm(c))
+    # Page rank
+    α = 0.85  # damping factor
+    n = 100  # number of iterations
+    ϵ = 1.0e-6  # convergence threhshold
+    G = Graph(t * t')
+    try
+        p = pagerank(G, α, n, ϵ)
+        # Sort sentences and return
+        text_summary = sentences[sort(sortperm(p, rev=true)[1:min(ns, length(p))])]
+        return join(text_summary)  # return a string
+    catch
+        @warn "Summarization failed while computing TextRank. Returning full document."
+        return text
+    end
+end

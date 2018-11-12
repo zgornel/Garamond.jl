@@ -33,13 +33,14 @@ module Garamond
     using ProgressMeter
     using ConceptnetNumberbatch, Word2Vec
     using HNSW, NearestNeighbors, Distances
+    using LightGraphs: Graph, pagerank
     using JSON, Glob
 
     # Import section (extendable methods)
     import Base: size, length, show, keys, values, push!,
                  delete!, getindex, names, convert, lowercase,
                  occursin, isempty
-    import TextAnalysis: prepare!, id
+    import TextAnalysis: id, prepare!, summarize
     import ConceptnetNumberbatch: embed_document
 
     # Abstract types
