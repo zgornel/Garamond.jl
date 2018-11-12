@@ -274,24 +274,21 @@ function get_parsing_function(parser::Symbol,
                               build_summary::Bool,
                               summary_ns::Int) where T<:AbstractId
     PREFIX = :__parser_
-    # Construct basic parsing function from parser name
-    _function  = eval(Symbol(PREFIX, parser))
+    # Construct the actual basic parsing function from parser name
+    parsing_function  = eval(Symbol(PREFIX, parser))
     # Get parser config
-    _config = get(PARSER_CONFIGS,
-                  parser,
-                  Dict())
-    # Build parsing function (a nice closure)
-    function parsing_function(filename::String,
-                              doc_type::Type{D}=DEFAULT_DOC_TYPE) where
-            {T<:AbstractId, D<:AbstractDocument}
-        return _function(filename,
-                         _config,
-                         doc_type,
-                         header=header,
-                         delimiter=delimiter,
-                         globbing_pattern=globbing_pattern,
-                         build_summary=build_summary,
-                         summary_ns=summary_ns)
+    parser_config = get(PARSER_CONFIGS, parser, Dict())
+    # Build and return parsing function (a nice closure)
+    function parsing_closure(filename::String)
+        return parsing_function(# Compulsory arguments for all parsers
+                                filename,
+                                parser_config,
+                                # keyword arguments (not used by all parsers)
+                                header=header,
+                                delimiter=delimiter,
+                                globbing_pattern=globbing_pattern,
+                                build_summary=build_summary,
+                                summary_ns=summary_ns)
     end
-    return parsing_function
+    return parsing_closure
 end

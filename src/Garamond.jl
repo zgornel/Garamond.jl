@@ -27,7 +27,7 @@ module Garamond
     using Base.Threads
     using Statistics: mean
     using DataStructures: Set, MultiDict
-    using TextAnalysis, Languages
+    using TextAnalysis, Languages, WordTokenizers
     using StringDistances, BKTrees
     using ArgParse
     using ProgressMeter
@@ -40,7 +40,7 @@ module Garamond
     import Base: size, length, show, keys, values, push!,
                  delete!, getindex, names, convert, lowercase,
                  occursin, isempty
-    import TextAnalysis: id, prepare!, summarize
+    import TextAnalysis: id, prepare!, stem!, summarize
     import ConceptnetNumberbatch: embed_document
 
     # Abstract types

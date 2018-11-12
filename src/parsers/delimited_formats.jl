@@ -13,72 +13,79 @@ end
 
 
 # Parser for "delimited_format_1"
+# Logical to physical mapping:
+#   - field -> sentence
+#   - line (multiple fields) -> document
+#   - file -> corpus
+# The function returns a tuple (documents, metadata_vector):
+#   Documents are a Vector{Vector{String}}:
+#       - the String is the sentence
+#       - the inner vector is for a the document: vector of sentences
+#       - the outer vector is for the corpus: a vector of documents
+#   The metadata vector is a Vector{TextAnalysis.DocumentMetadata}
 function __parser_delimited_format_1(filename::AbstractString,
-                                     config::Dict,
-                                     doc_type::Type{T}=DEFAULT_DOC_TYPE;
+                                     config::Dict;
                                      header::Bool = false,
-                                     delimiter::String = DEFAULT_DELIMITER,
+                                     delimiter::String=DEFAULT_DELIMITER,
                                      kwargs...  # unused kw arguments (used in other parsers)
                                     ) where T<:AbstractDocument
     # Initializations
     nlines = linecount(filename) - ifelse(header,1,0)
-    nlines==0 &&
-        error("$filename contains no data lines.")
-    documents = Vector{doc_type}(undef, nlines)
-    documents_meta = Vector{doc_type}(undef, nlines)
-    metadata_fields = fieldnames(TextAnalysis.DocumentMetadata)
+    nlines==0 && error("$filename contains no data lines.")
+    # Select and sort the line fields which will be used as document text in the corpus
+    fields_mask = sort!([k for k in keys(config[:data]) if config[:data][k]])
     # Read the file
     if header
         string_matrix, _ = readdlm(filename, delimiter[1], String, header=header)
     else
         string_matrix = readdlm(filename, delimiter[1], String, header=header)
     end
-    # Select and sort the line fields which will be used as document text in the corpus
-    mask = sort!([k for k in keys(config[:data]) if config[:data][k]])
     # Progressbar
     _nl = 10  # number of lines after wihich progress is updated
     _filename = split(filename,"/")[end]
     progressbar = Progress(div(nlines, _nl)+1,
                            desc="Parsing $_filename...",
                            color=:normal)
-    @inbounds for il in 1:size(string_matrix,1)
+    # Initialize outputs
+    nlines = min(nlines, size(string_matrix,1))  # avoid newlines
+    documents = Vector{Vector{String}}(undef, nlines)
+    metadata_vector = Vector{TextAnalysis.DocumentMetadata}(undef, nlines)
+    metadata_fields = fieldnames(TextAnalysis.DocumentMetadata)
+    # Loop over loaded data and process data
+    @inbounds for i in 1:size(string_matrix,1)
         # Iterate and parse
-        vline = strip.(view(string_matrix, il, :))
-        iszero(mod(il, _nl)) && next!(progressbar)
-        # Set document data
-        doc = doc_type(join(vline[mask]," "))
-        # Set document metadata
+        vline = strip.(view(string_matrix, i, :))
+        iszero(mod(i, _nl)) && next!(progressbar)
+        # Create document
+        documents[i] = vline[fields_mask]
+        metadata_vector[i] = TextAnalysis.DocumentMetadata(Languages.English(),
+                                "", "", "", "", "", "", "", "", "")
+        # Set parsed values for document metadata
         for (column, metafield) in config[:metadata]
             local _language
             if metafield in metadata_fields
+                # Metadata field is to be parsed
                 if metafield == :language
+                    # Get Language object from string
                     _lang = lowercase(vline[column])
                     try
                         #_language = STR_TO_LANG[_lang]
                         # HACK, force Languages.English() as there is little
                         # reason to use other languages. Preprocessing fails
                         # as dictionaries are needed
-                        # TODO(Corneliu): Remove hack when languages are supported.
+                        # TODO(Corneliu): Add language support for supported languages.
                         _language = STR_TO_LANG["english"]
                     catch
                         @warn "Language $_lang not supported. Using default."
                         _language = Languages.English()
                     end
-                    setfield!(doc.metadata, metafield, _language)
+                    setfield!(metadata_vector[i], metafield, _language)
                 else
-                    setfield!(doc.metadata, metafield, lowercase(vline[column]))
+                    # Non-language field
+                    setfield!(metadata_vector[i], metafield, lowercase(vline[column]))
                 end
             end
         end
-        # Create metadata document vector
-        doc_meta = metastring(doc, collect(v for v in DEFAULT_METADATA_FIELDS
-                                           if v in metadata_fields))
-        documents_meta[il] = doc_type(doc_meta)
-        # Create document vector
-        documents[il] = doc
     end
-    # Create and post-process document/document metadata corpora
-    crps = Corpus(documents)
-    crps_meta = Corpus(documents_meta)
-    return crps, crps_meta
+    return documents, metadata_vector
 end

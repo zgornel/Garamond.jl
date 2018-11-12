@@ -8,7 +8,7 @@ Through `doc_type` the type of document in which the query can
 be wrapped (for processing) can be specified, in case the query
 is not already a `TextAnalysis.AbstractDocument`.
 """
-process_query(query::AbstractDocument;
+process_query(query::AbstractString;
               prepare::Bool=false,
               stem::Bool=false) = begin
     # Note: preparation and stemming slow by hundreds of μs the search.
@@ -17,15 +17,9 @@ process_query(query::AbstractDocument;
     return extract_tokens(query)
 end
 
-process_query(query::AbstractString;
-              doc_type::Type{T}=TextAnalysis.StringDocument
-             ) where T<:TextAnalysis.AbstractDocument = begin
-    process_query(doc_type(query))
-end
-
 process_query(query::V;
               doc_type::Type{T}=TextAnalysis.StringDocument
              ) where {T<:TextAnalysis.AbstractDocument,
                       V<:AbstractVector{<:AbstractString}} = begin
-    process_query(doc_type(join(query," ")))
+    process_query(join(query," "))
 end

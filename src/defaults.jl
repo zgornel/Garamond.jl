@@ -30,7 +30,7 @@ const DEFAULT_DELIMITER = "|"  # For delimited files only (i.e. document is a li
 ##############################################################
 # TODO(corneliu): Check here if any of them can also be data configuration options
 #  i.e. max matches, exit distance, document type
-const DEFAULT_DOC_TYPE = TextAnalysis.NGramDocument  # default document object type
+const DEFAULT_DOCUMENT_TYPE = TextAnalysis.NGramDocument  # default document object type
 const DEFAULT_MAX_MATCHES = 1_000  # maximum number of matches that can be retrned
 const DEFAULT_MAX_SUGGESTIONS = 1  # maximum number of overall suggestions
 const DEFAULT_MAX_CORPUS_SUGGESTIONS = 1  # maximum number of suggestions for each corpus

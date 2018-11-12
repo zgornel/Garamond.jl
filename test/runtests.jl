@@ -5,7 +5,6 @@
 #   - generate data and configs based on a set of single patameters
 #     the ouput of data generation is used (where possible) in the configs
 #   - test as exaustively as possible the search
-# TODO(Corneliu): Build a directory confiuration for testing the parsing of directories
 ####
 using Test
 using Random
