@@ -1,46 +1,47 @@
-############
-# Defaults #
-############
-# Note: What is marked as constant cannot be changed in the search configuration
-
-# Search approach
-const DEFAULT_SEARCH = :classic
-
-
+#######################################################################################
+# DATA Configuration: these are used to provide default values in case options in the #
+# data configuration files are missing.                                               #
+#######################################################################################
+const DEFAULT_SEARCH = :classic  # Search approach
+const DEFAULT_BUILD_SUMMARY = false  # whether to summarize text before indexing
+const DEFAULT_SUMMARY_NS = 1  # Default number of sentences for a summary
 # Classic seatch defaults
 const DEFAULT_COUNT_TYPE = :tfidf  # can be :tf or :tfidf
 const DEFAULT_SEARCH_TYPE = :data  # can be :data or :metadata
 const DEFAULT_SEARCH_METHOD = :exact  #can be :exact or :regex
-const DEFAULT_MAX_MATCHES = 1_000  # maximum number of matches that can be retrned
-const DEFAULT_MAX_SUGGESTIONS = 1  # maximum number of overall suggestions
-const DEFAULT_MAX_CORPUS_SUGGESTIONS = 1  # maximum number of suggestions for each corpus
-const MAX_EDIT_DISTANCE = 2  # maximum edit distance for which to return suggestions
-# Search tree constants
 const DEFAULT_HEURISTIC = :hamming
-const HEURISTIC_TO_DISTANCE = Dict(  # heuristic to distance object mapping
-    :levenshtein => StringDistances.Levenshtein(),
-    :dameraulevenshtein => StringDistances.DamerauLevenshtein(),
-    :hamming => StringDistances.Hamming(),
-    :jaro => StringDistances.Jaro())
-const DEFAULT_DISTANCE = HEURISTIC_TO_DISTANCE[DEFAULT_HEURISTIC]
 const DEFAULT_COUNT_ELEMENT_TYPE = Float32  # used in classic search
-
 # Semantic search related
 const DEFAULT_EMBEDDING_METHOD = :bow  # can be :bow or :arora
 const DEFAULT_EMBEDDINGS_TYPE = :conceptnet  # can be :word2vec or :conceptnet
 const DEFAULT_EMBEDDING_SEARCH_MODEL = :naive  # can be :naive, :kdtree or :hnsw
 const DEFAULT_EMBEDDING_ELEMENT_TYPE = :Float32  # can be :Float32, :Float64
-
-
-# Various document processing related constants
+# Various document parsing constants
 const DEFAULT_PARSER = :no_parse
-const DEFAULT_KEEP_CORPUS = true  #TODO(Corneliu) Actually use this thing.
-const DEFAULT_DOC_TYPE = TextAnalysis.NGramDocument
-const DEFAULT_METADATA_FIELDS = [:author, :name, :note]  # Default metadata fields for search
 const DEFAULT_GLOBBING_PATTERN = "*"  # Can be any regexp-like pattern
 const DEFAULT_DELIMITER = "|"  # For delimited files only (i.e. document is a line/record)
-const DEFAULT_BUILD_SUMMARY = false
-const DEFAULT_SUMMARY_NS = 1  # Default number of sentences for a summary
+###const DEFAULT_KEEP_CORPUS = true  #TODO(Corneliu) Actually use this thing.
+
+
+
+##############################################################
+# SEARCH ENGINE configuration: the constants here are used   #
+# throughout the code and do not correspond to file-options. #
+##############################################################
+# TODO(corneliu): Check here if any of them can also be data configuration options
+#  i.e. max matches, exit distance, document type
+const DEFAULT_DOC_TYPE = TextAnalysis.NGramDocument  # default document object type
+const DEFAULT_MAX_MATCHES = 1_000  # maximum number of matches that can be retrned
+const DEFAULT_MAX_SUGGESTIONS = 1  # maximum number of overall suggestions
+const DEFAULT_MAX_CORPUS_SUGGESTIONS = 1  # maximum number of suggestions for each corpus
+const MAX_EDIT_DISTANCE = 2  # maximum edit distance for which to return suggestions
+const HEURISTIC_TO_DISTANCE = Dict(  # heuristic to distance object mapping
+    :levenshtein => StringDistances.Levenshtein(),
+    :dameraulevenshtein => StringDistances.DamerauLevenshtein(),
+    :hamming => StringDistances.Hamming(),
+    :jaro => StringDistances.Jaro())
+const DEFAULT_DISTANCE = HEURISTIC_TO_DISTANCE[DEFAULT_HEURISTIC]  # default distance
+const DEFAULT_METADATA_FIELDS = [:author, :name, :note]  # Default metadata fields for search
 
 # Text pre-processing flags (for the prepare! function)
 const TEXT_STRIP_FLAGS = strip_case |
@@ -70,7 +71,6 @@ const SUMMARIZATION_FLAGS = strip_corrupt_utf8 |
                             strip_case |
                             strip_stopwords |
                             strip_non_letters
-
 
 # Dictionaries for String <=>Languages.Language / Languages.Languages <=> String
 # conversion
@@ -118,7 +118,6 @@ const STR_TO_LANG = Dict("english"=>Languages.English(),
                          "tamil"=>Languages.Tamil()
                         )
 const LANG_TO_STR = Dict((v=>k) for (k,v) in STR_TO_LANG)
-
 
 # Parser configurations; the keys of this dictionary have to appear in the
 # parsing configuration files.
