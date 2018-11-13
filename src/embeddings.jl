@@ -137,28 +137,29 @@ function embed_document(embeddings_library::Union{
     # Initializations
     n = length(document)
     m = size(embeddings_library)[1]  # number of vector components
-    missing_tokens = Vector{Vector{Int}}(undef, n)
+    embedded_words = Vector{Vector{String}}(undef, n)
     sentence_embeddings = Vector{Matrix{T}}(undef, n)
     # Embed sentences individually
     # TODO(Corneliu) Verify speed and pre-allocate with keep size if too slow
     @inbounds for i in 1:n
+        words = extract_tokens(document[i])
         _embs, _mtoks = embed_document(embeddings_library,
-                                       extract_tokens(document[i]),
+                                       words,
                                        keep_size=false,
                                        max_compound_word_length=1,
                                        wildcard_matching=true,
                                        print_matched_words=false)
-        sentence_embeddings[i], missing_tokens[i] = float(_embs), _mtoks
+        sentence_embeddings[i] = float(_embs)
+        embedded_words[i] = words[setdiff(1:length(words), _mtoks)]
     end
     # Remove empty embeddings
     embedded = map(!isempty, sentence_embeddings)
     sentence_embeddings = sentence_embeddings[embedded]
-    missing_tokens = missing_tokens[embedded]
+    embedded_words = embedded_words[embedded]
     # If nothing is embedded, return zeros
     isempty(sentence_embeddings) && return zeros(T, m)
     if embedding_method == :arora
-        tokens = [extract_tokens(sentence) for sentence in document[embedded]]
-        return squash(process_arora(sentence_embeddings, tokens, missing_tokens, lexicon))
+        return squash(process_arora(sentence_embeddings, lexicon, embedded_words))
     else 
         return squash(squash.(sentence_embeddings),m)
     end
@@ -174,26 +175,27 @@ occur.
 [1] "A simple but tough-to-beat baseline for sentence embeddings", Arora et al. ICLR 2017
     (https://openreview.net/pdf?id=SyK00v5xx)
 """
-function process_arora(sentences::Vector{Matrix{T}},
-                       tokens::Vector{Vector{S}},
-                       missing_tokens::Vector{Vector{Int}},
-                       lexicon::Dict{String, Int}) where {T<:AbstractFloat, S<:AbstractString}
+#TODO(Corneliu): Make the calculation of `a` automatic using some heuristic
+function process_arora(document_embedding::Vector{Matrix{T}},
+                       lexicon::Dict{String, Int},
+                       embedded_words::Vector{Vector{S}}
+                      ) where {T<:AbstractFloat, S<:AbstractString}
     L = sum(values(lexicon))
-    X = zeros(T, size(sentences[1],1), length(sentences))
-    a = 1e-2
+    m = size(document_embedding[1],1)  # number of vector elements
+    n = length(document_embedding)  # number of sentences in document
+    X = zeros(T, m, n)  # new document embedding
+    a = 1
     # Loop over sentences
-    for (i, s) in enumerate(sentences)
-        p = [get(lexicon, tok, eps())/L for (j, tok) in enumerate(tokens[i])
-             if !(j in missing_tokens[i])]
-        @assert length(p) == size(s,2)
-        # Add weighted word embeddings
-        for k in 1:length(p)
-            X[:,i] += 1/(length(s)) * (a/(a+p[k]) .* s[:,k])
+    for (i, s) in enumerate(document_embedding)
+        p = [get(lexicon, word, eps())/L for word in embedded_words[i]]
+        W = size(s,2)  # no. of words
+        @inbounds for w in 1:W
+            X[:,i] += 1/(length(s)) * (a/(a+p[w]) .* s[:,w])
         end
     end
     u, _, _ = svd(X)
     u = u[:,1]
-    for i in 1:length(sentences)
+    @inbounds @simd for i in 1:n
         X[:,i] -= u'u * X[:,i]
     end
     return X
