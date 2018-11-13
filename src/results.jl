@@ -109,8 +109,8 @@ function squash_suggestions(results::Vector{SearchResult},
         # Get the needles not found across all corpus results
         matched_needles = (needle for _result in results
                            for needle in keys(_result.needle_matches))
-        missed_needles = intersect((keys(_result.suggestions)
-                                    for _result in results)...)
+        missed_needles = union((keys(_result.suggestions)
+                                for _result in results)...)
         # Construct suggestions for the whole AggregateSearcher
         for needle in missed_needles
             all_needle_suggestions = Vector{Tuple{AbstractFloat,String}}()
