@@ -85,19 +85,19 @@ length(model::HNSWEmbeddingModel) = length(model.tree.data)
 """
 Function that creates a single mean vector from a vector or matrix.
 """
-squash(m::AbstractMatrix) = begin
+squash(m::Matrix{T}) where T<:AbstractFloat = begin
     # Calculate document embedding
     ##############################
     v = vec(mean(m, dims=2))
-    return v./(norm(v,2)+eps())
+    return v./(norm(v,2)+eps(T))
 end
 
-squash(vv::Vector{Vector{T}}, m::Int) where T = begin
+squash(vv::Vector{Vector{T}}, m::Int) where T<:AbstractFloat = begin
     v = zeros(T,m)
     for w in vv
         v+= w
     end
-    return v./(norm(v,2)+eps())
+    return v./(norm(v,2)+eps(T))
 end
 
 
@@ -149,7 +149,7 @@ function embed_document(embeddings_library::Union{
                                        max_compound_word_length=1,
                                        wildcard_matching=true,
                                        print_matched_words=false)
-        sentence_embeddings[i] = float(_embs)
+        sentence_embeddings[i] = T.(_embs)
         embedded_words[i] = words[setdiff(1:length(words), _mtoks)]
     end
     # Remove empty embeddings
@@ -160,7 +160,7 @@ function embed_document(embeddings_library::Union{
     isempty(sentence_embeddings) && return zeros(T, m)
     if embedding_method == :arora
         return squash(process_arora(sentence_embeddings, lexicon, embedded_words))
-    else 
+    else
         return squash(squash.(sentence_embeddings),m)
     end
 end
@@ -187,7 +187,7 @@ function process_arora(document_embedding::Vector{Matrix{T}},
     a = 1
     # Loop over sentences
     for (i, s) in enumerate(document_embedding)
-        p = [get(lexicon, word, eps())/L for word in embedded_words[i]]
+        p = [get(lexicon, word, eps(T))/L for word in embedded_words[i]]
         W = size(s,2)  # no. of words
         @inbounds for w in 1:W
             X[:,i] += 1/(length(s)) * (a/(a+p[w]) .* s[:,w])
