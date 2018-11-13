@@ -27,19 +27,20 @@ module Garamond
     using Base.Threads
     using Statistics: mean
     using DataStructures: Set, MultiDict
-    using TextAnalysis, Languages
+    using TextAnalysis, Languages, WordTokenizers
     using StringDistances, BKTrees
     using ArgParse
     using ProgressMeter
     using ConceptnetNumberbatch, Word2Vec
     using HNSW, NearestNeighbors, Distances
-    using JSON
+    using LightGraphs: Graph, pagerank
+    using JSON, Glob
 
     # Import section (extendable methods)
     import Base: size, length, show, keys, values, push!,
                  delete!, getindex, names, convert, lowercase,
                  occursin, isempty
-    import TextAnalysis: prepare!, id
+    import TextAnalysis: id, prepare!, stem!, summarize
     import ConceptnetNumberbatch: embed_document
 
     # Abstract types
@@ -62,7 +63,9 @@ module Garamond
         id,
         enable!,
         disable!,
-        prepare!,
+        prepare,
+        preprocess,
+        summarize,
         isenabled,
         print_search_results
 
@@ -73,10 +76,11 @@ module Garamond
     include("utils_text_lang.jl")
     include("embeddings.jl")
     include("search_structures.jl")
-    include("query.jl")
     include("search.jl")
     include("results.jl")
-    include("parsers/csv_format_1.jl")
+    include("parsers/delimited_formats.jl")
+    include("parsers/directory_formats.jl")
+    include("parsers/no_parse.jl")
     include("cmdline.jl")
     ###include("servers.jl")
 

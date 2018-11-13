@@ -6,7 +6,7 @@ end
 
 struct TermCounts <: AbstractDocumentCount
     column_indices::Dict{String, Int}
-    values::SparseMatrixCSC{Float64, Int64}
+    values::SparseMatrixCSC{DEFAULT_COUNT_ELEMENT_TYPE, Int64}
 end
 
 # Useful methods
@@ -112,17 +112,29 @@ Creates a Searcher from a SearchConfig.
 """
 function make_searcher(sconf::SearchConfig{T}) where T
     # Parse file
-    crps, crps_meta = sconf.parser(sconf.data_path)
-    # Prepare
-    prepare!(crps, TEXT_STRIP_FLAGS)
-    prepare!(crps_meta, METADATA_STRIP_FLAGS)
-    # Stemming
-    stem!(crps)
-    stem!(crps_meta)
+    documents, metadata_vector = sconf.parser(sconf.data_path)
+    # Create metadata documents; output is Vector{Vector{String}}
+    documents_meta = meta2sv.(metadata_vector)
+    # Pre-process documents
+    documents = preprocess(documents, TEXT_STRIP_FLAGS)
+    documents_meta = preprocess(documents_meta, METADATA_STRIP_FLAGS)
+    # Build document and document metadata corpora
+    # Note: the metadata is kept as well for the purpose of
+    #       converying information regarding what is being
+    #       searched. The only use for it is when displaying
+    #       results
+    # TODO: Make storing the metadata optional (some application
+    #       may not need it but only the document index)
+    crps = build_corpus(documents,
+                        DEFAULT_DOCUMENT_TYPE,
+                        metadata_vector)
+    crps_meta = build_corpus(documents_meta,
+                             DEFAULT_DOCUMENT_TYPE,
+                             metadata_vector)
     # Update lexicons
     update_lexicon!(crps)
     update_lexicon!(crps_meta)
-    # Classic search
+    # Classic searcher
     if sconf.search == :classic
         # Calculate term importances
         dtm = DocumentTermMatrix(crps)
@@ -142,18 +154,22 @@ function make_searcher(sconf::SearchConfig{T}) where T
                                add_final_zeros(count_func(dtm)))
         _srchdata_meta = TermCounts(dtm_meta.column_indices,
                                     add_final_zeros(count_func(dtm_meta)))
+    # Semantic searcher
     elseif sconf.search == :semantic
+        # Construct element type
+        _eltype = eval(sconf.embedding_element_type)
         # Read word embeddings
         if sconf.embeddings_type == :conceptnet
             word_embeddings = load_embeddings(sconf.embeddings_path,
-                                              languages=[Languages.English()])
+                                              languages=[Languages.English()],
+                                              data_type = _eltype)
         elseif sconf.embeddings_type == :word2vec
-            word_embeddings = wordvectors(sconf.embeddings_path,
+            word_embeddings = wordvectors(sconf.embeddings_path, _eltype,
                                           kind=:binary)
         else
             @error "$(sconf.embeddings_type) embeddings not supported."
         end
-        # Create model
+        # Get search model types
         if sconf.embedding_search_model == :naive
             model_type = NaiveEmbeddingModel
         elseif sconf.embedding_search_model == :brutetree
@@ -167,14 +183,18 @@ function make_searcher(sconf::SearchConfig{T}) where T
         end
         # Construct document data model
         _srchdata = model_type(
-            hcat((embed_document(word_embeddings, crps.lexicon, doc,
+            hcat((embed_document(word_embeddings,
+                                 crps.lexicon,
+                                 doc,
                                  embedding_method=sconf.embedding_method)
-                  for doc in crps)...))
+                  for doc in documents)...))
         # Construct document metadata model
         _srchdata_meta = model_type(
-            hcat((embed_document(word_embeddings, crps_meta.lexicon, doc,
+            hcat((embed_document(word_embeddings,
+                                 crps_meta.lexicon,
+                                 doc,
                                  embedding_method=sconf.embedding_method)
-                  for doc in crps_meta)...))
+                  for doc in documents_meta)...))
     else
         # This statement should never be reached in practice
         # as the search option should be checked prior (during parsing)

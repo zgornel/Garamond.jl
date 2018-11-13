@@ -85,50 +85,84 @@ length(model::HNSWEmbeddingModel) = length(model.tree.data)
 """
 Function that creates a single mean vector from a vector or matrix.
 """
-squash(m::AbstractArray) = begin
+squash(m::Matrix{T}) where T<:AbstractFloat = begin
     # Calculate document embedding
     ##############################
     v = vec(mean(m, dims=2))
-    return v./(norm(v,2)+eps())
+    return v./(norm(v,2)+eps(T))
+end
+
+squash(vv::Vector{Vector{T}}, m::Int) where T<:AbstractFloat = begin
+    v = zeros(T,m)
+    for w in vv
+        v+= w
+    end
+    return v./(norm(v,2)+eps(T))
 end
 
 
 
 """
-    embed_document(embeddings_library, lexicon, doc[; embeddings_method])
+    embed_document(embeddings_library, lexicon, document[; embeddings_method])
 
-Function to get from multiple word-embeddings to a document embedding.
-The `embedding_method` option controls how multiple word embeddings
+Function to get from multiple sentencea to a document embedding.
+The `embedding_method` option controls how multiple sentence embeddings
 are combined into a single document embedding. Avalilable options:
-    :bow - calculate document embedding as the mean of the word embeddings
+    :bow - calculate document embedding as the mean of the sentence embeddings
     :arora - subtract paragraph/phrase vector [not working properly unless full documents are used]
 """
-function embed_document(embeddings_library,
+### function embed_document(embeddings_library,
+###                         lexicon::Dict{String, Int},
+###                         doc::D
+###                        ) where D<:Union{<:AbstractDocument, <:AbstractString}
+###     # Tokenize
+###     tokens = extract_tokens(doc)
+###     # Get word embeddings
+###     doc_embs, missing_tokens = embed_document(embeddings_library,
+###                                               tokens,
+###                                               keep_size=false,
+###                                               max_compound_word_length=1,
+###                                               wildcard_matching=true,
+###                                               print_matched_words=false)
+###     @debug "Document Embedding: $(tokens[missing_tokens]) could not be embedded."
+###     return float(doc_embs)
+### end
+function embed_document(embeddings_library::Union{
+                            ConceptNet{<:Languages.Language, <:AbstractString, T},
+                            WordVectors{<:AbstractString, T, <:Integer}},
                         lexicon::Dict{String, Int},
-                        doc;
-                        embedding_method::Symbol=DEFAULT_EMBEDDING_METHOD)
-    # Tokenize
-    tokens = extract_tokens(doc)
-    # Get word embeddings
-    doc_embs, missing_tokens = embed_document(embeddings_library,
-                                              tokens,
-                                              keep_size=false,
-                                              max_compound_word_length=1,
-                                              wildcard_matching=true,
-                                              print_matched_words=false)
-    @debug "Document Embedding: $(tokens[missing_tokens]) could not be embedded."
-
-    ############################################
-    # TODO: Language detection wold go here :) #
-    ############################################
-
-    # Calculate document embedding
-    n = size(embeddings_library)[1]  # number of vector components
-    isempty(doc_embs) && return zeros(n)
-    em = float(doc_embs)
-    embedding_method ==:arora && preprocess_arora_style!(em,
-                                    tokens, missing_tokens, lexicon)
-    return squash(em)
+                        document::Vector{String};  # a vector of sentences
+                        embedding_method::Symbol=DEFAULT_EMBEDDING_METHOD
+                       ) where T<:AbstractFloat
+    # Initializations
+    n = length(document)
+    m = size(embeddings_library)[1]  # number of vector components
+    embedded_words = Vector{Vector{String}}(undef, n)
+    sentence_embeddings = Vector{Matrix{T}}(undef, n)
+    # Embed sentences individually
+    # TODO(Corneliu) Verify speed and pre-allocate with keep size if too slow
+    @inbounds for i in 1:n
+        words = extract_tokens(document[i])
+        _embs, _mtoks = embed_document(embeddings_library,
+                                       words,
+                                       keep_size=false,
+                                       max_compound_word_length=1,
+                                       wildcard_matching=true,
+                                       print_matched_words=false)
+        sentence_embeddings[i] = T.(_embs)
+        embedded_words[i] = words[setdiff(1:length(words), _mtoks)]
+    end
+    # Remove empty embeddings
+    embedded = map(!isempty, sentence_embeddings)
+    sentence_embeddings = sentence_embeddings[embedded]
+    embedded_words = embedded_words[embedded]
+    # If nothing is embedded, return zeros
+    isempty(sentence_embeddings) && return zeros(T, m)
+    if embedding_method == :arora
+        return squash(process_arora(sentence_embeddings, lexicon, embedded_words))
+    else
+        return squash(squash.(sentence_embeddings),m)
+    end
 end
 
 
@@ -141,25 +175,30 @@ occur.
 [1] "A simple but tough-to-beat baseline for sentence embeddings", Arora et al. ICLR 2017
     (https://openreview.net/pdf?id=SyK00v5xx)
 """
-function preprocess_arora_style!(em::Matrix{T},
-                                 tokens::Vector{S},
-                                 missing_tokens::Vector{Int},
-                                 lexicon::Dict{String, Int}) where
-            {T<:AbstractFloat, S<:AbstractString}
-    # Calculate term frequency vector p
-    tt = sum(values(lexicon))
-    p = [get(lexicon,tk,eps())/tt for (i, tk) in enumerate(tokens) if !(i in missing_tokens)]
+#TODO(Corneliu): Make the calculation of `a` automatic using some heuristic
+function process_arora(document_embedding::Vector{Matrix{T}},
+                       lexicon::Dict{String, Int},
+                       embedded_words::Vector{Vector{S}}
+                      ) where {T<:AbstractFloat, S<:AbstractString}
+    L = sum(values(lexicon))
+    m = size(document_embedding[1],1)  # number of vector elements
+    n = length(document_embedding)  # number of sentences in document
+    X = zeros(T, m, n)  # new document embedding
     a = 1
-    # There are no sentences, assuming 1-word sentences
-    for i in 1:length(p)
-        em[:,i] = em[:,i].*(a/(a+p[i]))  # equivalent of vₛ
+    # Loop over sentences
+    for (i, s) in enumerate(document_embedding)
+        p = [get(lexicon, word, eps(T))/L for word in embedded_words[i]]
+        W = size(s,2)  # no. of words
+        @inbounds for w in 1:W
+            X[:,i] += 1/(length(s)) * (a/(a+p[w]) .* s[:,w])
+        end
     end
-    u, _, _ = svd(em)
+    u, _, _ = svd(X)
     u = u[:,1]
-    for i in 1:length(p)
-        em[:,i] -= u'u*em[:,i]
+    @inbounds @simd for i in 1:n
+        X[:,i] -= u'u * X[:,i]
     end
-    return em
+    return X
 end
 
 
