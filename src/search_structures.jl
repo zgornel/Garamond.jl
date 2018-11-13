@@ -116,8 +116,8 @@ function make_searcher(sconf::SearchConfig{T}) where T
     # Create metadata documents; output is Vector{Vector{String}}
     documents_meta = meta2sv.(metadata_vector)
     # Pre-process documents
-    preprocess_documents!(documents, TEXT_STRIP_FLAGS)
-    preprocess_documents!(documents_meta, METADATA_STRIP_FLAGS)
+    preprocess!(documents, TEXT_STRIP_FLAGS)
+    preprocess!(documents_meta, METADATA_STRIP_FLAGS)
     # Build document and document metadata corpora
     # Note: the metadata is kept as well for the purpose of
     #       converying information regarding what is being

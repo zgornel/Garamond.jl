@@ -81,8 +81,19 @@ Processes a string according to the `flags` which are an `UInt32` of
 the form used in `TextAnalysis.jl` ie `strip_numbers | strip_articles` etc.
 and the keyword arguments are thos of the `Unicode.normalize` function.
 """
-function prepare!(text::AbstractString, flags::UInt32; kwargs...)
-    sd = StringDocument(Unicode.normalize(text, kwargs...))
+function prepare!(text::AbstractString, flags::UInt32;
+                  compat=true,
+                  casefold=true,
+                  stripmark=true,
+                  stripignore=true,
+                  stripcc=true,
+                  stable=true,
+                  kwargs...
+                 )
+    sd = StringDocument(Unicode.normalize(text, compat=compat,
+                                          casefold=casefold, stripmark=stripmark,
+                                          stripignore=stripignore, stripcc=stripcc,
+                                          stable=stable,kwargs...))
 	prepare!(sd, flags)
     return sd.text
 end
@@ -100,6 +111,58 @@ function stem!(text::AbstractString)
 end
 
 
+
+"""
+    preprocess(sentence, flags [;prepare=true, stem=false])
+
+Applies preprocessing to one sentence considered to be an
+AbstractString.
+"""
+function preprocess!(sentence::AbstractString,
+                     flags::UInt32;
+                     prepare::Bool=true,
+                     stem::Bool=false)
+    # Pre process sentences: iterate over sentences and apply
+    # prepare, stem to each sentence indivicually
+    #TODO(Corneliu) Make prepare! and stem! efficient:
+    #               now they create objects to operate and
+    #               process the sentences returning the text field.
+    # Prepare
+    prepare && prepare!(sentence, flags)
+    # Stemming
+    stem && stem!(sentence)
+    return sentence
+end
+
+function preprocess!(document::Vector{S},
+                     flags::UInt32;
+                     prepare::Bool=true,
+                     stem::Bool=false
+                    ) where S<:AbstractString
+    for sentence in document
+        preprocess!.(sentence, flags, prepare=prepare, stem=stem)
+    end
+    return document
+end
+
+function preprocess!(documents::Vector{Vector{S}},
+                     flags::UInt32;
+                     prepare::Bool=true,
+                     stem::Bool=false
+                    ) where S<:AbstractString
+    for doc in documents
+        preprocess!(doc, flags, prepare=prepare, stem=stem)
+    end
+    return documents
+end
+
+preprocess(x, args...; kwargs...) = begin
+    x_copy = Base.deepcopy(x)
+    return preprocess!(x_copy, args...; kwargs...)
+end
+
+
+
 """
     extract_tokens(doc)
 
@@ -109,6 +172,7 @@ Vector{AbstractString} and `TextAnalysis.jl` documents.
 extract_tokens(doc::NGramDocument) = String.(collect(keys(doc.ngrams)))
 extract_tokens(doc::StringDocument) = String.(tokenize_for_conceptnet(doc.text))
 extract_tokens(doc::AbstractString) = String.(tokenize_for_conceptnet(doc))
+extract_tokens(doc::Vector{S}) where S<:AbstractString = String.(doc)
 
 
 
@@ -162,34 +226,16 @@ end
 
 
 """
-    preprocess_documents(documents)
+    build_corpus(documents, doctype, metadata_vector)
 
-Applies preprocessing to documents.
-"""
-function preprocess_documents!(documents::Vector{Vector{S}}, flags::UInt32
-                              ) where S<:AbstractString
-    # Pre process documents: iterate over documents and apply
-    # prepare, stem to each sentence indivicually
-    #TODO(Corneliu) Make prepare! and stem! efficient:
-    #               now they create objects to operate and
-    #               process the documents returning the text field.
-    for vdoc in documents
-        # Prepare
-        prepare!.(vdoc, flags)
-        # Stemming
-        stem!.(vdoc)
-    end
-    return documents
-end
-
-
-"""
-
+Builds a corpus of documents of type `doctype` using the data in `documents`
+and metadata from `metadata_vector`.
 """
 function build_corpus(documents::Vector{Vector{S}},
                       doctype::Type{T},
                       metadata_vector::Vector{TextAnalysis.DocumentMetadata}
                      ) where {S<:AbstractString, T<:AbstractDocument}
+    @assert length(documents) == length(metadata_vector)
     n = length(documents)
     v = Vector{T}(undef, n)
     @inbounds for i in 1:n

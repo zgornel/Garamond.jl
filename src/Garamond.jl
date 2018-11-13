@@ -64,6 +64,8 @@ module Garamond
         enable!,
         disable!,
         prepare!,
+        preprocess!,
+        summarize,
         isenabled,
         print_search_results
 
@@ -74,7 +76,6 @@ module Garamond
     include("utils_text_lang.jl")
     include("embeddings.jl")
     include("search_structures.jl")
-    include("query.jl")
     include("search.jl")
     include("results.jl")
     include("parsers/delimited_formats.jl")
