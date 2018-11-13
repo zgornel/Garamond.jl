@@ -112,7 +112,7 @@ function search(srcher::Searcher{I,D,E,M},
                 max_suggestions::Int=DEFAULT_MAX_CORPUS_SUGGESTIONS) where
         {I<:AbstractId, D<:AbstractDocument, E, M<:AbstractDocumentCount}
     # Tokenize
-    needles = extract_tokens(preprocess(query, QUERY_STRIP_FLAGS))
+    needles = preprocess_query(query)
     # Initializations
     n = length(srcher.search_data[:data])    # number of documents
     p = length(needles)                 # number of search terms
@@ -268,7 +268,7 @@ function search(srcher::Searcher{I,D,E,M},
                 ) where
         {I<:AbstractId, D<:AbstractDocument, E, M<:AbstractEmbeddingModel}
     # Tokenize
-    needles = extract_tokens(preprocess(query, QUERY_STRIP_FLAGS))
+    needles = preprocess_query(query)
     # Initializations
     n = length(srcher.search_data[:data])  # number of embedded documents
     # Search metadata and/or data

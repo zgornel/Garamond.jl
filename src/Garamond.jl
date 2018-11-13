@@ -63,8 +63,8 @@ module Garamond
         id,
         enable!,
         disable!,
-        prepare!,
-        preprocess!,
+        prepare,
+        preprocess,
         summarize,
         isenabled,
         print_search_results

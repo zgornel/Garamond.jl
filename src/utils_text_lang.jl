@@ -75,27 +75,29 @@ lowercase(v::T) where T<:AbstractArray{S} where S<:AbstractString =
 
 
 """
-    prepare!(text, flags [;kwargs...])
+    prepare(text, flags [;kwargs...])
 
 Processes a string according to the `flags` which are an `UInt32` of
 the form used in `TextAnalysis.jl` ie `strip_numbers | strip_articles` etc.
 and the keyword arguments are thos of the `Unicode.normalize` function.
 """
-function prepare!(text::AbstractString, flags::UInt32;
-                  compat=true,
-                  casefold=true,
-                  stripmark=true,
-                  stripignore=true,
-                  stripcc=true,
-                  stable=true,
-                  kwargs...
-                 )
+# TODO TODO TODO! Improve this crap
+function prepare(text::AbstractString, flags::UInt32;
+                 compat=true,
+                 casefold=true,
+                 stripmark=true,
+                 stripignore=true,
+                 stripcc=true,
+                 stable=true,
+                 kwargs...
+                )
     sd = StringDocument(Unicode.normalize(text, compat=compat,
                                           casefold=casefold, stripmark=stripmark,
                                           stripignore=stripignore, stripcc=stripcc,
                                           stable=stable,kwargs...))
-	prepare!(sd, flags)
-    return sd.text
+    sdc = Base.deepcopy(sd)
+	prepare!(sdc, flags)
+    return sdc.text
 end
 
 
@@ -104,7 +106,7 @@ end
     stem!(text, flags [;kwargs...])
 
 """
-function stem!(text::AbstractString)
+function stem(text::AbstractString)
     sd = StringDocument(text)
 	stem!(sd)
     return sd.text
@@ -113,52 +115,55 @@ end
 
 
 """
-    preprocess(sentence, flags [;prepare=true, stem=false])
+    preprocess(sentence, flags [;isprepared=false, isstemmed=true])
 
 Applies preprocessing to one sentence considered to be an
 AbstractString.
 """
-function preprocess!(sentence::AbstractString,
-                     flags::UInt32;
-                     prepare::Bool=true,
-                     stem::Bool=false)
-    # Pre process sentences: iterate over sentences and apply
-    # prepare, stem to each sentence indivicually
-    #TODO(Corneliu) Make prepare! and stem! efficient:
-    #               now they create objects to operate and
-    #               process the sentences returning the text field.
+function preprocess(sentence::AbstractString,
+                    flags::UInt32;
+                    isprepared::Bool=false,
+                    isstemmed::Bool=true)
     # Prepare
-    prepare && prepare!(sentence, flags)
+    if !isprepared
+        sentence = prepare(sentence, flags)
+    end
     # Stemming
-    stem && stem!(sentence)
+    if !isstemmed
+        sentence = stem(sentence)
+    end
     return sentence
 end
 
-function preprocess!(document::Vector{S},
-                     flags::UInt32;
-                     prepare::Bool=true,
-                     stem::Bool=false
-                    ) where S<:AbstractString
-    for sentence in document
-        preprocess!.(sentence, flags, prepare=prepare, stem=stem)
-    end
-    return document
+function preprocess(document::Vector{S},
+                    flags::UInt32;
+                    isprepared::Bool=false,
+                    isstemmed::Bool=true
+                   ) where S<:AbstractString
+    return [preprocess.(sentence, flags, isprepared=isprepared,
+                        isstemmed=isstemmed)
+            for sentence in document]
 end
 
-function preprocess!(documents::Vector{Vector{S}},
-                     flags::UInt32;
-                     prepare::Bool=true,
-                     stem::Bool=false
-                    ) where S<:AbstractString
-    for doc in documents
-        preprocess!(doc, flags, prepare=prepare, stem=stem)
-    end
-    return documents
+function preprocess(documents::Vector{Vector{S}},
+                    flags::UInt32;
+                    isprepared::Bool=false,
+                    isstemmed::Bool=true
+                   ) where S<:AbstractString
+    return [preprocess(doc, flags, isprepared=isprepared, isstemmed=isstemmed)
+            for doc in documents]
 end
 
-preprocess(x, args...; kwargs...) = begin
-    x_copy = Base.deepcopy(x)
-    return preprocess!(x_copy, args...; kwargs...)
+function preprocess_query(query::AbstractString)
+    needles = extract_tokens(Unicode.normalize(query,
+                                               casefold=true,
+                                               stripcc=true,
+                                               stripmark=true))
+    return needles
+end
+
+function preprocess_query(query::Vector{S}) where S<:AbstractString
+    return Unicode.normalize.(query, casefold=true, stripcc=true, stripmark=true)
 end
 
 
