@@ -243,6 +243,10 @@ function load_search_configs(filename::AbstractString)
     return search_configs
 end
 
+function load_search_configs(filenames::Vector{S}) where S<:AbstractString
+    return vcat((load_search_configs(file) for file in filenames)...)
+end
+
 
 
 """

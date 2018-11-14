@@ -30,8 +30,8 @@ A detailed feature list:
         - [ ] PDF files **TODO**
         - [ ] Microsoft like (.doc, .xls etc)
 - Engine configuration:
-    - [x] Multiple corpora data configurations in one file
-    - [ ] Individual corpus data configuration
+    - [x] Single file for multiple data configurations
+    - [x] Multiple files for data configurations
     - [ ] General engine configuration
 - Search types:
     - Classic Search:

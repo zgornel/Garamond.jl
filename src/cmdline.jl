@@ -8,6 +8,7 @@ function get_commandline_arguments(args::Vector{String})
 		"--engine-config"
 			help = "search engine configuration file"
 			default = ""
+        #TODO(Corneliu): Add -v (verbosity) argument
 		### "--webpage", "-w"
 		### 	help = "the webpage to display"
 		### 	default = ""
