@@ -106,11 +106,11 @@ end
 
 
 """
-    make_searcher(sconf)
+    build_searcher(sconf)
 
 Creates a Searcher from a SearchConfig.
 """
-function make_searcher(sconf::SearchConfig{T}) where T
+function build_searcher(sconf::SearchConfig{T}) where T
     # Parse file
     documents, metadata_vector = sconf.parser(sconf.data_path)
     # Create metadata documents; output is Vector{Vector{String}}
@@ -226,19 +226,19 @@ end
 ##################
 # Load searchers #
 ##################
-# Loadin process flow:
+# Loading process flow:
 #   1. Parse configuration file using `load_search_configs`
 #   2. The resulting Vector{SearchConfig} is passed to `load_searchers`
 #      (each SearchConfig contains the data filepath, corpus name etc.
 #   3. Parse the data file, obtain Corpus and create specified Searcher
-function load_searchers(data_config_path::AbstractString)
-    sconfs = load_search_configs(data_config_path)
+function load_searchers(paths)
+    sconfs = load_search_configs(paths)
     srchers = load_searchers(sconfs)
     return srchers
 end
 
 function load_searchers(sconfs::Vector{SearchConfig{T}}) where T<:AbstractId
-    srchers = [make_searcher(sconf) for sconf in sconfs]
+    srchers = [build_searcher(sconf) for sconf in sconfs]
 	return srchers
 end
 

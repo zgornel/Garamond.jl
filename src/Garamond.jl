@@ -52,21 +52,12 @@ module Garamond
     export
         search,
         load_searchers,
-        embed_document,
-        AbstractId,
-        HashId,
-        StringId,
-        SearchConfig,
         AbstractSearcher,
         Searcher,
+        SearchConfig,
         SearchResult,
-        id,
         enable!,
         disable!,
-        prepare,
-        preprocess,
-        summarize,
-        isenabled,
         print_search_results
 
     # Include section
