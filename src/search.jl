@@ -59,7 +59,7 @@ function search(srchers::V,
     # or start julia with:
     #   `env OPENBLAS_NUM_THREADS=1 julia`
     ###################################################################
-    for i in 1:n_enabled
+    @threads for i in 1:n_enabled
         # Get corpus search results
         results[i] = search(srchers[enabled_searchers[i]],
                             query,

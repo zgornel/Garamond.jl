@@ -2,16 +2,16 @@
 function get_commandline_arguments(args::Vector{String})
 	s = ArgParseSettings()
 	@add_arg_table s begin
-		"--data-config", "-d"
-			help = "data configuration file"
-			action = :append_arg
-		"--engine-config", "-e"
-			help = "search engine configuration file"
-			default = ""
+        "--data-config", "-d"
+            help = "data configuration file"
+            action = :append_arg
+        "--engine-config", "-e"
+            help = "search engine configuration file"
+            default = ""
         "--verbose", "-v"
-			help = "verbosity option"
-			default = "Debug"
-		"--socket", "-s"
+            help = "verbosity option"
+            default = "Debug"
+        "--socket", "-s"
             help = "user specified UNIX socket for data communication"
 		    default = "/tmp/garamond/sockets/socket1"
         "--query", "-q"
