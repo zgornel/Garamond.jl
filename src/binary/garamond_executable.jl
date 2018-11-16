@@ -18,15 +18,7 @@ Base.@ccallable function garamond_executable(ARGS::Vector{String})::Cint
 
     # Parse command line arguments
     args = get_commandline_arguments(ARGS)
-    println("~ GARAMOND ~")
-    ### wp = args["webpage"]
-    ### dconf = args["data-config"]
-    ### phttp = args["http-port"]
-
-    ### # Start web server
-    ### @assert !isempty(dconf) && isfile(dconf)
-    ### start_http_server(wp, dconf, phttp)
-
+    # TODO: Implement logic similar to garamond.jl
     return 0
 end
 

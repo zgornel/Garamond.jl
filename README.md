@@ -86,12 +86,34 @@ A detailed feature list:
         - [ ] Multi-core + task scheduling ([Dispatcher.jl](https://github.com/invenia/Dispatcher.jl) for distributed corpora **TODO**
         - [ ] Cluster support **TODO**
 
+## Running in server/client mode
+ - **Server mode**: In server mode, Garamond listens to a socket (i.e.`/tmp/garamond/sockets/socket1`) for incoming queries. Once the query recived it is processed and the answer written back to same socket
+ - **Client mode**: A Garamond client writes the query to a socket where the server listens and waits the search results.
+ Both modes can be exemplified using the `garamond.jl` script:
+ ```
+ $ ./garamond.jl -d ../extras_for_Garamond/data/Cornel/delimited/config_cornel_data_classic.json -s /tmp/garamond/sockets/socket1 --server
+ # ~ GARAMOND ~ v.0.0.0 (commit 12f88b4+)
+ #
+ # Parsing library_big.tsv... 12%|███                      |  ETA: 0:00:03
+ # ┌ Debug: [main] Waiting for query...
+ # └ @ Garamond ~/projects/Garamond.jl/src/fsm.jl:43
+ # ┌ Debug:        [io module] Waiting for data from socket...
+ # ...
+ ```
+ With the server running, the client can connect and run a query:
+ ```
+ $ ./garamond.jl --client --q "arthur clarke"
+ #~ GARAMOND ~ v.0.0.0 (commit 12f88b4+)
+ #
+ # [{"id":{"id":"biglib-classic"},"query_matches":{"d":{"0.52403444":[1,2],"0.36279306":[3],"0.42875543":[6,7],"0.39302582":[4,5]}},"needle_matches":{"clarke":1.5272124,"arthur":1.5272124},"suggestions":{"d":{}}},{"id":{"id":"techlib-classic"},"query_matches":{"d":{}},"needle_matches":{},"suggestions":{"d":{}}}]
+ ```
+
 
 ## Immediate TODOs
-- Prototype asynchronous search update mechanism for index/search model update based (may require developing `DispatcherCache.jl` first for multi-core support)
+- **WIP** ~~Prototype asynchronous search update mechanism for index/search model update based (may require developing `DispatcherCache.jl` first for multi-core support)~~
+- **WIP** ~~Stream and socket IO~~
+- **WIP** ~~Minimal command line interface: options for configs, I/O types, logging, parallelism(?)~~
 - Support for PDFs, archives, other files (see Taro.jl, TranscodingStreams.jl)
-- Stream and socket IO
-- Minimal command line interface: options for configs, I/O types, logging, parallelism(?)
 - Proper API documentation (auto-generated from doc-strings, Documenter.jl?)
 - Minimalistic HTTP server (new package GaramondHTTPServer.jl ?)
 - Take text pre-processing seriously (optimization + flag checking + support skipping patterns from processing)

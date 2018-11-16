@@ -23,10 +23,6 @@ function fsm(data_config_paths,
     srcher_channel = Channel(0)
     io_channel = Channel(0)
 
-    # Logging
-    logger = ConsoleLogger(stdout, Logging.Debug)
-    global_logger(logger)
-
     # Load data
     srchers = load_searchers(data_config_paths)
 
@@ -34,22 +30,21 @@ function fsm(data_config_paths,
     #@async updater(data, 1, channel=srcher_channel)
 
     # Start I/O listner
-    socket =
     @async ioserver(socket, channel=io_channel)
 
     # Main loop
     n = 3 # Maximum 3 searches and its over :)
     while n > 0
         if isready(srcher_channel)
-            @info "[main] updating!"
-            data = take!(srcher_channel)
+            @debug "[main] updating!"
+            srchers = take!(srcher_channel)
             n-=1
        else
-           @info "[main] Waiting for query..."
+           @debug "[main] Waiting for query..."
            QUERY = take!(io_channel)
-           @info "[main] QUERY: $QUERY"
+           @debug "[main] QUERY: $QUERY"
            result = search(srchers, QUERY)
-           @info "[main] Writing result for query..."
+           @debug "[main] Writing result for query..."
            put!(io_channel, result)
        end
     end

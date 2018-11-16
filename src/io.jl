@@ -18,17 +18,17 @@ function ioserver(socketfile=""; channel=Channel(0))
     while true
         conn = accept(server)
         @async while isopen(conn)
-            @info "\t[io module] Waiting for data from socket..."
+            @debug "\t[io module] Waiting for data from socket..."
             query = readline(conn, keep=true)
-            @info "\t[io module] received: $query"
+            @debug "\t[io module] received: $query"
             # Send query to FSM and get response
             put!(channel, query)
             search_results = take!(channel)
             # Return response
-            @info "\t[io module] Writing to socket ..."
+            @debug "\t[io module] Writing to socket ..."
             buf = IOBuffer()
             write(conn, json(search_results)*"\n")
-            @info "\t[io module] Written the data."
+            @debug "\t[io module] Written the data."
         end
     end
     return nothing
@@ -44,5 +44,5 @@ function iosearch(connection, query)  # search option would go here
         @error "Connection is is closed."
     end
     # Return Dict
-    JSON.parse(response)
+    println(stdout, response)
 end
