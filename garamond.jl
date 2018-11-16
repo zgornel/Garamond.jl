@@ -26,6 +26,9 @@ function main()
     ### @assert !isempty(dconf) && isfile(dconf)
     ### start_http_server(wp, dconf, phttp)
 
+    # Start FSM
+    ###fsm()
+
     return 0
 end
 

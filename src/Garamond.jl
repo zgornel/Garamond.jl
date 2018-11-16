@@ -34,7 +34,9 @@ module Garamond
     using ConceptnetNumberbatch, Word2Vec
     using HNSW, NearestNeighbors, Distances
     using LightGraphs: Graph, pagerank
-    using JSON, Glob
+    using JSON
+    using Glob
+    using Sockets
 
     # Import section (extendable methods)
     import Base: size, length, show, keys, values, push!,
@@ -67,12 +69,14 @@ module Garamond
     include("utils_text_lang.jl")
     include("embeddings.jl")
     include("search_structures.jl")
+    include("update.jl")
     include("search.jl")
     include("results.jl")
     include("parsers/delimited_formats.jl")
     include("parsers/directory_formats.jl")
     include("parsers/no_parse.jl")
     include("cmdline.jl")
-    ###include("servers.jl")
+    include("io.jl")
+    include("fsm.jl")
 
 end # module
