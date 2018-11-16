@@ -24,11 +24,11 @@ A detailed feature list:
     - [x] Summarization support (index [TextRank](https://en.wikipedia.org/wiki/Automatic_summarization#Unsupervised_approach:_TextRank)-based summary)
     - [ ] Parallelism: green light or hardware threads **TODO**
     - [x] Update support (real-time, once-every-x) **WIP**
-    - File support:
+    - [x] Multiple files/directories support:
         - [x] Text files
         - [ ] Compressed files **TODO**
         - [ ] PDF files **TODO**
-        - [ ] Microsoft like (.doc, .xls etc)
+        - [ ] Microsoft/Libre Office files (.doc, .xls etc)
 - Engine configuration:
     - [x] Single file for multiple data configurations
     - [x] Multiple files for data configurations
