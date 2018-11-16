@@ -1,7 +1,7 @@
 ###############################################################################
 # File that is to be compiled with juliac.jl to obtain a Garamond binary blob #
 ###############################################################################
-module MainGaramond
+module GaramondExecutable
 
 # Set variables
 LOCAL_PACKAGES = expanduser("~/projects/")
@@ -14,7 +14,7 @@ using Garamond
 ###################################
 # Main compilable module function #
 ###################################
-Base.@ccallable function garamondmain(ARGS::Vector{String})::Cint
+Base.@ccallable function garamond_executable(ARGS::Vector{String})::Cint
 
     # Parse command line arguments
     args = get_commandline_arguments(ARGS)
