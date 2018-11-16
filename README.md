@@ -23,7 +23,7 @@ A detailed feature list:
     - [x] A directory (all files in all subdirs that fit a globbing pattern are indexed)
     - [x] Summarization support (index [TextRank](https://en.wikipedia.org/wiki/Automatic_summarization#Unsupervised_approach:_TextRank)-based summary)
     - [ ] Parallelism: green light or hardware threads **TODO**
-    - [ ] Update support (real-time, once-every-x) **TODO**
+    - [x] Update support (real-time, once-every-x) **WIP**
     - File support:
         - [x] Text files
         - [ ] Compressed files **TODO**
@@ -75,13 +75,13 @@ A detailed feature list:
             - [x] [KD-tree](https://en.wikipedia.org/wiki/K-d_tree) (multiple metrics)
             - [x] [HNSW](https://arxiv.org/abs/1603.09320) (multiple metrics supported)
     - I/O Iterface
-        - [ ] Socket **TODO**
-        - [ ] Streams **TODO**
+        - [x] Socket **WIP**
+        - [x] Streams **WIP**
     - Per-corpus embedding training
         - [x] Word2Vec (manual)
         - [ ] Conceptnet **TODO?**
         - [ ] GloVe **TODO?**
-    - Parallelism
+    - Parallelism forms supported
         - [x] Multi-threading (each corpus is searched withing a hardware thread)
         - [ ] Multi-core + task scheduling ([Dispatcher.jl](https://github.com/invenia/Dispatcher.jl) for distributed corpora **TODO**
         - [ ] Cluster support **TODO**
