@@ -114,7 +114,7 @@ function search(srcher::Searcher{I,D,E,M},
     needle_popularity = zeros(DEFAULT_COUNT_ELEMENT_TYPE, p)   # needle relevance
     for wts in where_to_search
         # search
-        inds = search(srcher.search_data[wts], needles, search_method=search_method)
+        inds = search(srcher.search_data[wts], needles, method=search_method)
         # select term importance vectors
         _M = view(srcher.search_data[wts].values, :, inds)
         @inbounds @simd for j in 1:p

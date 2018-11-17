@@ -211,7 +211,11 @@ function build_searcher(sconf::SearchConfig{T}) where T
         _srchtree_data = BKTree{String}()
         _srchtree_meta = BKTree{String}()
     end
-    # Build semantic searcher
+    # Remove corpus data if keep_data is false
+    if !sconf.keep_data
+        crps = Corpus(DEFAULT_DOCUMENT_TYPE[])
+    end
+    # Build searcher
     srcher = Searcher(sconf,
                       crps,
                       word_embeddings,

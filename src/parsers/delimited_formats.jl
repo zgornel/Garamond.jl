@@ -27,6 +27,7 @@ function __parser_delimited_format_1(filename::AbstractString,
                                      config::Dict;
                                      header::Bool = false,
                                      delimiter::String=DEFAULT_DELIMITER,
+                                     show_progress::Bool=DEFAULT_SHOW_PROGRESS,
                                      kwargs...  # unused kw arguments (used in other parsers)
                                     ) where T<:AbstractDocument
     # Initializations
@@ -86,6 +87,7 @@ function __parser_delimited_format_1(filename::AbstractString,
                 end
             end
         end
+        show_progress && next!(progressbar)
     end
     return documents, metadata_vector
 end

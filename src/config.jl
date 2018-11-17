@@ -44,6 +44,7 @@ mutable struct SearchConfig{I<:AbstractId}
     parser::Function                # parser function used to obtain corpus
     build_summary::Bool             # whether to summarize or not the documents
     summary_ns::Int                 # the number of sentences in the summary
+    keep_data::Bool                 # whether to keep document data, metadata
     # classic search
     count_type::Symbol              # search term counting type i.e. :tf, :tfidf etc (classic search)
     heuristic::Symbol               # search heuristic for recommendtations (classic search)
@@ -64,8 +65,9 @@ SearchConfig{I}() where I<:AbstractId =
                              DEFAULT_DELIMITER,
                              DEFAULT_GLOBBING_PATTERN,
                              DEFAULT_BUILD_SUMMARY,
-                             DEFAULT_SUMMARY_NS),
-        DEFAULT_BUILD_SUMMARY, DEFAULT_SUMMARY_NS,
+                             DEFAULT_SUMMARY_NS,
+                             DEFAULT_SHOW_PROGRESS),
+        DEFAULT_BUILD_SUMMARY, DEFAULT_SUMMARY_NS, DEFAULT_KEEP_DATA,
         DEFAULT_COUNT_TYPE, DEFAULT_HEURISTIC,
         "", DEFAULT_EMBEDDINGS_TYPE, DEFAULT_EMBEDDING_METHOD,
         DEFAULT_EMBEDDING_SEARCH_MODEL, DEFAULT_EMBEDDING_ELEMENT_TYPE)
@@ -82,9 +84,11 @@ SearchConfig(;
                                       DEFAULT_DELIMITER,
                                       DEFAULT_GLOBBING_PATTERN,
                                       DEFAULT_BUILD_SUMMARY,
-                                      DEFAULT_SUMMARY_NS),
+                                      DEFAULT_SUMMARY_NS,
+                                      DEFAULT_SHOW_PROGRESS),
           build_summary=DEFAULT_BUILD_SUMMARY,
           summary_ns=DEFAULT_SUMMARY_NS,
+          keep_data=DEFAULT_KEEP_DATA,
           count_type=DEFAULT_COUNT_TYPE,
           heuristic=DEFAULT_HEURISTIC,
           embeddings_path="",
@@ -94,7 +98,7 @@ SearchConfig(;
           embedding_element_type=DEFAULT_EMBEDDING_ELEMENT_TYPE) =
     # Call normal constructor
     SearchConfig(id, search, name, enabled, data_path, parser,
-                 build_summary, summary_ns,
+                 build_summary, summary_ns, keep_data,
                  count_type, heuristic,
                  embeddings_path, embeddings_type,
                  embedding_method, embedding_search_model,
@@ -135,8 +139,8 @@ function load_search_configs(filename::AbstractString)
         if !ismissing(id)
             sconfig.id = make_id(DEFAULT_ID_TYPE, id)
         end
-        globbing_pattern = get(dconfig, "globbing_pattern",
-                               DEFAULT_GLOBBING_PATTERN)
+        globbing_pattern = get(dconfig, "globbing_pattern", DEFAULT_GLOBBING_PATTERN)
+        show_progress = get(dconfig, "show_progress", DEFAULT_SHOW_PROGRESS)
         delimiter = get(dconfig, "delimiter", DEFAULT_DELIMITER)
         sconfig.search = Symbol(get(dconfig, "search", DEFAULT_SEARCH))
         sconfig.name = get(dconfig, "name", "")
@@ -144,12 +148,14 @@ function load_search_configs(filename::AbstractString)
         sconfig.data_path = get(dconfig, "data_path", "")
         sconfig.build_summary = get(dconfig, "build_summary", DEFAULT_BUILD_SUMMARY)
         sconfig.summary_ns = get(dconfig, "summary_ns", DEFAULT_SUMMARY_NS)
+        sconfig.keep_data = get(dconfig, "keep_data", DEFAULT_KEEP_DATA)
         sconfig.parser = get_parsing_function(Symbol(dconfig["parser"]),
                                               header,
                                               delimiter,
                                               globbing_pattern,
                                               sconfig.build_summary,
-                                              sconfig.summary_ns)
+                                              sconfig.summary_ns,
+                                              show_progress)
         sconfig.count_type = Symbol(get(dconfig, "count_type", DEFAULT_COUNT_TYPE))
         sconfig.heuristic = Symbol(get(dconfig, "heuristic", DEFAULT_HEURISTIC))
         sconfig.embeddings_path = get(dconfig, "embeddings_path", "")
@@ -189,6 +195,11 @@ function load_search_configs(filename::AbstractString)
         if !(typeof(sconfig.summary_ns) <: Integer) || sconfig.summary_ns <= 0
             @warn "$(sconfig.id) Forcing summary_ns=$DEFAULT_SUMMARY_NS."
             sconfig.summary_ns = DEFAULT_SUMMARY_NS
+        end
+        # keep_data
+        if !(typeof(sconfig.keep_data) <: Bool)
+            @warn "$(sconfig.keep_data) Forcing keep_data=$DEFAULT_KEEP_DATA."
+            sconfig.keep_data = DEFAULT_KEEP_DATA
         end
         # delimiter
         if !(typeof(delimiter) <: AbstractString) || length(delimiter) == 0
@@ -265,6 +276,7 @@ returns it.
     (for directory parsers only)
   * `summary_ns::Int` how many sentences to use in the summary (for directory
     parsers only)
+  * `show_progress::Bool` whether to show the progress when loading files
 
 Note: `parser` must be in the keys of the `PARSER_CONFIGS` constant. The name
       of the data parsing function is created as: `:__parser_<parser>` so,
@@ -276,7 +288,8 @@ function get_parsing_function(parser::Symbol,
                               delimiter::String,
                               globbing_pattern::String,
                               build_summary::Bool,
-                              summary_ns::Int) where T<:AbstractId
+                              summary_ns::Int,
+                              show_progress::Bool) where T<:AbstractId
     PREFIX = :__parser_
     # Construct the actual basic parsing function from parser name
     parsing_function  = eval(Symbol(PREFIX, parser))
@@ -292,7 +305,8 @@ function get_parsing_function(parser::Symbol,
                                 delimiter=delimiter,
                                 globbing_pattern=globbing_pattern,
                                 build_summary=build_summary,
-                                summary_ns=summary_ns)
+                                summary_ns=summary_ns,
+                                show_progress=show_progress)
     end
     return parsing_closure
 end

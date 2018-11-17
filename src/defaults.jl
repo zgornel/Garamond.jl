@@ -20,7 +20,8 @@ const DEFAULT_EMBEDDING_ELEMENT_TYPE = :Float32  # can be :Float32, :Float64
 const DEFAULT_PARSER = :no_parse
 const DEFAULT_GLOBBING_PATTERN = "*"  # Can be any regexp-like pattern
 const DEFAULT_DELIMITER = "|"  # For delimited files only (i.e. document is a line/record)
-###const DEFAULT_KEEP_CORPUS = true  #TODO(Corneliu) Actually use this thing.
+const DEFAULT_SHOW_PROGRESS = true  # Show progress while loading files (useful lor longer operations)
+const DEFAULT_KEEP_DATA = true  # whether to keep the actual document data, metadata
 
 
 
