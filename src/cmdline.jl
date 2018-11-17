@@ -13,7 +13,7 @@ function get_commandline_arguments(args::Vector{String})
             default = "Debug"
         "--socket", "-s"
             help = "user specified UNIX socket for data communication"
-		    default = "/tmp/garamond/sockets/socket1"
+            default = "/tmp/garamond/sockets/socket1"
         "--query", "-q"
             help = "query the search engine if in client mode"
             default = ""

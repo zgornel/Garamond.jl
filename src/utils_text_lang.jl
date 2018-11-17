@@ -103,7 +103,7 @@ end
 
 
 """
-    stem!(text, flags [;kwargs...])
+    stem(text, flags [;kwargs...])
 
 """
 function stem(text::AbstractString)

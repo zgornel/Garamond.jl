@@ -26,11 +26,6 @@ a `Vector{SearchResult}`.
      each corpus
   * `max_corpus_suggestions::Int` is the maximum number of suggestions to return for
      each missing needle from the search in a corpus
-
-# Examples
-```
-	...
-```
 """
 function search(srchers::V,
                 query;
@@ -96,11 +91,6 @@ The function returns an object of type SearchResult and the id of the searcher.
   * `max_matches::Int` is the maximum number of search results to return
   * `max_suggestions::Int` is the maximum number of suggestions to return for
      each missing needle
-
-# Examples
-```
-	...
-```
 """
 # Function that searches in a corpus'a metdata or
 # metadata + content for query (i.e. keyterms)
@@ -171,22 +161,23 @@ end
 
 
 """
-	Search function for searching using the term imporatances associated to a corpus.
+    search(termcnt, needles, method)
+
+Search function for searching using the term imporatances associated to a corpus.
 """
-function search(search_data::TermCounts,
-                needles::Vector{S};
-                search_method::Symbol=:exact) where S<:AbstractString
+function search(termcnt::TermCounts, needles::Vector{S}; method::Symbol=:exact
+               ) where S<:AbstractString
     # Initializations
     p = length(needles)
-    I = search_data.column_indices
-    V = search_data.values
-    m, n = size(search_data.values)  # m - no. of documents, n - no. of terms+1
+    I = termcnt.column_indices
+    V = termcnt.values
+    m, n = size(termcnt.values)  # m - no. of documents, n - no. of terms+1
     inds = fill(n,p)  # default value n i.e. return 0-vector from V
     # Get needle mutating and string matching functions
-    if search_method == :exact
+    if method == :exact
         needle_mutator = identity
         matching_function = isequal
-    else  # search_method == :regex
+    else  # method == :regex
         needle_mutator = (arg::S)->Regex(arg)
         matching_function = occursin
     end
@@ -195,11 +186,11 @@ function search(search_data::TermCounts,
     # Search
     haystack = keys(I)
     empty_vector = Int[]
-    if search_method == :exact
+    if method == :exact
         for (j, pattern) in enumerate(patterns)
             inds[j] = get(I, pattern, n)
         end
-    else  # search_method==:regex
+    else  # method==:regex
         for (j, pattern) in enumerate(patterns)
             for k in haystack
                 if matching_function(pattern, k)
@@ -213,7 +204,9 @@ end
 
 
 """
-    Search in the search tree for matches.
+    search_heuristically!(suggestions, search_tree, needles [;max_suggestions=1])
+
+Searches in the search tree for partial matches of the `needles`.
 """
 function search_heuristically!(suggestions::MultiDict{String,
                                     Tuple{DEFAULT_COUNT_ELEMENT_TYPE, String}},
