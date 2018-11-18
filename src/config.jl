@@ -38,7 +38,7 @@ mutable struct SearchConfig{I<:AbstractId}
     # general
     id::I                           # searcher/corpus id
     search::Symbol                  # search type i.e. :classic, :semantic
-    name::String                    # name of the searcher.corpus
+    description::String             # description of the searcher.corpus
     enabled::Bool                   # whether to use the corpus in search or not
     data_path::String               # file/directory path for the data (depends on what the parser accepts)
     parser::Function                # parser function used to obtain corpus
@@ -76,7 +76,7 @@ SearchConfig{I}() where I<:AbstractId =
 SearchConfig(;
           id=random_id(DEFAULT_ID_TYPE),
           search=DEFAULT_SEARCH,
-          name="",
+          description="",
           enabled=false,
           data_path="",
           parser=get_parsing_function(DEFAULT_PARSER,
@@ -97,7 +97,7 @@ SearchConfig(;
           embedding_search_model=DEFAULT_EMBEDDING_SEARCH_MODEL,
           embedding_element_type=DEFAULT_EMBEDDING_ELEMENT_TYPE) =
     # Call normal constructor
-    SearchConfig(id, search, name, enabled, data_path, parser,
+    SearchConfig(id, search, description, enabled, data_path, parser,
                  build_summary, summary_ns, keep_data,
                  count_type, heuristic,
                  embeddings_path, embeddings_type,
@@ -106,7 +106,7 @@ SearchConfig(;
 
 
 Base.show(io::IO, sconfig::SearchConfig) = begin
-    printstyled(io, "SearchConfig for $(sconfig.name)\n")
+    printstyled(io, "SearchConfig for $(sconfig.description)\n")
     _status = ifelse(sconfig.enabled, "enabled", "disabled")
     _status_color = ifelse(sconfig.enabled, :light_green, :light_black)
     printstyled(io, "`-[$_status]", color=_status_color)
@@ -149,7 +149,7 @@ function load_search_configs(filename::AbstractString)
         show_progress = get(dconfig, "show_progress", DEFAULT_SHOW_PROGRESS)
         delimiter = get(dconfig, "delimiter", DEFAULT_DELIMITER)
         sconfig.search = Symbol(get(dconfig, "search", DEFAULT_SEARCH))
-        sconfig.name = get(dconfig, "name", "")
+        sconfig.description = get(dconfig, "description", "")
         sconfig.enabled = get(dconfig, "enabled", false)
         sconfig.data_path = get(dconfig, "data_path", "")
         sconfig.build_summary = get(dconfig, "build_summary", DEFAULT_BUILD_SUMMARY)
@@ -178,7 +178,7 @@ function load_search_configs(filename::AbstractString)
         # Checks of the configuration parameter values;
         # No checks performed for:
         # - id (always works)
-        # - name (always works)
+        # - description (always works)
         # - enabled (must fail if wrong)
         # - parser (must fail if wrong)
         # - globbing_pattern (must fail if wrong)

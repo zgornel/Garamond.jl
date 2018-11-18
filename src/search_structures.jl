@@ -40,7 +40,7 @@ end
 # Useful methods
 id(srcher::Searcher{I,D,E,M}) where {I,D,E,M} = srcher.config.id::I
 
-name(srcher::Searcher{I,D,E,M}) where {I,D,E,M} = srcher.config.name
+description(srcher::Searcher{I,D,E,M}) where {I,D,E,M} = srcher.config.description
 
 isenabled(srcher::Searcher{I,D,E,M}) where {I,D,E,M} = srcher.config.enabled
 
@@ -89,7 +89,7 @@ show(io::IO, srcher::Searcher{I,D,E,M}) where {I,D,E,M} = begin
         _model_type = "unknown model"
     end
     printstyled(io, "-[$_embs_type]-[$_model_type] ")
-    printstyled(io, "$(name(srcher))", color=:normal)
+    printstyled(io, "$(description(srcher))", color=:normal)
     printstyled(io, ", $(length(srcher.search_data[:data])) embedded documents")
 end
 
