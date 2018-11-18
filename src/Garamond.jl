@@ -46,7 +46,6 @@ module Garamond
     import ConceptnetNumberbatch: embed_document
 
     # Abstract types
-    abstract type AbstractId end
     abstract type AbstractSearcher end
     abstract type AbstractSearchData end
 

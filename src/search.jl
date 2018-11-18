@@ -33,8 +33,8 @@ function search(srchers::V,
                 search_method::Symbol=DEFAULT_SEARCH_METHOD,
                 max_matches::Int=DEFAULT_MAX_MATCHES,
                 max_corpus_suggestions::Int=DEFAULT_MAX_CORPUS_SUGGESTIONS) where
-    {V<:Vector{<:Searcher{I,D,E,M} where I<:AbstractId where D<:AbstractDocument
-               where E where M<:AbstractSearchData}}
+        {V<:Vector{<:Searcher{D,E,M} where D<:AbstractDocument
+                   where E where M<:AbstractSearchData}}
     # Checks
     @assert search_type in [:data, :metadata, :all]
     @assert search_method in [:exact, :regex]
@@ -94,13 +94,13 @@ The function returns an object of type SearchResult and the id of the searcher.
 """
 # Function that searches in a corpus'a metdata or
 # metadata + content for query (i.e. keyterms)
-function search(srcher::Searcher{I,D,E,M},
+function search(srcher::Searcher{D,E,M},
                 query;
                 search_type::Symbol=:metadata,
                 search_method::Symbol=:exact,
                 max_matches::Int=10,
                 max_suggestions::Int=DEFAULT_MAX_CORPUS_SUGGESTIONS) where
-        {I<:AbstractId, D<:AbstractDocument, E, M<:AbstractDocumentCount}
+        {D<:AbstractDocument, E, M<:AbstractDocumentCount}
     # Tokenize
     needles = preprocess_query(query)
     # Initializations
@@ -252,14 +252,14 @@ get_embedding_eltype(::ConceptNet{L,K,E}) where
 
 
 # Semantic search method (M<:AbstractEmbeddingModel)
-function search(srcher::Searcher{I,D,E,M},
+function search(srcher::Searcher{D,E,M},
                 query;  # can be either a string or vector of strings
                 search_type::Symbol=:metadata,
                 search_method::Symbol=Symbol(),  #not used
                 max_matches::Int=10,
                 max_suggestions::Int=DEFAULT_MAX_CORPUS_SUGGESTIONS  # not used
                 ) where
-        {I<:AbstractId, D<:AbstractDocument, E, M<:AbstractEmbeddingModel}
+        {D<:AbstractDocument, E, M<:AbstractEmbeddingModel}
     # Tokenize
     needles = preprocess_query(query)
     # Initializations

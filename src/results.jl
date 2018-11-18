@@ -3,8 +3,8 @@
 #################################################
 
 # Search results from a single corpus
-struct SearchResult{I<:AbstractId, T<:AbstractFloat}
-    id::I
+struct SearchResult{T<:AbstractFloat}
+    id::StringId
     query_matches::MultiDict{T, Int}  # score => document indices
     needle_matches::Dict{String, T}  # needle => sum of scores
     suggestions::MultiDict{String, Tuple{T,String}} # needle => tuples of (score,partial match)

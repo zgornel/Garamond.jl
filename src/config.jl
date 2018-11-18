@@ -1,32 +1,17 @@
 ########################################################
 # Corpus Id's i.e. keys that uniquely identify corpora #
 ########################################################
-
-struct HashId <: AbstractId
-    id::UInt
-end
-
-
-struct StringId <: AbstractId
+struct StringId
     id::String
 end
 
-
+# Utils
 show(io::IO, id::StringId) = print(io, "id=\"$(id.id)\"")
-show(io::IO, id::HashId) = print(io, "id=0x$(string(id.id, base=16))")
-
-
-random_id(::Type{HashId}) = HashId(hash(rand()))
 random_id(::Type{StringId}) = StringId(randstring())
 
-
 # Construct IDs
-make_id(::Type{HashId}, id::String) = HashId(parse(UInt, id))  # the id has to be parsable to UInt
-make_id(::Type{HashId}, id::T) where T<:Number = HashId(UInt(abs(id)))  # may fail for floats!
 make_id(::Type{StringId}, id::T) where T<:AbstractString = StringId(String(id))
 make_id(::Type{StringId}, id::T) where T<:Number = StringId(string(id))
-
-const DEFAULT_ID_TYPE = StringId
 
 
 
@@ -34,9 +19,9 @@ const DEFAULT_ID_TYPE = StringId
 # SearchConfig #
 ################
 # SearchConfigs can be built from a data configuration file or manually
-mutable struct SearchConfig{I<:AbstractId}
+mutable struct SearchConfig
     # general
-    id::I                           # searcher/corpus id
+    id::StringId                    # searcher/corpus id
     search::Symbol                  # search type i.e. :classic, :semantic
     description::String             # description of the searcher.corpus
     enabled::Bool                   # whether to use the corpus in search or not
@@ -56,25 +41,9 @@ mutable struct SearchConfig{I<:AbstractId}
     embedding_element_type::Symbol  # Type of the embedding elements
 end
 
-
-SearchConfig{I}() where I<:AbstractId =
-    SearchConfig{I}(
-        random_id(I), DEFAULT_SEARCH, "", false, "",
-        get_parsing_function(DEFAULT_PARSER,
-                             false,
-                             DEFAULT_DELIMITER,
-                             DEFAULT_GLOBBING_PATTERN,
-                             DEFAULT_BUILD_SUMMARY,
-                             DEFAULT_SUMMARY_NS,
-                             DEFAULT_SHOW_PROGRESS),
-        DEFAULT_BUILD_SUMMARY, DEFAULT_SUMMARY_NS, DEFAULT_KEEP_DATA,
-        DEFAULT_COUNT_TYPE, DEFAULT_HEURISTIC,
-        "", DEFAULT_EMBEDDINGS_TYPE, DEFAULT_EMBEDDING_METHOD,
-        DEFAULT_EMBEDDING_SEARCH_MODEL, DEFAULT_EMBEDDING_ELEMENT_TYPE)
-
 # Keyword argument constructor; all arguments sho
 SearchConfig(;
-          id=random_id(DEFAULT_ID_TYPE),
+          id=random_id(StringId),
           search=DEFAULT_SEARCH,
           description="",
           enabled=false,
@@ -106,7 +75,7 @@ SearchConfig(;
 
 
 Base.show(io::IO, sconfig::SearchConfig) = begin
-    printstyled(io, "SearchConfig for $(sconfig.description)\n")
+    printstyled(io, "SearchConfig for $(sconfig.id)\n")
     _status = ifelse(sconfig.enabled, "enabled", "disabled")
     _status_color = ifelse(sconfig.enabled, :light_green, :light_black)
     printstyled(io, "`-[$_status]", color=_status_color)
@@ -129,7 +98,7 @@ function load_search_configs(filename::AbstractString)
     dict_configs = JSON.parse(open(fid->read(fid, String), filename))
     n = length(dict_configs)
     # Create search configurations
-    search_configs = [SearchConfig{DEFAULT_ID_TYPE}() for _ in 1:n]
+    search_configs = [SearchConfig() for _ in 1:n]
     removable = Int[]  # search configs that have problems
     must_have_keys = ["search", "data_path", "parser"]
     for (i, (sconfig, dconfig)) in enumerate(zip(search_configs, dict_configs))
@@ -141,10 +110,7 @@ function load_search_configs(filename::AbstractString)
         # Get search parameters accounting for missing values
         # by using default parameters where the case
         header = get(dconfig, "header", false)
-        id = get(dconfig, "id", missing)
-        if !ismissing(id)
-            sconfig.id = make_id(DEFAULT_ID_TYPE, id)
-        end
+        sconfig.id = make_id(StringId, get(dconfig, "id", randstring(10)))
         globbing_pattern = get(dconfig, "globbing_pattern", DEFAULT_GLOBBING_PATTERN)
         show_progress = get(dconfig, "show_progress", DEFAULT_SHOW_PROGRESS)
         delimiter = get(dconfig, "delimiter", DEFAULT_DELIMITER)
@@ -295,7 +261,7 @@ function get_parsing_function(parser::Symbol,
                               globbing_pattern::String,
                               build_summary::Bool,
                               summary_ns::Int,
-                              show_progress::Bool) where T<:AbstractId
+                              show_progress::Bool)
     PREFIX = :__parser_
     # Construct the actual basic parsing function from parser name
     parsing_function  = eval(Symbol(PREFIX, parser))
