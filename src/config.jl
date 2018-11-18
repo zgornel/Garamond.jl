@@ -131,7 +131,13 @@ function load_search_configs(filename::AbstractString)
     # Create search configurations
     search_configs = [SearchConfig{DEFAULT_ID_TYPE}() for _ in 1:n]
     removable = Int[]  # search configs that have problems
+    must_have_keys = ["search", "data_path", "parser"]
     for (i, (sconfig, dconfig)) in enumerate(zip(search_configs, dict_configs))
+        if !all(map(key->haskey(dconfig, key), must_have_keys))
+            @warn "$(sconfig.id) Missing options from [$must_have_keys]. Ignoring search configuration..."
+            push!(removable, i)  # if there is are no word embeddings, cannot search
+            continue
+        end
         # Get search parameters accounting for missing values
         # by using default parameters where the case
         header = get(dconfig, "header", false)
@@ -169,8 +175,8 @@ function load_search_configs(filename::AbstractString)
         sconfig.embedding_element_type = Symbol(get(dconfig,
                                                 "embedding_element_type",
                                                 DEFAULT_EMBEDDING_SEARCH_MODEL))
-        # Checks of the configuration parameter values; no checks
-        # for:
+        # Checks of the configuration parameter values;
+        # No checks performed for:
         # - id (always works)
         # - name (always works)
         # - enabled (must fail if wrong)
