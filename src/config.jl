@@ -39,6 +39,7 @@ mutable struct SearchConfig
     embedding_method::Symbol        # How to arrive at a single embedding from multiple i.e. :bow, :arora (semantic search)
     embedding_search_model::Symbol  # type of the search model i.e. :naive, :kdtree, :hnsw (semantic search)
     embedding_element_type::Symbol  # Type of the embedding elements
+    word2vec_filetype::Symbol       # Type of the embedding file (word2vec embeddings specific)
 end
 
 # Keyword argument constructor; all arguments sho
@@ -64,14 +65,16 @@ SearchConfig(;
           embeddings_type=DEFAULT_EMBEDDINGS_TYPE,
           embedding_method=DEFAULT_EMBEDDING_METHOD,
           embedding_search_model=DEFAULT_EMBEDDING_SEARCH_MODEL,
-          embedding_element_type=DEFAULT_EMBEDDING_ELEMENT_TYPE) =
+          embedding_element_type=DEFAULT_EMBEDDING_ELEMENT_TYPE,
+          word2vec_filetype=DEFAULT_WORD2VEC_FILETYPE) =
     # Call normal constructor
     SearchConfig(id, search, description, enabled, data_path, parser,
                  build_summary, summary_ns, keep_data,
                  count_type, heuristic,
                  embeddings_path, embeddings_type,
                  embedding_method, embedding_search_model,
-                 embedding_element_type)
+                 embedding_element_type,
+                 word2vec_filetype)
 
 
 Base.show(io::IO, sconfig::SearchConfig) = begin
@@ -135,12 +138,12 @@ function load_search_configs(filename::AbstractString)
                                              DEFAULT_EMBEDDINGS_TYPE))
         sconfig.embedding_method = Symbol(get(dconfig, "embedding_method",
                                               DEFAULT_EMBEDDING_METHOD))
-        sconfig.embedding_search_model = Symbol(get(dconfig,
-                                                "embedding_search_model",
+        sconfig.embedding_search_model = Symbol(get(dconfig, "embedding_search_model",
                                                 DEFAULT_EMBEDDING_SEARCH_MODEL))
-        sconfig.embedding_element_type = Symbol(get(dconfig,
-                                                "embedding_element_type",
+        sconfig.embedding_element_type = Symbol(get(dconfig, "embedding_element_type",
                                                 DEFAULT_EMBEDDING_SEARCH_MODEL))
+        sconfig.word2vec_filetype = Symbol(get(dconfig, "word2vec_filetype",
+                                               DEFAULT_WORD2VEC_FILETYPE))
         # Checks of the configuration parameter values;
         # No checks performed for:
         # - id (always works)
@@ -218,6 +221,10 @@ function load_search_configs(filename::AbstractString)
             if !(sconfig.embedding_element_type in [:Float32, :Float64])
                 @warn "$(sconfig.id) Forcing embedding_element_type=$DEFAULT_EMBEDDING_ELEMENT_TYPE."
                 sconfig.embedding_element_type = DEFAULT_EMBEDDING_ELEMENT_TYPE
+            end
+            if !(sconfig.word2vec_filetype in [:binary, :text])
+                @warn "$(sconfig.id) Forcing word2vec_filetype=$DEFAULT_WORD2VEC_FILETYPE."
+                sconfig.word2vec_filetype = DEFAULT_WORD2VEC_FILETYPE
             end
         end
     end

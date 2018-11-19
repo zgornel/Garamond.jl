@@ -345,9 +345,9 @@ version = "1.0.2"
 
 [[PackageCompiler]]
 deps = ["ArgParse", "Libdl", "Pkg", "Serialization", "SnoopCompile", "Test", "WinRPM"]
-git-tree-sha1 = "58ae9646b6a25bb2ebd1ed1e74e22aa02375c3a7"
+git-tree-sha1 = "ba059afb6e9300fb4b059669cd695521e166c670"
 uuid = "9b87118b-4619-50d2-8e1e-99f35a4d4d9d"
-version = "0.5.0"
+version = "0.5.1"
 
 [[Parameters]]
 deps = ["Markdown", "OrderedCollections", "REPL", "Test"]

@@ -164,7 +164,7 @@ function build_searcher(sconf::SearchConfig)
                                               data_type = _eltype)
         elseif sconf.embeddings_type == :word2vec
             word_embeddings = wordvectors(sconf.embeddings_path, _eltype,
-                                          kind=:binary)
+                                          kind=sconf.word2vec_filetype)
         else
             @error "$(sconf.embeddings_type) embeddings not supported."
         end

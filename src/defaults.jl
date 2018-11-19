@@ -16,6 +16,7 @@ const DEFAULT_EMBEDDING_METHOD = :bow  # can be :bow or :arora
 const DEFAULT_EMBEDDINGS_TYPE = :conceptnet  # can be :word2vec or :conceptnet
 const DEFAULT_EMBEDDING_SEARCH_MODEL = :naive  # can be :naive, :kdtree or :hnsw
 const DEFAULT_EMBEDDING_ELEMENT_TYPE = :Float32  # can be :Float32, :Float64
+const DEFAULT_WORD2VEC_FILETYPE = :binary  # can be :binary or :text
 # Various document parsing constants
 const DEFAULT_PARSER = :no_parse
 const DEFAULT_GLOBBING_PATTERN = "*"  # Can be any regexp-like pattern
