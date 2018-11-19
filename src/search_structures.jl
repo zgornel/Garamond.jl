@@ -115,8 +115,12 @@ function build_searcher(sconf::SearchConfig)
     # Create metadata documents; output is Vector{Vector{String}}
     documents_meta = meta2sv.(metadata_vector)
     # Pre-process documents
-    documents = preprocess(documents, TEXT_STRIP_FLAGS)
-    documents_meta = preprocess(documents_meta, METADATA_STRIP_FLAGS)
+    documents = preprocess(documents,
+                           TEXT_STRIP_FLAGS,
+                           isstemmed=!sconf.stem_words)
+    documents_meta = preprocess(documents_meta,
+                                METADATA_STRIP_FLAGS,
+                                isstemmed=!sconf.stem_words)
     # Build document and document metadata corpora
     # Note: the metadata is kept as well for the purpose of
     #       converying information regarding what is being

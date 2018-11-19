@@ -30,6 +30,7 @@ mutable struct SearchConfig
     build_summary::Bool             # whether to summarize or not the documents
     summary_ns::Int                 # the number of sentences in the summary
     keep_data::Bool                 # whether to keep document data, metadata
+    stem_words::Bool                # whether to stem data or not
     # classic search
     count_type::Symbol              # search term counting type i.e. :tf, :tfidf etc (classic search)
     heuristic::Symbol               # search heuristic for recommendtations (classic search)
@@ -59,6 +60,7 @@ SearchConfig(;
           build_summary=DEFAULT_BUILD_SUMMARY,
           summary_ns=DEFAULT_SUMMARY_NS,
           keep_data=DEFAULT_KEEP_DATA,
+          stem_words=DEFAULT_STEM_WORDS,
           count_type=DEFAULT_COUNT_TYPE,
           heuristic=DEFAULT_HEURISTIC,
           embeddings_path="",
@@ -69,7 +71,7 @@ SearchConfig(;
           word2vec_filetype=DEFAULT_WORD2VEC_FILETYPE) =
     # Call normal constructor
     SearchConfig(id, search, description, enabled, data_path, parser,
-                 build_summary, summary_ns, keep_data,
+                 build_summary, summary_ns, keep_data, stem_words,
                  count_type, heuristic,
                  embeddings_path, embeddings_type,
                  embedding_method, embedding_search_model,
@@ -124,6 +126,7 @@ function load_search_configs(filename::AbstractString)
         sconfig.build_summary = get(dconfig, "build_summary", DEFAULT_BUILD_SUMMARY)
         sconfig.summary_ns = get(dconfig, "summary_ns", DEFAULT_SUMMARY_NS)
         sconfig.keep_data = get(dconfig, "keep_data", DEFAULT_KEEP_DATA)
+        sconfig.stem_words = get(dconfig, "stem_words", DEFAULT_STEM_WORDS)
         sconfig.parser = get_parsing_function(Symbol(dconfig["parser"]),
                                               header,
                                               delimiter,
@@ -175,6 +178,11 @@ function load_search_configs(filename::AbstractString)
         if !(typeof(sconfig.keep_data) <: Bool)
             @warn "$(sconfig.keep_data) Forcing keep_data=$DEFAULT_KEEP_DATA."
             sconfig.keep_data = DEFAULT_KEEP_DATA
+        end
+        # stem_words
+        if !(typeof(sconfig.stem_words) <: Bool)
+            @warn "$(sconfig.stem_words) Forcing stem_words=$DEFAULT_STEM_WORDS."
+            sconfig.stem_words = DEFAULT_STEM_WORDS
         end
         # delimiter
         if !(typeof(delimiter) <: AbstractString) || length(delimiter) == 0
