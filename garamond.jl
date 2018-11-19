@@ -40,7 +40,7 @@ function main()
     global_logger(logger)
 
     # Start FSM
-    println("~ GARAMOND ~ v.0.0.0 (commit 12f88b4+)\n")
+    println("~ GARAMOND ~ $(Garamond.printable_version())\n")
     if is_server && !is_client
         Garamond.fsm(data_config_paths, socket, engine_config_path, verbosity)
     elseif is_client  # if both client and server set, client wins

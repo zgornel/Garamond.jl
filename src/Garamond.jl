@@ -77,5 +77,6 @@ module Garamond
     include("cmdline.jl")
     include("io.jl")
     include("fsm.jl")
+    include("version.jl")
 
 end # module
