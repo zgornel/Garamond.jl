@@ -96,19 +96,19 @@ function prepare(text::AbstractString, flags::UInt32;
                                           stripignore=stripignore, stripcc=stripcc,
                                           stable=stable,kwargs...))
     sdc = Base.deepcopy(sd)
-	prepare!(sdc, flags)
+    prepare!(sdc, flags)
     return sdc.text
 end
 
 
 
 """
-    stem!(text, flags [;kwargs...])
+    stem(text, flags [;kwargs...])
 
 """
 function stem(text::AbstractString)
     sd = StringDocument(text)
-	stem!(sd)
+    stem!(sd)
     return sd.text
 end
 

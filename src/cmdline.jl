@@ -2,29 +2,30 @@
 function get_commandline_arguments(args::Vector{String})
 	s = ArgParseSettings()
 	@add_arg_table s begin
-		"--data-config"
-			help = "data configuration file"
-			default = ""
-		"--engine-config"
-			help = "search engine configuration file"
-			default = ""
-		### "--webpage", "-w"
-		### 	help = "the webpage to display"
-		### 	default = ""
-		### "--http-port", "-p"
-		### 	help = "use specified port for HTTP related communication"
-		### 	default = 9999
-		### 	arg_type = Int
-		### "--data-port"
-		### 	help = "use specified port for TCP data communication"
-		### 	default = 9998
-		### 	arg_type = Int
-		### "--socket", "-s"
-		### 	help = "use specified UNIX socket for data communication"
-		### 	default = ""
-		### "--server-only", "-o"
-		### 	help = "start in server only mode (i.e. without the HTTP server)"
-		### 	action = :store_true
+        "--data-config", "-d"
+            help = "data configuration file"
+            action = :append_arg
+        "--engine-config", "-e"
+            help = "search engine configuration file"
+            default = ""
+        "--log-level"
+            help = "logging level"
+            default = "info"
+        "--log", "-l"
+            help = "logging stream"
+            default = "stdout"
+        "--socket", "-s"
+            help = "UNIX socket for data communication"
+            default = "/tmp/garamond/sockets/socket1"
+        "--query", "-q"
+            help = "query the search engine if in client mode"
+            default = ""
+        "--client"
+            help = "client mode"
+            action = :store_true
+        "--server"
+            help = "server mode"
+            action = :store_true
 	end
 	
 	return parse_args(args,s)

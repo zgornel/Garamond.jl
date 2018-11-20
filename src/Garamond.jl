@@ -18,14 +18,15 @@
 module Garamond
 
     # Using section
-    using Logging
-    using Random
     using Unicode
+    using Random
+    using Logging
+    using Dates
     using DelimitedFiles
+    using Sockets
     using LinearAlgebra
     using SparseArrays
-    using Base.Threads
-    using Statistics: mean
+    using Statistics
     using DataStructures: Set, MultiDict
     using TextAnalysis, Languages, WordTokenizers
     using StringDistances, BKTrees
@@ -34,7 +35,8 @@ module Garamond
     using ConceptnetNumberbatch, Word2Vec
     using HNSW, NearestNeighbors, Distances
     using LightGraphs: Graph, pagerank
-    using JSON, Glob
+    using JSON
+    using Glob
 
     # Import section (extendable methods)
     import Base: size, length, show, keys, values, push!,
@@ -44,7 +46,6 @@ module Garamond
     import ConceptnetNumberbatch: embed_document
 
     # Abstract types
-    abstract type AbstractId end
     abstract type AbstractSearcher end
     abstract type AbstractSearchData end
 
@@ -52,21 +53,12 @@ module Garamond
     export
         search,
         load_searchers,
-        embed_document,
-        AbstractId,
-        HashId,
-        StringId,
-        SearchConfig,
         AbstractSearcher,
         Searcher,
+        SearchConfig,
         SearchResult,
-        id,
         enable!,
         disable!,
-        prepare,
-        preprocess,
-        summarize,
-        isenabled,
         print_search_results
 
     # Include section
@@ -76,12 +68,15 @@ module Garamond
     include("utils_text_lang.jl")
     include("embeddings.jl")
     include("search_structures.jl")
+    include("update.jl")
     include("search.jl")
     include("results.jl")
     include("parsers/delimited_formats.jl")
     include("parsers/directory_formats.jl")
     include("parsers/no_parse.jl")
     include("cmdline.jl")
-    ###include("servers.jl")
+    include("io.jl")
+    include("fsm.jl")
+    include("version.jl")
 
 end # module

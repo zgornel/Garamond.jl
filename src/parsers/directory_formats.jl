@@ -43,6 +43,7 @@ function __parser_directory_format_1(directory::AbstractString,
                                      globbing_pattern::String=DEFAULT_GLOBBING_PATTERN,
                                      build_summary::Bool=DEFAULT_BUILD_SUMMARY,
                                      summary_ns::Int=DEFAULT_SUMMARY_NS,
+                                     show_progress::Bool=DEFAULT_SHOW_PROGRESS,
                                      kwargs...  # unused kw arguments (used in other parsers)
                                     ) where T<:AbstractDocument
     # Initializations
@@ -79,7 +80,7 @@ function __parser_directory_format_1(directory::AbstractString,
         setfield!(metadata_vector[i], :name, readuntil(file,"\n"))  # set name the first line
         setfield!(metadata_vector[i], :id, file)  # set id the filename
         # Update progressbar
-        next!(progressbar)
+        show_progress && next!(progressbar)
     end
     return documents, metadata_vector
 end

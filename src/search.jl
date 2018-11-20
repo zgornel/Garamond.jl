@@ -26,11 +26,6 @@ a `Vector{SearchResult}`.
      each corpus
   * `max_corpus_suggestions::Int` is the maximum number of suggestions to return for
      each missing needle from the search in a corpus
-
-# Examples
-```
-	...
-```
 """
 function search(srchers::V,
                 query;
@@ -38,8 +33,8 @@ function search(srchers::V,
                 search_method::Symbol=DEFAULT_SEARCH_METHOD,
                 max_matches::Int=DEFAULT_MAX_MATCHES,
                 max_corpus_suggestions::Int=DEFAULT_MAX_CORPUS_SUGGESTIONS) where
-    {V<:Vector{<:Searcher{I,D,E,M} where I<:AbstractId where D<:AbstractDocument
-               where E where M<:AbstractSearchData}}
+        {V<:Vector{<:Searcher{D,E,M} where D<:AbstractDocument
+                   where E where M<:AbstractSearchData}}
     # Checks
     @assert search_type in [:data, :metadata, :all]
     @assert search_method in [:exact, :regex]
@@ -52,14 +47,14 @@ function search(srchers::V,
     # Search
     results = Vector{SearchResult}(undef, length(enabled_searchers))
     ###################################################################
-    # The `@threads` statement in front of the for loop here idicates
+    # A `@threads` statement in front of the for loop here idicates
     # the use of multi-threading. If multi-threading is used,
     # OPENBLAS multi-threading support has to be disabled by using:
     #   `export OPENBLAS_NUM_THREADS=1` in the shell
     # or start julia with:
     #   `env OPENBLAS_NUM_THREADS=1 julia`
     ###################################################################
-    @threads for i in 1:n_enabled
+    Threads.@threads for i in 1:n_enabled
         # Get corpus search results
         results[i] = search(srchers[enabled_searchers[i]],
                             query,
@@ -96,21 +91,16 @@ The function returns an object of type SearchResult and the id of the searcher.
   * `max_matches::Int` is the maximum number of search results to return
   * `max_suggestions::Int` is the maximum number of suggestions to return for
      each missing needle
-
-# Examples
-```
-	...
-```
 """
 # Function that searches in a corpus'a metdata or
 # metadata + content for query (i.e. keyterms)
-function search(srcher::Searcher{I,D,E,M},
+function search(srcher::Searcher{D,E,M},
                 query;
                 search_type::Symbol=:metadata,
                 search_method::Symbol=:exact,
                 max_matches::Int=10,
                 max_suggestions::Int=DEFAULT_MAX_CORPUS_SUGGESTIONS) where
-        {I<:AbstractId, D<:AbstractDocument, E, M<:AbstractDocumentCount}
+        {D<:AbstractDocument, E, M<:AbstractDocumentCount}
     # Tokenize
     needles = preprocess_query(query)
     # Initializations
@@ -124,7 +114,7 @@ function search(srcher::Searcher{I,D,E,M},
     needle_popularity = zeros(DEFAULT_COUNT_ELEMENT_TYPE, p)   # needle relevance
     for wts in where_to_search
         # search
-        inds = search(srcher.search_data[wts], needles, search_method=search_method)
+        inds = search(srcher.search_data[wts], needles, method=search_method)
         # select term importance vectors
         _M = view(srcher.search_data[wts].values, :, inds)
         @inbounds @simd for j in 1:p
@@ -171,22 +161,23 @@ end
 
 
 """
-	Search function for searching using the term imporatances associated to a corpus.
+    search(termcnt, needles, method)
+
+Search function for searching using the term imporatances associated to a corpus.
 """
-function search(search_data::TermCounts,
-                needles::Vector{S};
-                search_method::Symbol=:exact) where S<:AbstractString
+function search(termcnt::TermCounts, needles::Vector{S}; method::Symbol=:exact
+               ) where S<:AbstractString
     # Initializations
     p = length(needles)
-    I = search_data.column_indices
-    V = search_data.values
-    m, n = size(search_data.values)  # m - no. of documents, n - no. of terms+1
+    I = termcnt.column_indices
+    V = termcnt.values
+    m, n = size(termcnt.values)  # m - no. of documents, n - no. of terms+1
     inds = fill(n,p)  # default value n i.e. return 0-vector from V
     # Get needle mutating and string matching functions
-    if search_method == :exact
+    if method == :exact
         needle_mutator = identity
         matching_function = isequal
-    else  # search_method == :regex
+    else  # method == :regex
         needle_mutator = (arg::S)->Regex(arg)
         matching_function = occursin
     end
@@ -195,11 +186,11 @@ function search(search_data::TermCounts,
     # Search
     haystack = keys(I)
     empty_vector = Int[]
-    if search_method == :exact
+    if method == :exact
         for (j, pattern) in enumerate(patterns)
             inds[j] = get(I, pattern, n)
         end
-    else  # search_method==:regex
+    else  # method==:regex
         for (j, pattern) in enumerate(patterns)
             for k in haystack
                 if matching_function(pattern, k)
@@ -213,7 +204,9 @@ end
 
 
 """
-    Search in the search tree for matches.
+    search_heuristically!(suggestions, search_tree, needles [;max_suggestions=1])
+
+Searches in the search tree for partial matches of the `needles`.
 """
 function search_heuristically!(suggestions::MultiDict{String,
                                     Tuple{DEFAULT_COUNT_ELEMENT_TYPE, String}},
@@ -259,14 +252,14 @@ get_embedding_eltype(::ConceptNet{L,K,E}) where
 
 
 # Semantic search method (M<:AbstractEmbeddingModel)
-function search(srcher::Searcher{I,D,E,M},
+function search(srcher::Searcher{D,E,M},
                 query;  # can be either a string or vector of strings
                 search_type::Symbol=:metadata,
                 search_method::Symbol=Symbol(),  #not used
                 max_matches::Int=10,
                 max_suggestions::Int=DEFAULT_MAX_CORPUS_SUGGESTIONS  # not used
                 ) where
-        {I<:AbstractId, D<:AbstractDocument, E, M<:AbstractEmbeddingModel}
+        {D<:AbstractDocument, E, M<:AbstractEmbeddingModel}
     # Tokenize
     needles = preprocess_query(query)
     # Initializations

@@ -27,6 +27,7 @@ function __parser_delimited_format_1(filename::AbstractString,
                                      config::Dict;
                                      header::Bool = false,
                                      delimiter::String=DEFAULT_DELIMITER,
+                                     show_progress::Bool=DEFAULT_SHOW_PROGRESS,
                                      kwargs...  # unused kw arguments (used in other parsers)
                                     ) where T<:AbstractDocument
     # Initializations
@@ -55,7 +56,7 @@ function __parser_delimited_format_1(filename::AbstractString,
     @inbounds for i in 1:size(string_matrix,1)
         # Iterate and parse
         vline = strip.(view(string_matrix, i, :))
-        iszero(mod(i, _nl)) && next!(progressbar)
+        iszero(mod(i, _nl)) && show_progress && next!(progressbar)
         # Create document
         documents[i] = vline[fields_mask]
         metadata_vector[i] = TextAnalysis.DocumentMetadata(Languages.English(),
