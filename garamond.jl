@@ -20,6 +20,7 @@ function main()
     args = Garamond.get_commandline_arguments(ARGS)
     # Get the argument values
     data_config_paths = String.(args["data-config"])
+    #TODO(Corneliu): Use the engine_config_path
     engine_config_path = String(args["engine-config"])
     log_level = args["log-level"]
     logging_stream = args["log"]
@@ -35,7 +36,7 @@ function main()
     if is_server && !is_client
         # Server
         ########
-        Garamond.fsm(data_config_paths, socket, engine_config_path, log_level)
+        Garamond.fsm(data_config_paths, socket)
     elseif !is_server && is_client
         # Client
         ########

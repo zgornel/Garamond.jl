@@ -22,7 +22,7 @@ const DEFAULT_WORD2VEC_FILETYPE = :binary  # can be :binary or :text
 const DEFAULT_PARSER = :no_parse
 const DEFAULT_GLOBBING_PATTERN = "*"  # Can be any regexp-like pattern
 const DEFAULT_DELIMITER = "|"  # For delimited files only (i.e. document is a line/record)
-const DEFAULT_SHOW_PROGRESS = true  # Show progress while loading files (useful lor longer operations)
+const DEFAULT_SHOW_PROGRESS = false  # Show progress while loading files (useful lor longer operations)
 const DEFAULT_KEEP_DATA = true  # whether to keep the actual document data, metadata
 
 

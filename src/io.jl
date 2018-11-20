@@ -1,4 +1,4 @@
-function ioserver(socketfile=""; channel=Channel(0))
+function ioserver(socketfile=""; channel=Channel{String}(0))
     # Checks
     if issocket(socketfile)
         rm(socketfile)
@@ -18,17 +18,17 @@ function ioserver(socketfile=""; channel=Channel(0))
     while true
         conn = accept(server)
         @async while isopen(conn)
-            @debug "\t[io module] Waiting for data from socket..."
+            @debug "Waiting for data from socket..."
             query = readline(conn, keep=true)
-            @debug "\t[io module] received: $query"
+            @debug "received: $query"
             # Send query to FSM and get response
             put!(channel, query)
             search_results = take!(channel)
             # Return response
-            @debug "\t[io module] Writing to socket ..."
+            @debug "Writing to socket ..."
             buf = IOBuffer()
             write(conn, json(search_results)*"\n")
-            @debug "\t[io module] Written the data."
+            @debug "Written the data."
         end
     end
     return nothing
