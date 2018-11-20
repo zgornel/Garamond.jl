@@ -105,7 +105,7 @@ $ ./garamond.jl --server -d ../extras_for_Garamond/data/Cornel/delimited/config_
 % ./garamond.jl --client --q "arthur c clarke" --log-level debug
 [ [2018-11-18 15:37:33][DEBUG][garamond.jl:35] ~ GARAMOND ~ v"0.0.0" commit: 90f1a17 (2018-11-20)
 [ [2018-11-18 15:37:33][DEBUG][io.jl:42] >>> Query sent.
-[ [2018-11-18 15:37:36][DEBUG][io.jl:44] <<< Serach results received
+[ [2018-11-18 15:37:36][DEBUG][io.jl:44] <<< Search results received.
 [{"id":{"id":"biglib-classic"},"query_matches":{"d":{"0.5441896":[3],"0.78605163":[1,2],"0.64313316":[6,7],"0.5895387":[4,5]}},"needle_matches":{"clarke":1.5272124,"arthur":1.5272124,"c":1.5272124},"suggestions":{"d":{}}},{"id":{"id":"techlib-classic"},"query_matches":{"d":{"0.053899456":[1,5]}},"needle_matches":{"c":0.10779891},"suggestions":{"d":{}}}]
 ```
 **Note**: The client mode for `garamond.jl` serves testing purposes only and should not be used in production. A separate client (that just reads and writes to/from the socket) should be developed and readily available.
