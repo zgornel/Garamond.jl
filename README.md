@@ -75,8 +75,8 @@ A detailed feature list:
             - [x] [KD-tree](https://en.wikipedia.org/wiki/K-d_tree) (multiple metrics)
             - [x] [HNSW](https://arxiv.org/abs/1603.09320) (multiple metrics supported)
     - I/O Iterface
-        - [x] Socket **WIP**
-        - [x] Streams **WIP**
+        - [x] Input: receive query data through UNIX sockets (when in server mode)
+        - [x] Output: output to socket (when in server mode), to `STDOUT` when in client mode
     - Per-corpus embedding training
         - [x] Word2Vec (manual)
         - [ ] Conceptnet **TODO?**
@@ -85,6 +85,10 @@ A detailed feature list:
         - [x] Multi-threading (each corpus is searched withing a hardware thread)
         - [ ] Multi-core + task scheduling ([Dispatcher.jl](https://github.com/invenia/Dispatcher.jl) for distributed corpora **TODO**
         - [ ] Cluster support **TODO**
+- Other:
+    - [x] Logging mechanism
+    - [x] Client/server functionality
+    - [x] Pretty version support :)
 
 ## Running in server/client mode
  - **Server mode**: In server mode, Garamond listens to a socket (i.e.`/tmp/garamond/sockets/socket1`) for incoming queries. Once the query recived it is processed and the answer written back to same socket

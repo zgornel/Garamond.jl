@@ -1,8 +1,8 @@
 #!/bin/julia
 
-##########################################################################
-# File that is to be run with `julia run.jl` in order to start Garamond  #
-##########################################################################
+################################################
+# Garamond script for client/server operations #
+################################################
 module RunGaramond
 
 using Pkg
@@ -18,46 +18,45 @@ function main()
 
     # Parse command line arguments
     args = Garamond.get_commandline_arguments(ARGS)
-    # --
+    # Get the argument values
     data_config_paths = String.(args["data-config"])
     engine_config_path = String(args["engine-config"])
-    verbosity = args["verbose"]
+    log_level = args["log-level"]
+    logging_stream = args["log"]
     socket = args["socket"]
     query = args["query"]
-    is_client = args["client"]
-    is_server = args["server"]
-
+    is_client = get(args, "client", false)
+    is_server = get(args, "server", false)
     # Logging
-    if lowercase(verbosity) == "debug"
-        logger = ConsoleLogger(stdout, Logging.Debug)
-    elseif lowercase(verbosity) == "info"
-        logger = ConsoleLogger(stdout, Logging.Info)
-    elseif lowercase(verbosity) == "error"
-        logger = ConsoleLogger(stdout, Logging.Error)
-    else
-        logger = ConsoleLogger(stdout, Logging.Info)
-    end
+    logger = Garamond.build_logger(logging_stream, log_level)
     global_logger(logger)
-
-    # Start FSM
-    println("~ GARAMOND ~ $(Garamond.printable_version())\n")
+    # Start Garamond in either server or client mode
+    @debug "~ GARAMOND ~ $(Garamond.printable_version())\n"
     if is_server && !is_client
-        Garamond.fsm(data_config_paths, socket, engine_config_path, verbosity)
-    elseif is_client  # if both client and server set, client wins
+        # Server
+        ########
+        Garamond.fsm(data_config_paths, socket, engine_config_path, log_level)
+    elseif !is_server && is_client
+        # Client
+        ########
         conn = connect(socket)
         if !isempty(query)
             Garamond.iosearch(conn, query)
         else
-            @info "Empty query. Nothing to search ;)"
+            ###
+            # Do nothing, there is nothing to search
+            ###
         end
         close(conn)
         return 0
     else
-        @info "Use either '--server' of '--client' flags. Exiting."
+        @error "Use either '--server' of '--client' flags. Exiting."
         return 0
     end
 end
 
+
+# Start main Garamond function
 main()
 
 end # RunGaramond

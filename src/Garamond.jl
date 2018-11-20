@@ -18,14 +18,15 @@
 module Garamond
 
     # Using section
-    using Logging
-    using Random
     using Unicode
+    using Random
+    using Logging
+    using Dates
     using DelimitedFiles
+    using Sockets
     using LinearAlgebra
     using SparseArrays
-    using Base.Threads
-    using Statistics: mean
+    using Statistics
     using DataStructures: Set, MultiDict
     using TextAnalysis, Languages, WordTokenizers
     using StringDistances, BKTrees
@@ -36,7 +37,6 @@ module Garamond
     using LightGraphs: Graph, pagerank
     using JSON
     using Glob
-    using Sockets
 
     # Import section (extendable methods)
     import Base: size, length, show, keys, values, push!,
