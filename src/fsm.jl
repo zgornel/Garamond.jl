@@ -25,7 +25,7 @@ function fsm(data_config_paths,
     # Load data
     srchers = load_searchers(data_config_paths)
     # Start updater
-    ### srchers_channel = Channel{typeof(srchers)}(0)
+    srchers_channel = Channel{typeof(srchers)}(0)
     ### @async updater(srchers,
     ###                channels=srchers_channel,
     ###                update_interval=update_interval)
@@ -33,9 +33,9 @@ function fsm(data_config_paths,
     @async ioserver(socket, channel=io_channel)
     # Main loop
     while true
-        if isready(srcher_channel)
+        if isready(srchers_channel)
             @debug "Garamond is updating searchers ..."
-            srchers = take!(srcher_channel)
+            srchers = take!(srchers_channel)
             @debug "Searchers updated."
         else
             @debug "Waiting for query..."
