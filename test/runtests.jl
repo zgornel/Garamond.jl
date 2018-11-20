@@ -64,20 +64,24 @@ function generate_test_configurations(data_path::String,
     for _count_type in ["tf", "tfidf"]
         for _heuristic in ["jaro", "levenshtein"]
             for _build_summary in [false, true]
-                dconfig = Dict("id"=> _id,
-                               "search" => search_approach,
-                               "data_path" => data_path,
-                               "parser" => parser,
-                               "enabled" => true,
-                               "header" => false,
-                               "delimiter" => DELIMITER,
-                               "count_type" => _count_type,
-                               "heuristic" => _heuristic,
-                               "globbing_pattern" => GLOBBING_PATTERN,
-                               "build_summary" => _build_summary,
-                               "summary_ns" => 3)
-                push!(CLASSIC_CONFIGS, dconfig)
-                _id+= 1
+                for _keep_data in [false, true]
+                    dconfig = Dict("id"=> _id,
+                                   "search" => search_approach,
+                                   "data_path" => data_path,
+                                   "parser" => parser,
+                                   "enabled" => true,
+                                   "header" => false,
+                                   "delimiter" => DELIMITER,
+                                   "show_progress" => false,
+                                   "count_type" => _count_type,
+                                   "heuristic" => _heuristic,
+                                   "globbing_pattern" => GLOBBING_PATTERN,
+                                   "build_summary" => _build_summary,
+                                   "summary_ns" => 3,
+                                   "keep_data" => _keep_data)
+                    push!(CLASSIC_CONFIGS, dconfig)
+                    _id+= 1
+                end
             end
         end
     end
@@ -90,26 +94,30 @@ function generate_test_configurations(data_path::String,
             for _emb_model in ["naive", "brutetree", "kdtree", "hnsw"]
                 for _emb_eltype in ["Float32","Float64"]
                     for _build_summary in [false, true]
-                        _embs_path = ifelse(_embs_type=="conceptnet",
-                                "$(@__DIR__)/embeddings/conceptnet/sample_model.txt",
-                                "$(@__DIR__)/embeddings/word2vec/sample_model.bin")
-                        dconfig = Dict("id" => _id,
-                                       "search"=> search_approach,
-                                       "data_path" => data_path,
-                                       "parser" => parser,
-                                       "enabled" => true,
-                                       "header" => false,
-                                       "delimiter" => DELIMITER,
-                                       "embeddings_path" => _embs_path,
-                                       "embeddings_type" => _embs_type,
-                                       "embedding_method" => _emb_method,
-                                       "embedding_search_model" => _emb_model,
-                                       "embedding_element_type" => _emb_eltype,
-                                       "globbing_pattern" => GLOBBING_PATTERN,
-                                       "build_summary" => _build_summary,
-                                       "summary_ns" => 3)
-                        push!(SEMANTIC_CONFIGS, dconfig)
-                        _id+= 1
+                        for _keep_data in [false, true]
+                            _embs_path = ifelse(_embs_type=="conceptnet",
+                                    "$(@__DIR__)/embeddings/conceptnet/sample_model.txt",
+                                    "$(@__DIR__)/embeddings/word2vec/sample_model.bin")
+                            dconfig = Dict("id" => _id,
+                                           "search"=> search_approach,
+                                           "data_path" => data_path,
+                                           "parser" => parser,
+                                           "enabled" => true,
+                                           "header" => false,
+                                           "delimiter" => DELIMITER,
+                                           "show_progress" => false,
+                                           "embeddings_path" => _embs_path,
+                                           "embeddings_type" => _embs_type,
+                                           "embedding_method" => _emb_method,
+                                           "embedding_search_model" => _emb_model,
+                                           "embedding_element_type" => _emb_eltype,
+                                           "globbing_pattern" => GLOBBING_PATTERN,
+                                           "build_summary" => _build_summary,
+                                           "summary_ns" => 3,
+                                           "keep_data"=>_keep_data)
+                            push!(SEMANTIC_CONFIGS, dconfig)
+                            _id+= 1
+                        end
                     end
                 end
             end

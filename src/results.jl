@@ -3,8 +3,8 @@
 #################################################
 
 # Search results from a single corpus
-struct SearchResult{I<:AbstractId, T<:AbstractFloat}
-    id::I
+struct SearchResult{T<:AbstractFloat}
+    id::StringId
     query_matches::MultiDict{T, Int}  # score => document indices
     needle_matches::Dict{String, T}  # needle => sum of scores
     suggestions::MultiDict{String, Tuple{T,String}} # needle => tuples of (score,partial match)
@@ -44,9 +44,13 @@ function print_search_results(srcher::AbstractSearcher, result::SearchResult)
     printstyled("[$(id(srcher))] $nm search results")
     ch = ifelse(nm==0, ".", ":"); printstyled("$ch\n")
     for score in sort(collect(keys(result.query_matches)), rev=true)
-        for doc in (srcher.corpus[i] for i in result.query_matches[score])
-            printstyled("  $score ~ ", color=:normal, bold=true)
-            printstyled("$(metadata(doc))\n", color=:normal)
+        if isempty(srcher.corpus)
+            printstyled("*** Corpus data is missing ***", color=:normal)
+        else
+            for doc in (srcher.corpus[i] for i in result.query_matches[score])
+                printstyled("  $score ~ ", color=:normal, bold=true)
+                printstyled("$(metadata(doc))\n", color=:normal)
+            end
         end
     end
     ns > 0 && printstyled("$ns suggestions:\n")
@@ -76,10 +80,14 @@ function print_search_results(srchers::S,
         printstyled("`-[$(_result.id)] ", color=:cyan)  # hash
         printstyled("$(nm) search results")
         ch = ifelse(nm==0, ".", ":"); printstyled("$ch\n")
-        for score in sort(collect(keys(_result.query_matches)), rev=true)
-            for doc in (crps[i] for i in _result.query_matches[score])
-                printstyled("  $score ~ ", color=:normal, bold=true)
-                printstyled("$(metadata(doc))\n", color=:normal)
+        if isempty(crps)
+            printstyled("*** Corpus data is missing ***\n", color=:normal)
+        else
+            for score in sort(collect(keys(_result.query_matches)), rev=true)
+                for doc in (crps[i] for i in _result.query_matches[score])
+                    printstyled("  $score ~ ", color=:normal, bold=true)
+                    printstyled("$(metadata(doc))\n", color=:normal)
+                end
             end
         end
     end

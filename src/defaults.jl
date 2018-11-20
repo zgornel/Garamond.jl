@@ -5,6 +5,7 @@
 const DEFAULT_SEARCH = :classic  # Search approach
 const DEFAULT_BUILD_SUMMARY = false  # whether to summarize text before indexing
 const DEFAULT_SUMMARY_NS = 1  # Default number of sentences for a summary
+const DEFAULT_STEM_WORDS = false  # whether to stem words or not
 # Classic seatch defaults
 const DEFAULT_COUNT_TYPE = :tfidf  # can be :tf or :tfidf
 const DEFAULT_SEARCH_TYPE = :data  # can be :data or :metadata
@@ -16,11 +17,13 @@ const DEFAULT_EMBEDDING_METHOD = :bow  # can be :bow or :arora
 const DEFAULT_EMBEDDINGS_TYPE = :conceptnet  # can be :word2vec or :conceptnet
 const DEFAULT_EMBEDDING_SEARCH_MODEL = :naive  # can be :naive, :kdtree or :hnsw
 const DEFAULT_EMBEDDING_ELEMENT_TYPE = :Float32  # can be :Float32, :Float64
+const DEFAULT_WORD2VEC_FILETYPE = :binary  # can be :binary or :text
 # Various document parsing constants
 const DEFAULT_PARSER = :no_parse
 const DEFAULT_GLOBBING_PATTERN = "*"  # Can be any regexp-like pattern
 const DEFAULT_DELIMITER = "|"  # For delimited files only (i.e. document is a line/record)
-###const DEFAULT_KEEP_CORPUS = true  #TODO(Corneliu) Actually use this thing.
+const DEFAULT_SHOW_PROGRESS = false  # Show progress while loading files (useful lor longer operations)
+const DEFAULT_KEEP_DATA = true  # whether to keep the actual document data, metadata
 
 
 

@@ -25,11 +25,10 @@ end
 #################################################
 
 # Searcher structures
-mutable struct Searcher{I<:AbstractId,
-                        D<:AbstractDocument,
+mutable struct Searcher{D<:AbstractDocument,
                         E,
                         M<:AbstractSearchData} <: AbstractSearcher
-    config::SearchConfig{I}                     # most of what is not actual data
+    config::SearchConfig                        # most of what is not actual data
     corpus::Corpus{D}                           # corpus
     embeddings::E                               # needed to embed query
     search_data::Dict{Symbol, M}                # actual search data (classic and semantic)
@@ -38,11 +37,11 @@ end
 
 
 # Useful methods
-id(srcher::Searcher{I,D,E,M}) where {I,D,E,M} = srcher.config.id::I
+id(srcher::Searcher{D,E,M}) where {D,E,M} = srcher.config.id
 
-name(srcher::Searcher{I,D,E,M}) where {I,D,E,M} = srcher.config.name
+description(srcher::Searcher{D,E,M}) where {D,E,M} = srcher.config.description
 
-isenabled(srcher::Searcher{I,D,E,M}) where {I,D,E,M} = srcher.config.enabled
+isenabled(srcher::Searcher{D,E,M}) where {D,E,M} = srcher.config.enabled
 
 disable!(srcher::Searcher) = begin
     srcher.config.enabled = false
@@ -55,7 +54,7 @@ enable!(srcher::Searcher) = begin
 end
 
 # Show method
-show(io::IO, srcher::Searcher{I,D,E,M}) where {I,D,E,M} = begin
+show(io::IO, srcher::Searcher{D,E,M}) where {D,E,M} = begin
     _srcher_type = ifelse(M<:AbstractDocumentCount,
                           "Classic Searcher",
                           "Semantic Searcher")
@@ -89,7 +88,7 @@ show(io::IO, srcher::Searcher{I,D,E,M}) where {I,D,E,M} = begin
         _model_type = "unknown model"
     end
     printstyled(io, "-[$_embs_type]-[$_model_type] ")
-    printstyled(io, "$(name(srcher))", color=:normal)
+    printstyled(io, "$(description(srcher))", color=:normal)
     printstyled(io, ", $(length(srcher.search_data[:data])) embedded documents")
 end
 
@@ -110,14 +109,18 @@ end
 
 Creates a Searcher from a SearchConfig.
 """
-function build_searcher(sconf::SearchConfig{T}) where T
+function build_searcher(sconf::SearchConfig)
     # Parse file
     documents, metadata_vector = sconf.parser(sconf.data_path)
     # Create metadata documents; output is Vector{Vector{String}}
     documents_meta = meta2sv.(metadata_vector)
     # Pre-process documents
-    documents = preprocess(documents, TEXT_STRIP_FLAGS)
-    documents_meta = preprocess(documents_meta, METADATA_STRIP_FLAGS)
+    documents = preprocess(documents,
+                           TEXT_STRIP_FLAGS,
+                           isstemmed=!sconf.stem_words)
+    documents_meta = preprocess(documents_meta,
+                                METADATA_STRIP_FLAGS,
+                                isstemmed=!sconf.stem_words)
     # Build document and document metadata corpora
     # Note: the metadata is kept as well for the purpose of
     #       converying information regarding what is being
@@ -165,7 +168,7 @@ function build_searcher(sconf::SearchConfig{T}) where T
                                               data_type = _eltype)
         elseif sconf.embeddings_type == :word2vec
             word_embeddings = wordvectors(sconf.embeddings_path, _eltype,
-                                          kind=:binary)
+                                          kind=sconf.word2vec_filetype)
         else
             @error "$(sconf.embeddings_type) embeddings not supported."
         end
@@ -211,7 +214,11 @@ function build_searcher(sconf::SearchConfig{T}) where T
         _srchtree_data = BKTree{String}()
         _srchtree_meta = BKTree{String}()
     end
-    # Build semantic searcher
+    # Remove corpus data if keep_data is false
+    if !sconf.keep_data
+        crps = Corpus(DEFAULT_DOCUMENT_TYPE[])
+    end
+    # Build searcher
     srcher = Searcher(sconf,
                       crps,
                       word_embeddings,
@@ -237,30 +244,23 @@ function load_searchers(paths)
     return srchers
 end
 
-function load_searchers(sconfs::Vector{SearchConfig{T}}) where T<:AbstractId
+function load_searchers(sconfs::Vector{SearchConfig})
     srchers = [build_searcher(sconf) for sconf in sconfs]
-	return srchers
+    return srchers
 end
 
 
 
 # Indexing for vectors of searchers
-getindex(srchers::V, an_id::AbstractId) where {V<:Vector{<:Searcher{I,D,E,M}
-        where I<:AbstractId where D<:AbstractDocument where E
-        where M<:AbstractSearchData}} = begin
+getindex(srchers::V, an_id::StringId) where {V<:Vector{<:Searcher{D,E,M}
+        where D<:AbstractDocument where E where M<:AbstractSearchData}} = begin
     idxs = Int[]
-	for (i, srcher) in enumerate(srchers)
-		id(srcher) == an_id && push!(idxs, i)
-	end
-	return srchers[idxs]
+    for (i, srcher) in enumerate(srchers)
+        id(srcher) == an_id && push!(idxs, i)
+    end
+    return srchers[idxs]
 end
 
-getindex(srchers::V, an_id::UInt) where{V<:Vector{<:Searcher{I,D,E,M}
-        where I<:AbstractId where D<:AbstractDocument where E
-        where M<:AbstractSearchData}} =
-	srchers[HashId(an_id)]
-
-getindex(srchers::V, an_id::String) where {V<:Vector{<:Searcher{I,D,E,M}
-        where I<:AbstractId where D<:AbstractDocument where E
-        where M<:AbstractSearchData}} =
-	srchers[StringId(an_id)]
+getindex(srchers::V, an_id::String) where {V<:Vector{<:Searcher{D,E,M}
+        where D<:AbstractDocument where E where M<:AbstractSearchData}} =
+    srchers[StringId(an_id)]

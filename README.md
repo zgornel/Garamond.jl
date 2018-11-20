@@ -19,16 +19,16 @@ For more information, please leave a message at cornel@oxoaresearch.com
 A detailed feature list:
 
 - Document Indexing/Modelling:
-    - [x] Sigle delimited file (rows are documents)
+    - [x] Single delimited file (rows are documents)
     - [x] A directory (all files in all subdirs that fit a globbing pattern are indexed)
     - [x] Summarization support (index [TextRank](https://en.wikipedia.org/wiki/Automatic_summarization#Unsupervised_approach:_TextRank)-based summary)
     - [ ] Parallelism: green light or hardware threads **TODO**
-    - [ ] Update support (real-time, once-every-x) **TODO**
-    - File support:
+    - [x] Update support (real-time, once-every-x) **WIP**
+    - [x] Multiple files/directories support:
         - [x] Text files
         - [ ] Compressed files **TODO**
         - [ ] PDF files **TODO**
-        - [ ] Microsoft like (.doc, .xls etc)
+        - [ ] Microsoft/Libre Office files (.doc, .xls etc)
 - Engine configuration:
     - [x] Single file for multiple data configurations
     - [x] Multiple files for data configurations
@@ -75,23 +75,68 @@ A detailed feature list:
             - [x] [KD-tree](https://en.wikipedia.org/wiki/K-d_tree) (multiple metrics)
             - [x] [HNSW](https://arxiv.org/abs/1603.09320) (multiple metrics supported)
     - I/O Iterface
-        - [ ] Socket **TODO**
-        - [ ] Streams **TODO**
+        - [x] Input: receive query data through UNIX sockets (when in server mode)
+        - [x] Output: output to socket (when in server mode), to `STDOUT` when in client mode
     - Per-corpus embedding training
         - [x] Word2Vec (manual)
         - [ ] Conceptnet **TODO?**
         - [ ] GloVe **TODO?**
-    - Parallelism
+    - Parallelism forms supported
         - [x] Multi-threading (each corpus is searched withing a hardware thread)
         - [ ] Multi-core + task scheduling ([Dispatcher.jl](https://github.com/invenia/Dispatcher.jl) for distributed corpora **TODO**
         - [ ] Cluster support **TODO**
+- Other:
+    - [x] Logging mechanism
+    - [x] Client/server functionality
+    - [x] Pretty version support :)
+
+
+## Running in server/client mode
+- **Server mode**: In _server_ mode, Garamond listens to a socket (i.e.`/tmp/garamond/sockets/socket1`) for incoming queries. Once the query is received, it is processed and the answer written back to same socket.
+The following example starts Garamond in server mode (indexes the data and connects to socket, displaying all messages):
+```
+$ ./garamond.jl --server -d ../extras_for_Garamond/data/Cornel/delimited/config_cornel_data_classic.json -s /tmp/garamond/sockets/socket1 --log-level debug
+[ [2018-11-18 15:29:17][DEBUG][garamond.jl:35] ~ GARAMOND ~ v"0.0.0" commit: 90f1a17 (2018-11-20)
+[ [2018-11-18 15:29:25][DEBUG][fsm.jl:41] Waiting for query...
+```
+
+- **Client mode**: In _client_ mode, the script sends the query to the server's socket and waits the search results on the same socket. Since it uses the whole package, client startup times are slow. View the notes for faster query alternatives. The following example performs a query using the server defined above (the socket is not specified as the server uses the _default_ value):
+```
+% ./garamond.jl --client --q "arthur c clarke" --log-level debug
+[ [2018-11-18 15:37:33][DEBUG][garamond.jl:35] ~ GARAMOND ~ v"0.0.0" commit: 90f1a17 (2018-11-20)
+[ [2018-11-18 15:37:33][DEBUG][io.jl:42] >>> Query sent.
+[ [2018-11-18 15:37:36][DEBUG][io.jl:44] <<< Serach results received
+[{"id":{"id":"biglib-classic"},"query_matches":{"d":{"0.5441896":[3],"0.78605163":[1,2],"0.64313316":[6,7],"0.5895387":[4,5]}},"needle_matches":{"clarke":1.5272124,"arthur":1.5272124,"c":1.5272124},"suggestions":{"d":{}}},{"id":{"id":"techlib-classic"},"query_matches":{"d":{"0.053899456":[1,5]}},"needle_matches":{"c":0.10779891},"suggestions":{"d":{}}}]
+```
+**Note**: The client mode for `garamond.jl` serves testing purposes only and should not be used in production. A separate client (that just reads and writes to/from the socket) should be developed and readily available.
+To view the command line options for `garamond.jl`, run `./garamond.jl --help`:
+```
+ % ./garamond.jl --help
+usage: garamond.jl [-d DATA-CONFIG] [-e ENGINE-CONFIG]
+                   [--log-level LOG-LEVEL] [-l LOG] [-s SOCKET]
+                   [-q QUERY] [--client] [--server] [-h]
+
+optional arguments:
+  -d, --data-config DATA-CONFIG
+                        data configuration file
+  -e, --engine-config ENGINE-CONFIG
+                        search engine configuration file (default: "")
+  --log-level LOG-LEVEL
+                        logging level (default: "info")
+  -l, --log LOG         logging stream (default: "stdout")
+  -s, --socket SOCKET   UNIX socket for data communication (default:
+                        "/tmp/garamond/sockets/socket1")
+  -q, --query QUERY     query the search engine if in client mode
+                        (default: "")
+  --client              client mode
+  --server              server mode
+  -h, --help            show this help message and exit
+```
 
 
 ## Immediate TODOs
-- Prototype asynchronous search update mechanism for index/search model update based (may require developing `DispatcherCache.jl` first for multi-core support)
+- **WIP** ~~Prototype asynchronous search update mechanism for index/search model update based (may require developing `DispatcherCache.jl` first for multi-core support)~~
 - Support for PDFs, archives, other files (see Taro.jl, TranscodingStreams.jl)
-- Stream and socket IO
-- Minimal command line interface: options for configs, I/O types, logging, parallelism(?)
 - Proper API documentation (auto-generated from doc-strings, Documenter.jl?)
 - Minimalistic HTTP server (new package GaramondHTTPServer.jl ?)
 - Take text pre-processing seriously (optimization + flag checking + support skipping patterns from processing)
@@ -108,5 +153,8 @@ A detailed feature list:
 - [Flux.jl](https://github.com/FluxML/Flux.jl) native embedding generation (i.e. custom embedding generation model architectures)
 
 
-## Notes
-The following exports: `OPENBLAS_NUM_THREADS=1` and `JULIA_NUM_THREADS=<n>` have to be performed for multi-threading to work efficiently.
+## Various Notes
+- The following exports: `OPENBLAS_NUM_THREADS=1` and `JULIA_NUM_THREADS=<n>` have to be performed for multi-threading to work efficiently.
+- To redirect a TCP socket to a UNIX socket: `socat TCP-LISTEN:<tcp_port>,reuseaddr,fork UNIX-CLIENT:/tmp/unix_socket` or `socat TCP-LISTEN:<tcp_port>,bind=127.0.0.1,reuseaddr,fork,su=nobody,range=127.0.0.0/8 UNIX-CLIENT:/tmp/unix_socket`
+- To send a query to a Garamond server (no reply, for debugging purposes): `echo 'find me a needle' | socat - UNIX-CONNECT:/tmp/garamond/sockets/<unix_socket>`
+- For interactive send/receive, `socat UNIX-CONNECT:/tmp/garamond/sockets/<unix_socket> STDOUT`
