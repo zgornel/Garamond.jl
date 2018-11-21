@@ -144,9 +144,9 @@ function build_searcher(sconf::SearchConfig)
         dtm_meta = DocumentTermMatrix(crps_meta)
         # Get document importance calculation function
         if sconf.count_type == :tf
-            count_func = TextAnalysis.tf
+            count_func = StringAnalysis.tf
         elseif sconf.count_type == :tfidf
-            count_func = TextAnalysis.tf_idf
+            count_func = StringAnalysis.tf_idf
         else
             @error "Unknown document importance $(sconf.count_type)."
         end

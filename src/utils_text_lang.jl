@@ -1,14 +1,14 @@
-###############################################################
-# Utils for interfacing with TextAnalysis.jl and Languages.jl #
-###############################################################
+#################################################################
+# Utils for interfacing with StringAnalysis.jl and Languages.jl #
+#################################################################
 
-# Printer for TextAnalysis metadata
+# Printer for StringAnalysis metadata
 titleize(str::AbstractString) = begin
     join(map(uppercasefirst, strip.(split(str, "."))), ". ","")
 end
 
 
-show(io::IO, md::TextAnalysis.DocumentMetadata) = begin
+show(io::IO, md::StringAnalysis.DocumentMetadata) = begin
     printstyled(io, "$(md.id)-[", color=:light_black)
     printstyled(io, "\"$(titleize(md.name))\"",
                     " by $(titlecase(md.author)),",
@@ -25,10 +25,10 @@ convert(::Type{L}, lang::S) where {L<:Languages.Language, S<:AbstractString} =
 convert(::Type{S}, lang::L) where {L<:Languages.Language, S<:AbstractString} =
 	get(LANG_TO_STR, lang, "unknown")
 
-# Convert a TextAnalysis metadata structure to a Dict
-convert(::Type{Dict}, md::TextAnalysis.DocumentMetadata) =
+# Convert a StringAnalysis metadata structure to a Dict
+convert(::Type{Dict}, md::StringAnalysis.DocumentMetadata) =
     Dict{String,String}((String(field) => getfield(md, field))
-                         for field in fieldnames(TextAnalysis.DocumentMetadata))
+                         for field in fieldnames(StringAnalysis.DocumentMetadata))
 
 
 # Medatadata getter for documents
@@ -36,13 +36,13 @@ metadata(document::D) where {D<:AbstractDocument} =
     document.metadata
 
 
-metadata(crps::C) where {C<:TextAnalysis.Corpus} =
+metadata(crps::C) where {C<:StringAnalysis.Corpus} =
     [doc.metadata for doc in crps]
 
 
 # Turn the document metadata into a vector of strings
 function meta2sv(md::T, fields=fieldnames(T)
-                ) where T<:TextAnalysis.DocumentMetadata
+                ) where T<:StringAnalysis.DocumentMetadata
     msv = ["" for _ in 1:length(fields)]
     for (i, field) in enumerate(fields)
         if field in fieldnames(T)
@@ -78,7 +78,7 @@ lowercase(v::T) where T<:AbstractArray{S} where S<:AbstractString =
     prepare(text, flags [;kwargs...])
 
 Processes a string according to the `flags` which are an `UInt32` of
-the form used in `TextAnalysis.jl` ie `strip_numbers | strip_articles` etc.
+the form used in `StringAnalysis.jl` ie `strip_numbers | strip_articles` etc.
 and the keyword arguments are thos of the `Unicode.normalize` function.
 """
 # TODO TODO TODO! Improve this crap
@@ -172,7 +172,7 @@ end
     extract_tokens(doc)
 
 Tokenizes various types of documents. Works for `AbstractString`,
-Vector{AbstractString} and `TextAnalysis.jl` documents.
+Vector{AbstractString} and `StringAnalysis.jl` documents.
 """
 extract_tokens(doc::NGramDocument) = String.(collect(keys(doc.ngrams)))
 extract_tokens(doc::StringDocument) = String.(tokenize_for_conceptnet(doc.text))
@@ -238,7 +238,7 @@ and metadata from `metadata_vector`.
 """
 function build_corpus(documents::Vector{Vector{S}},
                       doctype::Type{T},
-                      metadata_vector::Vector{TextAnalysis.DocumentMetadata}
+                      metadata_vector::Vector{StringAnalysis.DocumentMetadata}
                      ) where {S<:AbstractString, T<:AbstractDocument}
     @assert length(documents) == length(metadata_vector)
     n = length(documents)

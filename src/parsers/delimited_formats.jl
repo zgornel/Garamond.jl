@@ -22,7 +22,7 @@ end
 #       - the String is the sentence
 #       - the inner vector is for a the document: vector of sentences
 #       - the outer vector is for the corpus: a vector of documents
-#   The metadata vector is a Vector{TextAnalysis.DocumentMetadata}
+#   The metadata vector is a Vector{StringAnalysis.DocumentMetadata}
 function __parser_delimited_format_1(filename::AbstractString,
                                      config::Dict;
                                      header::Bool = false,
@@ -50,8 +50,8 @@ function __parser_delimited_format_1(filename::AbstractString,
     # Initialize outputs
     nlines = min(nlines, size(string_matrix,1))  # avoid newlines
     documents = Vector{Vector{String}}(undef, nlines)
-    metadata_vector = Vector{TextAnalysis.DocumentMetadata}(undef, nlines)
-    metadata_fields = fieldnames(TextAnalysis.DocumentMetadata)
+    metadata_vector = Vector{StringAnalysis.DocumentMetadata}(undef, nlines)
+    metadata_fields = fieldnames(StringAnalysis.DocumentMetadata)
     # Loop over loaded data and process data
     @inbounds for i in 1:size(string_matrix,1)
         # Iterate and parse
@@ -59,7 +59,7 @@ function __parser_delimited_format_1(filename::AbstractString,
         iszero(mod(i, _nl)) && show_progress && next!(progressbar)
         # Create document
         documents[i] = vline[fields_mask]
-        metadata_vector[i] = TextAnalysis.DocumentMetadata(Languages.English(),
+        metadata_vector[i] = StringAnalysis.DocumentMetadata(Languages.English(),
                                 "", "", "", "", "", "", "", "", "")
         # Set parsed values for document metadata
         for (column, metafield) in config[:metadata]
