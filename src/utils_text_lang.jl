@@ -78,18 +78,6 @@ end
 
 
 """
-    stem(text, flags [;kwargs...])
-
-"""
-function stem(text::AbstractString)
-    sd = StringDocument(text)
-    stem!(sd)
-    return sd.text
-end
-
-
-
-"""
     preprocess(sentence, flags [;isprepared=false, isstemmed=true])
 
 Applies preprocessing to one sentence considered to be an
@@ -210,6 +198,9 @@ end
 
 Builds a corpus of documents of type `doctype` using the data in `documents`
 and metadata from `metadata_vector`.
+
+Note: No preprocessing is performed at this step, it is assumed that the data
+      has already been preprocessed and is ready to be searched in.
 """
 function build_corpus(documents::Vector{Vector{S}},
                       doctype::Type{T},
@@ -224,31 +215,3 @@ function build_corpus(documents::Vector{Vector{S}},
     end
     return Corpus(v)
 end
-
-
-
-### # Useful regular expressions
-### replace.(select(tt2,2),r"([A-Z]\s|[A-Z]\.\s)","")  # replace middle initial
-### replace.(select(tt2,2),r"[\s]+$","")  # replace end spaces
-###
-### # Define base filtering functions
-###
-### remove_punctuation(s) = filter(x->!ispunct(x), s)
-###
-### remove_singlechars(s) = filter(x->length(x) > 1, s)
-###
-### split_space_tab(s) = split(s, r"(\s|\t|-)")
-###
-### normalizer(s) = normalize_string(s, decompose=true, compat=true, casefold=true,
-### 				    stripmark=true, stripignore=true)
-###
-### function searchquery_preprocess(s)
-### String.(
-###     remove_singlechars(
-### 	split_space_tab(
-### 		remove_punctuation(
-### 			normalizer(s)
-### 		)
-### 	)
-### ))
-### end
