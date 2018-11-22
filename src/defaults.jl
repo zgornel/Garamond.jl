@@ -50,7 +50,6 @@ const DEFAULT_METADATA_FIELDS = [:author, :name, :note]  # Default metadata fiel
 const TEXT_STRIP_FLAGS = strip_case |
                          strip_punctuation |
                          strip_articles |
-                         strip_non_letters |
                          strip_prepositions |
                          strip_whitespace |
                          strip_corrupt_utf8
@@ -58,7 +57,6 @@ const TEXT_STRIP_FLAGS = strip_case |
 const QUERY_STRIP_FLAGS = strip_case |
                           strip_punctuation |
                           strip_articles |
-                          strip_non_letters |
                           strip_prepositions |
                           strip_whitespace |
                           strip_corrupt_utf8
@@ -72,8 +70,7 @@ const METADATA_STRIP_FLAGS = strip_case |
 
 const SUMMARIZATION_FLAGS = strip_corrupt_utf8 |
                             strip_case |
-                            strip_stopwords |
-                            strip_non_letters
+                            strip_stopwords
 
 # Dictionaries for String <=>Languages.Language / Languages.Languages <=> String
 # conversion
