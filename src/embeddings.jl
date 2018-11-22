@@ -116,7 +116,7 @@ are combined into a single document embedding. Avalilable options:
 ###                         doc::D
 ###                        ) where D<:Union{<:AbstractDocument, <:AbstractString}
 ###     # Tokenize
-###     tokens = extract_tokens(doc)
+###     tokens = tokenize_fast(doc)
 ###     # Get word embeddings
 ###     doc_embs, missing_tokens = embed_document(embeddings_library,
 ###                                               tokens,
@@ -142,7 +142,7 @@ function embed_document(embeddings_library::Union{
     # Embed sentences individually
     # TODO(Corneliu) Verify speed and pre-allocate with keep size if too slow
     @inbounds for i in 1:n
-        words = extract_tokens(document[i])
+        words = tokenize_fast(document[i])
         _embs, _mtoks = embed_document(embeddings_library,
                                        words,
                                        keep_size=false,

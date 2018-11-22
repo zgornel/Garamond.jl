@@ -343,7 +343,7 @@ version = "0.25.0"
 
 [[StringAnalysis]]
 deps = ["BinaryProvider", "DataFrames", "Languages", "Libdl", "LinearAlgebra", "SparseArrays", "Test", "WordTokenizers"]
-git-tree-sha1 = "a839743055700cb9bc712a88f286ebd705be59fb"
+git-tree-sha1 = "f5dc4ddab1ae2ecb5b4839b177774310ec8e1d49"
 repo-rev = "master"
 repo-url = "https://github.com/zgornel/StringAnalysis.jl"
 uuid = "f2e5b97c-ed87-11e8-3fa8-a300efcc83e4"

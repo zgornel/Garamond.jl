@@ -118,29 +118,16 @@ function preprocess(documents::Vector{Vector{S}},
 end
 
 function preprocess_query(query::AbstractString)
-    needles = extract_tokens(Unicode.normalize(query,
-                                               casefold=true,
-                                               stripcc=true,
-                                               stripmark=true))
+    needles = tokenize_fast(Unicode.normalize(query,
+                                              casefold=true,
+                                              stripcc=true,
+                                              stripmark=true))
     return needles
 end
 
 function preprocess_query(query::Vector{S}) where S<:AbstractString
     return Unicode.normalize.(query, casefold=true, stripcc=true, stripmark=true)
 end
-
-
-
-"""
-    extract_tokens(doc)
-
-Tokenizes various types of documents. Works for `AbstractString`,
-Vector{AbstractString} and `StringAnalysis.jl` documents.
-"""
-extract_tokens(doc::NGramDocument) = String.(collect(keys(doc.ngrams)))
-extract_tokens(doc::StringDocument) = String.(tokenize_for_conceptnet(doc.text))
-extract_tokens(doc::AbstractString) = String.(tokenize_for_conceptnet(doc))
-extract_tokens(doc::Vector{S}) where S<:AbstractString = String.(doc)
 
 
 
