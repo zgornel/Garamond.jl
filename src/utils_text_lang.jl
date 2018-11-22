@@ -2,21 +2,6 @@
 # Utils for interfacing with StringAnalysis.jl and Languages.jl #
 #################################################################
 
-# Printer for StringAnalysis metadata
-titleize(str::AbstractString) = begin
-    join(map(uppercasefirst, strip.(split(str, "."))), ". ","")
-end
-
-
-show(io::IO, md::StringAnalysis.DocumentMetadata) = begin
-    printstyled(io, "$(md.id)-[", color=:light_black)
-    printstyled(io, "\"$(titleize(md.name))\"",
-                    " by $(titlecase(md.author)),",
-                    " $(md.edition_year)",
-                    " ($(md.published_year))]")
-end
-
-
 # Converts a String to Languages.Language (using STR_TO_LANG)
 convert(::Type{L}, lang::S) where {L<:Languages.Language, S<:AbstractString} =
     get(STR_TO_LANG, strip(lower(lang)), Languages.English())
@@ -26,23 +11,13 @@ convert(::Type{S}, lang::L) where {L<:Languages.Language, S<:AbstractString} =
 	get(LANG_TO_STR, lang, "unknown")
 
 # Convert a StringAnalysis metadata structure to a Dict
-convert(::Type{Dict}, md::StringAnalysis.DocumentMetadata) =
+convert(::Type{Dict}, md::DocumentMetadata) =
     Dict{String,String}((String(field) => getfield(md, field))
-                         for field in fieldnames(StringAnalysis.DocumentMetadata))
-
-
-# Medatadata getter for documents
-metadata(document::D) where {D<:AbstractDocument} =
-    document.metadata
-
-
-metadata(crps::C) where {C<:StringAnalysis.Corpus} =
-    [doc.metadata for doc in crps]
+                         for field in fieldnames(DocumentMetadata))
 
 
 # Turn the document metadata into a vector of strings
-function meta2sv(md::T, fields=fieldnames(T)
-                ) where T<:StringAnalysis.DocumentMetadata
+function meta2sv(md::T, fields=fieldnames(T)) where T<:DocumentMetadata
     msv = ["" for _ in 1:length(fields)]
     for (i, field) in enumerate(fields)
         if field in fieldnames(T)
@@ -238,7 +213,7 @@ and metadata from `metadata_vector`.
 """
 function build_corpus(documents::Vector{Vector{S}},
                       doctype::Type{T},
-                      metadata_vector::Vector{StringAnalysis.DocumentMetadata}
+                      metadata_vector::Vector{DocumentMetadata}
                      ) where {S<:AbstractString, T<:AbstractDocument}
     @assert length(documents) == length(metadata_vector)
     n = length(documents)

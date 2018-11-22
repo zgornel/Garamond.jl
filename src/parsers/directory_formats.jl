@@ -36,7 +36,7 @@ end
 #       - the String is the sentence
 #       - the inner vector is for a the document: vector of sentences
 #       - the outer vector is for the corpus: a vector of documents
-#   The metadata vector is a Vector{StringAnalysis.DocumentMetadata}
+#   The metadata vector is a Vector{DocumentMetadata}
 # TODO(Corneliu): Add support for other files (so far only text files supported)
 function __parser_directory_format_1(directory::AbstractString,
                                      config::Dict=Dict();  # not used
@@ -52,8 +52,8 @@ function __parser_directory_format_1(directory::AbstractString,
     n==0 && @error "No files found in $directory with glob: $globbing_pattern."
     # Initialize outputs
     documents = Vector{Vector{String}}(undef, n)
-    metadata_vector = Vector{StringAnalysis.DocumentMetadata}(undef, n)
-    metadata_fields = fieldnames(StringAnalysis.DocumentMetadata)
+    metadata_vector = Vector{DocumentMetadata}(undef, n)
+    metadata_fields = fieldnames(DocumentMetadata)
     # Progressbar
     progressbar = Progress(n,
                     desc="Parsing $(split(directory,"/")[end])...",
@@ -74,7 +74,7 @@ function __parser_directory_format_1(directory::AbstractString,
         documents[i] = sentences
         # TODO(Corneliu) Add language support for supported languages
         # through language detection
-        metadata_vector[i] = StringAnalysis.DocumentMetadata(Languages.English(),
+        metadata_vector[i] = DocumentMetadata(Languages.English(),
                                 "", "", "", "", "", "", "", "", "")
         # Add some real metadata
         setfield!(metadata_vector[i], :name, readuntil(file,"\n"))  # set name the first line
