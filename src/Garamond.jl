@@ -28,7 +28,7 @@ module Garamond
     using SparseArrays
     using Statistics
     using DataStructures: Set, MultiDict
-    using StringAnalysis, Languages, WordTokenizers
+    using StringAnalysis, Languages
     using StringDistances, BKTrees
     using ArgParse
     using ProgressMeter
@@ -42,7 +42,7 @@ module Garamond
     import Base: size, length, show, keys, values, push!,
                  delete!, getindex, names, convert, lowercase,
                  occursin, isempty
-    import StringAnalysis: id, prepare!, stem!
+    import StringAnalysis: id
     import ConceptnetNumberbatch: embed_document
 
     # Abstract types
@@ -57,7 +57,8 @@ module Garamond
         Searcher,
         SearchConfig,
         SearchResult,
-        enable!,
+        id, description,
+        isenabled, enable!,
         disable!,
         print_search_results
 

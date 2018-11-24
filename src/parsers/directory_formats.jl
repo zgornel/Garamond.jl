@@ -64,7 +64,7 @@ function __parser_directory_format_1(directory::AbstractString,
     ################################################################
     for (i, file) in enumerate(files)
         # Read data and split into sentences
-        sentences = split_sentences(open(fid->read(fid, String), file))
+        sentences = sentence_tokenize(open(fid->read(fid, String), file))
         # Create summary if the case
         if build_summary
             # TODO(Corneliu): Optimize this bit for performance

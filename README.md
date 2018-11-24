@@ -135,11 +135,11 @@ optional arguments:
 
 
 ## Immediate TODOs
-- **WIP** ~~Prototype asynchronous search update mechanism for index/search model update based (may require developing `DispatcherCache.jl` first for multi-core support)~~
+- ~~Prototype asynchronous search update mechanism for index/search model update based (may require developing `DispatcherCache.jl` first for multi-core support)~~
 - Support for PDFs, archives, other files (see Taro.jl, TranscodingStreams.jl)
 - Proper API documentation (auto-generated from doc-strings, Documenter.jl?)
 - Minimalistic HTTP server (new package GaramondHTTPServer.jl ?)
-- Take text pre-processing seriously (optimization + flag checking + support skipping patterns from processing)
+- ~~Take text pre-processing seriously (optimization + flag checking + support skipping patterns from processing)~~
 - Take testing seriously
 - Fat binary compilation (i.e. have one binary for the whole search engine, including dependencies)
 

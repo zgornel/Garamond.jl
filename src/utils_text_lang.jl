@@ -50,88 +50,6 @@ lowercase(v::T) where T<:AbstractArray{S} where S<:AbstractString =
 
 
 """
-    prepare(text, flags [;kwargs...])
-
-Processes a string according to the `flags` which are an `UInt32` of
-the form used in `StringAnalysis.jl` ie `strip_numbers | strip_articles` etc.
-and the keyword arguments are thos of the `Unicode.normalize` function.
-"""
-# TODO TODO TODO! Improve this crap
-function prepare(text::AbstractString, flags::UInt32;
-                 compat=true,
-                 casefold=true,
-                 stripmark=true,
-                 stripignore=true,
-                 stripcc=true,
-                 stable=true,
-                 kwargs...
-                )
-    sd = StringDocument(Unicode.normalize(text, compat=compat,
-                                          casefold=casefold, stripmark=stripmark,
-                                          stripignore=stripignore, stripcc=stripcc,
-                                          stable=stable,kwargs...))
-    sdc = Base.deepcopy(sd)
-    prepare!(sdc, flags)
-    return sdc.text
-end
-
-
-
-"""
-    preprocess(sentence, flags [;isprepared=false, isstemmed=true])
-
-Applies preprocessing to one sentence considered to be an
-AbstractString.
-"""
-function preprocess(sentence::AbstractString,
-                    flags::UInt32;
-                    isprepared::Bool=false,
-                    isstemmed::Bool=true)
-    # Prepare
-    if !isprepared
-        sentence = prepare(sentence, flags)
-    end
-    # Stemming
-    if !isstemmed
-        sentence = stem(sentence)
-    end
-    return sentence
-end
-
-function preprocess(document::Vector{S},
-                    flags::UInt32;
-                    isprepared::Bool=false,
-                    isstemmed::Bool=true
-                   ) where S<:AbstractString
-    return [preprocess.(sentence, flags, isprepared=isprepared,
-                        isstemmed=isstemmed)
-            for sentence in document]
-end
-
-function preprocess(documents::Vector{Vector{S}},
-                    flags::UInt32;
-                    isprepared::Bool=false,
-                    isstemmed::Bool=true
-                   ) where S<:AbstractString
-    return [preprocess(doc, flags, isprepared=isprepared, isstemmed=isstemmed)
-            for doc in documents]
-end
-
-function preprocess_query(query::AbstractString)
-    needles = tokenize_fast(Unicode.normalize(query,
-                                              casefold=true,
-                                              stripcc=true,
-                                              stripmark=true))
-    return needles
-end
-
-function preprocess_query(query::Vector{S}) where S<:AbstractString
-    return Unicode.normalize.(query, casefold=true, stripcc=true, stripmark=true)
-end
-
-
-
-"""
     detect_language(text)
 
 Detects the language of a piece of text.
@@ -201,4 +119,19 @@ function build_corpus(documents::Vector{Vector{S}},
         v[i].metadata = metadata_vector[i]
     end
     return Corpus(v)
+end
+
+
+"""
+    prepare_query(query, flags)
+
+Prepares the query for search (tokenization if the case), pre-processing.
+"""
+prepare_query(query::AbstractString, flags::UInt32) = begin
+    String.(tokenize(prepare(query, flags)))
+end
+
+prepare_query(query::Vector{<:AbstractString}, flags::UInt32) = begin
+    needles = prepare.(query, flags)
+    return needles
 end

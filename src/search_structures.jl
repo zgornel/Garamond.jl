@@ -114,26 +114,18 @@ function build_searcher(sconf::SearchConfig)
     documents, metadata_vector = sconf.parser(sconf.data_path)
     # Create metadata documents; output is Vector{Vector{String}}
     documents_meta = meta2sv.(metadata_vector)
-    # Pre-process documents
-    documents = preprocess(documents,
-                           TEXT_STRIP_FLAGS,
-                           isstemmed=!sconf.stem_words)
-    documents_meta = preprocess(documents_meta,
-                                METADATA_STRIP_FLAGS,
-                                isstemmed=!sconf.stem_words)
     # Build document and document metadata corpora
     # Note: the metadata is kept as well for the purpose of
     #       converying information regarding what is being
     #       searched. The only use for it is when displaying
-    #       results
-    # TODO: Make storing the metadata optional (some application
-    #       may not need it but only the document index)
-    crps = build_corpus(documents,
-                        DEFAULT_DOCUMENT_TYPE,
-                        metadata_vector)
-    crps_meta = build_corpus(documents_meta,
-                             DEFAULT_DOCUMENT_TYPE,
+    crps = build_corpus(documents, DEFAULT_DOCUMENT_TYPE, metadata_vector)
+    crps_meta = build_corpus(documents_meta, DEFAULT_DOCUMENT_TYPE,
                              metadata_vector)
+    # Pre-process documents
+    prepare!(crps, TEXT_STRIP_FLAGS |
+             (sconf.stem_words ? stem_words : 0x0))
+    prepare!(crps_meta, METADATA_STRIP_FLAGS |
+             (sconf.stem_words ? stem_words : 0x0))
     # Update lexicons
     update_lexicon!(crps)
     update_lexicon!(crps_meta)
