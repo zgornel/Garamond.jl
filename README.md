@@ -82,7 +82,7 @@ A detailed feature list:
         - [ ] Conceptnet **TODO?**
         - [ ] GloVe **TODO?**
     - Parallelism forms supported
-        - [x] Multi-threading (each corpus is searched withing a hardware thread)
+        - [x] Multi-threading (each corpus is searched withing a hardware thread; support is EXPERIMENTAL and it is disabled by default)
         - [ ] Multi-core + task scheduling ([Dispatcher.jl](https://github.com/invenia/Dispatcher.jl) for distributed corpora **TODO**
         - [ ] Cluster support **TODO**
 - Other:

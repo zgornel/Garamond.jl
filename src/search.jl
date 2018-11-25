@@ -45,16 +45,21 @@ function search(srchers::V,
     enabled_searchers = [i for i in 1:n if isenabled(srchers[i])]
     n_enabled = length(enabled_searchers)
     # Search
-    results = Vector{SearchResult}(undef, length(enabled_searchers))
+    results = Vector{SearchResult}(undef, n_enabled)
     ###################################################################
-    # A `@threads` statement in front of the for loop here idicates
-    # the use of multi-threading. If multi-threading is used,
+    # A `Threads.@threads` statement in front of the for loop here
+    # idicates the use of multi-threading. If multi-threading is used,
     # OPENBLAS multi-threading support has to be disabled by using:
     #   `export OPENBLAS_NUM_THREADS=1` in the shell
     # or start julia with:
     #   `env OPENBLAS_NUM_THREADS=1 julia`
+    #
+    # WARNING: Multi-theading support (as of v1.1 is still EXPERIMENTAL)
+    #          and floating point operations are not thread-safe!
+    #          Do not use with semantic search!!
     ###################################################################
-    Threads.@threads for i in 1:n_enabled
+    ### Threads.@threads for i in 1:n_enabled
+    for i in 1:n_enabled
         # Get corpus search results
         results[i] = search(srchers[enabled_searchers[i]],
                             query,
