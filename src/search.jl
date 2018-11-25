@@ -44,6 +44,7 @@ function search(srchers::V,
     n = length(srchers)
     enabled_searchers = [i for i in 1:n if isenabled(srchers[i])]
     n_enabled = length(enabled_searchers)
+    query_prepared = prepare_query(query, QUERY_STRIP_FLAGS)
     # Search
     results = Vector{SearchResult}(undef, n_enabled)
     ###################################################################
@@ -62,7 +63,7 @@ function search(srchers::V,
     for i in 1:n_enabled
         # Get corpus search results
         results[i] = search(srchers[enabled_searchers[i]],
-                            query,
+                            query_prepared,
                             search_type=search_type,
                             search_method=search_method,
                             max_matches=max_matches,

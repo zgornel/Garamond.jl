@@ -131,6 +131,12 @@ prepare_query(query::AbstractString, flags::UInt32) = begin
     String.(tokenize_fast(prepare(query, flags)))
 end
 
-prepare_query(query::Vector{<:AbstractString}, flags::UInt32) = begin
-    return vcat((prepare_query(q, flags) for q in query)...)
+prepare_query(needles::Vector{String}, flags::UInt32) = begin
+    # To minimize time, no pre-processing is done here.
+    # The input is returned as is.
+    return needles
+end
+
+prepare_query(query, flags::UInt32) = begin
+    @error "Query pre-processing requires `String` or Vector{String} inputs."
 end

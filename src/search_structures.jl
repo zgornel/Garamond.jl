@@ -4,9 +4,9 @@
 abstract type AbstractDocumentCount <: AbstractSearchData
 end
 
-struct TermCounts <: AbstractDocumentCount
+struct TermCounts{T} <: AbstractDocumentCount
     column_indices::Dict{String, Int}
-    values::SparseMatrixCSC{DEFAULT_COUNT_ELEMENT_TYPE, Int64}
+    values::SparseMatrixCSC{T, Int64}
 end
 
 # Useful methods
@@ -145,10 +145,10 @@ function build_searcher(sconf::SearchConfig)
         # No word embeddings
         word_embeddings = nothing
         # Calculate doc importances
-        _srchdata = TermCounts(dtm.column_indices,
-                               add_final_zeros(count_func(dtm)))
-        _srchdata_meta = TermCounts(dtm_meta.column_indices,
-                                    add_final_zeros(count_func(dtm_meta)))
+        _srchdata = TermCounts{DEFAULT_COUNT_ELEMENT_TYPE}(
+                        dtm.column_indices, add_final_zeros(count_func(dtm)))
+        _srchdata_meta = TermCounts{DEFAULT_COUNT_ELEMENT_TYPE}(
+                            dtm_meta.column_indices, add_final_zeros(count_func(dtm_meta)))
     # Semantic searcher
     elseif sconf.search == :semantic
         # Construct element type
