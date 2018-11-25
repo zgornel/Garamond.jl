@@ -340,11 +340,11 @@ version = "0.4.2"
 
 [[Word2Vec]]
 deps = ["LinearAlgebra", "Statistics", "Test"]
-git-tree-sha1 = "322cfc70b2955bc1a5a25aa2010472d1a1475dfc"
-repo-rev = "fixes_and_improvements"
+git-tree-sha1 = "df0a7fbc674fe58548eb62ddf7ff895b535dd065"
+repo-rev = "latest"
 repo-url = "https://github.com/zgornel/Word2Vec.jl"
-uuid = "c64b6f0f-98cd-51d1-af78-58ae84944834"
-version = "0.0.3+"
+uuid = "3e5e13d1-f1b1-11e8-0a34-b72730d7b11b"
+version = "0.0.3"
 
 [[WordTokenizers]]
 deps = ["Test"]
