@@ -128,10 +128,9 @@ end
 Prepares the query for search (tokenization if the case), pre-processing.
 """
 prepare_query(query::AbstractString, flags::UInt32) = begin
-    String.(tokenize(prepare(query, flags)))
+    String.(tokenize_fast(prepare(query, flags)))
 end
 
 prepare_query(query::Vector{<:AbstractString}, flags::UInt32) = begin
-    needles = prepare.(query, flags)
-    return needles
+    return vcat((prepare_query(q, flags) for q in query)...)
 end
