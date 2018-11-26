@@ -66,7 +66,7 @@ module Garamond
     include("defaults.jl")
     include("logging.jl")
     include("config.jl")
-    include("utils_text_lang.jl")
+    include("textutils.jl")
     include("embeddings.jl")
     include("search_structures.jl")
     include("update.jl")
