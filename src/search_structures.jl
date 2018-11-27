@@ -139,6 +139,8 @@ function build_searcher(sconf::SearchConfig)
             count_func = StringAnalysis.tf
         elseif sconf.count_type == :tfidf
             count_func = StringAnalysis.tf_idf
+        elseif sconf.count_type == :bm25
+            count_func = StringAnalysis.bm_25
         else
             @error "Unknown document importance $(sconf.count_type)."
         end

@@ -7,7 +7,7 @@ const DEFAULT_BUILD_SUMMARY = false  # whether to summarize text before indexing
 const DEFAULT_SUMMARY_NS = 1  # Default number of sentences for a summary
 const DEFAULT_STEM_WORDS = false  # whether to stem words or not
 # Classic seatch defaults
-const DEFAULT_COUNT_TYPE = :tfidf  # can be :tf or :tfidf
+const DEFAULT_COUNT_TYPE = :bm25  # can be :tf, :tfidf or :bm25
 const DEFAULT_SEARCH_TYPE = :data  # can be :data or :metadata
 const DEFAULT_SEARCH_METHOD = :exact  #can be :exact or :regex
 const DEFAULT_HEURISTIC = :hamming
