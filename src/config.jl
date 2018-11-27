@@ -192,7 +192,7 @@ function load_search_configs(filename::AbstractString)
         # Classic search specific options
         if sconfig.search == :classic
             # count type
-            if !(sconfig.count_type in [:tf, :tfidf])
+            if !(sconfig.count_type in [:tf, :tfidf, :bm25])
                 @warn "$(sconfig.id) Forcing count_type=$DEFAULT_COUNT_TYPE."
                 sconfig.count_type = DEFAULT_COUNT_TYPE
             end

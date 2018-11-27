@@ -7,7 +7,7 @@ const DEFAULT_BUILD_SUMMARY = false  # whether to summarize text before indexing
 const DEFAULT_SUMMARY_NS = 1  # Default number of sentences for a summary
 const DEFAULT_STEM_WORDS = false  # whether to stem words or not
 # Classic seatch defaults
-const DEFAULT_COUNT_TYPE = :tfidf  # can be :tf or :tfidf
+const DEFAULT_COUNT_TYPE = :bm25  # can be :tf, :tfidf or :bm25
 const DEFAULT_SEARCH_TYPE = :data  # can be :data or :metadata
 const DEFAULT_SEARCH_METHOD = :exact  #can be :exact or :regex
 const DEFAULT_HEURISTIC = :hamming
@@ -33,10 +33,10 @@ const DEFAULT_KEEP_DATA = true  # whether to keep the actual document data, meta
 ##############################################################
 # TODO(corneliu): Check here if any of them can also be data configuration options
 #  i.e. max matches, exit distance, document type
-const DEFAULT_DOCUMENT_TYPE = TextAnalysis.NGramDocument  # default document object type
+const DEFAULT_DOCUMENT_TYPE = StringAnalysis.NGramDocument  # default document object type
 const DEFAULT_MAX_MATCHES = 1_000  # maximum number of matches that can be retrned
 const DEFAULT_MAX_SUGGESTIONS = 1  # maximum number of overall suggestions
-const DEFAULT_MAX_CORPUS_SUGGESTIONS = 1  # maximum number of suggestions for each corpus
+const DEFAULT_MAX_CORPUS_SUGGESTIONS = 0  # maximum number of suggestions for each corpus
 const MAX_EDIT_DISTANCE = 2  # maximum edit distance for which to return suggestions
 const HEURISTIC_TO_DISTANCE = Dict(  # heuristic to distance object mapping
     :levenshtein => StringDistances.Levenshtein(),
@@ -50,7 +50,6 @@ const DEFAULT_METADATA_FIELDS = [:author, :name, :note]  # Default metadata fiel
 const TEXT_STRIP_FLAGS = strip_case |
                          strip_punctuation |
                          strip_articles |
-                         strip_non_letters |
                          strip_prepositions |
                          strip_whitespace |
                          strip_corrupt_utf8
@@ -58,7 +57,6 @@ const TEXT_STRIP_FLAGS = strip_case |
 const QUERY_STRIP_FLAGS = strip_case |
                           strip_punctuation |
                           strip_articles |
-                          strip_non_letters |
                           strip_prepositions |
                           strip_whitespace |
                           strip_corrupt_utf8
@@ -72,8 +70,7 @@ const METADATA_STRIP_FLAGS = strip_case |
 
 const SUMMARIZATION_FLAGS = strip_corrupt_utf8 |
                             strip_case |
-                            strip_stopwords |
-                            strip_non_letters
+                            strip_stopwords
 
 # Dictionaries for String <=>Languages.Language / Languages.Languages <=> String
 # conversion

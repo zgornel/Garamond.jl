@@ -28,7 +28,7 @@ module Garamond
     using SparseArrays
     using Statistics
     using DataStructures: Set, MultiDict
-    using TextAnalysis, Languages, WordTokenizers
+    using StringAnalysis, Languages
     using StringDistances, BKTrees
     using ArgParse
     using ProgressMeter
@@ -42,7 +42,7 @@ module Garamond
     import Base: size, length, show, keys, values, push!,
                  delete!, getindex, names, convert, lowercase,
                  occursin, isempty
-    import TextAnalysis: id, prepare!, stem!, summarize
+    import StringAnalysis: id
     import ConceptnetNumberbatch: embed_document
 
     # Abstract types
@@ -57,7 +57,8 @@ module Garamond
         Searcher,
         SearchConfig,
         SearchResult,
-        enable!,
+        id, description,
+        isenabled, enable!,
         disable!,
         print_search_results
 
@@ -65,7 +66,7 @@ module Garamond
     include("defaults.jl")
     include("logging.jl")
     include("config.jl")
-    include("utils_text_lang.jl")
+    include("textutils.jl")
     include("embeddings.jl")
     include("search_structures.jl")
     include("update.jl")

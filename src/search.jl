@@ -44,20 +44,26 @@ function search(srchers::V,
     n = length(srchers)
     enabled_searchers = [i for i in 1:n if isenabled(srchers[i])]
     n_enabled = length(enabled_searchers)
+    query_prepared = prepare_query(query, QUERY_STRIP_FLAGS)
     # Search
-    results = Vector{SearchResult}(undef, length(enabled_searchers))
+    results = Vector{SearchResult}(undef, n_enabled)
     ###################################################################
-    # A `@threads` statement in front of the for loop here idicates
-    # the use of multi-threading. If multi-threading is used,
+    # A `Threads.@threads` statement in front of the for loop here
+    # idicates the use of multi-threading. If multi-threading is used,
     # OPENBLAS multi-threading support has to be disabled by using:
     #   `export OPENBLAS_NUM_THREADS=1` in the shell
     # or start julia with:
     #   `env OPENBLAS_NUM_THREADS=1 julia`
+    #
+    # WARNING: Multi-theading support (as of v1.1 is still EXPERIMENTAL)
+    #          and floating point operations are not thread-safe!
+    #          Do not use with semantic search!!
     ###################################################################
-    Threads.@threads for i in 1:n_enabled
+    ### Threads.@threads for i in 1:n_enabled
+    for i in 1:n_enabled
         # Get corpus search results
         results[i] = search(srchers[enabled_searchers[i]],
-                            query,
+                            query_prepared,
                             search_type=search_type,
                             search_method=search_method,
                             max_matches=max_matches,
@@ -102,7 +108,7 @@ function search(srcher::Searcher{D,E,M},
                 max_suggestions::Int=DEFAULT_MAX_CORPUS_SUGGESTIONS) where
         {D<:AbstractDocument, E, M<:AbstractDocumentCount}
     # Tokenize
-    needles = preprocess_query(query)
+    needles = prepare_query(query, QUERY_STRIP_FLAGS)
     # Initializations
     n = length(srcher.search_data[:data])    # number of documents
     p = length(needles)                 # number of search terms
@@ -261,7 +267,7 @@ function search(srcher::Searcher{D,E,M},
                 ) where
         {D<:AbstractDocument, E, M<:AbstractEmbeddingModel}
     # Tokenize
-    needles = preprocess_query(query)
+    needles = prepare_query(query, QUERY_STRIP_FLAGS)
     # Initializations
     n = length(srcher.search_data[:data])  # number of embedded documents
     # Search metadata and/or data

@@ -41,7 +41,7 @@ function iosearch(connection, query)  # search option would go here
         println(connection, query)
         @debug ">>> Query sent."
         response = readline(connection, keep=true)
-        @debug "<<< Serach results received"
+        @debug "<<< Search results received."
     else
         @error "Connection is is closed."
     end

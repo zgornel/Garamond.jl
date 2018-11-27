@@ -61,7 +61,7 @@ function generate_test_configurations(data_path::String,
     # Classic search test configuration
     CLASSIC_CONFIGS = []
     _id = 1
-    for _count_type in ["tf", "tfidf"]
+    for _count_type in ["tf", "tfidf", "bm25"]
         for _heuristic in ["jaro", "levenshtein"]
             for _build_summary in [false, true]
                 for _keep_data in [false, true]
