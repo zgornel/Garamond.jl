@@ -24,11 +24,18 @@ A detailed feature list:
     - [x] Summarization support (index [TextRank](https://en.wikipedia.org/wiki/Automatic_summarization#Unsupervised_approach:_TextRank)-based summary)
     - [ ] Parallelism: green light or hardware threads **TODO**
     - [x] Basic update or 're-indexing' support
-    - [x] Multiple files/directories support:
-        - [x] Text files
-        - [ ] Compressed files **TODO**
-        - [ ] PDF files **TODO**
-        - [ ] Microsoft/Libre Office files (.doc, .xls etc)
+    - [x] Single file support (parts of the file are treated as documents)
+    - [x] Multiple files / directory support (a file is a document)
+    - [x] File format support:
+        - [x] Text formats
+            - [x] `.csv`, `.tsv` etc.
+            - [x] `.json` (custom parser must be built)
+            - [x] `.html` (custom parser must be built)
+            - [ ] `.xml`
+        - [ ] Binary formats
+            - [ ] `.pdf` **TODO**
+            - [ ] Compressed files (`.zip`, `.gz`, etc.) **TODO**
+            - [ ] ~~Microsoft (`.doc`, `.xls`, etc.)~~
 - Engine configuration:
     - [x] Single file for multiple data configurations
     - [x] Multiple files for data configurations
