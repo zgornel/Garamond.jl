@@ -1,8 +1,3 @@
-const DEFAULT_LOG_LEVEL = Logging.Info
-const DEFAULT_LOGGER = ConsoleLogger
-
-
-
 """
     build_logger(logging_stream, log_level)
 

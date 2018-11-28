@@ -15,6 +15,9 @@
 #. .lxkOOkxl' .lXMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM#
 #MXl'.    .,oXMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM#
 ##################################################################################################################
+#
+# ~Garamond~ - Search engine written at 0x0α Research by Corneliu Cofaru, 2018.
+#
 module Garamond
 
     # Using section
@@ -63,21 +66,22 @@ module Garamond
         print_search_results
 
     # Include section
-    include("defaults.jl")
+    include("config/defaults.jl")
+    include("config/cmdline.jl")
+    include("config/engine.jl")
+    include("config/data.jl")
     include("logging.jl")
-    include("config.jl")
     include("textutils.jl")
     include("embeddings.jl")
     include("search_structures.jl")
     include("update.jl")
     include("search.jl")
     include("results.jl")
-    include("parsers/delimited_formats.jl")
-    include("parsers/directory_formats.jl")
-    include("parsers/no_parse.jl")
-    include("cmdline.jl")
     include("io.jl")
     include("fsm.jl")
     include("version.jl")
+    include("parsers/delimited_formats.jl")
+    include("parsers/directory_formats.jl")
+    include("parsers/no_parse.jl")
 
 end # module
