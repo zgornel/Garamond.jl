@@ -35,7 +35,8 @@ A detailed feature list:
         - [ ] Binary formats
             - [ ] `.pdf` **TODO**
             - [ ] Compressed files (`.zip`, `.gz`, etc.) **TODO**
-            - [ ] ~~Microsoft (`.doc`, `.xls`, etc.)~~
+            - [ ] Microsoft [new .xml formats(`.docx`, `.xlsx`, etc.)](https://docs.microsoft.com/en-us/office/open-xml/open-xml-sdk) **TODO**
+            - [ ] ~~Microsoft old binary formats(`.doc`, `.xls`, etc.)~~
 - Engine configuration:
     - [x] Single file for multiple data configurations
     - [x] Multiple files for data configurations

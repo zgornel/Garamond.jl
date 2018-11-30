@@ -75,7 +75,7 @@ function summarize(sentences::Vector{S};
                    flags::UInt32=SUMMARIZATION_FLAGS
                   ) where S<:AbstractString
     # Get document term matrix
-    s = StringDocument.(sentences)
+    s = StringDocument{String}.(sentences)
     c = Corpus(s)
     prepare!(c, flags)
     update_lexicon!(c)
