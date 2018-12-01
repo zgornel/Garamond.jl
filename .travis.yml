@@ -18,6 +18,17 @@ matrix:
   - julia: nightly
   - os: osx  # travis timing out
 
+jobs:
+  include:
+    - stage: "Documentation"
+      julia: 1.0
+      os: linux
+      script:
+        - julia --project=docs/ -e 'using Pkg; Pkg.instantiate();
+                                    Pkg.develop(PackageSpec(path=pwd()))'
+        - julia --project=docs/ docs/make.jl
+      after_success: skip
+
 #codecov: true
 #coveralls: true
 after_success:

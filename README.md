@@ -7,6 +7,11 @@ A small corpus search engine written in Julia.
 [![Build Status (latest)](https://travis-ci.com/zgornel/Garamond.jl.svg?token=8HcgFtAjpxwpdXiu8Fon&branch=latest)](https://travis-ci.com/zgornel/Garamond.jl)
 
 
+## Documentation
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://zgornel.github.io/Garamond.jl/stable)
+[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://zgornel.github.io/Garamond.jl/dev)
+
+
 ## Introduction
 
 Garamond is under development ...¯\\_(ツ)_/¯

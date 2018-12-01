@@ -1,5 +1,5 @@
 """
-    update_searcher(searcher)
+    update(searcher)
 
 Updates a Searcher from using its SearchConfig.
 """
