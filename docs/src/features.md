@@ -1,4 +1,4 @@
-# Feature list
+# Search engine features
 
 This is a list of the features supported by Garamond.
 
@@ -84,6 +84,6 @@ This is a list of the features supported by Garamond.
 
 
 ## Status of features
- - [x] supported
- - [ ] to be added
- - **?** not decided whether to add or not
+ - [x] _supported_
+ - [ ] _to be added_
+ - **?** _not decided whether to add or not_

@@ -28,7 +28,6 @@ optional arguments:
 ```
 
 ## Server mode
-
 In _server_ mode, Garamond listens to a socket (i.e.`/tmp/garamond/sockets/socket1`) for incoming queries. Once the query is received, it is processed and the answer written back to same socket.
 The following example starts Garamond in server mode (indexes the data and connects to socket, displaying all messages):
 ```
@@ -37,8 +36,7 @@ $ ./garamond.jl --server -d ../extras_for_Garamond/data/Cornel/delimited/config_
 [ [2018-11-18 15:29:25][DEBUG][fsm.jl:41] Waiting for query...
 ```
 
-##Client mode
-
+## Client mode
 In _client_ mode, the script sends the query to the server's socket and waits the search results on the same socket. Since it uses the whole package, client startup times are slow. View the notes for faster query alternatives. The following example performs a query using the server defined above (the socket is not specified as the server uses the _default_ value):
 ```
 % ./garamond.jl --client --q "arthur c clarke" --log-level debug
@@ -47,3 +45,9 @@ In _client_ mode, the script sends the query to the server's socket and waits th
 [ [2018-11-18 15:37:36][DEBUG][io.jl:44] <<< Search results received.
 [{"id":{"id":"biglib-classic"},"query_matches":{"d":{"0.5441896":[3],"0.78605163":[1,2],"0.64313316":[6,7],"0.5895387":[4,5]}},"needle_matches":{"clarke":1.5272124,"arthur":1.5272124,"c":1.5272124},"suggestions":{"d":{}}},{"id":{"id":"techlib-classic"},"query_matches":{"d":{"0.053899456":[1,5]}},"needle_matches":{"c":0.10779891},"suggestions":{"d":{}}}]
 ```
+
+## Unix socket tips and tricks
+The examples below assume the existence of a Unix socket at the location `/tmp/<unix_socket>` (the socket name is not specified).
+- To redirect a TCP socket to a UNIX socket: `socat TCP-LISTEN:<tcp_port>,reuseaddr,fork UNIX-CLIENT:/tmp/<unix_socket>` or `socat TCP-LISTEN:<tcp_port>,bind=127.0.0.1,reuseaddr,fork,su=nobody,range=127.0.0.0/8 UNIX-CLIENT:/tmp/<unix_socket>`
+- To send a query to a Garamond server (no reply, for debugging purposes): `echo 'find me a needle' | socat - UNIX-CONNECT:/tmp/garamond/sockets/<unix_socket>`
+- For interactive send/receive, `socat UNIX-CONNECT:/tmp/garamond/sockets/<unix_socket> STDOUT`
