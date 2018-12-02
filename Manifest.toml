@@ -352,7 +352,7 @@ version = "0.4.2"
 
 [[Word2Vec]]
 deps = ["LinearAlgebra", "Statistics", "Test"]
-git-tree-sha1 = "a00f471cf2e063a710673bae1fb4befb5872b982"
+git-tree-sha1 = "9ada4b3dd83a7659f1f8ee631df51e145979c661"
 repo-rev = "latest"
 repo-url = "https://github.com/zgornel/Word2Vec.jl"
 uuid = "3e5e13d1-f1b1-11e8-0a34-b72730d7b11b"
