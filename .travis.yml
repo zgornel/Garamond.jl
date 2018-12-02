@@ -25,6 +25,7 @@ jobs:
       os: linux
       script:
         - julia -e 'using Pkg;
+                    Pkg.add("Documenter");
                     cd(Pkg.dir("Garamond"));
                     Pkg.activate(".");
                     Pkg.instantiate();
