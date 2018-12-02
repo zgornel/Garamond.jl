@@ -4,6 +4,7 @@
 *~
 *.swp
 build/bin/
+docs/build/
 benchmarks/
 scripts/
 old/

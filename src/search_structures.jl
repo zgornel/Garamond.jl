@@ -29,7 +29,7 @@ mutable struct Searcher{D<:AbstractDocument,
                         E,
                         M<:AbstractSearchData} <: AbstractSearcher
     config::SearchConfig                        # most of what is not actual data
-    corpus::Corpus{D}                           # corpus
+    corpus::Corpus{String,D}                    # corpus
     embeddings::E                               # needed to embed query
     search_data::Dict{Symbol, M}                # actual search data (classic and semantic)
     search_trees::Dict{Symbol, BKTree{String}}  # for suggestions

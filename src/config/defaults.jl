@@ -33,7 +33,9 @@ const DEFAULT_KEEP_DATA = true  # whether to keep the actual document data, meta
 ##############################################################
 # TODO(corneliu): Check here if any of them can also be data configuration options
 #  i.e. max matches, exit distance, document type
-const DEFAULT_DOCUMENT_TYPE = StringAnalysis.NGramDocument  # default document object type
+const DEFAULT_LOG_LEVEL = Logging.Info
+const DEFAULT_LOGGER = ConsoleLogger
+const DEFAULT_DOCUMENT_TYPE = StringAnalysis.NGramDocument{String}  # default document object type
 const DEFAULT_MAX_MATCHES = 1_000  # maximum number of matches that can be retrned
 const DEFAULT_MAX_SUGGESTIONS = 1  # maximum number of overall suggestions
 const DEFAULT_MAX_CORPUS_SUGGESTIONS = 0  # maximum number of suggestions for each corpus
