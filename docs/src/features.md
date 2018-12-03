@@ -15,10 +15,10 @@ This is a list of the features supported by Garamond.
             - [x] `.csv`, `.tsv` etc.
             - [x] `.json` (custom parser must be built)
             - [x] `.html` (custom parser must be built)
-            - [ ] `.xml`
+            - [x] `.xml` (custom parser must be built)
         - [ ] Binary formats
-            - [ ] `.pdf`
-            - [ ] Compressed files (`.zip`, `.gz`, etc.)
+            - [x] `.pdf` (through external program `pdftotext` from [libpoppler](https://poppler.freedesktop.org/))
+            - [ ] Compressed files (`.tar`, `.zip`, `.gz`, etc.)
             - [ ] Microsoft [new .xml formats(`.docx`, `.xlsx`, etc.)](https://docs.microsoft.com/en-us/office/open-xml/open-xml-sdk)
             - **?** Microsoft old binary formats(`.doc`, `.xls`, etc.)
 - Engine configuration:

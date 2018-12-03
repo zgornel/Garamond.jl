@@ -33,6 +33,7 @@ const DEFAULT_KEEP_DATA = true  # whether to keep the actual document data, meta
 ##############################################################
 # TODO(corneliu): Check here if any of them can also be data configuration options
 #  i.e. max matches, exit distance, document type
+const DEFAULT_PDFTOTEXT_PROGRAM = "/usr/bin/pdftotext"  # program to convert PDFs to text
 const DEFAULT_LOG_LEVEL = Logging.Info
 const DEFAULT_LOGGER = ConsoleLogger
 const DEFAULT_DOCUMENT_TYPE = StringAnalysis.NGramDocument{String}  # default document object type

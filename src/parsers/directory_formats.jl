@@ -62,9 +62,30 @@ function __parser_directory_format_1(directory::AbstractString,
     # Any logic about how to process metadata, data should go into #
     # the `config`; for now it is not used.                        #
     ################################################################
+    # Check if there are pdf's in the documents and if the pdf to text
+    # converter is available
+    can_read_pdfs = false
+    if isfile(DEFAULT_PDFTOTEXT_PROGRAM)
+        can_read_pdfs = true
+    end
+    if !can_read_pdfs && any(map(file->endswith(file, ".pdf"), files))
+        @warn """PDF files will be ignored, reader program missing.
+                 To read PDF files, define a program (i.e. pdftotext)
+                 using the DEFAULT_PDFTOTEXT_PROGRAM engine variable."""
+    end
     for (i, file) in enumerate(files)
-        # Read data and split into sentences
-        sentences = sentence_tokenize(open(fid->read(fid, String), file))
+        # Read data
+        if endswith(file, ".pdf")
+            if can_read_pdfs
+                raw_data = read(`$DEFAULT_PDFTOTEXT_PROGRAM $file -`, String)
+            else
+                raw_data = ""
+            end
+        else
+            raw_data = open(fid->read(fid, String), file)
+        end
+        # Split into sentences
+        sentences = sentence_tokenize(raw_data)
         # Create summary if the case
         if build_summary
             # TODO(Corneliu): Optimize this bit for performance
