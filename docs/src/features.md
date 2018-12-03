@@ -24,7 +24,7 @@ This is a list of the features supported by Garamond.
 - Engine configuration:
     - [x] Single file for multiple data configurations
     - [x] Multiple files for data configurations
-    - [ ] General engine configuration
+    - [x] General engine configuration (`~/.garamondrc.jl`, gets re-compiled into Garamond at startup)
 - Search types:
     - Classic Search:
         - Language support:

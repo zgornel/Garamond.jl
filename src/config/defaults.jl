@@ -27,20 +27,27 @@ const DEFAULT_KEEP_DATA = true  # whether to keep the actual document data, meta
 
 
 
-##############################################################
-# SEARCH ENGINE configuration: the constants here are used   #
-# throughout the code and do not correspond to file-options. #
-##############################################################
+#################
+# SEARCH ENGINE #
+#################
 # TODO(corneliu): Check here if any of them can also be data configuration options
-#  i.e. max matches, exit distance, document type
+#  i.e. max matches, edit distance, document type
+
+# FILE Configuration: These defaults can be overwritten in .garamondrc.jl
 const DEFAULT_PDFTOTEXT_PROGRAM = "/usr/bin/pdftotext"  # program to convert PDFs to text
-const DEFAULT_LOG_LEVEL = Logging.Info
-const DEFAULT_LOGGER = ConsoleLogger
 const DEFAULT_DOCUMENT_TYPE = StringAnalysis.NGramDocument{String}  # default document object type
+const DEFAULT_MAX_EDIT_DISTANCE = 2  # maximum edit distance for which to return suggestions
 const DEFAULT_MAX_MATCHES = 1_000  # maximum number of matches that can be retrned
 const DEFAULT_MAX_SUGGESTIONS = 1  # maximum number of overall suggestions
 const DEFAULT_MAX_CORPUS_SUGGESTIONS = 0  # maximum number of suggestions for each corpus
-const MAX_EDIT_DISTANCE = 2  # maximum edit distance for which to return suggestions
+
+# DYNAMIC Configuration: These defaults can be through run-time options of the
+#                        Garamond CLI client/server utilities
+const DEFAULT_LOG_LEVEL = Logging.Info
+const DEFAULT_LOGGER = ConsoleLogger
+
+# STATIC Configuration: These constants cannot be overwritten
+const DEFAULT_GARAMONDRC_FILE = expanduser("~/.garamondrc.jl")
 const HEURISTIC_TO_DISTANCE = Dict(  # heuristic to distance object mapping
     :levenshtein => StringDistances.Levenshtein(),
     :dameraulevenshtein => StringDistances.DamerauLevenshtein(),
@@ -48,33 +55,28 @@ const HEURISTIC_TO_DISTANCE = Dict(  # heuristic to distance object mapping
     :jaro => StringDistances.Jaro())
 const DEFAULT_DISTANCE = HEURISTIC_TO_DISTANCE[DEFAULT_HEURISTIC]  # default distance
 const DEFAULT_METADATA_FIELDS = [:author, :name, :note]  # Default metadata fields for search
-
-# Text pre-processing flags (for the prepare! function)
+# TODO(Corneliu): Move preprocessing flags to the data configuration
 const TEXT_STRIP_FLAGS = strip_case |
                          strip_punctuation |
                          strip_articles |
                          strip_prepositions |
                          strip_whitespace |
                          strip_corrupt_utf8
-
 const QUERY_STRIP_FLAGS = strip_case |
                           strip_punctuation |
                           strip_articles |
                           strip_prepositions |
                           strip_whitespace |
                           strip_corrupt_utf8
-
 const METADATA_STRIP_FLAGS = strip_case |
                              strip_punctuation |
                              strip_articles |
                              strip_prepositions |
                              strip_whitespace |
                              strip_corrupt_utf8
-
 const SUMMARIZATION_FLAGS = strip_corrupt_utf8 |
                             strip_case |
                             strip_stopwords
-
 # Dictionaries for String <=>Languages.Language / Languages.Languages <=> String
 # conversion
 const STR_TO_LANG = Dict("english"=>Languages.English(),
@@ -121,7 +123,7 @@ const STR_TO_LANG = Dict("english"=>Languages.English(),
                          "tamil"=>Languages.Tamil()
                         )
 const LANG_TO_STR = Dict((v=>k) for (k,v) in STR_TO_LANG)
-
+# TODO(Corneliu): Check out if this can be moved to the data config as well
 # Parser configurations; the keys of this dictionary have to appear in the
 # parsing configuration files.
 const PARSER_CONFIGS = Dict(

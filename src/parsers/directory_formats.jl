@@ -65,19 +65,19 @@ function __parser_directory_format_1(directory::AbstractString,
     # Check if there are pdf's in the documents and if the pdf to text
     # converter is available
     can_read_pdfs = false
-    if isfile(DEFAULT_PDFTOTEXT_PROGRAM)
+    if isfile(PDFTOTEXT_PROGRAM)
         can_read_pdfs = true
     end
     if !can_read_pdfs && any(map(file->endswith(file, ".pdf"), files))
         @warn """PDF files will be ignored, reader program missing.
                  To read PDF files, define a program (i.e. pdftotext)
-                 using the DEFAULT_PDFTOTEXT_PROGRAM engine variable."""
+                 using the PDFTOTEXT_PROGRAM engine variable."""
     end
     for (i, file) in enumerate(files)
         # Read data
         if endswith(file, ".pdf")
             if can_read_pdfs
-                raw_data = read(`$DEFAULT_PDFTOTEXT_PROGRAM $file -`, String)
+                raw_data = read(`$PDFTOTEXT_PROGRAM $file -`, String)
             else
                 raw_data = ""
             end

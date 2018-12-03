@@ -65,7 +65,7 @@ end
 # Pretty printer of results
 function print_search_results(srchers::S,
                               results::T;
-                              max_suggestions=DEFAULT_MAX_CORPUS_SUGGESTIONS) where
+                              max_suggestions=MAX_CORPUS_SUGGESTIONS) where
         {S<:AbstractVector{<:AbstractSearcher},
          T<:AbstractVector{<:SearchResult}}
     if !isempty(results)
@@ -104,7 +104,7 @@ end
 
 # Squash suggestions for multiple corpora search results
 function squash_suggestions(results::Vector{SearchResult},
-                            max_suggestions::Int=1)
+                            max_suggestions::Int=MAX_SUGGESTIONS)
     suggestions = MultiDict{String, String}()
     # Quickly exit if no suggestions are sought
     max_suggestions <=0 && return suggestions

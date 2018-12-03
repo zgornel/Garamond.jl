@@ -5,9 +5,6 @@ function get_commandline_arguments(args::Vector{String})
         "--data-config", "-d"
             help = "data configuration file"
             action = :append_arg
-        "--engine-config", "-e"
-            help = "search engine configuration file"
-            default = ""
         "--log-level"
             help = "logging level"
             default = "info"

@@ -118,8 +118,8 @@ function build_searcher(sconf::SearchConfig)
     # Note: the metadata is kept as well for the purpose of
     #       converying information regarding what is being
     #       searched. The only use for it is when displaying
-    crps = build_corpus(documents, DEFAULT_DOCUMENT_TYPE, metadata_vector)
-    crps_meta = build_corpus(documents_meta, DEFAULT_DOCUMENT_TYPE,
+    crps = build_corpus(documents, DOCUMENT_TYPE, metadata_vector)
+    crps_meta = build_corpus(documents_meta, DOCUMENT_TYPE,
                              metadata_vector)
     # Pre-process documents
     prepare!(crps, TEXT_STRIP_FLAGS |
@@ -210,7 +210,7 @@ function build_searcher(sconf::SearchConfig)
     end
     # Remove corpus data if keep_data is false
     if !sconf.keep_data
-        crps = Corpus(DEFAULT_DOCUMENT_TYPE[])
+        crps = Corpus(DOCUMENT_TYPE[])
     end
     # Build searcher
     srcher = Searcher(sconf,
