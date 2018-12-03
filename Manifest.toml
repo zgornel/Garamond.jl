@@ -292,10 +292,8 @@ uuid = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 [[StringAnalysis]]
 deps = ["BinaryProvider", "Languages", "Libdl", "LinearAlgebra", "SparseArrays", "Statistics", "Test", "Unicode", "WordTokenizers"]
 git-tree-sha1 = "81f99e98875923bdfa1ccdfea50324c3c74bf431"
-repo-rev = "master"
-repo-url = "https://github.com/zgornel/StringAnalysis.jl"
-uuid = "f2e5b97c-ed87-11e8-3fa8-a300efcc83e4"
-version = "0.1.0"
+uuid = "b66b7d2f-f536-51df-9f97-4dfb9d27c005"
+version = "0.1.1"
 
 [[StringDistances]]
 deps = ["Distances", "IterTools", "Test"]
