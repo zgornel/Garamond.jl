@@ -11,7 +11,7 @@ function ioserver(socketfile=""; channel=Channel{String}(0))
     else
         socketfile = abspath(socketfile)
         _path = strip.(split(socketfile, "/"))
-        directory = join(_path[1:end-1])
+        directory = join(_path[1:end-1], "/")
         !isdir(directory) && mkpath(directory)
     end
     server = listen(socketfile)
