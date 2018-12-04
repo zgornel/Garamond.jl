@@ -43,6 +43,8 @@ function __parser_directory_format_1(directory::AbstractString,
                                      globbing_pattern::String=DEFAULT_GLOBBING_PATTERN,
                                      build_summary::Bool=DEFAULT_BUILD_SUMMARY,
                                      summary_ns::Int=DEFAULT_SUMMARY_NS,
+                                     summarization_strip_flags::UInt32=
+                                        DEFAULT_SUMMARIZATION_STRIP_FLAGS,
                                      show_progress::Bool=DEFAULT_SHOW_PROGRESS,
                                      kwargs...  # unused kw arguments (used in other parsers)
                                     ) where T<:AbstractDocument
@@ -90,7 +92,9 @@ function __parser_directory_format_1(directory::AbstractString,
         if build_summary
             # TODO(Corneliu): Optimize this bit for performance
             #                 i.e. investigate PageRank parameters
-            sentences = summarize(sentences, ns=summary_ns, flags=SUMMARIZATION_FLAGS)
+            sentences = summarize(sentences,
+                                  ns=summary_ns,
+                                  flags=summarization_strip_flags)
         end
         documents[i] = sentences
         # TODO(Corneliu) Add language support for supported languages

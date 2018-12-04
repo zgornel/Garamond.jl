@@ -64,7 +64,7 @@ end
 
 
 """
-    summarize(sentences [;ns=1, flags=SUMMARIZATION_FLAGS]
+    summarize(sentences [;ns=1, flags=DEFAULT_SUMMARIZATION_FLAGS]
 
 Build a summary of the text's `sentences`. The resulting summary will be
 a `ns` sentence document; each sentence is pre-procesed using the
@@ -72,7 +72,7 @@ a `ns` sentence document; each sentence is pre-procesed using the
 """
 function summarize(sentences::Vector{S};
                    ns::Int=1,
-                   flags::UInt32=SUMMARIZATION_FLAGS
+                   flags::UInt32=DEFAULT_SUMMARIZATION_FLAGS
                   ) where S<:AbstractString
     # Get document term matrix
     s = StringDocument{String}.(sentences)

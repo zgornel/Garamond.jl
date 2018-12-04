@@ -24,6 +24,18 @@ const DEFAULT_GLOBBING_PATTERN = "*"  # Can be any regexp-like pattern
 const DEFAULT_DELIMITER = "|"  # For delimited files only (i.e. document is a line/record)
 const DEFAULT_SHOW_PROGRESS = false  # Show progress while loading files (useful lor longer operations)
 const DEFAULT_KEEP_DATA = true  # whether to keep the actual document data, metadata
+# Text stripping flags
+const DEFAULT_TEXT_STRIP_FLAGS = strip_case | strip_punctuation | strip_articles |
+                                 strip_prepositions | strip_whitespace |
+                                 strip_corrupt_utf8
+const DEFAULT_QUERY_STRIP_FLAGS = strip_case | strip_punctuation | strip_articles |
+                                  strip_prepositions | strip_whitespace |
+                                  strip_corrupt_utf8
+const DEFAULT_METADATA_STRIP_FLAGS = strip_case | strip_punctuation | strip_articles |
+                                     strip_prepositions | strip_whitespace |
+                                     strip_corrupt_utf8
+const DEFAULT_SUMMARIZATION_STRIP_FLAGS = strip_corrupt_utf8 | strip_case |
+                                          strip_stopwords
 
 
 
@@ -55,28 +67,6 @@ const HEURISTIC_TO_DISTANCE = Dict(  # heuristic to distance object mapping
     :jaro => StringDistances.Jaro())
 const DEFAULT_DISTANCE = HEURISTIC_TO_DISTANCE[DEFAULT_HEURISTIC]  # default distance
 const DEFAULT_METADATA_FIELDS = [:author, :name, :note]  # Default metadata fields for search
-# TODO(Corneliu): Move preprocessing flags to the data configuration
-const TEXT_STRIP_FLAGS = strip_case |
-                         strip_punctuation |
-                         strip_articles |
-                         strip_prepositions |
-                         strip_whitespace |
-                         strip_corrupt_utf8
-const QUERY_STRIP_FLAGS = strip_case |
-                          strip_punctuation |
-                          strip_articles |
-                          strip_prepositions |
-                          strip_whitespace |
-                          strip_corrupt_utf8
-const METADATA_STRIP_FLAGS = strip_case |
-                             strip_punctuation |
-                             strip_articles |
-                             strip_prepositions |
-                             strip_whitespace |
-                             strip_corrupt_utf8
-const SUMMARIZATION_FLAGS = strip_corrupt_utf8 |
-                            strip_case |
-                            strip_stopwords
 # Dictionaries for String <=>Languages.Language / Languages.Languages <=> String
 # conversion
 const STR_TO_LANG = Dict("english"=>Languages.English(),

@@ -44,7 +44,8 @@ function search(srchers::V,
     n = length(srchers)
     enabled_searchers = [i for i in 1:n if isenabled(srchers[i])]
     n_enabled = length(enabled_searchers)
-    query_prepared = prepare_query(query, QUERY_STRIP_FLAGS)
+    queries = [prepare_query(query, srcher.config.query_strip_flags)
+               for srcher in srchers]
     # Search
     results = Vector{SearchResult}(undef, n_enabled)
     ###################################################################
@@ -63,7 +64,7 @@ function search(srchers::V,
     for i in 1:n_enabled
         # Get corpus search results
         results[i] = search(srchers[enabled_searchers[i]],
-                            query_prepared,
+                            queries[enabled_searchers[i]],
                             search_type=search_type,
                             search_method=search_method,
                             max_matches=max_matches,
@@ -108,7 +109,7 @@ function search(srcher::Searcher{D,E,M},
                 max_suggestions::Int=MAX_CORPUS_SUGGESTIONS) where
         {D<:AbstractDocument, E, M<:AbstractDocumentCount}
     # Tokenize
-    needles = prepare_query(query, QUERY_STRIP_FLAGS)
+    needles = prepare_query(query, srcher.config.query_strip_flags)
     # Initializations
     n = length(srcher.search_data[:data])    # number of documents
     p = length(needles)                 # number of search terms
@@ -267,7 +268,7 @@ function search(srcher::Searcher{D,E,M},
                 ) where
         {D<:AbstractDocument, E, M<:AbstractEmbeddingModel}
     # Tokenize
-    needles = prepare_query(query, QUERY_STRIP_FLAGS)
+    needles = prepare_query(query, srcher.config.query_strip_flags)
     # Initializations
     n = length(srcher.search_data[:data])  # number of embedded documents
     # Search metadata and/or data
