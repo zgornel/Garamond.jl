@@ -51,6 +51,7 @@ function main()
     logging_stream = args["log"]
     socket = args["socket"]
     port = args["port"]
+    #TODO(Corneliu): Select between socket and port
     # Logging
     logger = Garamond.build_logger(logging_stream, log_level)
     global_logger(logger)

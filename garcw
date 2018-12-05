@@ -1,0 +1,10 @@
+#!/bin/julia
+
+#############################################
+# Garamond script for TCP client operations #
+#############################################
+module GaramondWebClient
+
+#TODO(Corneliu): Implement
+
+end

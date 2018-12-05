@@ -33,23 +33,12 @@ reads a query, sends it to Garamond to perform the search,
 receives the search results from the same channel and writes
 them back to the socket.
 """
-function ioserver(socket=""; channel=Channel{String}(0))
+function ioserver(socket; channel=Channel{String}(0))
     # Checks
-    if issocket(socket)
-        rm(socket)
-    elseif isempty(socket)
-        @error "No socket file specified, cannot create Garamond socket."
-    elseif isfile(socket)
-        @error "$socket already exists, cannot create Garamond socket."
-    elseif isdir(socket)
-        @error "$socket is a directory, cannot create Garamond socket."
-    else
-        socket = abspath(socket)
-        _path = strip.(split(socket, "/"))
-        directory = join(_path[1:end-1], "/")
-        !isdir(directory) && mkpath(directory)
-    end
+    socket = _check_socket(socket)
+    # Start Server
     server = listen(socket)
+    # Start serving
     while true
         connection = accept(server)
         @async while isopen(connection)
@@ -72,6 +61,33 @@ function ioserver(socket=""; channel=Channel{String}(0))
 end
 
 
+_check_socket(socket::AbstractString) = begin
+    if issocket(socket)
+        rm(socket)
+    elseif isempty(socket)
+        @error "No socket file specified, cannot create Garamond socket."
+    elseif isfile(socket)
+        @error "$socket already exists, cannot create Garamond socket."
+    elseif isdir(socket)
+        @error "$socket is a directory, cannot create Garamond socket."
+    else
+        socket = abspath(socket)
+        _path = strip.(split(socket, "/"))
+        directory = join(_path[1:end-1], "/")
+        !isdir(directory) && mkpath(directory)
+    end
+    return socket
+end
+
+
+_check_socket(socket::Int) = begin
+    if socket > 0
+        return socket
+    else
+        @error "Please specify a TCP port of positive integer value."
+    end
+end
+
 
 """
     fsm(data_config_paths, socket, args... [;kwargs...])
@@ -85,10 +101,7 @@ and the proceeds to looping continuously in order to:
 
 Both searcher update and I/O communication are performed asynchronously.
 """
-function fsm(data_config_paths,
-             socket = "/tmp/garamond/sockets/socket1",
-             port = -1,
-             args...;kwargs...)  # data config path, ports, socket file etc
+function fsm(data_config_paths, socket, args...;kwargs...)  # data config path, ports, socket file etc
     # Initialize communication Channels
     io_channel = Channel{String}(0)
     # Load data
