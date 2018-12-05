@@ -39,7 +39,7 @@ end
 #   The metadata vector is a Vector{DocumentMetadata}
 # TODO(Corneliu): Add support for other files (so far only text files supported)
 function __parser_directory_format_1(directory::AbstractString,
-                                     config::Dict=Dict();  # not used
+                                     config=nothing;  # not used
                                      globbing_pattern::String=DEFAULT_GLOBBING_PATTERN,
                                      build_summary::Bool=DEFAULT_BUILD_SUMMARY,
                                      summary_ns::Int=DEFAULT_SUMMARY_NS,

@@ -23,6 +23,20 @@ end
 #       - the inner vector is for a the document: vector of sentences
 #       - the outer vector is for the corpus: a vector of documents
 #   The metadata vector is a Vector{DocumentMetadata}
+#
+# Example of parser config:
+# ------------------------
+#   Dict("metadata"=> Dict(1=>"id",
+#                          2=>"author",
+#                          3=>"name",
+#                          4=>"publisher",
+#                          5=>"edition_year",
+#                          6=>"published_year",
+#                          7=>"language",
+#                          8=>"note",
+#                          9=>"location"),
+#        "data"=> [2,3,8]
+#       )
 function __parser_delimited_format_1(filename::AbstractString,
                                      config::Dict;
                                      header::Bool = false,
@@ -33,8 +47,6 @@ function __parser_delimited_format_1(filename::AbstractString,
     # Initializations
     nlines = linecount(filename) - ifelse(header,1,0)
     nlines==0 && error("$filename contains no data lines.")
-    # Select and sort the line fields which will be used as document text in the corpus
-    fields_mask = sort!([k for k in keys(config[:data]) if config[:data][k]])
     # Read the file
     if header
         string_matrix, _ = readdlm(filename, delimiter[1], String, header=header)
@@ -47,44 +59,52 @@ function __parser_delimited_format_1(filename::AbstractString,
     progressbar = Progress(div(nlines, _nl)+1,
                            desc="Parsing $_filename...",
                            color=:normal)
+    # Read, sort and filter the line fields which
+    # will be used as document text in the corpus
+    data_fields = collect(config["data"])
+    ncols = size(string_matrix, 2)
+    filter!(col->col > 0 && col <= ncols, data_fields)
+    # Filter metadata mappings
+    metadata_fields = fieldnames(DocumentMetadata)
+    config_meta = Dict(parse(Int, k) => Symbol(v)
+                       for (k,v) in config["metadata"])
+    filter!(p->p.first > 0 && p.first <= ncols, config_meta)
+    filter!(p->p.second in metadata_fields, config_meta)
     # Initialize outputs
     nlines = min(nlines, size(string_matrix,1))  # avoid newlines
     documents = Vector{Vector{String}}(undef, nlines)
     metadata_vector = Vector{DocumentMetadata}(undef, nlines)
-    metadata_fields = fieldnames(DocumentMetadata)
     # Loop over loaded data and process data
     @inbounds for i in 1:size(string_matrix,1)
         # Iterate and parse
         vline = strip.(view(string_matrix, i, :))
         iszero(mod(i, _nl)) && show_progress && next!(progressbar)
         # Create document
-        documents[i] = vline[fields_mask]
+        documents[i] = vline[data_fields]
         metadata_vector[i] = DocumentMetadata(Languages.English(),
                                 "", "", "", "", "", "", "", "", "")
         # Set parsed values for document metadata
-        for (column, metafield) in config[:metadata]
+        for (column, metafield) in config_meta
             local _language
-            if metafield in metadata_fields
-                # Metadata field is to be parsed
-                if metafield == :language
-                    # Get Language object from string
-                    _lang = lowercase(vline[column])
-                    try
-                        #_language = STR_TO_LANG[_lang]
-                        # HACK, force Languages.English() as there is little
-                        # reason to use other languages. Preprocessing fails
-                        # as dictionaries are needed
-                        # TODO(Corneliu): Add language support for supported languages.
-                        _language = STR_TO_LANG["english"]
-                    catch
-                        @warn "Language $_lang not supported. Using default."
-                        _language = Languages.English()
-                    end
-                    setfield!(metadata_vector[i], metafield, _language)
-                else
-                    # Non-language field
-                    setfield!(metadata_vector[i], metafield, lowercase(vline[column]))
+            # Metadata field is to be parsed
+            if metafield == :language
+                # Get Language object from string
+                _lang = lowercase(vline[column])
+                try
+                    #_language = STR_TO_LANG[_lang]
+                    # HACK, force Languages.English() as there is little
+                    # reason to use other languages. Preprocessing fails
+                    # as dictionaries are needed
+                    # TODO(Corneliu): Add language support for supported languages.
+                    _language = STR_TO_LANG["english"]
+                catch
+                    @warn "Language $_lang not supported. Using default."
+                    _language = Languages.English()
                 end
+                setfield!(metadata_vector[i], metafield, _language)
+            else
+                # Non-language field
+                setfield!(metadata_vector[i], metafield, lowercase(vline[column]))
             end
         end
     end

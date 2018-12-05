@@ -27,6 +27,7 @@ mutable struct SearchConfig
     enabled::Bool                   # whether to use the corpus in search or not
     data_path::String               # file/directory path for the data (depends on what the parser accepts)
     parser::Function                # parser function used to obtain corpus
+    parser_config::Union{Nothing,Dict}  # parser configuration
     build_summary::Bool             # whether to summarize or not the documents
     summary_ns::Int                 # the number of sentences in the summary
     keep_data::Bool                 # whether to keep document data, metadata
@@ -56,6 +57,7 @@ SearchConfig(;
           enabled=false,
           data_path="",
           parser=get_parsing_function(DEFAULT_PARSER,
+                                      DEFAULT_PARSER_CONFIG,
                                       false,
                                       DEFAULT_DELIMITER,
                                       DEFAULT_GLOBBING_PATTERN,
@@ -63,6 +65,7 @@ SearchConfig(;
                                       DEFAULT_SUMMARY_NS,
                                       DEFAULT_SUMMARIZATION_STRIP_FLAGS,
                                       DEFAULT_SHOW_PROGRESS),
+          parser_config=DEFAULT_PARSER_CONFIG,
           build_summary=DEFAULT_BUILD_SUMMARY,
           summary_ns=DEFAULT_SUMMARY_NS,
           keep_data=DEFAULT_KEEP_DATA,
@@ -80,7 +83,8 @@ SearchConfig(;
           query_strip_flags=DEFAULT_QUERY_STRIP_FLAGS,
           summarization_strip_flags=DEFAULT_SUMMARIZATION_STRIP_FLAGS) =
     # Call normal constructor
-    SearchConfig(id, search, description, enabled, data_path, parser,
+    SearchConfig(id, search, description, enabled, data_path,
+                 parser, parser_config,
                  build_summary, summary_ns, keep_data, stem_words,
                  count_type, heuristic,
                  embeddings_path, embeddings_type,
@@ -161,7 +165,9 @@ function load_search_configs(filename::AbstractString)
                                                        "summarization_strip_flags",
                                                         DEFAULT_SUMMARIZATION_STRIP_FLAGS))
         # Construct parser (built last as requires other parameters)
+        sconfig.parser_config = get(dconfig, "parser_config", DEFAULT_PARSER_CONFIG)
         sconfig.parser = get_parsing_function(Symbol(dconfig["parser"]),
+                                              sconfig.parser_config,
                                               header,
                                               delimiter,
                                               globbing_pattern,
@@ -175,6 +181,7 @@ function load_search_configs(filename::AbstractString)
         # - description (always works)
         # - enabled (must fail if wrong)
         # - parser (must fail if wrong)
+        # - parser_config (must fail if wrong)
         # - globbing_pattern (must fail if wrong)
         # - build_summary (should fail if wrong)
         # - text data/metadata/query/summarization flags (must fail if wrong)
@@ -278,6 +285,8 @@ returns it.
 
 # Arguments
   * `parser::Symbol` is the name of the parser
+  * `parser_config::Union{Nothing, Dict}` can contain optional configuration data
+    for the parser (for delimited parsers)
   * `header::Bool` whether the file has a header or not (for delimited files only)
   * `delimiter::String` the delimiting character (for delimited files only)
   * `globbing_pattern::String` globbing pattern for gathering file lists
@@ -296,6 +305,7 @@ Note: `parser` must be in the keys of the `PARSER_CONFIGS` constant. The name
       parser `:delimited_format_1`. The function must be defined apriori.
 """
 function get_parsing_function(parser::Symbol,
+                              parser_config::Union{Nothing, Dict},
                               header::Bool,
                               delimiter::String,
                               globbing_pattern::String,
@@ -306,8 +316,6 @@ function get_parsing_function(parser::Symbol,
     PREFIX = :__parser_
     # Construct the actual basic parsing function from parser name
     parsing_function  = eval(Symbol(PREFIX, parser))
-    # Get parser config
-    parser_config = get(PARSER_CONFIGS, parser, Dict())
     # Build and return parsing function (a nice closure)
     function parsing_closure(filename::String)
         return parsing_function(# Compulsory arguments for all parsers
