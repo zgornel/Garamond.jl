@@ -1,0 +1,43 @@
+#!/bin/julia
+
+#########################################
+# Garamond script for server operations #
+#########################################
+module GaramondServer
+
+using Pkg
+Pkg.activate(@__DIR__)
+using Garamond
+using Sockets
+using Logging
+
+
+########################
+# Main module function #
+########################
+function main()
+    # Parse command line arguments
+    args = Garamond.get_server_commandline_arguments(ARGS)
+    # Get the argument values
+    data_config_paths = String.(args["data-config"])
+    log_level = args["log-level"]
+    logging_stream = args["log"]
+    socket = args["socket"]
+    # Logging
+    logger = Garamond.build_logger(logging_stream, log_level)
+    global_logger(logger)
+    # Start Garamond in either server or client mode
+    @debug "~ GARAMOND ~ $(Garamond.printable_version())\n"
+    # Start Server #
+    ################
+    Garamond.fsm(data_config_paths, socket)
+    return 0
+end
+
+
+################################
+# Start main Garamond function #
+################################
+main()
+
+end # GaramondServer

@@ -3,8 +3,6 @@
 This is a list of the features supported by Garamond.
 
 - Document Indexing/Modelling:
-    - [x] Single delimited file (rows are documents)
-    - [x] A directory (all files in all sub-directories that fit a globbing pattern are indexed)
     - [x] Summarization support (index [TextRank](https://en.wikipedia.org/wiki/Automatic_summarization#Unsupervised_approach:_TextRank)-based summary)
     - [ ] Parallelism: green light or hardware threads
     - [x] Basic update or 're-indexing' support
@@ -67,8 +65,9 @@ This is a list of the features supported by Garamond.
             - [x] [KD-tree](https://en.wikipedia.org/wiki/K-d_tree) (multiple metrics)
             - [x] [HNSW](https://arxiv.org/abs/1603.09320) (multiple metrics supported)
     - I/O Iterface
-        - [x] Input: receive query data through UNIX sockets (when in server mode)
-        - [x] Output: output to socket (when in server mode), to `STDOUT` when in client mode
+        - [x] Server: communication through UNIX/Web sockets
+        - [x] CLI Client: input and output are STDIN and STDOUT (communication through Unix sockets)
+        - [ ] HTTP Client: input and output are in a webpage (communication through Web sockets)
     - Per-corpus embedding training
         - [x] Word2Vec (manual)
         - **?** Conceptnet

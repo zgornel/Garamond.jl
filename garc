@@ -1,0 +1,84 @@
+#!/bin/julia
+
+#############################################
+# Garamond script for CLI client operations #
+#############################################
+module GaramondCLIClient
+
+using Sockets
+using ArgParse
+using Logging
+
+# Function that parses Garamond's client arguments
+function get_client_commandline_arguments(args::Vector{String})
+	s = ArgParseSettings()
+	@add_arg_table s begin
+        "--query", "-q"
+            help = "the search query"
+            default = ""
+        "--log-level"
+            help = "logging level"
+            default = "info"
+        "--log", "-l"
+            help = "logging stream"
+            default = "stdout"
+        "--socket", "-s"
+            help = "UNIX socket for data communication"
+            default = "/tmp/garamond/sockets/socket1"
+	end
+
+	return parse_args(args,s)
+end
+
+
+function iosearch(connection, query)  # search option would go here
+    # Checks
+    if isopen(connection)
+        println(connection, query)
+        @debug ">>> Query sent."
+        response = readline(connection, keep=true)
+        @debug "<<< Search results received."
+    else
+        @error "Connection is is closed."
+    end
+    # Return Dict
+    println(stdout, response)
+end
+
+
+########################
+# Main client function #
+########################
+function main()
+    # Parse command line arguments
+    args = get_client_commandline_arguments(ARGS)
+    # Get the argument values
+    log_level = args["log-level"]
+    logging_stream = args["log"]
+    socket = args["socket"]
+    query = args["query"]
+    # Logging
+    logger = ConsoleLogger(stdout, Logging.Debug)
+    global_logger(logger)
+
+    # Start client
+    @debug "~ GARAMOND~ (client)"
+    conn = connect(socket)
+    if !isempty(query)
+        iosearch(conn, query)
+    else
+        ###
+        # Do nothing, there is nothing to search
+        ###
+    end
+    close(conn)
+    return 0
+end
+
+
+##############
+# Run client #
+##############
+main()
+
+end  # GaramondCLIClient

@@ -33,18 +33,3 @@ function ioserver(socketfile=""; channel=Channel{String}(0))
     end
     return nothing
 end
-
-
-function iosearch(connection, query)  # search option would go here
-    # Checks
-    if isopen(connection)
-        println(connection, query)
-        @debug ">>> Query sent."
-        response = readline(connection, keep=true)
-        @debug "<<< Search results received."
-    else
-        @error "Connection is is closed."
-    end
-    # Return Dict
-    println(stdout, response)
-end
