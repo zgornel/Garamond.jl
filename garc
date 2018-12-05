@@ -47,8 +47,10 @@ function get_client_commandline_arguments(args::Vector{String})
             help = "How many suggestions to return for each mismatched query term"
             arg_type = Int
             default = 0
+        "--kill", "-k"
+            help = "Kill the search engine server"
+            action = :store_true
 	end
-
 	return parse_args(args,s)
 end
 
@@ -73,41 +75,7 @@ function iosearch(connection, request, pretty=false)
     else
         println(stdout, data)
     end
-end
-
-
-########################
-# Main client function #
-########################
-function main()
-    # Parse command line arguments
-    args = get_client_commandline_arguments(ARGS)
-    # Get the argument values
-    log_level = args["log-level"]
-    logging_stream = args["log"]
-    socket = args["socket"]
-    # Logging
-    # TODO(Corneliu) Handle logging properly
-    logger = ConsoleLogger(stdout, Logging.Info)
-    global_logger(logger)
-    # Construct Garamond request
-    request = construct_request(
-                args["query"],
-                args["max-matches"],
-                args["search-type"],
-                args["search-method"],
-                args["max-suggestions"],
-                args["pretty"])
-    # Start client
-    @debug "~ GARAMOND~ (client)"
-    if !issocket(socket)
-        @error "$socket is not a proper UNIX socket."
-    end
-    conn = connect(socket)
-    # Search
-    !isempty(request) && iosearch(conn, request, args["pretty"])
-    close(conn)
-    return 0
+    return nothing
 end
 
 
@@ -116,10 +84,10 @@ end
 # that come usually from parsed client input arguments
 function construct_request(query, max_matches, search_type,
                            search_method, max_suggestions,
-                           pretty)
+                           pretty, kill)
     # Check wether the query is actually a query or another command
-    if occursin("!", query)
-        cmd = replace(query, "!"=>"")
+    if kill
+        cmd = "kill"
     else
         cmd = "search"
     end
@@ -137,8 +105,42 @@ end
 
 
 # Deconstruct response is a pass through right now
-# TODO(Corneliu) See whether is makes sense to compliate it
 deconstruct_response(response) = response
+
+
+########################
+# Main client function #
+########################
+function main()
+    # Parse command line arguments
+    args = get_client_commandline_arguments(ARGS)
+    # Get the argument values
+    log_level = args["log-level"]
+    logging_stream = args["log"]
+    socket = args["socket"]
+    # Logging
+    # TODO(Corneliu) Handle logging properly
+    logger = ConsoleLogger(stdout, Logging.Info)
+    global_logger(logger)
+    # Construct Garamond request
+    request = construct_request(args["query"],
+                                args["max-matches"],
+                                args["search-type"],
+                                args["search-method"],
+                                args["max-suggestions"],
+                                args["pretty"],
+                                args["kill"])
+    # Start client
+    @debug "~ GARAMOND~ (client)"
+    if !issocket(socket)
+        @error "$socket is not a proper UNIX socket."
+    end
+    conn = connect(socket)
+    # Search
+    !isempty(request) && iosearch(conn, request, args["pretty"])
+    close(conn)
+    return 0
+end
 
 
 ##############

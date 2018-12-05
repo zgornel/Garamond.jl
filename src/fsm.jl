@@ -90,7 +90,7 @@ function fsm(data_config_paths,
              port = -1,
              args...;kwargs...)  # data config path, ports, socket file etc
     # Initialize communication Channels
-    io_channel = Channel(0)
+    io_channel = Channel{String}(0)
     # Load data
     srchers = load_searchers(data_config_paths)
     # Start updater
@@ -133,7 +133,7 @@ function fsm(data_config_paths,
                                               elapsed_time=t_finish-t_init)
                 put!(io_channel, response)
                 @debug "FSM: Search response sent to I/O server."
-            elseif command == "quit" || command == "exit"
+            elseif command == "kill"
                 ### Kill the search server ###
                 @info "FSM: Received exit command. Exiting..."
                 exit()
@@ -184,6 +184,6 @@ function construct_response(srchers,
         buf.data[buf.data.==0x0a] .= 0x09  # replace "\n" with "\t"
     else
         write(buf, JSON.json(results))
-    end 
+    end
     return join(Char.(buf.data))
 end
