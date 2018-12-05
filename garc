@@ -15,9 +15,9 @@ using JSON
 function get_client_commandline_arguments(args::Vector{String})
 	s = ArgParseSettings()
 	@add_arg_table s begin
-        "query",
+        "query"
             help = "the search query"
-            required = "true"
+            required = true
             default = ""
         "--log-level"
             help = "logging level"
@@ -31,7 +31,7 @@ function get_client_commandline_arguments(args::Vector{String})
         "--pretty"
             help = "output is a pretty print of the results"
             action = :store_true
-        "--max-results"
+        "--max-matches"
             help = "maximum results to return"
             arg_type = Int
             default = 10
@@ -53,7 +53,9 @@ function get_client_commandline_arguments(args::Vector{String})
 end
 
 
-function iosearch(connection, query)  # search option would go here
+# Function that performs a simple search i.e. sends data to
+# a socket, reads from the socket and outputs to STDOUT
+function iosearch(connection, query)
     # Checks
     if isopen(connection)
         println(connection, query)
@@ -63,8 +65,10 @@ function iosearch(connection, query)  # search option would go here
     else
         @error "Connection is is closed."
     end
+    # Deconstruct response
+    data = deconstruct_response(response)
     # Return Dict
-    println(stdout, response)
+    println(stdout, data)
 end
 
 
@@ -78,29 +82,65 @@ function main()
     log_level = args["log-level"]
     logging_stream = args["log"]
     socket = args["socket"]
-    query = args["query"]
     # Logging
+    # TODO(Corneliu) Handle logging properly
     logger = ConsoleLogger(stdout, Logging.Debug)
     global_logger(logger)
-
+    # Construct Garamond request
+    request = construct_request(
+                args["query"],
+                args["max-matches"],
+                args["search-type"],
+                args["search-method"],
+                args["max-suggestions"],
+                args["pretty"])
     # Start client
     @debug "~ GARAMOND~ (client)"
-    conn = connect(socket)
-    if !isempty(query)
-        iosearch(conn, query)
-    else
-        ###
-        # Do nothing, there is nothing to search
-        ###
+    if !issocket(socket)
+        @error "$socket is not a proper UNIX socket."
     end
+    conn = connect(socket)
+    # Search
+    !isempty(request) && iosearch(conn, request)
     close(conn)
     return 0
 end
+
+
+# Function that constructs a Garamond request (can be a
+# search request or a command) from a set of arguments
+# that come usually from parsed client input arguments
+function construct_request(query, max_matches, search_type,
+                           search_method, max_suggestions,
+                           pretty)
+    # Check wether the query is actually a query or another command
+    if occursin("!", query)
+        cmd = replace(query, "!"=>"")
+    else
+        cmd = "search"
+    end
+    return JSON.json(
+            Dict("command" => cmd,
+                 "query" => query,
+                 "max_matches" => max_matches,
+                 "search_type" => search_type,
+                 "search_method" => search_method,
+                 "max_suggestions" => max_suggestions,
+                 "pretty" => pretty
+                )
+           )
+end
+
+
+# Deconstruct response is a pass through right now
+# TODO(Corneliu) See whether is makes sense to compliate it
+deconstruct_response(response::Vector{UInt8}) = join(Char.(response))
 
 
 ##############
 # Run client #
 ##############
 main()
+
 
 end  # GaramondCLIClient

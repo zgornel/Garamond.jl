@@ -10,6 +10,7 @@ Pkg.activate(@__DIR__)
 using Garamond
 using Sockets
 using Logging
+using ArgParse
 
 
 # Function that parses Garamond's server arguments
@@ -49,6 +50,7 @@ function main()
     log_level = args["log-level"]
     logging_stream = args["log"]
     socket = args["socket"]
+    port = args["port"]
     # Logging
     logger = Garamond.build_logger(logging_stream, log_level)
     global_logger(logger)
@@ -56,7 +58,7 @@ function main()
     @debug "~ GARAMOND ~ $(Garamond.printable_version())\n"
     # Start Server #
     ################
-    Garamond.fsm(data_config_paths, socket)
+    Garamond.fsm(data_config_paths, socket, port)
     return 0
 end
 

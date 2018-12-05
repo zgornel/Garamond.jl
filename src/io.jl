@@ -1,28 +1,28 @@
 """
-    ioserver(socketfile, [;channel=Channel{String}(0)])
+    ioserver(socket, [;channel=Channel{String}(0)])
 
 Starts a server that accepts connections on a UNIX socket,
 reads a query, sends it to Garamond to perform the search,
 receives the search results from the same channel and writes
 them back to the socket.
 """
-function ioserver(socketfile=""; channel=Channel{String}(0))
+function ioserver(socket=""; channel=Channel{String}(0))
     # Checks
-    if issocket(socketfile)
-        rm(socketfile)
-    elseif isempty(socketfile)
+    if issocket(socket)
+        rm(socket)
+    elseif isempty(socket)
         @error "No socket file specified, cannot create Garamond socket."
-    elseif isfile(socketfile)
-        @error "$socketfile already exists, cannot create Garamond socket."
-    elseif isdir(socketfile)
-        @error "$socketfile is a directory, cannot create Garamond socket."
+    elseif isfile(socket)
+        @error "$socket already exists, cannot create Garamond socket."
+    elseif isdir(socket)
+        @error "$socket is a directory, cannot create Garamond socket."
     else
-        socketfile = abspath(socketfile)
-        _path = strip.(split(socketfile, "/"))
+        socket = abspath(socket)
+        _path = strip.(split(socket, "/"))
         directory = join(_path[1:end-1], "/")
         !isdir(directory) && mkpath(directory)
     end
-    server = listen(socketfile)
+    server = listen(socket)
     while true
         conn = accept(server)
         @async while isopen(conn)
