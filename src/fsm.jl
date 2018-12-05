@@ -51,18 +51,21 @@ function ioserver(socket=""; channel=Channel{String}(0))
     end
     server = listen(socket)
     while true
-        conn = accept(server)
-        @async while isopen(conn)
-            @debug "Waiting for data from socket..."
-            query = readline(conn, keep=true)
-            @debug "Received socket data: $query"
-            # Send query to FSM and get response
-            put!(channel, query)
-            response = take!(channel)
-            # Return response
-            @debug "Writing to socket ..."
-            println(conn, response)
-            @debug "Written the data."
+        connection = accept(server)
+        @async while isopen(connection)
+            @debug "I/O: Waiting for data from socket..."
+            request = readline(connection, keep=true)
+            if !isempty(request)
+                @debug "I/O: Received socket data: $request"
+                # Send query to FSM and get response
+                put!(channel, request)
+                @debug "I/O: Sent request to FSM using channel"
+                response = take!(channel)
+                # Return response
+                @debug "I/O: Writing to socket ..."
+                println(connection, response)
+                @debug "I/O: Written the data."
+            end
         end
     end
     return nothing
@@ -87,7 +90,7 @@ function fsm(data_config_paths,
              port = -1,
              args...;kwargs...)  # data config path, ports, socket file etc
     # Initialize communication Channels
-    io_channel = Channel{String}(0)
+    io_channel = Channel(0)
     # Load data
     srchers = load_searchers(data_config_paths)
     # Start updater
@@ -127,7 +130,7 @@ function fsm(data_config_paths,
                                               results,
                                               pretty=pretty,
                                               t=t_finish-t_init)
-                put!(io_channel, response.data)
+                put!(io_channel, response)
                 @debug "Search response sent to I/O server."
             elseif command == "quit" || command == "exit"
                 ### quit ###
@@ -143,7 +146,7 @@ end
 
 Function that deconstructs a Garamond request received from a client.
 """
-function deconstruct_request(request)
+function deconstruct_request(request::String)
     cmd = JSON.parse(request)
     return (cmd["command"],
             cmd["query"],
@@ -171,5 +174,5 @@ function construct_response(srchers, results; pretty::Bool=false, t::Float64=0)
     else
         write(response, JSON.json(results))
     end
-    return response
+    return join(Char.(response.data))
 end

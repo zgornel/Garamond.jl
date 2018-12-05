@@ -55,15 +55,15 @@ end
 
 # Function that performs a simple search i.e. sends data to
 # a socket, reads from the socket and outputs to STDOUT
-function iosearch(connection, query)
+function iosearch(connection, request)
     # Checks
     if isopen(connection)
-        println(connection, query)
-        @debug ">>> Query sent."
+        println(connection, request)
+        @debug ">>> Request sent."
         response = readline(connection, keep=true)
         @debug "<<< Search results received."
     else
-        @error "Connection is is closed."
+        @error "Connection is closed."
     end
     # Deconstruct response
     data = deconstruct_response(response)
@@ -84,7 +84,7 @@ function main()
     socket = args["socket"]
     # Logging
     # TODO(Corneliu) Handle logging properly
-    logger = ConsoleLogger(stdout, Logging.Debug)
+    logger = ConsoleLogger(stdout, Logging.Info)
     global_logger(logger)
     # Construct Garamond request
     request = construct_request(
@@ -128,13 +128,13 @@ function construct_request(query, max_matches, search_type,
                  "max_suggestions" => max_suggestions,
                  "pretty" => pretty
                 )
-           )*"\n"
+           )
 end
 
 
 # Deconstruct response is a pass through right now
 # TODO(Corneliu) See whether is makes sense to compliate it
-deconstruct_response(response::Vector{UInt8}) = join(Char.(response))
+deconstruct_response(response) = response
 
 
 ##############
