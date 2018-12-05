@@ -53,7 +53,7 @@ function ioserver(socket=""; channel=Channel{String}(0))
     while true
         connection = accept(server)
         @async while isopen(connection)
-            @debug "I/O: Waiting for data from socket..."
+            @info "I/O: Waiting for data from socket..."
             request = readline(connection, keep=true)
             if !isempty(request)
                 @debug "I/O: Received socket data: $request"
@@ -102,13 +102,13 @@ function fsm(data_config_paths,
     # Main loop
     while true
         if isready(srchers_channel)
-            @debug "Garamond is updating searchers ..."
+            @debug "FSM: Garamond is updating searchers ..."
             srchers = take!(srchers_channel)
-            @debug "Searchers updated."
+            @debug "FSM: Searchers updated."
         else
-            @debug "Waiting for query..."
+            @debug "FSM: Waiting for query..."
             request = take!(io_channel)
-            @debug "\tReceived REQUEST=$request"
+            @info "FSM: Received request=$request"
             (command,
                 query,
                 max_matches,
@@ -129,11 +129,13 @@ function fsm(data_config_paths,
                 response = construct_response(srchers,
                                               results,
                                               pretty=pretty,
-                                              t=t_finish-t_init)
+                                              max_suggestions=max_suggestions,
+                                              elapsed_time=t_finish-t_init)
                 put!(io_channel, response)
-                @debug "Search response sent to I/O server."
+                @debug "FSM: Search response sent to I/O server."
             elseif command == "quit" || command == "exit"
-                ### quit ###
+                ### Kill the search server ###
+                @info "FSM: Received exit command. Exiting..."
                 exit()
             end
         end
@@ -144,7 +146,8 @@ end
 """
     deconstruct_request(request)
 
-Function that deconstructs a Garamond request received from a client.
+Function that deconstructs a Garamond request received from a client into
+individual search engine commands and search parameters.
 """
 function deconstruct_request(request::String)
     cmd = JSON.parse(request)
@@ -159,7 +162,7 @@ end
 
 
 """
-    construct_response(results [; pretty=false, t=0])
+    construct_response(srchers, results [; kwargs...])
 
 Function that constructs a response for a Garamond client using
 the search `results`. The keyword arguments `pretty` and `t` indicate
@@ -167,12 +170,20 @@ whether the response is to be formatted for easy viewing (as opposed
 to machine-readable) and the time elapsed for the search respectively.
 """
 # TODO(Corneliu): Improve function
-function construct_response(srchers, results; pretty::Bool=false, t::Float64=0)
-    response = IOBuffer()
+function construct_response(srchers,
+                            results;
+                            pretty::Bool=false,
+                            max_suggestions=0,
+                            elapsed_time::Float64=0)
+    buf = IOBuffer()
     if pretty
-        write(response, print_search_results(srchers, results))
+        print_search_results(buf, srchers, results,
+                             max_suggestions=max_suggestions)
+        println(buf, "-----")
+        print(buf, "Elapsed search time: $elapsed_time seconds.")
+        buf.data[buf.data.==0x0a] .= 0x09  # replace "\n" with "\t"
     else
-        write(response, JSON.json(results))
-    end
-    return join(Char.(response.data))
+        write(buf, JSON.json(results))
+    end 
+    return join(Char.(buf.data))
 end
