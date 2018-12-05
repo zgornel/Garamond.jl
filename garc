@@ -8,13 +8,16 @@ module GaramondCLIClient
 using Sockets
 using ArgParse
 using Logging
+using JSON
+
 
 # Function that parses Garamond's client arguments
 function get_client_commandline_arguments(args::Vector{String})
 	s = ArgParseSettings()
 	@add_arg_table s begin
-        "--query", "-q"
+        "query",
             help = "the search query"
+            required = "true"
             default = ""
         "--log-level"
             help = "logging level"
@@ -25,6 +28,25 @@ function get_client_commandline_arguments(args::Vector{String})
         "--socket", "-s"
             help = "UNIX socket for data communication"
             default = "/tmp/garamond/sockets/socket1"
+        "--pretty"
+            help = "output is a pretty print of the results"
+            action = :store_true
+        "--max-results"
+            help = "maximum results to return"
+            arg_type = Int
+            default = 10
+        "--search-type"
+            help = "type of search"
+            arg_type = Symbol
+            default = :metadata
+        "--search-method"
+            help = "type of search"
+            arg_type = Symbol
+            default = :exact
+        "--max-suggestions"
+            help = "How many suggestions to return for each mismatched query term"
+            arg_type = Int
+            default = 0
 	end
 
 	return parse_args(args,s)

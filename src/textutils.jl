@@ -64,7 +64,7 @@ end
 
 
 """
-    summarize(sentences [;ns=1, flags=DEFAULT_SUMMARIZATION_FLAGS]
+    summarize(sentences [;ns=1, flags=DEFAULT_SUMMARIZATION_FLAGS])
 
 Build a summary of the text's `sentences`. The resulting summary will be
 a `ns` sentence document; each sentence is pre-procesed using the

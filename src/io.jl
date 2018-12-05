@@ -1,3 +1,11 @@
+"""
+    ioserver(socketfile, [;channel=Channel{String}(0)])
+
+Starts a server that accepts connections on a UNIX socket,
+reads a query, sends it to Garamond to perform the search,
+receives the search results from the same channel and writes
+them back to the socket.
+"""
 function ioserver(socketfile=""; channel=Channel{String}(0))
     # Checks
     if issocket(socketfile)

@@ -52,7 +52,6 @@ const DEFAULT_MAX_EDIT_DISTANCE = 2  # maximum edit distance for which to return
 const DEFAULT_MAX_MATCHES = 1_000  # maximum number of matches that can be retrned
 const DEFAULT_MAX_SUGGESTIONS = 1  # maximum number of overall suggestions
 const DEFAULT_MAX_CORPUS_SUGGESTIONS = 0  # maximum number of suggestions for each corpus
-
 # DYNAMIC Configuration: These defaults can be through run-time options of the
 #                        Garamond CLI client/server utilities
 const DEFAULT_LOG_LEVEL = Logging.Info
@@ -60,6 +59,7 @@ const DEFAULT_LOGGER = ConsoleLogger
 
 # STATIC Configuration: These constants cannot be overwritten
 const DEFAULT_GARAMONDRC_FILE = expanduser("~/.garamondrc.jl")
+const DEFAULT_SEARCHER_UPDATE_INTERVAL = Inf  # Inf means never update
 const HEURISTIC_TO_DISTANCE = Dict(  # heuristic to distance object mapping
     :levenshtein => StringDistances.Levenshtein(),
     :dameraulevenshtein => StringDistances.DamerauLevenshtein(),

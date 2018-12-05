@@ -67,7 +67,6 @@ module Garamond
 
     # Include section
     include("config/defaults.jl")
-    include("config/cmdline.jl")
     include("config/engine.jl")
     include("config/data.jl")
     include("logging.jl")
