@@ -26,6 +26,51 @@ end
 
 
 """
+    ioserver(socket, [;channel=Channel{String}(0)])
+
+Starts a server that accepts connections on a UNIX socket,
+reads a query, sends it to Garamond to perform the search,
+receives the search results from the same channel and writes
+them back to the socket.
+"""
+function ioserver(socket=""; channel=Channel{String}(0))
+    # Checks
+    if issocket(socket)
+        rm(socket)
+    elseif isempty(socket)
+        @error "No socket file specified, cannot create Garamond socket."
+    elseif isfile(socket)
+        @error "$socket already exists, cannot create Garamond socket."
+    elseif isdir(socket)
+        @error "$socket is a directory, cannot create Garamond socket."
+    else
+        socket = abspath(socket)
+        _path = strip.(split(socket, "/"))
+        directory = join(_path[1:end-1], "/")
+        !isdir(directory) && mkpath(directory)
+    end
+    server = listen(socket)
+    while true
+        conn = accept(server)
+        @async while isopen(conn)
+            @debug "Waiting for data from socket..."
+            query = readline(conn, keep=true)
+            @debug "Received socket data: $query"
+            # Send query to FSM and get response
+            put!(channel, query)
+            response = take!(channel)
+            # Return response
+            @debug "Writing to socket ..."
+            println(conn, response)
+            @debug "Written the data."
+        end
+    end
+    return nothing
+end
+
+
+
+"""
     fsm(data_config_paths, socket, args... [;kwargs...])
 
 Main finite state machine (FSM) function of Garamond. When called,
@@ -83,12 +128,12 @@ function fsm(data_config_paths,
                                               pretty=pretty,
                                               t=t_finish-t_init)
                 put!(io_channel, response.data)
-                @debug "Search response sent."
+                @debug "Search response sent to I/O server."
             elseif command == "quit" || command == "exit"
                 ### quit ###
                 exit()
             end
-       end
+        end
     end
 end
 

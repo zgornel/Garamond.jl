@@ -128,7 +128,7 @@ function construct_request(query, max_matches, search_type,
                  "max_suggestions" => max_suggestions,
                  "pretty" => pretty
                 )
-           )
+           )*"\n"
 end
 
 
