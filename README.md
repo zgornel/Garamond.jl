@@ -20,9 +20,10 @@ Garamond is under development ...¯\\_(ツ)_/¯. For more information, visit the
 - ~~Take text pre-processing seriously (optimization + flag checking + support skipping patterns from processing)~~
 - ~~Support for PDFs, archives, other files (see Taro.jl, TranscodingStreams.jl)~~
 - ~~General search engine configuration through runconfig file i.e. `~/.garamondrc`~~
-- Minimalistic HTTP server (new package GaramondHTTPServer.jl ?)
+- ~~Websocket support for server~~ **WIP**
+- ~~HTTP client~~ **WIP**
+- Fat binary compilation (binaries for server and clients)
 - Take testing seriously
-- Fat binary compilation (i.e. have one binary for the whole search engine, including dependencies)
 
 ### Longer term
 - Add support for controlling webcrawlers
