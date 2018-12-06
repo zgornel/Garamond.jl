@@ -1,8 +1,9 @@
 """
     updater(searchers, channel, update_interval)
 
-Function that regularly updates the `searchers` at each `update_interval`
-seconds, and puts the updates in the `channel` to be sent to the Garamond FSM.
+Function that regularly updates the `searchers` at each
+`update_interval` seconds, and puts the updates on the
+`channel` to be sent to the search server.
 """
 function updater(searchers::Vector{S};
                  channel=Channel{Vector{S}}(0),
@@ -111,18 +112,19 @@ end
 
 
 """
-    fsm(data_config_paths, socket)
+    search_server(data_config_paths, socket)
 
-Main finite state machine (FSM) function of Garamond. When called,
-creates the searchers i.e. search objects using the `data_config_paths`
-and the proceeds to looping continuously in order to:
+Main server function of Garamond. It is a finite-state-machine that
+when called, creates the searchers i.e. search objects using the 
+`data_config_paths` and the proceeds to looping continuously
+in order to:
     • update the searchers regularly;
     • receive requests from clients using `socket`, call search
       and write responses back to the clients through the `socket`;
 
 Both searcher update and I/O communication are performed asynchronously.
 """
-function fsm(data_config_paths, socket)  # data config path, ports, socket file etc
+function search_server(data_config_paths, socket)
     # Info message
     @info "~ GARAMOND ~ $(Garamond.printable_version())\n"
     # Initialize communication Channels
@@ -224,19 +226,58 @@ function construct_response(srchers,
                             elapsed_time::Float64=0)
     buf = IOBuffer()
     if what == "pretty-print"
-        # unix-socket client, pretty print
+        # Unix-socket client, pretty print
         print_search_results(buf, srchers, results,
                              max_suggestions=max_suggestions)
         println(buf, "-----")
         print(buf, "Elapsed search time: $elapsed_time seconds.")
         buf.data[buf.data.==0x0a] .= 0x09  # replace "\n" with "\t"
     elseif what == "json-index"
-        # unix/web socket client, return indices of the documents
+        # Unix-/Web- socket client, return indices of the documents
         write(buf, JSON.json(results))
     elseif what == "json-data"
-        # web socket client, return document metadata
-        # TODO(Corneliu): Implement this
+        # Web-socket client, return document metadata
+        write(buf, JSON.jsnon(
+            export_for_web(srchers, results, max_suggestions, elapsed_time)))
         @warn "NOT IMPLEMENTED FUNCTIONALITY REQUIRED."
     end
     return join(Char.(buf.data))
+end
+
+
+# Pretty printer of results
+function export_results_for_web(srchers::S, results::T, max_suggestions::Int,
+                                elapsed_time::Float64
+                               ) where {S<:AbstractVector{<:AbstractSearcher},
+                                        T<:AbstractVector{<:SearchResult}}
+    if !isempty(results)
+        nt = mapreduce(x->valength(x.query_matches), +, results)
+    else
+        nt = 0
+    end
+    printstyled(io, "$nt search results from $(length(results)) corpora\n")
+    for (i, _result) in enumerate(results)
+        crps = srchers[i].corpus
+        nm = valength(_result.query_matches)
+        printstyled(io, "`-[$(_result.id)] ", color=:cyan)  # hash
+        printstyled(io, "$(nm) search results")
+        ch = ifelse(nm==0, ".", ":"); printstyled(io, "$ch\n")
+        if isempty(crps)
+            printstyled(io, "*** Corpus data is missing ***\n", color=:normal)
+        else
+            for score in sort(collect(keys(_result.query_matches)), rev=true)
+                for doc in (crps[i] for i in _result.query_matches[score])
+                    printstyled(io, "  $score ~ ", color=:normal, bold=true)
+                    printstyled(io, "$(metadata(doc))\n", color=:normal)
+                end
+            end
+        end
+    end
+    suggestions = squash_suggestions(results, max_suggestions)
+    ns = length(suggestions)
+    ns > 0 && printstyled(io, "$ns suggestions:\n")
+    for (keyword, suggest) in suggestions
+        printstyled(io, "  \"$keyword\": ", color=:normal, bold=true)
+        printstyled(io, "$(join(suggest, ", "))\n", color=:normal)
+    end
 end
