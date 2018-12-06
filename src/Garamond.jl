@@ -40,6 +40,7 @@ module Garamond
     using LightGraphs: Graph, pagerank
     using JSON
     using Glob
+    using HTTP
 
     # Import section (extendable methods)
     import Base: size, length, show, keys, values, push!,

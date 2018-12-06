@@ -48,9 +48,13 @@ function web_socket_server(port::Int, channel::Channel{String})
     if port <= 0
         @error "Please specify a WEB-socket port of positive integer value."
     end
-    @async HTTP.WebSockets.listen("127.0.0.1", UInt16(port)) do ws
+    @info "I/O: Waiting for data @web-socket:$port ..."
+    @async HTTP.WebSockets.listen("127.0.0.1", UInt16(port), verbose=false) do ws
         while !eof(ws)
-            request = readavailable(ws)
+            # Read data
+            data = readavailable(ws)
+            # Convert to String
+            request = join(Char.(data))
             if !isempty(request)
                 # Send request to FSM and get response
                 put!(channel, request)
@@ -88,7 +92,7 @@ function unix_socket_server(socket::AbstractString, channel::Channel{String})
     # Start Server
     server = listen(socket)
     # Start serving
-    @info "I/O: Waiting for data @unix-socket=$socket ..."
+    @info "I/O: Waiting for data @unix-socket:$socket ..."
     while true
         connection = accept(server)
         @async while isopen(connection)

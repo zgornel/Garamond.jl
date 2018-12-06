@@ -30,7 +30,7 @@ function get_server_commandline_arguments(args::Vector{String})
         "--unix-socket", "-u"
             help = "UNIX socket for data communication"
             arg_type = String
-        "--web-socket-port", "-p"
+        "--web-socket-port", "-w"
             help = "WEB socket data communication port"
             arg_type = Int
 	end
