@@ -3,12 +3,17 @@
 #################################################################
 
 # Converts a String to Languages.Language (using STR_TO_LANG)
-convert(::Type{L}, lang::S) where {L<:Languages.Language, S<:AbstractString} =
-    get(STR_TO_LANG, strip(lower(lang)), Languages.English())
+convert(::Type{L}, lang::S) where {L<:Languages.Language, S<:AbstractString} = begin
+    TypeLang = get(STR_TO_LANG, strip(lower(lang)), Languages.English)
+    return TypeLang()
+end
 
 # Converts Languages.Language to String (using LANG_TO_STR)
+convert(::Type{S}, lang::Type{L}) where {L<:Languages.Language, S<:AbstractString} =
+    get(LANG_TO_STR, lang, string(L))
+
 convert(::Type{S}, lang::L) where {L<:Languages.Language, S<:AbstractString} =
-	get(LANG_TO_STR, lang, "unknown")
+    convert(S, L)
 
 # Convert a StringAnalysis metadata structure to a Dict
 convert(::Type{Dict}, md::DocumentMetadata) =
@@ -24,7 +29,7 @@ function meta2sv(md::T, fields=fieldnames(T)) where T<:DocumentMetadata
             if field != :language
                 msv[i] = getfield(md, field)
             else
-                msv[i] = LANG_TO_STR[getfield(md, field)]
+                msv[i] = LANG_TO_STR[typeof(getfield(md, field))]
             end
         end
     end

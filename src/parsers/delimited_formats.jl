@@ -91,12 +91,12 @@ function __parser_delimited_format_1(filename::AbstractString,
                 # Get Language object from string
                 _lang = lowercase(vline[column])
                 try
-                    #_language = STR_TO_LANG[_lang]
+                    #_language = STR_TO_LANG[_lang]()
                     # HACK, force Languages.English() as there is little
                     # reason to use other languages. Preprocessing fails
                     # as dictionaries are needed
                     # TODO(Corneliu): Add language support for supported languages.
-                    _language = STR_TO_LANG["english"]
+                    _language = STR_TO_LANG["english"]()
                 catch
                     @warn "Language $_lang not supported. Using default."
                     _language = Languages.English()
