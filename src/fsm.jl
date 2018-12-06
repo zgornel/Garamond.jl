@@ -48,7 +48,7 @@ function web_socket_server(port::Int, channel::Channel{String})
     if port <= 0
         @error "Please specify a WEB-socket port of positive integer value."
     end
-    @info "I/O: Waiting for data @web-socket:$port ..."
+    @info "I/O: Waiting for data @web-socket:$port..."
     @async HTTP.WebSockets.listen("127.0.0.1", UInt16(port), verbose=false) do ws
         while !eof(ws)
             # Read data
@@ -92,7 +92,7 @@ function unix_socket_server(socket::AbstractString, channel::Channel{String})
     # Start Server
     server = listen(socket)
     # Start serving
-    @info "I/O: Waiting for data @unix-socket:$socket ..."
+    @info "I/O: Waiting for data @unix-socket:$socket..."
     while true
         connection = accept(server)
         @async while isopen(connection)
@@ -146,7 +146,7 @@ function fsm(data_config_paths, socket)  # data config path, ports, socket file 
             @debug "Searchers updated."
         else
             request = take!(io_channel)
-            @info "Received request=$request"
+            @debug "Received request=$request"
             (command,
              query,
              max_matches,
@@ -157,6 +157,7 @@ function fsm(data_config_paths, socket)  # data config path, ports, socket file 
             ) = deconstruct_request(request)
             if command == "search"
                 ### Search ###
+                @info "FSM: Received search command. Searching for '$query'..."
                 t_init = time()
                 # Get search results
                 results = search(srchers,
@@ -178,6 +179,9 @@ function fsm(data_config_paths, socket)  # data config path, ports, socket file 
                 ### Kill the search server ###
                 @info "FSM: Received exit command. Exiting..."
                 exit()
+            elseif command == "request_error"
+                @info "FSM: Malformed request. Ignoring..."
+                put!(io_channel, "")
             end
         end
     end
@@ -190,15 +194,25 @@ end
 Function that deconstructs a Garamond request received from a client into
 individual search engine commands and search parameters.
 """
+const ERRORED_REQUEST = ("request_error", "", 0, :nothing, :nothing, 0, "")
 function deconstruct_request(request::String)
-    cmd = JSON.parse(request)
-    return (cmd["command"],
-            cmd["query"],
-            cmd["max_matches"],
-            Symbol(cmd["search_type"]),
-            Symbol(cmd["search_method"]),
-            cmd["max_suggestions"],
-            cmd["what_to_return"])
+    try
+        # Parse JSON request
+        req = JSON.parse(request)
+        # Read fields
+        cmd = req["command"]
+        query = req["query"]
+        max_matches = req["max_matches"]
+        search_type = Symbol(req["search_type"])
+        search_method = Symbol(req["search_method"])
+        max_suggestions = req["max_suggestions"]
+        what_to_return = req["what_to_return"]
+        return cmd, query, max_matches, search_type, search_method,
+               max_suggestions, what_to_return
+    catch
+        return ERRORED_REQUEST
+    end
+
 end
 
 
