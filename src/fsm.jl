@@ -24,43 +24,53 @@ function updater(searchers::Vector{S};
 end
 
 
+"""
+    ioserver(socket::Union{Int, AbstractString}, channel::Channel{String})
+
+Wrapper for the UNIX- or WEB- socket servers.
+"""
+ioserver(socket::AbstractString, channel::Channel{String}) =
+    unix_socket_server(socket, channel)
+
+ioserver(socket::Int, channel::Channel{String}) =
+    web_socket_server(socket, channel)
+
 
 """
-    ioserver(socket, [;channel=Channel{String}(0)])
+    web_socket_server(port::Int, channel::Channel{String})
 
-Starts a server that accepts connections on a UNIX socket,
-reads a query, sends it to Garamond to perform the search,
-receives the search results from the same channel and writes
-them back to the socket.
+Starts a bi-directional web socket server that uses a WEB-socket
+at port `port` and communicates with the search server through a
+channel `channel`.
 """
-function ioserver(socket; channel=Channel{String}(0))
-    # Checks
-    socket = _check_socket(socket)
-    sockstring = ifelse(socket isa String,
-                        "unix-socket=$socket",
-                        "web-socket, port=$socket")
-    # Start Server
-    server = listen(socket)
-    # Start serving
-    @info "I/O: Waiting for data @$sockstring ..."
-    while true
-        connection = accept(server)
-        @async while isopen(connection)
-            request = readline(connection, keep=true)
+function web_socket_server(port::Int, channel::Channel{String})
+    #Checks
+    if port <= 0
+        @error "Please specify a WEB-socket port of positive integer value."
+    end
+    @async HTTP.WebSockets.listen("127.0.0.1", UInt16(port)) do ws
+        while !eof(ws)
+            request = readavailable(ws)
             if !isempty(request)
-                # Send query to FSM and get response
+                # Send request to FSM and get response
                 put!(channel, request)
                 response = take!(channel)
                 # Return response
-                println(connection, response)
+                write(ws, response)
             end
         end
     end
-    return nothing
 end
 
 
-_check_socket(socket::AbstractString) = begin
+"""
+    unix_socket_server(socket::AbstractString, channel::Channel{String})
+
+Starts a bi-directional unix socket server that uses a UNIX-socket `socket`
+and communicates with the search server through a channel `channel`.
+"""
+function unix_socket_server(socket::AbstractString, channel::Channel{String})
+    # Checks
     if issocket(socket)
         rm(socket)
     elseif isempty(socket)
@@ -75,16 +85,29 @@ _check_socket(socket::AbstractString) = begin
         directory = join(_path[1:end-1], "/")
         !isdir(directory) && mkpath(directory)
     end
-    return socket
+    # Start Server
+    server = listen(socket)
+    # Start serving
+    @info "I/O: Waiting for data @unix-socket=$socket ..."
+    while true
+        connection = accept(server)
+        @async while isopen(connection)
+            request = readline(connection, keep=true)
+            if !isempty(request)
+                # Send request to FSM and get response
+                put!(channel, request)
+                response = take!(channel)
+                # Return response
+                println(connection, response)
+            end
+        end
+    end
+    return nothing
 end
 
 
+
 _check_socket(socket::Int) = begin
-    if socket > 0
-        return socket
-    else
-        @error "Please specify a TCP port of positive integer value."
-    end
 end
 
 
@@ -94,9 +117,9 @@ end
 Main finite state machine (FSM) function of Garamond. When called,
 creates the searchers i.e. search objects using the `data_config_paths`
 and the proceeds to looping continuously in order to:
-    • update the searchers regularly
-    • receive queries from the `socket`, call search
-      and writes the results back to the `socket`
+    • update the searchers regularly;
+    • receive requests from clients using `socket`, call search
+      and write responses back to the clients through the `socket`;
 
 Both searcher update and I/O communication are performed asynchronously.
 """
@@ -110,9 +133,8 @@ function fsm(data_config_paths, socket)  # data config path, ports, socket file 
     # Start updater
     srchers_channel = Channel{typeof(srchers)}(0)
     @async updater(srchers, channels=srchers_channel)
-    # Start I/O listner
-    # TODO(Corneliu) Support WebSockets through port
-    @async ioserver(socket, channel=io_channel)
+    # Start I/O server
+    @async ioserver(socket, io_channel)
     # Main loop
     while true
         if isready(srchers_channel)
@@ -122,15 +144,17 @@ function fsm(data_config_paths, socket)  # data config path, ports, socket file 
             request = take!(io_channel)
             @info "Received request=$request"
             (command,
-                query,
-                max_matches,
-                search_type,
-                search_method,
-                max_suggestions,
-                pretty) = deconstruct_request(request)
+             query,
+             max_matches,
+             search_type,
+             search_method,
+             max_suggestions,
+             what_to_return
+            ) = deconstruct_request(request)
             if command == "search"
                 ### Search ###
                 t_init = time()
+                # Get search results
                 results = search(srchers,
                                  query,
                                  search_type=search_type,
@@ -138,11 +162,13 @@ function fsm(data_config_paths, socket)  # data config path, ports, socket file 
                                  max_matches=max_matches,
                                  max_corpus_suggestions=max_suggestions)
                 t_finish = time()
+                # Construct response for client
                 response = construct_response(srchers,
                                               results,
-                                              pretty=pretty,
+                                              what_to_return,
                                               max_suggestions=max_suggestions,
                                               elapsed_time=t_finish-t_init)
+                # Write response to I/O server
                 put!(io_channel, response)
             elseif command == "kill"
                 ### Kill the search server ###
@@ -168,33 +194,36 @@ function deconstruct_request(request::String)
             Symbol(cmd["search_type"]),
             Symbol(cmd["search_method"]),
             cmd["max_suggestions"],
-            cmd["pretty"])
+            cmd["what_to_return"])
 end
 
 
 """
-    construct_response(srchers, results [; kwargs...])
+    construct_response(srchers, results, what [; kwargs...])
 
 Function that constructs a response for a Garamond client using
-the search `results`. The keyword arguments `pretty` and `t` indicate
-whether the response is to be formatted for easy viewing (as opposed
-to machine-readable) and the time elapsed for the search respectively.
+the search `results`, data from `srchers` and specifier `what`.
 """
-# TODO(Corneliu): Improve function
 function construct_response(srchers,
-                            results;
-                            pretty::Bool=false,
-                            max_suggestions=0,
+                            results,
+                            what::String;
+                            max_suggestions::Int=0,
                             elapsed_time::Float64=0)
     buf = IOBuffer()
-    if pretty
+    if what == "pretty-print"
+        # unix-socket client, pretty print
         print_search_results(buf, srchers, results,
                              max_suggestions=max_suggestions)
         println(buf, "-----")
         print(buf, "Elapsed search time: $elapsed_time seconds.")
         buf.data[buf.data.==0x0a] .= 0x09  # replace "\n" with "\t"
-    else
+    elseif what == "json-index"
+        # unix/web socket client, return indices of the documents
         write(buf, JSON.json(results))
+    elseif what == "json-data"
+        # web socket client, return document metadata
+        # TODO(Corneliu): Implement this
+        @warn "NOT IMPLEMENTED FUNCTIONALITY REQUIRED."
     end
     return join(Char.(buf.data))
 end
