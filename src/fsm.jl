@@ -36,24 +36,23 @@ them back to the socket.
 function ioserver(socket; channel=Channel{String}(0))
     # Checks
     socket = _check_socket(socket)
+    sockstring = ifelse(socket isa String,
+                        "unix-socket=$socket",
+                        "web-socket, port=$socket")
     # Start Server
     server = listen(socket)
     # Start serving
+    @info "I/O: Waiting for data @$sockstring ..."
     while true
         connection = accept(server)
         @async while isopen(connection)
-            @info "I/O: Waiting for data from socket..."
             request = readline(connection, keep=true)
             if !isempty(request)
-                @debug "I/O: Received socket data: $request"
                 # Send query to FSM and get response
                 put!(channel, request)
-                @debug "I/O: Sent request to FSM using channel"
                 response = take!(channel)
                 # Return response
-                @debug "I/O: Writing to socket ..."
                 println(connection, response)
-                @debug "I/O: Written the data."
             end
         end
     end
@@ -90,7 +89,7 @@ end
 
 
 """
-    fsm(data_config_paths, socket, args... [;kwargs...])
+    fsm(data_config_paths, socket)
 
 Main finite state machine (FSM) function of Garamond. When called,
 creates the searchers i.e. search objects using the `data_config_paths`
@@ -101,7 +100,9 @@ and the proceeds to looping continuously in order to:
 
 Both searcher update and I/O communication are performed asynchronously.
 """
-function fsm(data_config_paths, socket, args...;kwargs...)  # data config path, ports, socket file etc
+function fsm(data_config_paths, socket)  # data config path, ports, socket file etc
+    # Info message
+    @info "~ GARAMOND ~ $(Garamond.printable_version())\n"
     # Initialize communication Channels
     io_channel = Channel{String}(0)
     # Load data
@@ -115,13 +116,11 @@ function fsm(data_config_paths, socket, args...;kwargs...)  # data config path, 
     # Main loop
     while true
         if isready(srchers_channel)
-            @debug "FSM: Garamond is updating searchers ..."
             srchers = take!(srchers_channel)
-            @debug "FSM: Searchers updated."
+            @debug "Searchers updated."
         else
-            @debug "FSM: Waiting for query..."
             request = take!(io_channel)
-            @info "FSM: Received request=$request"
+            @info "Received request=$request"
             (command,
                 query,
                 max_matches,
@@ -145,7 +144,6 @@ function fsm(data_config_paths, socket, args...;kwargs...)  # data config path, 
                                               max_suggestions=max_suggestions,
                                               elapsed_time=t_finish-t_init)
                 put!(io_channel, response)
-                @debug "FSM: Search response sent to I/O server."
             elseif command == "kill"
                 ### Kill the search server ###
                 @info "FSM: Received exit command. Exiting..."

@@ -22,12 +22,9 @@ function get_client_commandline_arguments(args::Vector{String})
         "--log-level"
             help = "logging level"
             default = "info"
-        "--log", "-l"
-            help = "logging stream"
-            default = "stdout"
-        "--socket", "-s"
+        "--unix-socket", "-u"
             help = "UNIX socket for data communication"
-            default = "/tmp/garamond/sockets/socket1"
+            required = true
         "--pretty"
             help = "output is a pretty print of the results"
             action = :store_true
@@ -114,13 +111,14 @@ deconstruct_response(response) = response
 function main()
     # Parse command line arguments
     args = get_client_commandline_arguments(ARGS)
-    # Get the argument values
-    log_level = args["log-level"]
-    logging_stream = args["log"]
-    socket = args["socket"]
     # Logging
-    # TODO(Corneliu) Handle logging properly
-    logger = ConsoleLogger(stdout, Logging.Info)
+    log_levels = Dict("debug" => Logging.Debug,
+                      "info" => Logging.Info,
+                      "warning" => Logging.Warn,
+                      "error" => Logging.Error)
+    logger = ConsoleLogger(stdout, get(log_levels,
+                                       args["log-level"],
+                                       Logging.Info))
     global_logger(logger)
     # Construct Garamond request
     request = construct_request(args["query"],
@@ -132,10 +130,14 @@ function main()
                                 args["kill"])
     # Start client
     @debug "~ GARAMOND~ (client)"
-    if !issocket(socket)
+    unixsocket = args["unix-socket"]
+    if unixsocket == nothing
+        @error """Please specify a unix-socket to connect to
+                  through the -u switch."""
+    elseif !issocket(unixsocket)
         @error "$socket is not a proper UNIX socket."
     end
-    conn = connect(socket)
+    conn = connect(unixsocket)
     # Search
     !isempty(request) && iosearch(conn, request, args["pretty"])
     close(conn)

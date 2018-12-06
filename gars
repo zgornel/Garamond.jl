@@ -19,6 +19,7 @@ function get_server_commandline_arguments(args::Vector{String})
 	@add_arg_table s begin
         "--data-config", "-d"
             help = "data configuration file"
+            required = true
             action = :append_arg
         "--log-level"
             help = "logging level"
@@ -26,13 +27,12 @@ function get_server_commandline_arguments(args::Vector{String})
         "--log", "-l"
             help = "logging stream"
             default = "stdout"
-        "--socket", "-s"
+        "--unix-socket", "-u"
             help = "UNIX socket for data communication"
-            default = "/tmp/garamond/sockets/socket1"
-        "--port", "-p"
+            arg_type = String
+        "--web-socket-port", "-p"
             help = "WEB socket data communication port"
             arg_type = Int
-            default = -1
 	end
 
 	return parse_args(args,s)
@@ -46,20 +46,27 @@ function main()
     # Parse command line arguments
     args = get_server_commandline_arguments(ARGS)
     # Get the argument values
-    data_config_paths = String.(args["data-config"])
     log_level = args["log-level"]
     logging_stream = args["log"]
-    socket = args["socket"]
-    port = args["port"]
-    #TODO(Corneliu): Select between socket and port
     # Logging
     logger = Garamond.build_logger(logging_stream, log_level)
     global_logger(logger)
-    # Start Garamond in either server or client mode
-    @info "~ GARAMOND ~ $(Garamond.printable_version())\n"
+    # Select one entry point
+    unixsocket = args["unix-socket"]
+    websocket = args["web-socket-port"]
+    is_socket = unixsocket != nothing
+    is_port = websocket != nothing
+    if is_socket && !is_port
+        socket = unixsocket
+    elseif !is_socket && is_port
+        socket = websocket
+    else
+        @error """Either a unix-socket or web-socket port has to
+                  be specified through the -u and -p swithches."""
+    end
     # Start Server #
-    ################
-    Garamond.fsm(data_config_paths, socket, port)
+    data_config_paths = String.(args["data-config"])
+    Garamond.fsm(data_config_paths, socket)
     return 0
 end
 
