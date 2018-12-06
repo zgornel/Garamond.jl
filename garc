@@ -11,8 +11,8 @@ using Logging
 using JSON
 
 
-# Function that parses Garamond's client arguments
-function get_client_commandline_arguments(args::Vector{String})
+# Function that parses Garamond's unix-socket client arguments
+function get_unix_socket_client_arguments(args::Vector{String})
 	s = ArgParseSettings()
 	@add_arg_table s begin
         "query"
@@ -24,6 +24,7 @@ function get_client_commandline_arguments(args::Vector{String})
             default = "info"
         "--unix-socket", "-u"
             help = "UNIX socket for data communication"
+            arg_type = String
             required = true
         "--pretty"
             help = "output is a pretty print of the results"
@@ -76,7 +77,7 @@ function iosearch(connection, request, pretty=false)
 end
 
 
-# Function that constructs a Garamond request (can be a
+# Function that constructs a search server request (can be a
 # search request or a command) from a set of arguments
 # that come usually from parsed client input arguments
 function construct_request(query, max_matches, search_type,
@@ -88,6 +89,7 @@ function construct_request(query, max_matches, search_type,
     else
         cmd = "search"
     end
+    what_to_return = ifelse(pretty, "pretty-print", "json-index")
     return JSON.json(
             Dict("command" => cmd,
                  "query" => query,
@@ -95,7 +97,7 @@ function construct_request(query, max_matches, search_type,
                  "search_type" => search_type,
                  "search_method" => search_method,
                  "max_suggestions" => max_suggestions,
-                 "pretty" => pretty
+                 "what_to_return" => what_to_return
                 )
            )
 end
@@ -110,7 +112,7 @@ deconstruct_response(response) = response
 ########################
 function main()
     # Parse command line arguments
-    args = get_client_commandline_arguments(ARGS)
+    args = get_unix_socket_client_arguments(ARGS)
     # Logging
     log_levels = Dict("debug" => Logging.Debug,
                       "info" => Logging.Info,
@@ -129,12 +131,9 @@ function main()
                                 args["pretty"],
                                 args["kill"])
     # Start client
-    @debug "~ GARAMOND~ (client)"
+    @debug "~ GARAMOND~ (unix-socket client)"
     unixsocket = args["unix-socket"]
-    if unixsocket == nothing
-        @error """Please specify a unix-socket to connect to
-                  through the -u switch."""
-    elseif !issocket(unixsocket)
+    if !issocket(unixsocket)
         @error "$socket is not a proper UNIX socket."
     end
     conn = connect(unixsocket)
@@ -149,6 +148,5 @@ end
 # Run client #
 ##############
 main()
-
 
 end  # GaramondCLIClient
