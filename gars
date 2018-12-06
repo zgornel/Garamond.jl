@@ -32,7 +32,7 @@ function get_server_commandline_arguments(args::Vector{String})
             arg_type = String
         "--web-socket-port", "-w"
             help = "WEB socket data communication port"
-            arg_type = Int
+            arg_type = UInt16
 	end
 
 	return parse_args(args,s)
@@ -55,7 +55,7 @@ function main()
     unixsocket = args["unix-socket"]
     ws_port = args["web-socket-port"]
     is_socket = unixsocket != nothing
-    is_port = (ws_port != nothing)  && (ws_port > 0)
+    is_port = ws_port != nothing
     if is_socket && !is_port
         socket = unixsocket
     elseif !is_socket && is_port

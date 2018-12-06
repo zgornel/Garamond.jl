@@ -25,31 +25,31 @@ end
 
 
 """
-    ioserver(socket::Union{Int, AbstractString}, channel::Channel{String})
+    ioserver(socket_or_port::Union{UInt16, AbstractString}, channel::Channel{String})
 
 Wrapper for the UNIX- or WEB- socket servers.
 """
 ioserver(socket::AbstractString, channel::Channel{String}) =
     unix_socket_server(socket, channel)
 
-ioserver(socket::Int, channel::Channel{String}) =
-    web_socket_server(socket, channel)
+ioserver(port::UInt16, channel::Channel{String}) =
+    web_socket_server(port, channel)
 
 
 """
-    web_socket_server(port::Int, channel::Channel{String})
+    web_socket_server(port::UInt16, channel::Channel{String})
 
 Starts a bi-directional web socket server that uses a WEB-socket
 at port `port` and communicates with the search server through a
 channel `channel`.
 """
-function web_socket_server(port::Int, channel::Channel{String})
+function web_socket_server(port::UInt16, channel::Channel{String})
     #Checks
     if port <= 0
         @error "Please specify a WEB-socket port of positive integer value."
     end
     @info "I/O: Waiting for data @web-socket:$port..."
-    @async HTTP.WebSockets.listen("127.0.0.1", UInt16(port), verbose=false) do ws
+    @async HTTP.WebSockets.listen("127.0.0.1", port, verbose=false) do ws
         while !eof(ws)
             # Read data
             data = readavailable(ws)
@@ -107,11 +107,6 @@ function unix_socket_server(socket::AbstractString, channel::Channel{String})
         end
     end
     return nothing
-end
-
-
-
-_check_socket(socket::Int) = begin
 end
 
 
