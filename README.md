@@ -1,6 +1,6 @@
 # Garamond
 
-A small, fast and flexible search engine that supports both classic and semantic searches, written in Julia.
+A small, fast and flexible semantic search engine, written in Julia.
 
 [![License](http://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat)](LICENSE.md) 
 [![Build Status (master)](https://travis-ci.com/zgornel/Garamond.jl.svg?token=8HcgFtAjpxwpdXiu8Fon&branch=master)](https://travis-ci.com/zgornel/Garamond.jl)
@@ -20,8 +20,8 @@ Garamond is under development ...¯\\_(ツ)_/¯. For more information, visit the
 - ~~Take text pre-processing seriously (optimization + flag checking + support skipping patterns from processing)~~
 - ~~Support for PDFs, archives, other files (see Taro.jl, TranscodingStreams.jl)~~
 - ~~General search engine configuration through runconfig file i.e. `~/.garamondrc`~~
-- ~~Websocket support for server~~ **WIP**
-- ~~HTTP client~~ **WIP**
+- ~~Websocket support for server~~
+- ~~HTTP client~~
 - Fat binary compilation (binaries for server and clients)
 - Take testing seriously
 

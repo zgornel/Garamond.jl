@@ -67,7 +67,7 @@ This is a list of the features supported by Garamond.
     - I/O Iterface
         - [x] Server: communication through UNIX/Web sockets
         - [x] CLI Client: input and output are STDIN and STDOUT (communication through Unix sockets)
-        - [ ] HTTP Client: input and output are in a webpage (communication through Web sockets)
+        - [x] HTTP Client: input and output are in a webpage (communication through Web sockets)
     - Per-corpus embedding training
         - [x] Word2Vec (manual)
         - **?** Conceptnet
