@@ -37,7 +37,6 @@ end
 #       - the inner vector is for a the document: vector of sentences
 #       - the outer vector is for the corpus: a vector of documents
 #   The metadata vector is a Vector{DocumentMetadata}
-# TODO(Corneliu): Add support for other files (so far only text files supported)
 function __parser_directory_format_1(directory::AbstractString,
                                      config=nothing;  # not used
                                      globbing_pattern::String=DEFAULT_GLOBBING_PATTERN,
