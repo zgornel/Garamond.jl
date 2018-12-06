@@ -237,47 +237,48 @@ function construct_response(srchers,
         write(buf, JSON.json(results))
     elseif what == "json-data"
         # Web-socket client, return document metadata
-        write(buf, JSON.jsnon(
-            export_for_web(srchers, results, max_suggestions, elapsed_time)))
-        @warn "NOT IMPLEMENTED FUNCTIONALITY REQUIRED."
+        write(buf, JSON.json(
+            export_results_for_web(srchers, results, max_suggestions, elapsed_time)))
     end
     return join(Char.(buf.data))
 end
 
 
 # Pretty printer of results
+# #TODO(Corneliu) Display scores, suggestions as well, improve function
 function export_results_for_web(srchers::S, results::T, max_suggestions::Int,
                                 elapsed_time::Float64
                                ) where {S<:AbstractVector{<:AbstractSearcher},
                                         T<:AbstractVector{<:SearchResult}}
+    # Count the total number of results
     if !isempty(results)
         nt = mapreduce(x->valength(x.query_matches), +, results)
     else
         nt = 0
     end
-    printstyled(io, "$nt search results from $(length(results)) corpora\n")
+
+    no_matches(result::T) where T<:SearchResult =
+        isempty(result, quety_matches for field in fieldnames(T))
+    # This structure matches the one expencted
+    # in the web clients search page
+    r = Dict("etime"=>elapsed_time,
+             "matches" => Dict{String, Vector{Dict{String,String}}}(),
+             "n_matches" => nt,
+             "n_corpora" => length(results),
+             "n_corpora_match" =>
+                mapreduce(r->!isempty(r.query_matches), +, results))
     for (i, _result) in enumerate(results)
         crps = srchers[i].corpus
-        nm = valength(_result.query_matches)
-        printstyled(io, "`-[$(_result.id)] ", color=:cyan)  # hash
-        printstyled(io, "$(nm) search results")
-        ch = ifelse(nm==0, ".", ":"); printstyled(io, "$ch\n")
-        if isempty(crps)
-            printstyled(io, "*** Corpus data is missing ***\n", color=:normal)
-        else
+        push!(r["matches"], _result.id.id => Vector{Dict{String,String}}())
+        if !isempty(crps)
             for score in sort(collect(keys(_result.query_matches)), rev=true)
                 for doc in (crps[i] for i in _result.query_matches[score])
-                    printstyled(io, "  $score ~ ", color=:normal, bold=true)
-                    printstyled(io, "$(metadata(doc))\n", color=:normal)
+                    dictdoc = convert(Dict, metadata(doc))
+                    push!(r["matches"][_result.id.id], dictdoc)
                 end
             end
         end
     end
     suggestions = squash_suggestions(results, max_suggestions)
-    ns = length(suggestions)
-    ns > 0 && printstyled(io, "$ns suggestions:\n")
-    for (keyword, suggest) in suggestions
-        printstyled(io, "  \"$keyword\": ", color=:normal, bold=true)
-        printstyled(io, "$(join(suggest, ", "))\n", color=:normal)
-    end
+    return r
 end

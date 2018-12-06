@@ -21,7 +21,7 @@ function get_unix_socket_client_arguments(args::Vector{String})
             default = ""
         "--log-level"
             help = "logging level"
-            default = "info"
+            default = "warn"
         "--unix-socket", "-u"
             help = "UNIX socket for data communication"
             arg_type = String
