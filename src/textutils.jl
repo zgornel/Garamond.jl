@@ -3,12 +3,17 @@
 #################################################################
 
 # Converts a String to Languages.Language (using STR_TO_LANG)
-convert(::Type{L}, lang::S) where {L<:Languages.Language, S<:AbstractString} =
-    get(STR_TO_LANG, strip(lower(lang)), Languages.English())
+convert(::Type{L}, lang::S) where {L<:Languages.Language, S<:AbstractString} = begin
+    TypeLang = get(STR_TO_LANG, strip(lower(lang)), Languages.English)
+    return TypeLang()
+end
 
 # Converts Languages.Language to String (using LANG_TO_STR)
+convert(::Type{S}, lang::Type{L}) where {L<:Languages.Language, S<:AbstractString} =
+    get(LANG_TO_STR, lang, string(L))
+
 convert(::Type{S}, lang::L) where {L<:Languages.Language, S<:AbstractString} =
-	get(LANG_TO_STR, lang, "unknown")
+    convert(S, L)
 
 # Convert a StringAnalysis metadata structure to a Dict
 convert(::Type{Dict}, md::DocumentMetadata) =
@@ -24,7 +29,7 @@ function meta2sv(md::T, fields=fieldnames(T)) where T<:DocumentMetadata
             if field != :language
                 msv[i] = getfield(md, field)
             else
-                msv[i] = LANG_TO_STR[getfield(md, field)]
+                msv[i] = LANG_TO_STR[typeof(getfield(md, field))]
             end
         end
     end
@@ -64,7 +69,7 @@ end
 
 
 """
-    summarize(sentences [;ns=1, flags=SUMMARIZATION_FLAGS]
+    summarize(sentences [;ns=1, flags=DEFAULT_SUMMARIZATION_FLAGS])
 
 Build a summary of the text's `sentences`. The resulting summary will be
 a `ns` sentence document; each sentence is pre-procesed using the
@@ -72,7 +77,7 @@ a `ns` sentence document; each sentence is pre-procesed using the
 """
 function summarize(sentences::Vector{S};
                    ns::Int=1,
-                   flags::UInt32=SUMMARIZATION_FLAGS
+                   flags::UInt32=DEFAULT_SUMMARIZATION_FLAGS
                   ) where S<:AbstractString
     # Get document term matrix
     s = StringDocument{String}.(sentences)

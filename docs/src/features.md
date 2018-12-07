@@ -1,10 +1,8 @@
-# Feature list
+# Search engine features
 
 This is a list of the features supported by Garamond.
 
 - Document Indexing/Modelling:
-    - [x] Single delimited file (rows are documents)
-    - [x] A directory (all files in all sub-directories that fit a globbing pattern are indexed)
     - [x] Summarization support (index [TextRank](https://en.wikipedia.org/wiki/Automatic_summarization#Unsupervised_approach:_TextRank)-based summary)
     - [ ] Parallelism: green light or hardware threads
     - [x] Basic update or 're-indexing' support
@@ -15,16 +13,16 @@ This is a list of the features supported by Garamond.
             - [x] `.csv`, `.tsv` etc.
             - [x] `.json` (custom parser must be built)
             - [x] `.html` (custom parser must be built)
-            - [ ] `.xml`
+            - [x] `.xml` (custom parser must be built)
         - [ ] Binary formats
-            - [ ] `.pdf`
-            - [ ] Compressed files (`.zip`, `.gz`, etc.)
+            - [x] `.pdf` (through external program `pdftotext` from [libpoppler](https://poppler.freedesktop.org/))
+            - [ ] Compressed files (`.tar`, `.zip`, `.gz`, etc.)
             - [ ] Microsoft [new .xml formats(`.docx`, `.xlsx`, etc.)](https://docs.microsoft.com/en-us/office/open-xml/open-xml-sdk)
             - **?** Microsoft old binary formats(`.doc`, `.xls`, etc.)
 - Engine configuration:
     - [x] Single file for multiple data configurations
     - [x] Multiple files for data configurations
-    - [ ] General engine configuration
+    - [x] General engine configuration (`~/.garamondrc.jl`, gets re-compiled into Garamond at startup)
 - Search types:
     - Classic Search:
         - Language support:
@@ -67,8 +65,9 @@ This is a list of the features supported by Garamond.
             - [x] [KD-tree](https://en.wikipedia.org/wiki/K-d_tree) (multiple metrics)
             - [x] [HNSW](https://arxiv.org/abs/1603.09320) (multiple metrics supported)
     - I/O Iterface
-        - [x] Input: receive query data through UNIX sockets (when in server mode)
-        - [x] Output: output to socket (when in server mode), to `STDOUT` when in client mode
+        - [x] Server: communication through UNIX/Web sockets
+        - [x] CLI Client: input and output are STDIN and STDOUT (communication through Unix sockets)
+        - [x] HTTP Client: input and output are in a webpage (communication through Web sockets)
     - Per-corpus embedding training
         - [x] Word2Vec (manual)
         - **?** Conceptnet
@@ -84,6 +83,6 @@ This is a list of the features supported by Garamond.
 
 
 ## Status of features
- - [x] supported
- - [ ] to be added
- - **?** not decided whether to add or not
+ - [x] _supported_
+ - [ ] _to be added_
+ - **?** _not decided whether to add or not_

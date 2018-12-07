@@ -167,7 +167,6 @@ function embed_document(embeddings_library::Union{
     embedded_words = Vector{Vector{String}}(undef, n)
     sentence_embeddings = Vector{Matrix{T}}(undef, n)
     # Embed sentences individually
-    # TODO(Corneliu) Verify speed and pre-allocate with keep size if too slow
     @inbounds for i in 1:n
         words = tokenize_fast(document[i])
         _embs, _mtoks = embed_document(embeddings_library,

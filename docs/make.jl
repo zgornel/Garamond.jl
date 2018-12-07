@@ -15,6 +15,7 @@ makedocs(
         "Introduction" => "index.md",
         "Feature list" => "features.md",
         "Client/Server" => "clientserver.md",
+        "Notes" => "notes.md",
         "API Reference" => "api.md",
     ]
 )

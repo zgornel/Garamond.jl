@@ -37,74 +37,82 @@ end
 
 
 # Pretty printer of results
-function print_search_results(srcher::AbstractSearcher, result::SearchResult)
+function print_search_results(io::IO, srcher::AbstractSearcher, result::SearchResult)
     nm = valength(result.query_matches)
     ns = length(result.suggestions)
     @assert id(srcher) == result.id "Searcher and result id's do not match."
-    printstyled("[$(id(srcher))] $nm search results")
-    ch = ifelse(nm==0, ".", ":"); printstyled("$ch\n")
+    printstyled(io, "[$(id(srcher))] $nm search results")
+    ch = ifelse(nm==0, ".", ":"); printstyled(io, "$ch\n")
     for score in sort(collect(keys(result.query_matches)), rev=true)
         if isempty(srcher.corpus)
-            printstyled("*** Corpus data is missing ***", color=:normal)
+            printstyled(io, "*** Corpus data is missing ***", color=:normal)
         else
             for doc in (srcher.corpus[i] for i in result.query_matches[score])
-                printstyled("  $score ~ ", color=:normal, bold=true)
-                printstyled("$(metadata(doc))\n", color=:normal)
+                printstyled(io, "  $score ~ ", color=:normal, bold=true)
+                printstyled(io, "$(metadata(doc))\n", color=:normal)
             end
         end
     end
-    ns > 0 && printstyled("$ns suggestions:\n")
+    ns > 0 && printstyled(io, "$ns suggestions:\n")
     for (keyword, suggestions) in result.suggestions
-        printstyled("  \"$keyword\": ", color=:normal, bold=true)
-        printstyled("$(join(map(x->x[2], suggestions), ", "))\n", color=:normal)
+        printstyled(io, "  \"$keyword\": ", color=:normal, bold=true)
+        printstyled(io, "$(join(map(x->x[2], suggestions), ", "))\n", color=:normal)
     end
 end
 
+print_search_results(srcher::AbstractSearcher, result::SearchResult) =
+    print_search_results(stdout, srcher, result)
 
 
 # Pretty printer of results
-function print_search_results(srchers::S,
-                              results::T;
-                              max_suggestions=DEFAULT_MAX_CORPUS_SUGGESTIONS) where
-        {S<:AbstractVector{<:AbstractSearcher},
-         T<:AbstractVector{<:SearchResult}}
+function print_search_results(io::IO, srchers::S, results::T;
+                              max_suggestions=MAX_CORPUS_SUGGESTIONS
+                             ) where {S<:AbstractVector{<:AbstractSearcher},
+                                      T<:AbstractVector{<:SearchResult}}
     if !isempty(results)
         nt = mapreduce(x->valength(x.query_matches), +, results)
     else
         nt = 0
     end
-    printstyled("$nt search results from $(length(results)) corpora\n")
+    printstyled(io, "$nt search results from $(length(results)) corpora\n")
     for (i, _result) in enumerate(results)
         crps = srchers[i].corpus
         nm = valength(_result.query_matches)
-        printstyled("`-[$(_result.id)] ", color=:cyan)  # hash
-        printstyled("$(nm) search results")
-        ch = ifelse(nm==0, ".", ":"); printstyled("$ch\n")
+        printstyled(io, "`-[$(_result.id)] ", color=:cyan)  # hash
+        printstyled(io, "$(nm) search results")
+        ch = ifelse(nm==0, ".", ":"); printstyled(io, "$ch\n")
         if isempty(crps)
-            printstyled("*** Corpus data is missing ***\n", color=:normal)
+            printstyled(io, "*** Corpus data is missing ***\n", color=:normal)
         else
             for score in sort(collect(keys(_result.query_matches)), rev=true)
                 for doc in (crps[i] for i in _result.query_matches[score])
-                    printstyled("  $score ~ ", color=:normal, bold=true)
-                    printstyled("$(metadata(doc))\n", color=:normal)
+                    printstyled(io, "  $score ~ ", color=:normal, bold=true)
+                    printstyled(io, "$(metadata(doc))\n", color=:normal)
                 end
             end
         end
     end
     suggestions = squash_suggestions(results, max_suggestions)
     ns = length(suggestions)
-    ns > 0 && printstyled("$ns suggestions:\n")
+    ns > 0 && printstyled(io, "$ns suggestions:\n")
     for (keyword, suggest) in suggestions
-        printstyled("  \"$keyword\": ", color=:normal, bold=true)
-        printstyled("$(join(suggest, ", "))\n", color=:normal)
+        printstyled(io, "  \"$keyword\": ", color=:normal, bold=true)
+        printstyled(io, "$(join(suggest, ", "))\n", color=:normal)
     end
 end
 
+print_search_results(srchers::S, results::T, max_suggestions=MAX_CORPUS_SUGGESTIONS
+                    ) where {S<:AbstractVector{<:AbstractSearcher},
+                             T<:AbstractVector{<:SearchResult}} =
+    print_search_results(stdout,
+                         srchers,
+                         results,
+                         max_suggestions=max_suggestions)
 
 
 # Squash suggestions for multiple corpora search results
 function squash_suggestions(results::Vector{SearchResult},
-                            max_suggestions::Int=1)
+                            max_suggestions::Int=MAX_SUGGESTIONS)
     suggestions = MultiDict{String, String}()
     # Quickly exit if no suggestions are sought
     max_suggestions <=0 && return suggestions

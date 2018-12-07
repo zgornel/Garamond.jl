@@ -100,18 +100,6 @@ version = "0.7.3"
 deps = ["LinearAlgebra", "Random", "Serialization", "Sockets"]
 uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 
-[[DocStringExtensions]]
-deps = ["LibGit2", "Markdown", "Pkg", "Test"]
-git-tree-sha1 = "1df01539a1c952cef21f2d2d1c092c2bcf0177d7"
-uuid = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
-version = "0.6.0"
-
-[[Documenter]]
-deps = ["Base64", "DocStringExtensions", "InteractiveUtils", "LibGit2", "Logging", "Markdown", "Pkg", "REPL", "Random", "Test", "Unicode"]
-git-tree-sha1 = "9f2135e0e7ecb63f9c3ef73ea15a31d8cdb79bb7"
-uuid = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
-version = "0.20.0"
-
 [[Glob]]
 deps = ["Compat", "Test"]
 git-tree-sha1 = "c72f1fcb7d17426de1e8af2e948dfb3de1116eed"
@@ -132,6 +120,12 @@ repo-url = "https://github.com/zgornel/HNSW.jl"
 uuid = "540f64fa-c57e-11e8-081c-41422cda4629"
 version = "0.1.0"
 
+[[HTTP]]
+deps = ["Base64", "Dates", "Distributed", "IniFile", "MbedTLS", "Sockets", "Test"]
+git-tree-sha1 = "b881f69331e85642be315c63d05ed65d6fc8a05b"
+uuid = "cd3eb016-35fb-5094-929b-558a96fad6f3"
+version = "0.7.1"
+
 [[HTTPClient]]
 deps = ["Compat", "LibCURL"]
 git-tree-sha1 = "161d5776ae8e585ac0b8c20fb81f17ab755b3671"
@@ -149,6 +143,12 @@ deps = ["Pkg", "Printf", "Random", "Test"]
 git-tree-sha1 = "b7ec91c153cf8bff9aff58b39497925d133ef7fd"
 uuid = "d25df0c9-e2be-5dd7-82c8-3ad0b3e990b9"
 version = "0.1.1"
+
+[[IniFile]]
+deps = ["Test"]
+git-tree-sha1 = "098e4d2c533924c921f9f9847274f2ad89e018b8"
+uuid = "83e8ac13-25f8-5344-8a64-a9f2b223428f"
+version = "0.5.0"
 
 [[InteractiveUtils]]
 deps = ["LinearAlgebra", "Markdown"]
@@ -218,6 +218,12 @@ version = "0.4.4"
 [[Markdown]]
 deps = ["Base64"]
 uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
+
+[[MbedTLS]]
+deps = ["BinaryProvider", "Dates", "Libdl", "Random", "Sockets", "Test"]
+git-tree-sha1 = "c93a87da4081a3de781f34e0540175795a2ce83d"
+uuid = "739be429-bea8-5141-9913-cc70e7f3736d"
+version = "0.6.6"
 
 [[Mmap]]
 uuid = "a63ad114-7e13-5084-954f-fe012c677804"
@@ -304,10 +310,8 @@ uuid = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 [[StringAnalysis]]
 deps = ["BinaryProvider", "Languages", "Libdl", "LinearAlgebra", "SparseArrays", "Statistics", "Test", "Unicode", "WordTokenizers"]
 git-tree-sha1 = "81f99e98875923bdfa1ccdfea50324c3c74bf431"
-repo-rev = "master"
-repo-url = "https://github.com/zgornel/StringAnalysis.jl"
-uuid = "f2e5b97c-ed87-11e8-3fa8-a300efcc83e4"
-version = "0.1.0"
+uuid = "b66b7d2f-f536-51df-9f97-4dfb9d27c005"
+version = "0.1.1"
 
 [[StringDistances]]
 deps = ["Distances", "IterTools", "Test"]

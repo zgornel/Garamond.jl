@@ -15,6 +15,22 @@ using JSON
 
 # Generates test files for delimited configurations
 DELIMITER="|"
+PARSER_CONFIGS = Dict(
+   :delimited_format_1 =>
+       Dict("metadata"=> Dict(1=>"id",
+                              2=>"author",
+                              3=>"name",
+                              4=>"publisher",
+                              5=>"edition_year",
+                              6=>"published_year",
+                              7=>"language",
+                              8=>"note",
+                              9=>"location"),
+            "data"=> [2, 3, 8]
+           ),
+    :directory_format_1 => nothing
+)
+
 function generate_test_data(parser::Symbol)
     # Make directories
     tmp_path = tempdir()
@@ -69,6 +85,7 @@ function generate_test_configurations(data_path::String,
                                    "search" => search_approach,
                                    "data_path" => data_path,
                                    "parser" => parser,
+                                   "parser_config" => PARSER_CONFIGS[parser],
                                    "enabled" => true,
                                    "header" => false,
                                    "delimiter" => DELIMITER,
@@ -102,6 +119,7 @@ function generate_test_configurations(data_path::String,
                                            "search"=> search_approach,
                                            "data_path" => data_path,
                                            "parser" => parser,
+                                           "parser_config" => PARSER_CONFIGS[parser],
                                            "enabled" => true,
                                            "header" => false,
                                            "delimiter" => DELIMITER,

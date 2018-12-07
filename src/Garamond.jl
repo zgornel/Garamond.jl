@@ -40,6 +40,7 @@ module Garamond
     using LightGraphs: Graph, pagerank
     using JSON
     using Glob
+    using HTTP
 
     # Import section (extendable methods)
     import Base: size, length, show, keys, values, push!,
@@ -67,7 +68,6 @@ module Garamond
 
     # Include section
     include("config/defaults.jl")
-    include("config/cmdline.jl")
     include("config/engine.jl")
     include("config/data.jl")
     include("logging.jl")
@@ -77,8 +77,7 @@ module Garamond
     include("update.jl")
     include("search.jl")
     include("results.jl")
-    include("io.jl")
-    include("fsm.jl")
+    include("servers.jl")
     include("version.jl")
     include("parsers/delimited_formats.jl")
     include("parsers/directory_formats.jl")

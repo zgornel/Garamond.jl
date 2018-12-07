@@ -27,6 +27,7 @@ mutable struct SearchConfig
     enabled::Bool                   # whether to use the corpus in search or not
     data_path::String               # file/directory path for the data (depends on what the parser accepts)
     parser::Function                # parser function used to obtain corpus
+    parser_config::Union{Nothing,Dict}  # parser configuration
     build_summary::Bool             # whether to summarize or not the documents
     summary_ns::Int                 # the number of sentences in the summary
     keep_data::Bool                 # whether to keep document data, metadata
@@ -41,6 +42,11 @@ mutable struct SearchConfig
     embedding_search_model::Symbol  # type of the search model i.e. :naive, :kdtree, :hnsw (semantic search)
     embedding_element_type::Symbol  # Type of the embedding elements
     word2vec_filetype::Symbol       # Type of the embedding file (word2vec embeddings specific)
+    # test stripping flags
+    text_strip_flags::UInt32        # How to strip text data before indexing
+    metadata_strip_flags::UInt32    # How to strip text metadata before indexing
+    query_strip_flags::UInt32       # How to strip queries before searching
+    summarization_strip_flags::UInt32 # How to strip text before summarization
 end
 
 # Keyword argument constructor; all arguments sho
@@ -51,12 +57,15 @@ SearchConfig(;
           enabled=false,
           data_path="",
           parser=get_parsing_function(DEFAULT_PARSER,
+                                      DEFAULT_PARSER_CONFIG,
                                       false,
                                       DEFAULT_DELIMITER,
                                       DEFAULT_GLOBBING_PATTERN,
                                       DEFAULT_BUILD_SUMMARY,
                                       DEFAULT_SUMMARY_NS,
+                                      DEFAULT_SUMMARIZATION_STRIP_FLAGS,
                                       DEFAULT_SHOW_PROGRESS),
+          parser_config=DEFAULT_PARSER_CONFIG,
           build_summary=DEFAULT_BUILD_SUMMARY,
           summary_ns=DEFAULT_SUMMARY_NS,
           keep_data=DEFAULT_KEEP_DATA,
@@ -68,15 +77,21 @@ SearchConfig(;
           embedding_method=DEFAULT_EMBEDDING_METHOD,
           embedding_search_model=DEFAULT_EMBEDDING_SEARCH_MODEL,
           embedding_element_type=DEFAULT_EMBEDDING_ELEMENT_TYPE,
-          word2vec_filetype=DEFAULT_WORD2VEC_FILETYPE) =
+          word2vec_filetype=DEFAULT_WORD2VEC_FILETYPE,
+          text_strip_flags=DEFAULT_TEXT_STRIP_FLAGS,
+          metadata_strip_flags=DEFAULT_METADATA_STRIP_FLAGS,
+          query_strip_flags=DEFAULT_QUERY_STRIP_FLAGS,
+          summarization_strip_flags=DEFAULT_SUMMARIZATION_STRIP_FLAGS) =
     # Call normal constructor
-    SearchConfig(id, search, description, enabled, data_path, parser,
+    SearchConfig(id, search, description, enabled, data_path,
+                 parser, parser_config,
                  build_summary, summary_ns, keep_data, stem_words,
                  count_type, heuristic,
                  embeddings_path, embeddings_type,
                  embedding_method, embedding_search_model,
-                 embedding_element_type,
-                 word2vec_filetype)
+                 embedding_element_type, word2vec_filetype,
+                 text_strip_flags, metadata_strip_flags,
+                 query_strip_flags, summarization_strip_flags)
 
 
 Base.show(io::IO, sconfig::SearchConfig) = begin
@@ -127,13 +142,6 @@ function load_search_configs(filename::AbstractString)
         sconfig.summary_ns = get(dconfig, "summary_ns", DEFAULT_SUMMARY_NS)
         sconfig.keep_data = get(dconfig, "keep_data", DEFAULT_KEEP_DATA)
         sconfig.stem_words = get(dconfig, "stem_words", DEFAULT_STEM_WORDS)
-        sconfig.parser = get_parsing_function(Symbol(dconfig["parser"]),
-                                              header,
-                                              delimiter,
-                                              globbing_pattern,
-                                              sconfig.build_summary,
-                                              sconfig.summary_ns,
-                                              show_progress)
         sconfig.count_type = Symbol(get(dconfig, "count_type", DEFAULT_COUNT_TYPE))
         sconfig.heuristic = Symbol(get(dconfig, "heuristic", DEFAULT_HEURISTIC))
         sconfig.embeddings_path = get(dconfig, "embeddings_path", "")
@@ -142,19 +150,41 @@ function load_search_configs(filename::AbstractString)
         sconfig.embedding_method = Symbol(get(dconfig, "embedding_method",
                                               DEFAULT_EMBEDDING_METHOD))
         sconfig.embedding_search_model = Symbol(get(dconfig, "embedding_search_model",
-                                                DEFAULT_EMBEDDING_SEARCH_MODEL))
+                                                    DEFAULT_EMBEDDING_SEARCH_MODEL))
         sconfig.embedding_element_type = Symbol(get(dconfig, "embedding_element_type",
-                                                DEFAULT_EMBEDDING_SEARCH_MODEL))
+                                                    DEFAULT_EMBEDDING_ELEMENT_TYPE))
         sconfig.word2vec_filetype = Symbol(get(dconfig, "word2vec_filetype",
                                                DEFAULT_WORD2VEC_FILETYPE))
+        sconfig.text_strip_flags = UInt32(get(dconfig, "text_strip_flags",
+                                              DEFAULT_TEXT_STRIP_FLAGS))
+        sconfig.metadata_strip_flags = UInt32(get(dconfig, "metadata_strip_flags",
+                                                  DEFAULT_METADATA_STRIP_FLAGS))
+        sconfig.query_strip_flags = UInt32(get(dconfig, "query_strip_flags",
+                                               DEFAULT_QUERY_STRIP_FLAGS))
+        sconfig.summarization_strip_flags = UInt32(get(dconfig,
+                                                       "summarization_strip_flags",
+                                                        DEFAULT_SUMMARIZATION_STRIP_FLAGS))
+        # Construct parser (built last as requires other parameters)
+        sconfig.parser_config = get(dconfig, "parser_config", DEFAULT_PARSER_CONFIG)
+        sconfig.parser = get_parsing_function(Symbol(dconfig["parser"]),
+                                              sconfig.parser_config,
+                                              header,
+                                              delimiter,
+                                              globbing_pattern,
+                                              sconfig.build_summary,
+                                              sconfig.summary_ns,
+                                              sconfig.summarization_strip_flags,
+                                              show_progress)
         # Checks of the configuration parameter values;
         # No checks performed for:
         # - id (always works)
         # - description (always works)
         # - enabled (must fail if wrong)
         # - parser (must fail if wrong)
+        # - parser_config (must fail if wrong)
         # - globbing_pattern (must fail if wrong)
         # - build_summary (should fail if wrong)
+        # - text data/metadata/query/summarization flags (must fail if wrong)
         ###
         # search
         if !(sconfig.search in [:classic, :semantic])
@@ -255,6 +285,8 @@ returns it.
 
 # Arguments
   * `parser::Symbol` is the name of the parser
+  * `parser_config::Union{Nothing, Dict}` can contain optional configuration data
+    for the parser (for delimited parsers)
   * `header::Bool` whether the file has a header or not (for delimited files only)
   * `delimiter::String` the delimiting character (for delimited files only)
   * `globbing_pattern::String` globbing pattern for gathering file lists
@@ -263,6 +295,8 @@ returns it.
     (for directory parsers only)
   * `summary_ns::Int` how many sentences to use in the summary (for directory
     parsers only)
+  * `summarization_strip_flags::UInt32` flags used to strip text before summarization
+    (for directory parsers only)
   * `show_progress::Bool` whether to show the progress when loading files
 
 Note: `parser` must be in the keys of the `PARSER_CONFIGS` constant. The name
@@ -271,17 +305,17 @@ Note: `parser` must be in the keys of the `PARSER_CONFIGS` constant. The name
       parser `:delimited_format_1`. The function must be defined apriori.
 """
 function get_parsing_function(parser::Symbol,
+                              parser_config::Union{Nothing, Dict},
                               header::Bool,
                               delimiter::String,
                               globbing_pattern::String,
                               build_summary::Bool,
                               summary_ns::Int,
+                              summarization_strip_flags::UInt32,
                               show_progress::Bool)
     PREFIX = :__parser_
     # Construct the actual basic parsing function from parser name
     parsing_function  = eval(Symbol(PREFIX, parser))
-    # Get parser config
-    parser_config = get(PARSER_CONFIGS, parser, Dict())
     # Build and return parsing function (a nice closure)
     function parsing_closure(filename::String)
         return parsing_function(# Compulsory arguments for all parsers
@@ -293,6 +327,8 @@ function get_parsing_function(parser::Symbol,
                                 globbing_pattern=globbing_pattern,
                                 build_summary=build_summary,
                                 summary_ns=summary_ns,
+                                summarization_strip_flags=
+                                    summarization_strip_flags,
                                 show_progress=show_progress)
     end
     return parsing_closure

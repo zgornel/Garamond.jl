@@ -18,21 +18,25 @@ matrix:
   - julia: nightly
   - os: osx  # travis timing out
 
-jobs:
-  include:
-    - stage: "Documentation"
-      julia: 1.0
-      os: linux
-      script:
-        - julia -e 'using Pkg;
-                    cd(Pkg.dir("Garamond"));
-                    Pkg.activate(".");
-                    Pkg.instantiate();
-                    include(joinpath("docs", "make.jl"))'
-      after_success: skip
+# jobs:
+#   include:
+#     - stage: "Documentation"
+#       julia: 1.0
+#       os: linux
+#       script:
+#         - julia -e 'using Pkg;
+#                     Pkg.add("Documenter");
+#                     cd(Pkg.dir("Garamond"));
+#                     Pkg.activate(".");
+#                     Pkg.instantiate();
+#                     include(joinpath("docs", "make.jl"))'
+#       after_success: skip
 
 #codecov: true
 #coveralls: true
 after_success:
+  # generate documentation
+  - julia -e 'using Pkg; ps=Pkg.PackageSpec(name="Documenter", version="0.20"); Pkg.add(ps); Pkg.pin(ps); Pkg.add("Garamond")'
+  - julia -e 'using Pkg; cd(Pkg.dir("Garamond")); include(joinpath("docs", "make.jl"))'
   # push coverage results to Coveralls
-  - julia -e '(VERSION >= v"0.7" && using Pkg); Pkg.add("Coverage"); cd(Pkg.dir("Garamond")); using Coverage; Coveralls.submit(process_folder()); Codecov.submit(process_folder())'
+  - julia -e 'using Pkg; cd(Pkg.dir("Garamond")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'

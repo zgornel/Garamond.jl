@@ -1,0 +1,73 @@
+#!/bin/julia
+
+#########################################
+# Garamond script for server operations #
+#########################################
+module GaramondServer
+
+using Pkg
+Pkg.activate(@__DIR__)
+using Garamond
+using Sockets
+using Logging
+using ArgParse
+
+
+# Function that parses Garamond's server arguments
+function get_server_commandline_arguments(args::Vector{String})
+	s = ArgParseSettings()
+	@add_arg_table s begin
+        "--data-config", "-d"
+            help = "data configuration file"
+            required = true
+            action = :append_arg
+        "--log-level"
+            help = "logging level"
+            default = "info"
+        "--log", "-l"
+            help = "logging stream"
+            default = "stdout"
+        "--unix-socket", "-u"
+            help = "UNIX socket for data communication"
+            arg_type = String
+        "--web-socket-port", "-w"
+            help = "WEB socket data communication port"
+            arg_type = UInt16
+	end
+
+	return parse_args(args,s)
+end
+
+
+########################
+# Main module function #
+########################
+function main()
+    # Parse command line arguments
+    args = get_server_commandline_arguments(ARGS)
+    # Get the argument values
+    log_level = args["log-level"]
+    logging_stream = args["log"]
+    # Logging
+    logger = Garamond.build_logger(logging_stream, log_level)
+    global_logger(logger)
+    # Select one entry point
+    unixsocket = args["unix-socket"]
+    ws_port = args["web-socket-port"]
+    if unixsocket == nothing && ws_port == nothing
+        @error """At least a UNIX-socket or WEB-socket port has to
+                  be specified through the -u and -p switches."""
+    end
+    # Start Server #
+    data_config_paths = String.(args["data-config"])
+    Garamond.search_server(data_config_paths, unixsocket, ws_port)
+    return 0
+end
+
+
+################################
+# Start main Garamond function #
+################################
+main()
+
+end # GaramondServer
