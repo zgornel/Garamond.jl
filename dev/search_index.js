@@ -57,11 +57,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "features/#Feature-list-1",
+    "location": "features/#Search-engine-features-1",
     "page": "Feature list",
-    "title": "Feature list",
+    "title": "Search engine features",
     "category": "section",
-    "text": "This is a list of the features supported by Garamond.Document Indexing/Modelling:\n[x] Single delimited file (rows are documents)\n[x] A directory (all files in all sub-directories that fit a globbing pattern are indexed)\n[x] Summarization support (index TextRank-based summary)\n[ ] Parallelism: green light or hardware threads\n[x] Basic update or \'re-indexing\' support\n[x] Single file support (parts of the file are treated as documents)\n[x] Multiple files / directory support (a file is a document)\n[x] File format support:\n[x] Text formats\n[x] .csv, .tsv etc.\n[x] .json (custom parser must be built)\n[x] .html (custom parser must be built)\n[ ] .xml\n[ ] Binary formats\n[ ] .pdf\n[ ] Compressed files (.zip, .gz, etc.)\n[ ] Microsoft new .xml formats(.docx, .xlsx, etc.)\n? Microsoft old binary formats(.doc, .xls, etc.)\nEngine configuration:\n[x] Single file for multiple data configurations\n[x] Multiple files for data configurations\n[ ] General engine configuration\nSearch types:\nClassic Search:\nLanguage support:\n[x] Uniform language: query language same as doc language\n[ ] Different languages for query / docs\nWhere to search:\n[x] Document data\n[x] Document metadata\n[x] Document data + metadata\nHow to search for patterns:\n[x] exact match\n[x] regular expression\nDocument term importance\n[x] term frequency\n[x] tf-idf\n[x] BM25\nSuggestion support\n[x] BK Trees (through BKTrees.jl)\n? Levenshtein Automata\n? SymSpell and others\nSemantic Search:\nLanguage support:\n[x] Uniform language: query language same as doc language (English, German, Romanian)(\n[x] Different languages for query / docs (ALMOST English, German, Romanian; to test :))\nWhere to search:\n[x] Document data\n[x] Document metadata\n[x] Document data + metadata\nDocument embedding:\n[x] Bag of words\n[x] Arora et al.\nEmbedding Vector libraries\n[x] Word2Vec embeddings\n[x] ConceptnetNumberbatch embeddings\n? GloVe embeddings\n? Other i.e. FastText\nSearch Models (for semantic vectors)\n[x] Naive cosine similarity base\n[x] Brute-force \"tree\" (multiple metrics)\n[x] KD-tree (multiple metrics)\n[x] HNSW (multiple metrics supported)\nI/O Iterface\n[x] Input: receive query data through UNIX sockets (when in server mode)\n[x] Output: output to socket (when in server mode), to STDOUT when in client mode\nPer-corpus embedding training\n[x] Word2Vec (manual)\n? Conceptnet\n? GloVe\nParallelism forms supported\n[x] Multi-threading (each corpus is searched withing a hardware thread; support is EXPERIMENTAL and it is disabled by default)\n[ ] Multi-core + task scheduling Dispatcher.jl for distributed corpora\n[ ] Cluster support\nOther:\n[x] Logging mechanism\n[x] Client/server functionality\n[x] Pretty version support :)"
+    "text": "This is a list of the features supported by Garamond.Document Indexing/Modelling:\n[x] Summarization support (index TextRank-based summary)\n[ ] Parallelism: green light or hardware threads\n[x] Basic update or \'re-indexing\' support\n[x] Single file support (parts of the file are treated as documents)\n[x] Multiple files / directory support (a file is a document)\n[x] File format support:\n[x] Text formats\n[x] .csv, .tsv etc.\n[x] .json (custom parser must be built)\n[x] .html (custom parser must be built)\n[x] .xml (custom parser must be built)\n[ ] Binary formats\n[x] .pdf (through external program pdftotext from libpoppler)\n[ ] Compressed files (.tar, .zip, .gz, etc.)\n[ ] Microsoft new .xml formats(.docx, .xlsx, etc.)\n? Microsoft old binary formats(.doc, .xls, etc.)\nEngine configuration:\n[x] Single file for multiple data configurations\n[x] Multiple files for data configurations\n[x] General engine configuration (~/.garamondrc.jl, gets re-compiled into Garamond at startup)\nSearch types:\nClassic Search:\nLanguage support:\n[x] Uniform language: query language same as doc language\n[ ] Different languages for query / docs\nWhere to search:\n[x] Document data\n[x] Document metadata\n[x] Document data + metadata\nHow to search for patterns:\n[x] exact match\n[x] regular expression\nDocument term importance\n[x] term frequency\n[x] tf-idf\n[x] BM25\nSuggestion support\n[x] BK Trees (through BKTrees.jl)\n? Levenshtein Automata\n? SymSpell and others\nSemantic Search:\nLanguage support:\n[x] Uniform language: query language same as doc language (English, German, Romanian)(\n[x] Different languages for query / docs (ALMOST English, German, Romanian; to test :))\nWhere to search:\n[x] Document data\n[x] Document metadata\n[x] Document data + metadata\nDocument embedding:\n[x] Bag of words\n[x] Arora et al.\nEmbedding Vector libraries\n[x] Word2Vec embeddings\n[x] ConceptnetNumberbatch embeddings\n? GloVe embeddings\n? Other i.e. FastText\nSearch Models (for semantic vectors)\n[x] Naive cosine similarity base\n[x] Brute-force \"tree\" (multiple metrics)\n[x] KD-tree (multiple metrics)\n[x] HNSW (multiple metrics supported)\nI/O Iterface\n[x] Server: communication through UNIX/Web sockets\n[x] CLI Client: input and output are STDIN and STDOUT (communication through Unix sockets)\n[x] HTTP Client: input and output are in a webpage (communication through Web sockets)\nPer-corpus embedding training\n[x] Word2Vec (manual)\n? Conceptnet\n? GloVe\nParallelism forms supported\n[x] Multi-threading (each corpus is searched withing a hardware thread; support is EXPERIMENTAL and it is disabled by default)\n[ ] Multi-core + task scheduling Dispatcher.jl for distributed corpora\n[ ] Cluster support\nOther:\n[x] Logging mechanism\n[x] Client/server functionality\n[x] Pretty version support :)"
 },
 
 {
@@ -85,23 +85,63 @@ var documenterSearchIndex = {"docs": [
     "page": "Client/Server",
     "title": "Running Garamond in server/client mode",
     "category": "section",
-    "text": "Garamond is desinged as a client-server architecture in which the server receives queries, performs the search action and returns the results to a client that handles the interaction. The client can be either human or machine controlled."
+    "text": "Garamond is designed as a client-server architecture in which the server receives queries, performs the search action and returns the results to a client that handles the interaction. The client can be either human or machine controlled. There are three utilities designed to handle the search process, all of which can be found in the root directory of the package:./gars - starts the search server. The operations performed by the search engine server at this point are indexing data at a given location and listening to a socket.\n./garc - command line client supporting Unix socket communication. It is the most feature complete of the two clients. Through it, a single search can be performed and all search parameters can be specified. It supports pretty printing as well as a means of visually investigating the results of the search.\n./garw - web client supporting Web socket communication (EXPERIMENTAL). The basic principle is that the client starts a HTTP server which serves a page at a given HTTP port. If the web page is not specified, a default one is generated internally and served. The user connects with a web browser of choice at the local address (i.e. 127.0.0.1) and specified port and performs the search queries from the page. It naturally supports multiple queries however, the parameters of the search cannot be changed.Notes:The clients do not depend on the Garamond package and are very lightweight.\nIn the future, garw should support a query format through which the types of searches and their parameters can be controlled. Such options can include performing exact or regex matches, the number of maximum results to return etc.\nThe clients are currently the only \'easy\' way to communicate with the search server; communication with the latter is pretty straightforward (i.e. reading and writing from sockets) as long as the JSON format for data communication is respected."
 },
 
 {
-    "location": "clientserver/#Command-line-utility-1",
+    "location": "clientserver/#Starting-the-search-server-1",
     "page": "Client/Server",
-    "title": "Command line utility",
+    "title": "Starting the search server",
     "category": "section",
-    "text": "The main command line utility for Gramond is the script garamond.jl found in the root directory of the package. It is designed to be able to start the search server (i.e. server mode) and to send queries and receive results from the search server (i.e. client mode). The client mode serves testing purposes only and should not be used in production, it will be probably discontinued in the near future. A separate client (that just reads and writes to/from the socket) should be developed and readily available. To view the command line options for garamond.jl, run ./garamond.jl --help: % ./garamond.jl --help\nusage: garamond.jl [-d DATA-CONFIG] [-e ENGINE-CONFIG]\n                   [--log-level LOG-LEVEL] [-l LOG] [-s SOCKET]\n                   [-q QUERY] [--client] [--server] [-h]\n\noptional arguments:\n  -d, --data-config DATA-CONFIG\n                        data configuration file\n  -e, --engine-config ENGINE-CONFIG\n                        search engine configuration file (default: \"\")\n  --log-level LOG-LEVEL\n                        logging level (default: \"info\")\n  -l, --log LOG         logging stream (default: \"stdout\")\n  -s, --socket SOCKET   UNIX socket for data communication (default:\n                        \"/tmp/garamond/sockets/socket1\")\n  -q, --query QUERY     query the search engine if in client mode\n                        (default: \"\")\n  --client              client mode\n  --server              server mode\n  -h, --help            show this help message and exit"
+    "text": "The search server listens to a socket for incoming queries. Once the query is received, it is processed and the answer written back to same socket. Looking at the gars utility help$ ./gars --help\nusage: gars -d DATA-CONFIG [--log-level LOG-LEVEL] [-l LOG]\n            [-u UNIX-SOCKET] [-w WEB-SOCKET-PORT] [-h]\n\noptional arguments:\n  -d, --data-config DATA-CONFIG\n                        data configuration file\n  --log-level LOG-LEVEL\n                        logging level (default: \"info\")\n  -l, --log LOG         logging stream (default: \"stdout\")\n  -u, --unix-socket UNIX-SOCKET\n                        UNIX socket for data communication\n  -w, --web-socket-port WEB-SOCKET-PORT\n                        WEB socket data communication port (type:\n                        UInt16)\n  -h, --help            show this help message and exitstarting the server becomes quite straightforward. To start the server listening to a web socket at port 8081, all one has to do is:$ ./gars -d ../extras_for_Garamond/data/Cornel/delimited/config_cornel_data_semantic.json -w 8081 --log-level info\n[ [2018-12-18 12:26:59][INFO][servers.jl:102] ~ GARAMOND ~ v\"0.0.0\" commit: 4d7be0d (2018-12-07)\n[ [2018-12-18 12:27:21][INFO][servers.jl:25] I/O: Waiting for data @web-socket:8081...\n[ [2018-12-18 12:27:22][INFO][Servers.jl:301] Listening on: Sockets.InetAddr{Sockets.IPv4}(ip\"127.0.0.1\", 0x1f91)Notice that the -d switch allows indicating a data configuration to use. Multiple such configurations can be provided if multiple data sources are to be handled. After running the command, information-level output of the server is being written to the standard output stream. To write directly the server logs to a file, a file can be indicated through the -log switch or the output redirected to a file."
 },
 
 {
-    "location": "clientserver/#Server-mode-1",
+    "location": "clientserver/#Commandline-client-1",
     "page": "Client/Server",
-    "title": "Server mode",
+    "title": "Commandline client",
     "category": "section",
-    "text": "In server mode, Garamond listens to a socket (i.e./tmp/garamond/sockets/socket1) for incoming queries. Once the query is received, it is processed and the answer written back to same socket. The following example starts Garamond in server mode (indexes the data and connects to socket, displaying all messages):$ ./garamond.jl --server -d ../extras_for_Garamond/data/Cornel/delimited/config_cornel_data_classic.json -s /tmp/garamond/sockets/socket1 --log-level debug\n[ [2018-11-18 15:29:17][DEBUG][garamond.jl:35] ~ GARAMOND ~ v\"0.0.0\" commit: 90f1a17 (2018-11-20)\n[ [2018-11-18 15:29:25][DEBUG][fsm.jl:41] Waiting for query...##Client modeIn client mode, the script sends the query to the server\'s socket and waits the search results on the same socket. Since it uses the whole package, client startup times are slow. View the notes for faster query alternatives. The following example performs a query using the server defined above (the socket is not specified as the server uses the default value):% ./garamond.jl --client --q \"arthur c clarke\" --log-level debug\n[ [2018-11-18 15:37:33][DEBUG][garamond.jl:35] ~ GARAMOND ~ v\"0.0.0\" commit: 90f1a17 (2018-11-20)\n[ [2018-11-18 15:37:33][DEBUG][io.jl:42] >>> Query sent.\n[ [2018-11-18 15:37:36][DEBUG][io.jl:44] <<< Search results received.\n[{\"id\":{\"id\":\"biglib-classic\"},\"query_matches\":{\"d\":{\"0.5441896\":[3],\"0.78605163\":[1,2],\"0.64313316\":[6,7],\"0.5895387\":[4,5]}},\"needle_matches\":{\"clarke\":1.5272124,\"arthur\":1.5272124,\"c\":1.5272124},\"suggestions\":{\"d\":{}}},{\"id\":{\"id\":\"techlib-classic\"},\"query_matches\":{\"d\":{\"0.053899456\":[1,5]}},\"needle_matches\":{\"c\":0.10779891},\"suggestions\":{\"d\":{}}}]"
+    "text": "The commandline client garc sends the query to an open Unix socket and waits the search results on the same socket. It is worthwhile checking the available commandline options:$ ./garc --help\nusage: garc [--log-level LOG-LEVEL] -u UNIX-SOCKET [--pretty]\n            [--max-matches MAX-MATCHES] [--search-type SEARCH-TYPE]\n            [--search-method SEARCH-METHOD]\n            [--max-suggestions MAX-SUGGESTIONS] [-k] [-h] query\n\npositional arguments:\n  query                 the search query (default: \"\")\n\noptional arguments:\n  --log-level LOG-LEVEL\n                        logging level (default: \"warn\")\n  -u, --unix-socket UNIX-SOCKET\n                        UNIX socket for data communication\n  --pretty              output is a pretty print of the results\n  --max-matches MAX-MATCHES\n                        maximum results to return (type: Int64,\n                        default: 10)\n  --search-type SEARCH-TYPE\n                        type of search (type: Symbol, default:\n                        :metadata)\n  --search-method SEARCH-METHOD\n                        type of search (type: Symbol, default: :exact)\n  --max-suggestions MAX-SUGGESTIONS\n                        How many suggestions to return for each\n                        mismatched query term (type: Int64, default:\n                        0)\n  -k, --kill            Kill the search engine server\n  -h, --help            show this help message and exitAssuming that a search server was started with$ ./gars -d ../extras_for_Garamond/data/Cornel/delimited/config_cornel_data_semantic.json -u /tmp/_garamond_socket_001 --log-level infothe following example performs a query using the server defined above and displays the results in a human readable way:$ ./garc \"paolo coelho\" -u /tmp/_garamond_socket_001 --max-matches 5 --pretty --log-level debug\n┌ Debug: ~ GARAMOND~ (unix-socket client)\n└ @ Main.GaramondCLIClient ~/projects/Garamond.jl/garc:134\n┌ Debug: >>> Request sent.\n└ @ Main.GaramondCLIClient ~/projects/Garamond.jl/garc:62\n┌ Debug: <<< Search results received.\n└ @ Main.GaramondCLIClient ~/projects/Garamond.jl/garc:64\n10 search results from 2 corpora\n`-[id=\"biglib-semantic\"] 5 search results:\n  0.9740912108947957 ~ 50-[\"The tunnel\" by Ernesto Sabato, 1948 (2004)]\n  0.9598814147037482 ~ 63-[\"The autumn of the patriarch\" by Gabriel Garcia Marquez, 1975 (2005)]\n  0.9417322045431806 ~ 48-[\"Dialogues\" by Louis Borges, Ernesto Sabato, 1976 (2005)]\n  0.9380608114354404 ~ 49-[\"Essays\" by Ernesto Sabato, 1996 (2005)]\n  0.9262495410707653 ~ 61-[\"The green house\" by Mario Vargas Llosa, 1965 (2008)]\n`-[id=\"techlib-semantic\"] 5 search results:\n  0.8118677136424433 ~ 3-[\"Pattern recognition 4\'th edition\" by Sergios Theodoridis, Konstantinos Koutroumbas, 2008 (2008)]\n  0.804295301024025 ~ 2-[\"Pattern classification, 2\'nd edition\" by Richard O. Douda, Peter E. Hart, David G. Stork, 2000 (2000)]\n  0.7892832305144111 ~ 4-[\"Artificial intelligence, a modern approach 3\'rd edition\" by Stuart Russel, Peter Norvig, 2009 (2016)]\n  0.7713395077452254 ~ 5-[\"Numerical methods for engineers\" by Steven C. Chapra, Raymond P. Canale, 2014 (2014)]\n  0.7603241404778367 ~ 1-[\"Data classification: algorithms and applications\" by Charu C. Aggarwal, 2014 (2014)]\n-----\nElapsed search time: 0.0005221366882324219 seconds.Please not that the search returned five results from each corpus, ordered by relevance. Also, there is are no books by Paolo Coelho in the library (fortunately). The time indicated is from a second run of the query, the first query runs always takes longer (~1s) as the code needs to be compiled on-the-fly."
+},
+
+{
+    "location": "clientserver/#Web-client-1",
+    "page": "Client/Server",
+    "title": "Web client",
+    "category": "section",
+    "text": "The web client garw starts a HTTP server that locally serves a page: it is the page that has to actually connect to the search server through a user-specified web-socket. Therefore, garw is technically not fully a client but for the sake of consistency we will consider it to be one. Its commandline arguments are more simplistic:$ ./garw --help\nusage: garw [--log-level LOG-LEVEL] -w WEB-SOCKET-PORT [-p HTTP-PORT]\n             [--web-page WEB-PAGE] [-h]\n\noptional arguments:\n  --log-level LOG-LEVEL\n                        logging level (default: \"warn\")\n  -w, --web-socket-port WEB-SOCKET-PORT\n                        WEB socket data communication port (type:\n                        UInt16)\n  -p, --http-port HTTP-PORT\n                        HTTP port for the http server (type: Int64,\n                        default: 9999)\n  --web-page WEB-PAGE   Search web page to serve\n  -h, --help            show this help message and exitAssuming a search server is running using a web socket at port 8081 (as in the first gars example above), one can start serving the default webpage at the default port by simply running:$ ./garw -w 8081\n[ Info: Listening on: Sockets.InetAddr{Sockets.IPv4}(ip\"127.0.0.1\", 0x270f)Once a browser opens the page at locahost:9999, output will be generated by garw (by the HTTP.jl module more exactly) regarding the connections occurring:[ Info: Accept (0):  🔗    0↑     0↓    1s 127.0.0.1:9999:9999 ≣16\n┌ Warning: throttling 127.0.0.1\n└ @ HTTP.Servers ~/.julia/packages/HTTP/YjRCz/src/Servers.jl:121\n┌ Info: HTTP.Messages.Request:\n│ \"\"\"\n│ GET /? HTTP/1.1\n│ Host: localhost:9999\n│ Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\n│ User-Agent: mozilla\n│ Upgrade-Insecure-Requests: 1\n│ Accept-Encoding: gzip, deflate\n│ Accept-Language: en-US\n│ Connection: Keep-Alive\n│\n└ \"\"\"From this point on, one can have fun searching using the webpage."
+},
+
+{
+    "location": "clientserver/#Unix-socket-tips-and-tricks-1",
+    "page": "Client/Server",
+    "title": "Unix socket tips and tricks",
+    "category": "section",
+    "text": "The examples below assume the existence of a Unix socket at the location /tmp/<unix_socket> (the socket name is not specified).To redirect a TCP socket to a UNIX socket: socat TCP-LISTEN:<tcp_port>,reuseaddr,fork UNIX-CLIENT:/tmp/<unix_socket> or socat TCP-LISTEN:<tcp_port>,bind=127.0.0.1,reuseaddr,fork,su=nobody,range=127.0.0.0/8 UNIX-CLIENT:/tmp/<unix_socket>\nTo send a query to a Garamond server (no reply, for debugging purposes): echo \'find me a needle\' | socat - UNIX-CONNECT:/tmp/garamond/sockets/<unix_socket>\nFor interactive send/receive, socat UNIX-CONNECT:/tmp/garamond/sockets/<unix_socket> STDOUT"
+},
+
+{
+    "location": "notes/#",
+    "page": "Notes",
+    "title": "Notes",
+    "category": "page",
+    "text": ""
+},
+
+{
+    "location": "notes/#Notes-1",
+    "page": "Notes",
+    "title": "Notes",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "notes/#Multi-threading-1",
+    "page": "Notes",
+    "title": "Multi-threading",
+    "category": "section",
+    "text": "Using multi-threading in Garamond is not recommended (as of Julia versions v\"1.0.2\" / v\"1.1-dev\") as floating point operations are not thread-safe. If one chooses to use multi-threading i.e. through the @threads macro for example, the following exports: OPENBLAS_NUM_THREADS=1 and JULIA_NUM_THREADS=<n> have to be performed for multi-threading to work efficiently."
 },
 
 {
@@ -121,11 +161,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api/#Garamond.search-Union{Tuple{V}, Tuple{V,Any}} where V<:(Array{#s232,1} where #s232<:(Searcher{D,E,M} where D<:StringAnalysis.AbstractDocument where E where M<:Garamond.AbstractSearchData))",
+    "location": "api/#Garamond.search-Union{Tuple{V}, Tuple{V,Any}} where V<:(Array{#s264,1} where #s264<:(Searcher{D,E,M} where D<:StringAnalysis.AbstractDocument where E where M<:Garamond.AbstractSearchData))",
     "page": "API Reference",
     "title": "Garamond.search",
     "category": "method",
     "text": "search(srcher, query [;kwargs])\n\nSearches for query (i.e. key terms) in multiple corpora and returns information regarding the documents that match best the query. The function returns the search results in the form of a Vector{SearchResult}.\n\nArguments\n\nsrcher::AbstractVector{AbstractSearcher} is the corpora searcher\nquery the query\n\nKeyword arguments\n\nsearch_type::Symbol is the type of the search; can be :metadata,  :data or :all; the options specify that the query can be found in  the metadata of the documents of the corpus, the document content or both  respectively\nsearch_method::Symbol controls the type of matching: :exact  searches for the very same string while :regex searches for a string  in the corpus that includes the needle\nmax_matches::Int is the maximum number of search results to return from  each corpus\nmax_corpus_suggestions::Int is the maximum number of suggestions to return for  each missing needle from the search in a corpus\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#Garamond.ERRORED_REQUEST",
+    "page": "API Reference",
+    "title": "Garamond.ERRORED_REQUEST",
+    "category": "constant",
+    "text": "deconstruct_request(request)\n\nFunction that deconstructs a Garamond request received from a client into individual search engine operations and search parameters.\n\n\n\n\n\n"
 },
 
 {
@@ -169,7 +217,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api/#ConceptnetNumberbatch.embed_document-Union{Tuple{T}, Tuple{Union{ConceptNet{#s222,#s221,T} where #s221<:AbstractString where #s222<:Language, WordVectors{#s30,T,#s29} where #s29<:Integer where #s30<:AbstractString},Dict{String,Int64},Array{String,1}}} where T<:AbstractFloat",
+    "location": "api/#ConceptnetNumberbatch.embed_document-Union{Tuple{T}, Tuple{Union{ConceptNet{#s254,#s253,T} where #s253<:AbstractString where #s254<:Language, WordVectors{#s57,T,#s56} where #s56<:Integer where #s57<:AbstractString},Dict{String,Int64},Array{String,1}}} where T<:AbstractFloat",
     "page": "API Reference",
     "title": "ConceptnetNumberbatch.embed_document",
     "category": "method",
@@ -201,6 +249,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "api/#Garamond.construct_response-Tuple{Any,Any,String}",
+    "page": "API Reference",
+    "title": "Garamond.construct_response",
+    "category": "method",
+    "text": "construct_response(srchers, results, what [; kwargs...])\n\nFunction that constructs a response for a Garamond client using the search results, data from srchers and specifier what.\n\n\n\n\n\n"
+},
+
+{
     "location": "api/#Garamond.garamond_log_formatter-NTuple{6,Any}",
     "page": "API Reference",
     "title": "Garamond.garamond_log_formatter",
@@ -209,11 +265,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api/#Garamond.get_parsing_function-Tuple{Symbol,Bool,String,String,Bool,Int64,Bool}",
+    "location": "api/#Garamond.get_parsing_function-Tuple{Symbol,Union{Nothing, Dict},Bool,String,String,Bool,Int64,UInt32,Bool}",
     "page": "API Reference",
     "title": "Garamond.get_parsing_function",
     "category": "method",
-    "text": "get_parsing_function(args...)\n\nFunction that generates a parsing function from its input arguments and returns it.\n\nArguments\n\nparser::Symbol is the name of the parser\nheader::Bool whether the file has a header or not (for delimited files only)\ndelimiter::String the delimiting character (for delimited files only)\nglobbing_pattern::String globbing pattern for gathering file lists from directories (for directory parsers only)\nbuild_summary::Bool whether to use a summary instead of the full document (for directory parsers only)\nsummary_ns::Int how many sentences to use in the summary (for directory parsers only)\nshow_progress::Bool whether to show the progress when loading files\n\nNote: parser must be in the keys of the PARSER_CONFIGS constant. The name       of the data parsing function is created as: :__parser_<parser> so,       the function name :__parser_delimited_format_1 corresponds to the       parser :delimited_format_1. The function must be defined apriori.\n\n\n\n\n\n"
+    "text": "get_parsing_function(args...)\n\nFunction that generates a parsing function from its input arguments and returns it.\n\nArguments\n\nparser::Symbol is the name of the parser\nparser_config::Union{Nothing, Dict} can contain optional configuration data for the parser (for delimited parsers)\nheader::Bool whether the file has a header or not (for delimited files only)\ndelimiter::String the delimiting character (for delimited files only)\nglobbing_pattern::String globbing pattern for gathering file lists from directories (for directory parsers only)\nbuild_summary::Bool whether to use a summary instead of the full document (for directory parsers only)\nsummary_ns::Int how many sentences to use in the summary (for directory parsers only)\nsummarization_strip_flags::UInt32 flags used to strip text before summarization (for directory parsers only)\nshow_progress::Bool whether to show the progress when loading files\n\nNote: parser must be in the keys of the PARSER_CONFIGS constant. The name       of the data parsing function is created as: :__parser_<parser> so,       the function name :__parser_delimited_format_1 corresponds to the       parser :delimited_format_1. The function must be defined apriori.\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#Garamond.ioserver-Tuple{AbstractString,Channel{String}}",
+    "page": "API Reference",
+    "title": "Garamond.ioserver",
+    "category": "method",
+    "text": "ioserver(socket_or_port::Union{UInt16, AbstractString}, channel::Channel{String})\n\nWrapper for the UNIX- or WEB- socket servers.\n\n\n\n\n\n"
 },
 
 {
@@ -257,6 +321,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "api/#Garamond.search_server-Tuple{Any,Any,Any}",
+    "page": "API Reference",
+    "title": "Garamond.search_server",
+    "category": "method",
+    "text": "search_server(data_config_paths, socket, ws_port)\n\nMain server function of Garamond. It is a finite-state-machine that when called, creates the searchers i.e. search objects using the data_config_paths and the proceeds to looping continuously in order to:     • update the searchers regularly;     • receive requests from clients using the unix-socket       socket or/and a web-socket at port ws_port;     • call search and route responses back to the clients       through their corresponding sockets\n\nBoth searcher update and I/O communication are performed asynchronously.\n\n\n\n\n\n"
+},
+
+{
     "location": "api/#Garamond.squash-Union{Tuple{Array{T,2}}, Tuple{T}} where T<:AbstractFloat",
     "page": "API Reference",
     "title": "Garamond.squash",
@@ -277,7 +349,23 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "Garamond.summarize",
     "category": "method",
-    "text": "summarize(sentences [;ns=1, flags=SUMMARIZATION_FLAGS]\n\nBuild a summary of the text\'s sentences. The resulting summary will be a ns sentence document; each sentence is pre-procesed using the flags option.\n\n\n\n\n\n"
+    "text": "summarize(sentences [;ns=1, flags=DEFAULT_SUMMARIZATION_FLAGS])\n\nBuild a summary of the text\'s sentences. The resulting summary will be a ns sentence document; each sentence is pre-procesed using the flags option.\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#Garamond.unix_socket_server-Tuple{AbstractString,Channel{String}}",
+    "page": "API Reference",
+    "title": "Garamond.unix_socket_server",
+    "category": "method",
+    "text": "unix_socket_server(socket::AbstractString, channel::Channel{String})\n\nStarts a bi-directional unix socket server that uses a UNIX-socket socket and communicates with the search server through a channel channel.\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#Garamond.updater-Union{Tuple{Array{S,1}}, Tuple{S}} where S<:AbstractSearcher",
+    "page": "API Reference",
+    "title": "Garamond.updater",
+    "category": "method",
+    "text": "updater(searchers, channel, update_interval)\n\nFunction that regularly updates the searchers at each update_interval seconds, and puts the updates on the channel to be sent to the search server.\n\n\n\n\n\n"
 },
 
 {
@@ -286,6 +374,14 @@ var documenterSearchIndex = {"docs": [
     "title": "Garamond.version",
     "category": "method",
     "text": "version()\n\nReturns the current Garamond version using the Project.toml and git. If the Project.toml, git are not available, the version defaults to an empty string.\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#Garamond.web_socket_server-Tuple{UInt16,Channel{String}}",
+    "page": "API Reference",
+    "title": "Garamond.web_socket_server",
+    "category": "method",
+    "text": "web_socket_server(port::UInt16, channel::Channel{String})\n\nStarts a bi-directional web socket server that uses a WEB-socket at port port and communicates with the search server through a channel channel.\n\n\n\n\n\n"
 },
 
 {

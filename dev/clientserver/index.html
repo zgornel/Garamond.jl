@@ -1,27 +1,98 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Client/Server · Garamond.jl</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link href="../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><a href="../index.html"><img class="logo" src="../assets/logo.png" alt="Garamond.jl logo"/></a><h1>Garamond.jl</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../search/"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../">Introduction</a></li><li><a class="toctext" href="../features/">Feature list</a></li><li class="current"><a class="toctext" href>Client/Server</a><ul class="internal"><li><a class="toctext" href="#Command-line-utility-1">Command line utility</a></li><li><a class="toctext" href="#Server-mode-1">Server mode</a></li></ul></li><li><a class="toctext" href="../api/">API Reference</a></li></ul></nav><article id="docs"><header><nav><ul><li><a href>Client/Server</a></li></ul><a class="edit-page" href="https://github.com/zgornel/Garamond.jl/blob/master/docs/src/clientserver.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Client/Server</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Running-Garamond-in-server/client-mode-1" href="#Running-Garamond-in-server/client-mode-1">Running Garamond in server/client mode</a></h1><p>Garamond is desinged as a <a href="http://catb.org/~esr/writings/taoup/html/ch11s06.html#id2958899">client-server architecture</a> in which the server receives queries, performs the search action and returns the results to a client that handles the interaction. The client can be either human or machine controlled.</p><h2><a class="nav-anchor" id="Command-line-utility-1" href="#Command-line-utility-1">Command line utility</a></h2><p>The main command line utility for Gramond is the script <code>garamond.jl</code> found in the root directory of the package. It is designed to be able to start the search server (i.e. server mode) and to send queries and receive results from the search server (i.e. client mode). The client mode serves testing purposes only and should not be used in production, it will be probably discontinued in the near future. A separate client (that just reads and writes to/from the socket) should be developed and readily available. To view the command line options for <code>garamond.jl</code>, run <code>./garamond.jl --help</code>:</p><pre><code class="language-none"> % ./garamond.jl --help
-usage: garamond.jl [-d DATA-CONFIG] [-e ENGINE-CONFIG]
-                   [--log-level LOG-LEVEL] [-l LOG] [-s SOCKET]
-                   [-q QUERY] [--client] [--server] [-h]
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Client/Server · Garamond.jl</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link href="../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><a href="../index.html"><img class="logo" src="../assets/logo.png" alt="Garamond.jl logo"/></a><h1>Garamond.jl</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../search/"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../">Introduction</a></li><li><a class="toctext" href="../features/">Feature list</a></li><li class="current"><a class="toctext" href>Client/Server</a><ul class="internal"><li><a class="toctext" href="#Starting-the-search-server-1">Starting the search server</a></li><li><a class="toctext" href="#Commandline-client-1">Commandline client</a></li><li><a class="toctext" href="#Web-client-1">Web client</a></li><li><a class="toctext" href="#Unix-socket-tips-and-tricks-1">Unix socket tips and tricks</a></li></ul></li><li><a class="toctext" href="../notes/">Notes</a></li><li><a class="toctext" href="../api/">API Reference</a></li></ul></nav><article id="docs"><header><nav><ul><li><a href>Client/Server</a></li></ul><a class="edit-page" href="https://github.com/zgornel/Garamond.jl/blob/master/docs/src/clientserver.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Client/Server</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Running-Garamond-in-server/client-mode-1" href="#Running-Garamond-in-server/client-mode-1">Running Garamond in server/client mode</a></h1><p>Garamond is designed as a <a href="http://catb.org/~esr/writings/taoup/html/ch11s06.html#id2958899">client-server architecture</a> in which the server receives queries, performs the search action and returns the results to a client that handles the interaction. The client can be either human or machine controlled. There are three utilities designed to handle the search process, all of which can be found in the root directory of the package:</p><ul><li><strong>./gars</strong> - starts the search server. The operations performed by the search engine server at this point are indexing data at a given location and listening to a socket.</li><li><strong>./garc</strong> - command line client supporting Unix socket communication. It is the most feature complete of the two clients. Through it, a single search can be performed and all search parameters can be specified. It supports pretty printing as well as a means of visually investigating the results of the search.</li><li><strong>./garw</strong> - web client supporting Web socket communication (EXPERIMENTAL). The basic principle is that the client starts a HTTP server which serves a page at a given HTTP port. If the web page is not specified, a default one is generated internally and served. The user connects with a web browser of choice at the local address (i.e. <code>127.0.0.1</code>) and specified port and performs the search queries from the page. It naturally supports multiple queries however, the parameters of the search cannot be changed.</li></ul><p>Notes:</p><ul><li>The clients do not depend on the Garamond package and are very lightweight.</li><li>In the future, <strong>garw</strong> should support a query format through which the types of searches and their parameters can be controlled. Such options can include performing exact or regex matches, the number of maximum results to return etc.</li><li>The clients are currently the only &#39;easy&#39; way to communicate with the search server; communication with the latter is pretty straightforward (i.e. reading and writing from sockets) as long as the JSON format for data communication is respected.</li></ul><h2><a class="nav-anchor" id="Starting-the-search-server-1" href="#Starting-the-search-server-1">Starting the search server</a></h2><p>The search server listens to a socket for incoming queries. Once the query is received, it is processed and the answer written back to same socket. Looking at the <code>gars</code> utility help</p><pre><code class="language-none">$ ./gars --help
+usage: gars -d DATA-CONFIG [--log-level LOG-LEVEL] [-l LOG]
+            [-u UNIX-SOCKET] [-w WEB-SOCKET-PORT] [-h]
 
 optional arguments:
   -d, --data-config DATA-CONFIG
                         data configuration file
-  -e, --engine-config ENGINE-CONFIG
-                        search engine configuration file (default: &quot;&quot;)
   --log-level LOG-LEVEL
                         logging level (default: &quot;info&quot;)
   -l, --log LOG         logging stream (default: &quot;stdout&quot;)
-  -s, --socket SOCKET   UNIX socket for data communication (default:
-                        &quot;/tmp/garamond/sockets/socket1&quot;)
-  -q, --query QUERY     query the search engine if in client mode
-                        (default: &quot;&quot;)
-  --client              client mode
-  --server              server mode
-  -h, --help            show this help message and exit</code></pre><h2><a class="nav-anchor" id="Server-mode-1" href="#Server-mode-1">Server mode</a></h2><p>In <em>server</em> mode, Garamond listens to a socket (i.e.<code>/tmp/garamond/sockets/socket1</code>) for incoming queries. Once the query is received, it is processed and the answer written back to same socket. The following example starts Garamond in server mode (indexes the data and connects to socket, displaying all messages):</p><pre><code class="language-none">$ ./garamond.jl --server -d ../extras_for_Garamond/data/Cornel/delimited/config_cornel_data_classic.json -s /tmp/garamond/sockets/socket1 --log-level debug
-[ [2018-11-18 15:29:17][DEBUG][garamond.jl:35] ~ GARAMOND ~ v&quot;0.0.0&quot; commit: 90f1a17 (2018-11-20)
-[ [2018-11-18 15:29:25][DEBUG][fsm.jl:41] Waiting for query...</code></pre><p>##Client mode</p><p>In <em>client</em> mode, the script sends the query to the server&#39;s socket and waits the search results on the same socket. Since it uses the whole package, client startup times are slow. View the notes for faster query alternatives. The following example performs a query using the server defined above (the socket is not specified as the server uses the <em>default</em> value):</p><pre><code class="language-none">% ./garamond.jl --client --q &quot;arthur c clarke&quot; --log-level debug
-[ [2018-11-18 15:37:33][DEBUG][garamond.jl:35] ~ GARAMOND ~ v&quot;0.0.0&quot; commit: 90f1a17 (2018-11-20)
-[ [2018-11-18 15:37:33][DEBUG][io.jl:42] &gt;&gt;&gt; Query sent.
-[ [2018-11-18 15:37:36][DEBUG][io.jl:44] &lt;&lt;&lt; Search results received.
-[{&quot;id&quot;:{&quot;id&quot;:&quot;biglib-classic&quot;},&quot;query_matches&quot;:{&quot;d&quot;:{&quot;0.5441896&quot;:[3],&quot;0.78605163&quot;:[1,2],&quot;0.64313316&quot;:[6,7],&quot;0.5895387&quot;:[4,5]}},&quot;needle_matches&quot;:{&quot;clarke&quot;:1.5272124,&quot;arthur&quot;:1.5272124,&quot;c&quot;:1.5272124},&quot;suggestions&quot;:{&quot;d&quot;:{}}},{&quot;id&quot;:{&quot;id&quot;:&quot;techlib-classic&quot;},&quot;query_matches&quot;:{&quot;d&quot;:{&quot;0.053899456&quot;:[1,5]}},&quot;needle_matches&quot;:{&quot;c&quot;:0.10779891},&quot;suggestions&quot;:{&quot;d&quot;:{}}}]</code></pre><footer><hr/><a class="previous" href="../features/"><span class="direction">Previous</span><span class="title">Feature list</span></a><a class="next" href="../api/"><span class="direction">Next</span><span class="title">API Reference</span></a></footer></article></body></html>
+  -u, --unix-socket UNIX-SOCKET
+                        UNIX socket for data communication
+  -w, --web-socket-port WEB-SOCKET-PORT
+                        WEB socket data communication port (type:
+                        UInt16)
+  -h, --help            show this help message and exit</code></pre><p>starting the server becomes quite straightforward. To start the server listening to a web socket at port 8081, all one has to do is:</p><pre><code class="language-none">$ ./gars -d ../extras_for_Garamond/data/Cornel/delimited/config_cornel_data_semantic.json -w 8081 --log-level info
+[ [2018-12-18 12:26:59][INFO][servers.jl:102] ~ GARAMOND ~ v&quot;0.0.0&quot; commit: 4d7be0d (2018-12-07)
+[ [2018-12-18 12:27:21][INFO][servers.jl:25] I/O: Waiting for data @web-socket:8081...
+[ [2018-12-18 12:27:22][INFO][Servers.jl:301] Listening on: Sockets.InetAddr{Sockets.IPv4}(ip&quot;127.0.0.1&quot;, 0x1f91)</code></pre><p>Notice that the <code>-d</code> switch allows indicating a data configuration to use. Multiple such configurations can be provided if multiple data sources are to be handled. After running the command, information-level output of the server is being written to the standard output stream. To write directly the server logs to a file, a file can be indicated through the <code>-log</code> switch or the output redirected to a file.</p><h2><a class="nav-anchor" id="Commandline-client-1" href="#Commandline-client-1">Commandline client</a></h2><p>The commandline client <code>garc</code> sends the query to an open Unix socket and waits the search results on the same socket. It is worthwhile checking the available commandline options:</p><pre><code class="language-none">$ ./garc --help
+usage: garc [--log-level LOG-LEVEL] -u UNIX-SOCKET [--pretty]
+            [--max-matches MAX-MATCHES] [--search-type SEARCH-TYPE]
+            [--search-method SEARCH-METHOD]
+            [--max-suggestions MAX-SUGGESTIONS] [-k] [-h] query
+
+positional arguments:
+  query                 the search query (default: &quot;&quot;)
+
+optional arguments:
+  --log-level LOG-LEVEL
+                        logging level (default: &quot;warn&quot;)
+  -u, --unix-socket UNIX-SOCKET
+                        UNIX socket for data communication
+  --pretty              output is a pretty print of the results
+  --max-matches MAX-MATCHES
+                        maximum results to return (type: Int64,
+                        default: 10)
+  --search-type SEARCH-TYPE
+                        type of search (type: Symbol, default:
+                        :metadata)
+  --search-method SEARCH-METHOD
+                        type of search (type: Symbol, default: :exact)
+  --max-suggestions MAX-SUGGESTIONS
+                        How many suggestions to return for each
+                        mismatched query term (type: Int64, default:
+                        0)
+  -k, --kill            Kill the search engine server
+  -h, --help            show this help message and exit</code></pre><p>Assuming that a search server was started with</p><pre><code class="language-none">$ ./gars -d ../extras_for_Garamond/data/Cornel/delimited/config_cornel_data_semantic.json -u /tmp/_garamond_socket_001 --log-level info</code></pre><p>the following example performs a query using the server defined above and displays the results in a human readable way:</p><pre><code class="language-none">$ ./garc &quot;paolo coelho&quot; -u /tmp/_garamond_socket_001 --max-matches 5 --pretty --log-level debug
+┌ Debug: ~ GARAMOND~ (unix-socket client)
+└ @ Main.GaramondCLIClient ~/projects/Garamond.jl/garc:134
+┌ Debug: &gt;&gt;&gt; Request sent.
+└ @ Main.GaramondCLIClient ~/projects/Garamond.jl/garc:62
+┌ Debug: &lt;&lt;&lt; Search results received.
+└ @ Main.GaramondCLIClient ~/projects/Garamond.jl/garc:64
+10 search results from 2 corpora
+`-[id=&quot;biglib-semantic&quot;] 5 search results:
+  0.9740912108947957 ~ 50-[&quot;The tunnel&quot; by Ernesto Sabato, 1948 (2004)]
+  0.9598814147037482 ~ 63-[&quot;The autumn of the patriarch&quot; by Gabriel Garcia Marquez, 1975 (2005)]
+  0.9417322045431806 ~ 48-[&quot;Dialogues&quot; by Louis Borges, Ernesto Sabato, 1976 (2005)]
+  0.9380608114354404 ~ 49-[&quot;Essays&quot; by Ernesto Sabato, 1996 (2005)]
+  0.9262495410707653 ~ 61-[&quot;The green house&quot; by Mario Vargas Llosa, 1965 (2008)]
+`-[id=&quot;techlib-semantic&quot;] 5 search results:
+  0.8118677136424433 ~ 3-[&quot;Pattern recognition 4&#39;th edition&quot; by Sergios Theodoridis, Konstantinos Koutroumbas, 2008 (2008)]
+  0.804295301024025 ~ 2-[&quot;Pattern classification, 2&#39;nd edition&quot; by Richard O. Douda, Peter E. Hart, David G. Stork, 2000 (2000)]
+  0.7892832305144111 ~ 4-[&quot;Artificial intelligence, a modern approach 3&#39;rd edition&quot; by Stuart Russel, Peter Norvig, 2009 (2016)]
+  0.7713395077452254 ~ 5-[&quot;Numerical methods for engineers&quot; by Steven C. Chapra, Raymond P. Canale, 2014 (2014)]
+  0.7603241404778367 ~ 1-[&quot;Data classification: algorithms and applications&quot; by Charu C. Aggarwal, 2014 (2014)]
+-----
+Elapsed search time: 0.0005221366882324219 seconds.</code></pre><p>Please not that the search returned five results from each corpus, ordered by relevance. Also, there is are no books by <code>Paolo Coelho</code> in the library (fortunately). The time indicated is from a second run of the query, the first query runs always takes longer (~1s) as the code needs to be compiled on-the-fly.</p><h2><a class="nav-anchor" id="Web-client-1" href="#Web-client-1">Web client</a></h2><p>The web client <code>garw</code> starts a HTTP server that locally serves a page: it is the page that has to actually connect to the search server through a user-specified web-socket. Therefore, <code>garw</code> is technically not fully a client but for the sake of consistency we will consider it to be one. Its commandline arguments are more simplistic:</p><pre><code class="language-none">$ ./garw --help
+usage: garw [--log-level LOG-LEVEL] -w WEB-SOCKET-PORT [-p HTTP-PORT]
+             [--web-page WEB-PAGE] [-h]
+
+optional arguments:
+  --log-level LOG-LEVEL
+                        logging level (default: &quot;warn&quot;)
+  -w, --web-socket-port WEB-SOCKET-PORT
+                        WEB socket data communication port (type:
+                        UInt16)
+  -p, --http-port HTTP-PORT
+                        HTTP port for the http server (type: Int64,
+                        default: 9999)
+  --web-page WEB-PAGE   Search web page to serve
+  -h, --help            show this help message and exit</code></pre><p>Assuming a search server is running using a web socket at port 8081 (as in the first <code>gars</code> example above), one can start serving the default webpage at the default port by simply running:</p><pre><code class="language-none">$ ./garw -w 8081
+[ Info: Listening on: Sockets.InetAddr{Sockets.IPv4}(ip&quot;127.0.0.1&quot;, 0x270f)</code></pre><p>Once a browser opens the page at <code>locahost:9999</code>, output will be generated by <code>garw</code> (by the <code>HTTP.jl</code> module more exactly) regarding the connections occurring:</p><pre><code class="language-none">[ Info: Accept (0):  🔗    0↑     0↓    1s 127.0.0.1:9999:9999 ≣16
+┌ Warning: throttling 127.0.0.1
+└ @ HTTP.Servers ~/.julia/packages/HTTP/YjRCz/src/Servers.jl:121
+┌ Info: HTTP.Messages.Request:
+│ &quot;&quot;&quot;
+│ GET /? HTTP/1.1
+│ Host: localhost:9999
+│ Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+│ User-Agent: mozilla
+│ Upgrade-Insecure-Requests: 1
+│ Accept-Encoding: gzip, deflate
+│ Accept-Language: en-US
+│ Connection: Keep-Alive
+│
+└ &quot;&quot;&quot;</code></pre><p>From this point on, one can have fun searching using the webpage.</p><h2><a class="nav-anchor" id="Unix-socket-tips-and-tricks-1" href="#Unix-socket-tips-and-tricks-1">Unix socket tips and tricks</a></h2><p>The examples below assume the existence of a Unix socket at the location <code>/tmp/&lt;unix_socket&gt;</code> (the socket name is not specified).</p><ul><li>To redirect a TCP socket to a UNIX socket: <code>socat TCP-LISTEN:&lt;tcp_port&gt;,reuseaddr,fork UNIX-CLIENT:/tmp/&lt;unix_socket&gt;</code> or <code>socat TCP-LISTEN:&lt;tcp_port&gt;,bind=127.0.0.1,reuseaddr,fork,su=nobody,range=127.0.0.0/8 UNIX-CLIENT:/tmp/&lt;unix_socket&gt;</code></li><li>To send a query to a Garamond server (no reply, for debugging purposes): <code>echo &#39;find me a needle&#39; | socat - UNIX-CONNECT:/tmp/garamond/sockets/&lt;unix_socket&gt;</code></li><li>For interactive send/receive, <code>socat UNIX-CONNECT:/tmp/garamond/sockets/&lt;unix_socket&gt; STDOUT</code></li></ul><footer><hr/><a class="previous" href="../features/"><span class="direction">Previous</span><span class="title">Feature list</span></a><a class="next" href="../notes/"><span class="direction">Next</span><span class="title">Notes</span></a></footer></article></body></html>
