@@ -72,6 +72,7 @@ function main()
         end
     end
     HTTP.serve(host=ip"127.0.0.1", port=http_port, handler=_handler)
+
     return 0
 end
 
@@ -187,7 +188,7 @@ function _default_webpage(ws_port::UInt16)
 			console.log(\"Sending message...\");
 			// Create JSON query
 			var jq = {
-				command: \"search\",
+				operation: \"search\",
 				query: q,
                 max_matches: 1000,
                 search_type: \"metadata\",

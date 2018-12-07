@@ -1,31 +1,4 @@
 """
-    updater(searchers, channel, update_interval)
-
-Function that regularly updates the `searchers` at each
-`update_interval` seconds, and puts the updates on the
-`channel` to be sent to the search server.
-"""
-function updater(searchers::Vector{S};
-                 channel=Channel{Vector{S}}(0),
-                 update_interval::Float64=DEFAULT_SEARCHER_UPDATE_INTERVAL
-                ) where S<:AbstractSearcher
-    if update_interval==Inf
-        # Task exits and the searcher update channel in the
-        # Garamond FSM will never be ready ergo, no update.
-        return nothing
-    else
-        while true
-            @debug "Garamond update sleeping for $(update_interval)(s)..."
-            sleep(update_interval)
-            new_searchers = update(searchers)
-            put!(ch, new_searchers)
-        end
-    end
-    return nothing
-end
-
-
-"""
     ioserver(socket_or_port::Union{UInt16, AbstractString}, channel::Channel{String})
 
 Wrapper for the UNIX- or WEB- socket servers.
@@ -140,11 +113,11 @@ function search_server(data_config_paths, socket)
     while true
         if isready(srchers_channel)
             srchers = take!(srchers_channel)
-            @debug "Searchers updated."
+            @debug "FSM: Searchers updated."
         else
             request = take!(io_channel)
-            @debug "Received request=$request"
-            (command,
+            @debug "FSM: Received request=$request"
+            (operation,
              query,
              max_matches,
              search_type,
@@ -152,9 +125,9 @@ function search_server(data_config_paths, socket)
              max_suggestions,
              what_to_return
             ) = deconstruct_request(request)
-            if command == "search"
+            if operation == "search"
                 ### Search ###
-                @info "FSM: Received search command. Searching for '$query'..."
+                @info "FSM: Performing search operation query='$query'..."
                 t_init = time()
                 # Get search results
                 results = search(srchers,
@@ -172,11 +145,11 @@ function search_server(data_config_paths, socket)
                                               elapsed_time=t_finish-t_init)
                 # Write response to I/O server
                 put!(io_channel, response)
-            elseif command == "kill"
+            elseif operation == "kill"
                 ### Kill the search server ###
-                @info "FSM: Received exit command. Exiting..."
+                @info "FSM: Exiting..."
                 exit()
-            elseif command == "request_error"
+            elseif operation == "request_error"
                 @info "FSM: Malformed request. Ignoring..."
                 put!(io_channel, "")
             end
@@ -189,7 +162,7 @@ end
     deconstruct_request(request)
 
 Function that deconstructs a Garamond request received from a client into
-individual search engine commands and search parameters.
+individual search engine operations and search parameters.
 """
 const ERRORED_REQUEST = ("request_error", "", 0, :nothing, :nothing, 0, "")
 function deconstruct_request(request::String)
@@ -197,14 +170,14 @@ function deconstruct_request(request::String)
         # Parse JSON request
         req = JSON.parse(request)
         # Read fields
-        cmd = req["command"]
+        op = req["operation"]
         query = req["query"]
         max_matches = req["max_matches"]
         search_type = Symbol(req["search_type"])
         search_method = Symbol(req["search_method"])
         max_suggestions = req["max_suggestions"]
         what_to_return = req["what_to_return"]
-        return cmd, query, max_matches, search_type, search_method,
+        return op, query, max_matches, search_type, search_method,
                max_suggestions, what_to_return
     catch
         return ERRORED_REQUEST
@@ -240,7 +213,8 @@ function construct_response(srchers,
         write(buf, JSON.json(
             export_results_for_web(srchers, results, max_suggestions, elapsed_time)))
     end
-    return join(Char.(buf.data))
+    response = join(Char.(buf.data))
+    return response
 end
 
 

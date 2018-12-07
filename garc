@@ -85,13 +85,13 @@ function construct_request(query, max_matches, search_type,
                            pretty, kill)
     # Check wether the query is actually a query or another command
     if kill
-        cmd = "kill"
+        op = "kill"
     else
-        cmd = "search"
+        op = "search"
     end
     what_to_return = ifelse(pretty, "pretty-print", "json-index")
     return JSON.json(
-            Dict("command" => cmd,
+            Dict("operation" => op,
                  "query" => query,
                  "max_matches" => max_matches,
                  "search_type" => search_type,
@@ -134,7 +134,7 @@ function main()
     @debug "~ GARAMOND~ (unix-socket client)"
     unixsocket = args["unix-socket"]
     if !issocket(unixsocket)
-        @error "$socket is not a proper UNIX socket."
+        @error "$unixsocket is not a proper UNIX socket."
     end
     conn = connect(unixsocket)
     # Search
