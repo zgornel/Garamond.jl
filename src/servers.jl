@@ -222,8 +222,9 @@ function construct_response(srchers,
 end
 
 
-# Pretty printer of results
-# #TODO(Corneliu) Display scores, suggestions as well, improve function
+# Export results to be a format that can be converted into JSON for
+# webpage viewing
+# #TODO(Corneliu) Display suggestions as well, improve function
 function export_results_for_web(srchers::S, results::T, max_suggestions::Int,
                                 elapsed_time::Float64
                                ) where {S<:AbstractVector{<:AbstractSearcher},
@@ -240,7 +241,7 @@ function export_results_for_web(srchers::S, results::T, max_suggestions::Int,
     # This structure matches the one expencted
     # in the web clients search page
     r = Dict("etime"=>elapsed_time,
-             "matches" => Dict{String, Vector{Dict{String,String}}}(),
+             "matches" => Dict{String, Vector{Tuple{Float64, Dict{String,String}}}}(),
              "n_matches" => nt,
              "n_corpora" => length(results),
              "n_corpora_match" =>
@@ -252,7 +253,7 @@ function export_results_for_web(srchers::S, results::T, max_suggestions::Int,
             for score in sort(collect(keys(_result.query_matches)), rev=true)
                 for doc in (crps[i] for i in _result.query_matches[score])
                     dictdoc = convert(Dict, metadata(doc))
-                    push!(r["matches"][_result.id.id], dictdoc)
+                    push!(r["matches"][_result.id.id], (score, dictdoc))
                 end
             end
         end

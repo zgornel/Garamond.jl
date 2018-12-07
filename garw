@@ -171,11 +171,13 @@ function _default_webpage(ws_port::UInt16)
 				let crps_matches = jr.matches[crps_id]  // individual corpus matches
 				results_text +=\"<p><b>\" + crps_id +\"</b></br></p>\"
 				for (i=0; i < crps_matches.length; i++){
-					results_text += \"&emsp;<i> \\\"\" +
-						crps_matches[i].name + \"\\\"</i>\" + \" by \" +
-						crps_matches[i].author + \" <b>\" +
-						crps_matches[i].publisher + \"</b>, \" +
-						crps_matches[i].published_year + \"<br>\"
+					results_text += \"&emsp;\"+
+                        crps_matches[i][0] +
+                        \"<i> \\\"\" +
+						crps_matches[i][1].name + \"\\\"</i>\" + \" by \" +
+						crps_matches[i][1].author + \" <b>\" +
+						crps_matches[i][1].publisher + \"</b>, \" +
+						crps_matches[i][1].published_year + \"<br>\"
 				}
 			}
 			results_text += \"</p>\"
