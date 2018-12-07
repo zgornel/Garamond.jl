@@ -54,19 +54,13 @@ function main()
     # Select one entry point
     unixsocket = args["unix-socket"]
     ws_port = args["web-socket-port"]
-    is_socket = unixsocket != nothing
-    is_port = ws_port != nothing
-    if is_socket && !is_port
-        socket = unixsocket
-    elseif !is_socket && is_port
-        socket = ws_port
-    else
-        @error """Either a UNIX-socket or WEB-socket port has to
+    if unixsocket == nothing && ws_port == nothing
+        @error """At least a UNIX-socket or WEB-socket port has to
                   be specified through the -u and -p switches."""
     end
     # Start Server #
     data_config_paths = String.(args["data-config"])
-    Garamond.search_server(data_config_paths, socket)
+    Garamond.search_server(data_config_paths, unixsocket, ws_port)
     return 0
 end
 
