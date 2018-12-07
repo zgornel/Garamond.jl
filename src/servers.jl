@@ -89,7 +89,7 @@ end
     search_server(data_config_paths, socket, ws_port)
 
 Main server function of Garamond. It is a finite-state-machine that
-when called, creates the searchers i.e. search objects using the 
+when called, creates the searchers i.e. search objects using the
 `data_config_paths` and the proceeds to looping continuously
 in order to:
     • update the searchers regularly;

@@ -12,23 +12,23 @@ A small, fast and flexible semantic search engine, written in Julia.
 Garamond is under development ...¯\\_(ツ)_/¯. For more information, visit the documentation pages. For any question, praise or remark, contact the author at cornel@oxoaresearch.com
 
 
-## Future features and TODO's
+## Backlog
 
-### Immediate
-- ~~Prototype asynchronous search update mechanism for index/search model update based (may require developing `DispatcherCache.jl` first for multi-core support)~~
-- ~~Proper API documentation (auto-generated from doc-strings, Documenter.jl)~~
-- ~~Take text pre-processing seriously (optimization + flag checking + support skipping patterns from processing)~~
-- ~~Support for PDFs, archives, other files (see Taro.jl, TranscodingStreams.jl)~~
-- ~~General search engine configuration through runconfig file i.e. `~/.garamondrc`~~
-- ~~Websocket support for server~~
-- ~~HTTP client~~
+### Short term
 - Fat binary compilation (binaries for server and clients)
+- Add actual support for supported Languages (English, German, Romanian)
+- Check whether adding support in `Languages.jl` for French, Italian
+- Take metadata search seriously (i.e. decide on facets, what fields to use/index etc)
 - Take testing seriously
+- Build scoring function (normalize document scores, map non-linearly to arbitrary scale)
+- Improve re-indexing mechanism (i.e. @spawn worker, use incremental approach)
+- Improve speed for suggestions, re-visit mechanism
+- Implement influence of search key-term hit-rate (=how many terms found in query)
+- Implement mechanism for query expansion
+- Define (decide on) mechanisms to combine semantic and classic searches (i.e. classic for filtering, semantic for ordering)
 
-### Longer term
-- Add support for controlling webcrawlers
-- Develop web crawler
-- Implement HSNW heuristic search (cluster analysis)
+### Long term
+- Data gathering: web crawler (either implement or support), data streaming sink APIs (should be in distinct support packages)
 - Reliable search from any language to any language (external APIs?, dictionaries ?)
 - Abstract semantic search (search into 1-D, 2-D signals i.e. sound, images)
 - Ontology builder and explorer; (see [Conceptnet](https://github.com/commonsense/conceptnet5)); arbitrary query to target ontology linking
