@@ -156,7 +156,8 @@ Avalilable options for `embedding_method`:
 """
 function embed_document(embeddings_library::Union{
                             ConceptNet{<:Languages.Language, <:AbstractString, T},
-                            WordVectors{<:AbstractString, T, <:Integer}},
+                            Word2Vec.WordVectors{<:AbstractString, T, <:Integer},
+                            Glowe.WordVectors{<:AbstractString, T, <:Integer}},
                         lexicon::Dict{String, Int},
                         document::Vector{String};  # a vector of sentences
                         embedding_method::Symbol=DEFAULT_EMBEDDING_METHOD
@@ -233,11 +234,12 @@ end
 
 """
 Function that embeds a document i.e. returns an embedding matrix, columns
-are word embeddings, using the `word2vec` WordVectors object. The function
-has an identical signature as the one from the `ConceptnetNumberbatch`
-package.
+are word embeddings, using the `Word2Vec` or `Glowe` WordVectors object.
+The function has an identical signature as the one from the
+`ConceptnetNumberbatch` package.
 """
-function embed_document(word_vectors::WordVectors{S1,T,H},
+function embed_document(word_vectors::Union{Word2Vec.WordVectors{S1,T,H},
+                                            Glowe.WordVectors{S1,T,H}},
                         document_tokens::Vector{S2};
                         language=Languages.English(),           # not used
                         keep_size::Bool=true,

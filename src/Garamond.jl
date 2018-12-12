@@ -35,7 +35,7 @@ module Garamond
     using StringDistances, BKTrees
     using ArgParse
     using ProgressMeter
-    using ConceptnetNumberbatch, Word2Vec
+    using ConceptnetNumberbatch, Word2Vec, Glowe
     using HNSW, NearestNeighbors, Distances
     using LightGraphs: Graph, pagerank
     using JSON
@@ -48,6 +48,7 @@ module Garamond
                  occursin, isempty
     import StringAnalysis: id
     import ConceptnetNumberbatch: embed_document
+    import Word2Vec: WordVectors
 
     # Abstract types
     abstract type AbstractSearcher end

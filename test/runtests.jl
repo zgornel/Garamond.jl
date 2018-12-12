@@ -106,15 +106,24 @@ function generate_test_configurations(data_path::String,
     SEMANTIC_CONFIGS = []
     dir = @__DIR__
     _id = 1
-    for _embs_type in ["conceptnet", "word2vec"]
+    for _embs_library in ["conceptnet", "word2vec", "glove"]
         for _emb_method in ["bow", "arora"]
             for _emb_model in ["naive", "brutetree", "kdtree", "hnsw"]
                 for _emb_eltype in ["Float32","Float64"]
                     for _build_summary in [false, true]
                         for _keep_data in [false, true]
-                            _embs_path = ifelse(_embs_type=="conceptnet",
-                                    "$(@__DIR__)/embeddings/conceptnet/sample_model.txt",
-                                    "$(@__DIR__)/embeddings/word2vec/sample_model.bin")
+                            _embs_path = ""
+                            if _embs_library == "conceptnet"
+                                _embs_path = "$(@__DIR__)/embeddings/conceptnet/sample_model.txt"
+                                _embs_kind = "text"  #not used
+                            elseif _embs_library == "word2vec"
+                                _embs_path = "$(@__DIR__)/embeddings/word2vec/sample_model.bin"
+                                _embs_kind = "binary"
+                            else  # "glove"
+                                _embs_path = "$(@__DIR__)/embeddings/glove/sample_model.txt"
+                                _embs_kind = "text"
+                            end
+                            # Data config structure
                             dconfig = Dict("id" => _id,
                                            "search"=> search_approach,
                                            "data_path" => data_path,
@@ -125,7 +134,8 @@ function generate_test_configurations(data_path::String,
                                            "delimiter" => DELIMITER,
                                            "show_progress" => false,
                                            "embeddings_path" => _embs_path,
-                                           "embeddings_type" => _embs_type,
+                                           "embeddings_library" => _embs_library,
+                                           "embeddings_kind" => _embs_kind,
                                            "embedding_method" => _emb_method,
                                            "embedding_search_model" => _emb_model,
                                            "embedding_element_type" => _emb_eltype,

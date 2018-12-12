@@ -108,7 +108,7 @@ version = "1.2.0"
 
 [[Glowe]]
 deps = ["LinearAlgebra", "Statistics", "Test"]
-git-tree-sha1 = "8ab1f8d176b635ea29c933af6b985e4791b2ac2b"
+git-tree-sha1 = "8969388b206c55a8bf81415da93aa4ea1dcfed0a"
 repo-rev = "master"
 repo-url = "https://github.com/zgornel/Glowe.jl"
 uuid = "41444f52-fbde-11e8-14fe-eb60a09dbaaa"
