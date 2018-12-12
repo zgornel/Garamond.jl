@@ -14,7 +14,7 @@ This is a list of the features supported by Garamond.
             - [x] `.json` (custom parser must be built)
             - [x] `.html` (custom parser must be built)
             - [x] `.xml` (custom parser must be built)
-        - [ ] Binary formats
+        - [x] Binary formats
             - [x] `.pdf` (through external program `pdftotext` from [libpoppler](https://poppler.freedesktop.org/))
             - [ ] Compressed files (`.tar`, `.zip`, `.gz`, etc.)
             - [ ] Microsoft [new .xml formats(`.docx`, `.xlsx`, etc.)](https://docs.microsoft.com/en-us/office/open-xml/open-xml-sdk)
@@ -55,23 +55,22 @@ This is a list of the features supported by Garamond.
             - [x] Bag of words
             - [x] [Arora et al.](https://openreview.net/pdf?id=SyK00v5xx)
         - Embedding Vector libraries
-            - [x] [Word2Vec](https://en.wikipedia.org/wiki/Word2vec) embeddings
-            - [x] [ConceptnetNumberbatch](https://github.com/commonsense/conceptnet-numberbatch) embeddings
-            - **?** [GloVe](https://nlp.stanford.edu/projects/glove/) embeddings
-            - **?** Other i.e. [FastText](https://fasttext.cc/)
+            - [x] [Word2Vec](https://en.wikipedia.org/wiki/Word2vec)
+            - [x] [ConceptnetNumberbatch](https://github.com/commonsense/conceptnet-numberbatch)
+            - [x] [GloVe](https://nlp.stanford.edu/projects/glove/)
         - Search Models (for semantic vectors)
-            - [x] Naive cosine similarity base
-            - [x] [Brute-force "tree"](https://en.wikipedia.org/wiki/Brute-force_search) (multiple metrics)
-            - [x] [KD-tree](https://en.wikipedia.org/wiki/K-d_tree) (multiple metrics)
-            - [x] [HNSW](https://arxiv.org/abs/1603.09320) (multiple metrics supported)
+            - [x] Naive i.e. cosine similarity
+            - [x] [Brute-force "tree"](https://en.wikipedia.org/wiki/Brute-force_search), uses Euclidean metrics
+            - [x] [KD-tree](https://en.wikipedia.org/wiki/K-d_tree), uses Euclidean metrics
+            - [x] [HNSW](https://arxiv.org/abs/1603.09320), uses Euclidean metrics
     - I/O Iterface
         - [x] Server: communication through UNIX/Web sockets
         - [x] CLI Client: input and output are STDIN and STDOUT (communication through Unix sockets)
         - [x] HTTP Client: input and output are in a webpage (communication through Web sockets)
-    - Per-corpus embedding training
-        - [x] Word2Vec (manual)
+    - Embedding training support
+        - [x] Word2Vec (offline training)
+        - [x] GloVe (offline training)
         - **?** Conceptnet
-        - **?** GloVe
     - Parallelism forms supported
         - [x] Multi-threading (each corpus is searched withing a hardware thread; support is EXPERIMENTAL and it is _disabled_ by default)
         - [ ] Multi-core + task scheduling [Dispatcher.jl](https://github.com/invenia/Dispatcher.jl) for distributed corpora

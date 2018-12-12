@@ -64,10 +64,12 @@ show(io::IO, srcher::Searcher{D,E,M}) where {D,E,M} = begin
     _status_color = ifelse(isenabled(srcher), :light_green, :light_black)
     printstyled(io, "[$_status]", color=_status_color)
     # Get embeddings type string
-    if E <: WordVectors
-        _embs_type = "word2vec"
+    if E <: Word2Vec.WordVectors
+        _embs_type = "Word2Vec"
+    elseif E <: Glowe.WordVectors
+        _embs_type = "GloVe"
     elseif E <: ConceptNet
-        _embs_type = "conceptnet"
+        _embs_type = "Conceptnet"
     elseif E <: Nothing
         _embs_type = "no embeddings"
     else
@@ -156,15 +158,24 @@ function build_searcher(sconf::SearchConfig)
         # Construct element type
         _eltype = eval(sconf.embedding_element_type)
         # Read word embeddings
-        if sconf.embeddings_type == :conceptnet
+        if sconf.embeddings_library == :conceptnet
             word_embeddings = load_embeddings(sconf.embeddings_path,
                                               languages=[Languages.English()],
-                                              data_type = _eltype)
-        elseif sconf.embeddings_type == :word2vec
-            word_embeddings = wordvectors(sconf.embeddings_path, _eltype,
-                                          kind=sconf.word2vec_filetype)
+                                              data_type=_eltype)
+        elseif sconf.embeddings_library == :word2vec
+            word_embeddings = Word2Vec.wordvectors(sconf.embeddings_path,
+                                                   _eltype,
+                                                   kind=sconf.embeddings_kind,
+                                                   normalize=false)
+        elseif sconf.embeddings_library == :glove
+            word_embeddings = Glowe.wordvectors(sconf.embeddings_path,
+                                                _eltype,
+                                                kind=sconf.embeddings_kind,
+                                                vocabulary=sconf.glove_vocabulary,
+                                                normalize=false,
+                                                load_bias=false)
         else
-            @error "$(sconf.embeddings_type) embeddings not supported."
+            @error "$(sconf.embeddings_library) embeddings library not supported."
         end
         # Get search model types
         if sconf.embedding_search_model == :naive

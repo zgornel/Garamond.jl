@@ -37,11 +37,12 @@ mutable struct SearchConfig
     heuristic::Symbol               # search heuristic for recommendtations (classic search)
     # semantic search
     embeddings_path::String         # path to the embeddings file
-    embeddings_type::Symbol         # type of the embeddings i.e. :conceptnet, :word2vec (semantic search)
-    embedding_method::Symbol        # How to arrive at a single embedding from multiple i.e. :bow, :arora (semantic search)
+    embeddings_library::Symbol      # embeddings library i.e. :conceptnet, :word2vec, :glove (semantic search)
+    embeddings_kind::Symbol         # Type of the embedding file for Word2Vec, GloVe i.e. :text, :binary
+    embedding_method::Symbol        # How to arrive at a single embedding from multiple i.e. :bow, :sif (semantic search)
     embedding_search_model::Symbol  # type of the search model i.e. :naive, :kdtree, :hnsw (semantic search)
     embedding_element_type::Symbol  # Type of the embedding elements
-    word2vec_filetype::Symbol       # Type of the embedding file (word2vec embeddings specific)
+    glove_vocabulary::Union{Nothing, String}  # Path to a GloVe-generated vocabulary file (only for binary embeddings)
     # test stripping flags
     text_strip_flags::UInt32        # How to strip text data before indexing
     metadata_strip_flags::UInt32    # How to strip text metadata before indexing
@@ -73,11 +74,12 @@ SearchConfig(;
           count_type=DEFAULT_COUNT_TYPE,
           heuristic=DEFAULT_HEURISTIC,
           embeddings_path="",
-          embeddings_type=DEFAULT_EMBEDDINGS_TYPE,
+          embeddings_library=DEFAULT_EMBEDDINGS_LIBRARY,
+          embeddings_kind=DEFAULT_EMBEDDINGS_KIND,
           embedding_method=DEFAULT_EMBEDDING_METHOD,
           embedding_search_model=DEFAULT_EMBEDDING_SEARCH_MODEL,
           embedding_element_type=DEFAULT_EMBEDDING_ELEMENT_TYPE,
-          word2vec_filetype=DEFAULT_WORD2VEC_FILETYPE,
+          glove_vocabulary=nothing,
           text_strip_flags=DEFAULT_TEXT_STRIP_FLAGS,
           metadata_strip_flags=DEFAULT_METADATA_STRIP_FLAGS,
           query_strip_flags=DEFAULT_QUERY_STRIP_FLAGS,
@@ -87,9 +89,10 @@ SearchConfig(;
                  parser, parser_config,
                  build_summary, summary_ns, keep_data, stem_words,
                  count_type, heuristic,
-                 embeddings_path, embeddings_type,
+                 embeddings_path, embeddings_library, embeddings_kind,
                  embedding_method, embedding_search_model,
-                 embedding_element_type, word2vec_filetype,
+                 embedding_element_type,
+                 glove_vocabulary,
                  text_strip_flags, metadata_strip_flags,
                  query_strip_flags, summarization_strip_flags)
 
@@ -145,16 +148,17 @@ function load_search_configs(filename::AbstractString)
         sconfig.count_type = Symbol(get(dconfig, "count_type", DEFAULT_COUNT_TYPE))
         sconfig.heuristic = Symbol(get(dconfig, "heuristic", DEFAULT_HEURISTIC))
         sconfig.embeddings_path = get(dconfig, "embeddings_path", "")
-        sconfig.embeddings_type = Symbol(get(dconfig, "embeddings_type",
-                                             DEFAULT_EMBEDDINGS_TYPE))
+        sconfig.embeddings_library = Symbol(get(dconfig, "embeddings_library",
+                                                DEFAULT_EMBEDDINGS_LIBRARY))
+        sconfig.embeddings_kind = Symbol(get(dconfig, "embeddings_kind",
+                                             DEFAULT_EMBEDDINGS_KIND))
         sconfig.embedding_method = Symbol(get(dconfig, "embedding_method",
                                               DEFAULT_EMBEDDING_METHOD))
         sconfig.embedding_search_model = Symbol(get(dconfig, "embedding_search_model",
                                                     DEFAULT_EMBEDDING_SEARCH_MODEL))
         sconfig.embedding_element_type = Symbol(get(dconfig, "embedding_element_type",
                                                     DEFAULT_EMBEDDING_ELEMENT_TYPE))
-        sconfig.word2vec_filetype = Symbol(get(dconfig, "word2vec_filetype",
-                                               DEFAULT_WORD2VEC_FILETYPE))
+        sconfig.glove_vocabulary= get(dconfig, "glove_vocabulary", nothing)
         sconfig.text_strip_flags = UInt32(get(dconfig, "text_strip_flags",
                                               DEFAULT_TEXT_STRIP_FLAGS))
         sconfig.metadata_strip_flags = UInt32(get(dconfig, "metadata_strip_flags",
@@ -188,47 +192,45 @@ function load_search_configs(filename::AbstractString)
         ###
         # search
         if !(sconfig.search in [:classic, :semantic])
-            @warn "$(sconfig.id) Forcing search=$DEFAULT_SEARCH."
+            @warn "$(sconfig.id) Defaulting search=$DEFAULT_SEARCH."
             sconfig.search = DEFAULT_SEARCH
         end
         # data path
         if !isfile(sconfig.data_path) && !isdir(sconfig.data_path)
-            @show isfile(sconfig.data_path)
-            @show isdir(sconfig.data_path)
             @warn "$(sconfig.id) Missing data, ignoring search configuration..."
             push!(removable, i)  # if there is no data file, cannot search
             continue
         end
         # summary_ns i.e. the number of sentences in a summary
         if !(typeof(sconfig.summary_ns) <: Integer) || sconfig.summary_ns <= 0
-            @warn "$(sconfig.id) Forcing summary_ns=$DEFAULT_SUMMARY_NS."
+            @warn "$(sconfig.id) Defaulting summary_ns=$DEFAULT_SUMMARY_NS."
             sconfig.summary_ns = DEFAULT_SUMMARY_NS
         end
         # keep_data
         if !(typeof(sconfig.keep_data) <: Bool)
-            @warn "$(sconfig.keep_data) Forcing keep_data=$DEFAULT_KEEP_DATA."
+            @warn "$(sconfig.keep_data) Defaulting keep_data=$DEFAULT_KEEP_DATA."
             sconfig.keep_data = DEFAULT_KEEP_DATA
         end
         # stem_words
         if !(typeof(sconfig.stem_words) <: Bool)
-            @warn "$(sconfig.stem_words) Forcing stem_words=$DEFAULT_STEM_WORDS."
+            @warn "$(sconfig.stem_words) Defaulting stem_words=$DEFAULT_STEM_WORDS."
             sconfig.stem_words = DEFAULT_STEM_WORDS
         end
         # delimiter
         if !(typeof(delimiter) <: AbstractString) || length(delimiter) == 0
-            @warn "$(sconfig.id) Forcing delimiter=$DEFAULT_DELIMITER."
+            @warn "$(sconfig.id) Defaulting delimiter=$DEFAULT_DELIMITER."
             sconfig.delimiter = DEFAULT_DELIMITER
         end
         # Classic search specific options
         if sconfig.search == :classic
             # count type
             if !(sconfig.count_type in [:tf, :tfidf, :bm25])
-                @warn "$(sconfig.id) Forcing count_type=$DEFAULT_COUNT_TYPE."
+                @warn "$(sconfig.id) Defaulting count_type=$DEFAULT_COUNT_TYPE."
                 sconfig.count_type = DEFAULT_COUNT_TYPE
             end
             # heuristic
             if !(sconfig.heuristic in keys(HEURISTIC_TO_DISTANCE))
-                @warn "$(sconfig.id) Forcing heuristic=$DEFAULT_HEURISTIC."
+                @warn "$(sconfig.id) Defaulting heuristic=$DEFAULT_HEURISTIC."
                 sconfig.heuristic = DEFAULT_HEURISTIC
             end
         end
@@ -241,33 +243,48 @@ function load_search_configs(filename::AbstractString)
                 continue
             end
             # type of embeddings
-            if !(sconfig.embeddings_type in [:word2vec, :conceptnet])
-                @warn "$(sconfig.id) Forcing embeddings_type=$DEFAULT_EMBEDDINGS_TYPE."
-                sconfig.embeddings_type = DEFAULT_EMBEDDINGS_TYPE
+            if !(sconfig.embeddings_library in [:conceptnet, :word2vec, :glove])
+                @warn "$(sconfig.id) Defaulting embeddings_library=$DEFAULT_EMBEDDINGS_LIBRARY."
+                sconfig.embeddings_library = DEFAULT_EMBEDDINGS_LIBRARY
+            end
+            # embeddings kind
+            if !(sconfig.embeddings_kind in [:binary, :text])
+                @warn "$(sconfig.id) Defaulting embeddings_kind=$DEFAULT_EMBEDDINGS_KIND."
+                sconfig.embeddings_kind = DEFAULT_EMBEDDINGS_KIND
             end
             # embedding method
-            if !(sconfig.embedding_method in [:bow, :arora])
-                @warn "$(sconfig.id) Forcing embedding_method=$DEFAULT_EMBEDDING_METHOD."
+            if !(sconfig.embedding_method in [:bow, :sif])
+                @warn "$(sconfig.id) Defaulting embedding_method=$DEFAULT_EMBEDDING_METHOD."
                 sconfig.embedding_method = DEFAULT_EMBEDDING_METHOD
             end
             # type of search model
             if !(sconfig.embedding_search_model in [:naive, :brutetree, :kdtree, :hnsw])
-                @warn "$(sconfig.id) Forcing embedding_search_model=$DEFAULT_EMBEDDING_SEARCH_MODEL."
+                @warn "$(sconfig.id) Defaulting embedding_search_model=$DEFAULT_EMBEDDING_SEARCH_MODEL."
                 sconfig.embedding_search_model = DEFAULT_EMBEDDING_SEARCH_MODEL
             end
             # type of the embedding elements
             if !(sconfig.embedding_element_type in [:Float32, :Float64])
-                @warn "$(sconfig.id) Forcing embedding_element_type=$DEFAULT_EMBEDDING_ELEMENT_TYPE."
+                @warn "$(sconfig.id) Defaulting embedding_element_type=$DEFAULT_EMBEDDING_ELEMENT_TYPE."
                 sconfig.embedding_element_type = DEFAULT_EMBEDDING_ELEMENT_TYPE
             end
-            if !(sconfig.word2vec_filetype in [:binary, :text])
-                @warn "$(sconfig.id) Forcing word2vec_filetype=$DEFAULT_WORD2VEC_FILETYPE."
-                sconfig.word2vec_filetype = DEFAULT_WORD2VEC_FILETYPE
+            # GloVe embeddings vocabulary (only for binary embedding files)
+            if  sconfig.embeddings_library == :glove && sconfig.embeddings_kind == :binary
+                if (sconfig.glove_vocabulary == nothing) ||
+                   (sconfig.glove_vocabulary isa AbstractString &&
+                    !isfile(sconfig.glove_vocabulary))
+                    @warn """$(sconfig.id) Missing GloVe vocabulary file,
+                             ignoring search configuration..."""
+                    push!(removable, i)
+                    continue
+                end
             end
         end
     end
     # Remove search configs that have missing files
     deleteat!(search_configs, removable)
+    isempty(search_configs) &&
+        @error """The search configuration does not contain searchable entities.
+                  Please review $filename, add entries or fix the configuration errors."""
     return search_configs
 end
 

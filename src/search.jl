@@ -249,7 +249,9 @@ generate score vectors. If the element type is and `Int8` (ConceptNet compressed
 the returned type is the DEFAULT_EMBEDDING_TYPE.
 """
 # Get embedding element types
-get_embedding_eltype(::WordVectors{S,T,H}) where
+get_embedding_eltype(::Word2Vec.WordVectors{S,T,H}) where
+    {S<:AbstractString, T<:Real, H<:Integer} = T
+get_embedding_eltype(::Glowe.WordVectors{S,T,H}) where
     {S<:AbstractString, T<:Real, H<:Integer} = T
 get_embedding_eltype(::ConceptNet{L,K,E}) where
     {L<:Language, K<:AbstractString, E<:AbstractFloat} = E

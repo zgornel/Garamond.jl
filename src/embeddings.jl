@@ -152,11 +152,13 @@ The `embedding_method` option controls how multiple sentence embeddings
 are combined into a single document embedding.
 Avalilable options for `embedding_method`:
     :bow - calculates document embedding as the mean of the sentence embeddings
-    :arora - subtracts paragraph/phrase vector from each sentence embedding
+    :sif - smooth-inverse-frequency subtracts paragraph/phrase vector
+           from each sentence embedding
 """
 function embed_document(embeddings_library::Union{
                             ConceptNet{<:Languages.Language, <:AbstractString, T},
-                            WordVectors{<:AbstractString, T, <:Integer}},
+                            Word2Vec.WordVectors{<:AbstractString, T, <:Integer},
+                            Glowe.WordVectors{<:AbstractString, T, <:Integer}},
                         lexicon::Dict{String, Int},
                         document::Vector{String};  # a vector of sentences
                         embedding_method::Symbol=DEFAULT_EMBEDDING_METHOD
@@ -184,8 +186,10 @@ function embed_document(embeddings_library::Union{
     embedded_words = embedded_words[embedded]
     # If nothing is embedded, return zeros
     isempty(sentence_embeddings) && return zeros(T, m)
-    if embedding_method == :arora
-        return squash(process_arora(sentence_embeddings, lexicon, embedded_words))
+    if embedding_method == :sif
+        return squash(smooth_inverse_frequency(sentence_embeddings,
+                                               lexicon,
+                                               embedded_words))
     else
         return squash(squash.(sentence_embeddings),m)
     end
@@ -194,7 +198,7 @@ end
 
 
 """
-    process_arora(document_embedding, lexicon, embedded_words)
+    smooth_inverse_frequency(document_embedding, lexicon, embedded_words)
 
 Small function that transforms a document embedding based on word frequencies subtracting the
 paragraph vector i.e. principal vector from the word embeddings. Useful for transfer learning
@@ -204,10 +208,10 @@ occur.
     (https://openreview.net/pdf?id=SyK00v5xx)
 """
 #TODO(Corneliu): Make the calculation of `a` automatic using some heuristic
-function process_arora(document_embedding::Vector{Matrix{T}},
-                       lexicon::Dict{String, Int},
-                       embedded_words::Vector{Vector{S}}
-                      ) where {T<:AbstractFloat, S<:AbstractString}
+function smooth_inverse_frequency(document_embedding::Vector{Matrix{T}},
+                                  lexicon::Dict{String, Int},
+                                  embedded_words::Vector{Vector{S}}
+                                 ) where {T<:AbstractFloat, S<:AbstractString}
     L = sum(values(lexicon))
     m = size(document_embedding[1],1)  # number of vector elements
     n = length(document_embedding)  # number of sentences in document
@@ -233,11 +237,12 @@ end
 
 """
 Function that embeds a document i.e. returns an embedding matrix, columns
-are word embeddings, using the `word2vec` WordVectors object. The function
-has an identical signature as the one from the `ConceptnetNumberbatch`
-package.
+are word embeddings, using the `Word2Vec` or `Glowe` WordVectors object.
+The function has an identical signature as the one from the
+`ConceptnetNumberbatch` package.
 """
-function embed_document(word_vectors::WordVectors{S1,T,H},
+function embed_document(word_vectors::Union{Word2Vec.WordVectors{S1,T,H},
+                                            Glowe.WordVectors{S1,T,H}},
                         document_tokens::Vector{S2};
                         language=Languages.English(),           # not used
                         keep_size::Bool=true,
