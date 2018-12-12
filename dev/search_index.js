@@ -13,7 +13,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Introduction",
     "title": "Introduction",
     "category": "section",
-    "text": "Garamond is a search engine that supports both classical and semantic search. The documentation is work in progress and has little coverage right now."
+    "text": "Garamond is a search engine that supports both classical and semantic search. It is designed to be used both as a Julia package, with search functionality available through API method calls, as well as a standalone search server with search functionality accessible through clients that connect to and query the server."
 },
 
 {
@@ -45,31 +45,63 @@ var documenterSearchIndex = {"docs": [
     "page": "Introduction",
     "title": "Simple usage example",
     "category": "section",
-    "text": "#TODO"
+    "text": ""
 },
 
 {
-    "location": "features/#",
-    "page": "Feature list",
-    "title": "Feature list",
+    "location": "#Classic-search-1",
+    "page": "Introduction",
+    "title": "Classic search",
+    "category": "section",
+    "text": "To run a quick and dirty search in a given dataset:# Use packages\nusing Pkg;\nPkg.activate(\".\");\nusing Garamond\n\n# Load searchers\nfilepath = [\"/home/zgornel/projects/extras_for_Garamond/data/Cornel/delimited/config_cornel_data_classic.json\"]\nsrchers = load_searchers(filepath);\n\n# Search\nQUERY = \"arthur clarke pattern\"\nresults = search(srchers, QUERY)The search results promptly appear:# 2-element Array{SearchResult,1}:\n#  Search results for id=\"biglib-classic\":  7 hits, 2 query terms, 0 suggestions.\n#  Search results for id=\"techlib-classic\":  2 hits, 1 query terms, 0 suggestions.To view them in a more detailed fashion i.e. including metadata:print_search_results(srchers, results)which will print:9 search results from 2 corpora\n`-[id=\"biglib-classic\"] 7 search results:\n  2.9344456 ~ 1-[\"The last theorem\" by Arthur C. Clarke, 2008 (2010)]\n  2.5842855 ~ 2-[\"2010: odyssey two\" by Arthur C. Clarke, 1982 (2010)]\n  2.059056 ~ 4-[\"Childhood\'s end\" by Arthur C. Clarke, 1954 (2013)]\n  2.059056 ~ 6-[\"3001: the final odyssey\" by Arthur C. Clarke, 1968 (1997)]\n  2.059056 ~ 7-[\"2061: odyssey three\" by Arthur C. Clarke, 1987 (1988)]\n  1.8586512 ~ 3-[\"The city and the stars\" by Arthur C. Clarke, 1956 (2003)]\n  1.8586512 ~ 5-[\"2001: a space odyssey\" by Arthur C. Clarke, 1968 (2001)]\n`-[id=\"techlib-classic\"] 2 search results:\n  0.6101619 ~ 3-[\"Pattern recognition 4\'th edition\" by Sergios Theodoridis, Konstantinos Koutroumbas, 2008 (2008)]\n  0.37574464 ~ 2-[\"Pattern classification, 2\'nd edition\" by Richard O. Douda, Peter E. Hart, David G. Stork, 2000 (2000)]"
+},
+
+{
+    "location": "#Semantic-search-1",
+    "page": "Introduction",
+    "title": "Semantic search",
+    "category": "section",
+    "text": "Performing a semantic search is very similar to performing a classic one, the difference being that another data configuration file must be provided:# Load searchers\nfilepath = [\"/home/zgornel/projects/extras_for_Garamond/data/Cornel/delimited/config_cornel_data_semantic.json\"]\nsrchers = load_searchers(filepath);\n\n# Search\nQUERY = \"space fiction and planets galore\"\nresults = search(srchers, QUERY, max_matches=10)which yields:# 2-element Array{SearchResult,1}:\n#  Search results for id=\"biglib-semantic\":  10 hits, 0 query terms, 0 suggestions.\n#  Search results for id=\"techlib-semantic\":  5 hits, 0 query terms, 0 suggestions.Looking at the detailed results withprint_search_results(srchers, results)prints:15 search results from 2 corpora\n`-[id=\"biglib-semantic\"] 10 search results:\n  1.4016596138408786 ~ 5-[\"2001: a space odyssey\" by Arthur C. Clarke, 1968 (2001)]\n  1.3030687835002375 ~ 3-[\"The city and the stars\" by Arthur C. Clarke, 1956 (2003)]\n  1.1831628403122616 ~ 2-[\"2010: odyssey two\" by Arthur C. Clarke, 1982 (2010)]\n  1.1558528687320448 ~ 65-[\"Of love and other demons\" by Gabriel Garcia Marquez, 1994 (2012)]\n  1.1384422864227708 ~ 10-[\"A legend of the future\" by Augustin De Rojas, 1985 (2014)]\n  1.0947549384771254 ~ 62-[\"Love in the time of cholera\" by Gabriel Garcia Marquez, 1985 (2012)]\n  1.0729641968647925 ~ 31-[\"The devil and the good lord\" by Jean-Paul Sartre, 1951 (2007)]\n  1.0320209929919373 ~ 1-[\"The last theorem\" by Arthur C. Clarke, 2008 (2010)]\n  1.0250176565568312 ~ 21-[\"In the miso soup\" by Ryu Murakami, 1997 (2006)]\n  1.0 ~ 47-[\"Jailbird\" by Kurt Vonnegut, 1979 (2009)]\n`-[id=\"techlib-semantic\"] 5 search results:\n  1.1470548192935575 ~ 1-[\"Data classification: algorithms and applications\" by Charu C. Aggarwal, 2014 (2014)]\n  0.9473624595100231 ~ 5-[\"Numerical methods for engineers\" by Steven C. Chapra, Raymond P. Canale, 2014 (2014)]\n  0.8689249981976931 ~ 3-[\"Pattern recognition 4\'th edition\" by Sergios Theodoridis, Konstantinos Koutroumbas, 2008 (2008)]\n  0.8644211963883863 ~ 4-[\"Artificial intelligence, a modern approach 3\'rd edition\" by Stuart Russel, Peter Norvig, 2009 (2016)]\n  0.7924568154973227 ~ 2-[\"Pattern classification, 2\'nd edition\" by Richard O. Douda, Peter E. Hart, David G. Stork, 2000 (2000)]"
+},
+
+{
+    "location": "configuration/#",
+    "page": "Configuration",
+    "title": "Configuration",
     "category": "page",
     "text": ""
 },
 
 {
-    "location": "features/#Search-engine-features-1",
-    "page": "Feature list",
-    "title": "Search engine features",
+    "location": "configuration/#Configuration-1",
+    "page": "Configuration",
+    "title": "Configuration",
     "category": "section",
-    "text": "This is a list of the features supported by Garamond.Document Indexing/Modelling:\n[x] Summarization support (index TextRank-based summary)\n[ ] Parallelism: green light or hardware threads\n[x] Basic update or \'re-indexing\' support\n[x] Single file support (parts of the file are treated as documents)\n[x] Multiple files / directory support (a file is a document)\n[x] File format support:\n[x] Text formats\n[x] .csv, .tsv etc.\n[x] .json (custom parser must be built)\n[x] .html (custom parser must be built)\n[x] .xml (custom parser must be built)\n[ ] Binary formats\n[x] .pdf (through external program pdftotext from libpoppler)\n[ ] Compressed files (.tar, .zip, .gz, etc.)\n[ ] Microsoft new .xml formats(.docx, .xlsx, etc.)\n? Microsoft old binary formats(.doc, .xls, etc.)\nEngine configuration:\n[x] Single file for multiple data configurations\n[x] Multiple files for data configurations\n[x] General engine configuration (~/.garamondrc.jl, gets re-compiled into Garamond at startup)\nSearch types:\nClassic Search:\nLanguage support:\n[x] Uniform language: query language same as doc language\n[ ] Different languages for query / docs\nWhere to search:\n[x] Document data\n[x] Document metadata\n[x] Document data + metadata\nHow to search for patterns:\n[x] exact match\n[x] regular expression\nDocument term importance\n[x] term frequency\n[x] tf-idf\n[x] BM25\nSuggestion support\n[x] BK Trees (through BKTrees.jl)\n? Levenshtein Automata\n? SymSpell and others\nSemantic Search:\nLanguage support:\n[x] Uniform language: query language same as doc language (English, German, Romanian)(\n[x] Different languages for query / docs (ALMOST English, German, Romanian; to test :))\nWhere to search:\n[x] Document data\n[x] Document metadata\n[x] Document data + metadata\nDocument embedding:\n[x] Bag of words\n[x] Arora et al.\nEmbedding Vector libraries\n[x] Word2Vec embeddings\n[x] ConceptnetNumberbatch embeddings\n? GloVe embeddings\n? Other i.e. FastText\nSearch Models (for semantic vectors)\n[x] Naive cosine similarity base\n[x] Brute-force \"tree\" (multiple metrics)\n[x] KD-tree (multiple metrics)\n[x] HNSW (multiple metrics supported)\nI/O Iterface\n[x] Server: communication through UNIX/Web sockets\n[x] CLI Client: input and output are STDIN and STDOUT (communication through Unix sockets)\n[x] HTTP Client: input and output are in a webpage (communication through Web sockets)\nPer-corpus embedding training\n[x] Word2Vec (manual)\n? Conceptnet\n? GloVe\nParallelism forms supported\n[x] Multi-threading (each corpus is searched withing a hardware thread; support is EXPERIMENTAL and it is disabled by default)\n[ ] Multi-core + task scheduling Dispatcher.jl for distributed corpora\n[ ] Cluster support\nOther:\n[x] Logging mechanism\n[x] Client/server functionality\n[x] Pretty version support :)"
+    "text": "The configuration options of the Garamond search engine can be logically split into three main categories, based on what they tend to operate on and where they actually reside:data - the data configuration pertains to the way the data is indexed and the implicitly, the type of search operation i.e. classic or semantic it supports. In this category one can count options such as the type of search being performed, the path to the actual files to be indexed, the specific parser to use, the path and type of embeddings libraries to be used for semantic search and so on. The data configuration format is a simple JSON file in which multiple configurations for the same or distinct datasets can reside. The engine supports loading multiple such configuration files, providing additional flexibility to the user in choosing how to construct the search structures that guide the search given the particularities of their data. One could for example perform several searches using in the same data or a single search on several distinct datasets.\nengine - the engine configuration file is a simple run-control file named .garamondrc that has to reside in the user home directory on UNIX-like systems i.e. ~/.garamondrc. The configuration file is parsed entirely as Julia code at the startup of the search server - if the file exists - and pre-compiled into the engine itself. The file defines options that pertain to external programs such as the pdf to text converter and replacement values for several default internal variables of the engine such as what type of StringAnalysis document objects the documents are internally represented as, how many search results to return by default, the maximum edit distance to be used when searching for suggestions for possibly misspelled query terms and so on.\ninternal - the engine default configuration variable values for as well as necessary constants such as text preprocessing flags (a flag describes a full set of operations to be performed on input text) reside in the src/config/defaults.jl file and can be modified prior to running the search server. Please note that such operation will also result in new compilation of the package."
 },
 
 {
-    "location": "features/#Status-of-features-1",
-    "page": "Feature list",
-    "title": "Status of features",
+    "location": "configuration/#Data-configuration-1",
+    "page": "Configuration",
+    "title": "Data configuration",
     "category": "section",
-    "text": "[x] supported\n[ ] to be added\n? not decided whether to add or not"
+    "text": "This section will be added at a latter time."
+},
+
+{
+    "location": "configuration/#Engine-configuration-1",
+    "page": "Configuration",
+    "title": "Engine configuration",
+    "category": "section",
+    "text": "A sample ~/.garamondrc file with all available configuration options filled would look like:# Text to pdf program\nconst PDFTOTEXT_PROGRAM = \"/bin/pdftotext\"\n\n# Type of StrinAnalysis document\nconst DOCUMENT_TYPE = StringAnalysis.NGramDocument{String}\n\n# Maximum edit distance for suggestion search\nconst MAX_EDIT_DISTANCE = 2\n\n# Default maximum matches to return\nconst MAX_MATCHES = 1_000\n\n# Default maximum number of suggestions to return\n# for each non-matched query term when squashing\n# results from several corpora\nconst MAX_SUGGESTIONS = 10\n\n# Default maximum number of suggestions to return\n# for each non-matched query term when searching\n# in a single corpus\nconst MAX_CORPUS_SUGGESTIONS = 5"
+},
+
+{
+    "location": "configuration/#Internal-configuration-1",
+    "page": "Configuration",
+    "title": "Internal configuration",
+    "category": "section",
+    "text": "The full internal configuration of the engine can be readily viewed in src/config/defaults.jl."
 },
 
 {
@@ -85,7 +117,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Client/Server",
     "title": "Running Garamond in server/client mode",
     "category": "section",
-    "text": "Garamond is designed as a client-server architecture in which the server receives queries, performs the search action and returns the results to a client that handles the interaction. The client can be either human or machine controlled. There are three utilities designed to handle the search process, all of which can be found in the root directory of the package:./gars - starts the search server. The operations performed by the search engine server at this point are indexing data at a given location and listening to a socket.\n./garc - command line client supporting Unix socket communication. It is the most feature complete of the two clients. Through it, a single search can be performed and all search parameters can be specified. It supports pretty printing as well as a means of visually investigating the results of the search.\n./garw - web client supporting Web socket communication (EXPERIMENTAL). The basic principle is that the client starts a HTTP server which serves a page at a given HTTP port. If the web page is not specified, a default one is generated internally and served. The user connects with a web browser of choice at the local address (i.e. 127.0.0.1) and specified port and performs the search queries from the page. It naturally supports multiple queries however, the parameters of the search cannot be changed.Notes:The clients do not depend on the Garamond package and are very lightweight.\nIn the future, garw should support a query format through which the types of searches and their parameters can be controlled. Such options can include performing exact or regex matches, the number of maximum results to return etc.\nThe clients are currently the only \'easy\' way to communicate with the search server; communication with the latter is pretty straightforward (i.e. reading and writing from sockets) as long as the JSON format for data communication is respected."
+    "text": "Garamond is designed as a client-server architecture in which the server receives queries, performs the search action and returns the results to a client that handles the interaction. The client can be either human or machine controlled. There are three utilities designed to handle the search process, all of which can be found in the root directory of the package:gars - starts the search server. The operations performed by the search engine server at this point are indexing data at a given location and listening to a socket.\ngarc - command line client supporting Unix socket communication. It is the most feature complete of the two clients. Through it, a single search can be performed and all search parameters can be specified. It supports pretty printing as well as a means of visually investigating the results of the search.\ngarw - web client supporting Web socket communication (EXPERIMENTAL). The basic principle is that the client starts a HTTP server which serves a page at a given HTTP port. If the web page is not specified, a default one is generated internally and served. The user connects with a web browser of choice at the local address (i.e. 127.0.0.1) and specified port and performs the search queries from the page. It naturally supports multiple queries however, the parameters of the search cannot be changed.Notes:The clients do not depend on the Garamond package and are very lightweight.\nIn the future, garw should support a query format through which the types of searches and their parameters can be controlled. Such options can include performing exact or regex matches, the number of maximum results to return etc.\nThe clients are currently the only \'easy\' way to communicate with the search server; communication with the latter is pretty straightforward (i.e. reading and writing from sockets) as long as the JSON format for data communication is respected."
 },
 
 {
@@ -113,14 +145,6 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "clientserver/#Unix-socket-tips-and-tricks-1",
-    "page": "Client/Server",
-    "title": "Unix socket tips and tricks",
-    "category": "section",
-    "text": "The examples below assume the existence of a Unix socket at the location /tmp/<unix_socket> (the socket name is not specified).To redirect a TCP socket to a UNIX socket: socat TCP-LISTEN:<tcp_port>,reuseaddr,fork UNIX-CLIENT:/tmp/<unix_socket> or socat TCP-LISTEN:<tcp_port>,bind=127.0.0.1,reuseaddr,fork,su=nobody,range=127.0.0.0/8 UNIX-CLIENT:/tmp/<unix_socket>\nTo send a query to a Garamond server (no reply, for debugging purposes): echo \'find me a needle\' | socat - UNIX-CONNECT:/tmp/garamond/sockets/<unix_socket>\nFor interactive send/receive, socat UNIX-CONNECT:/tmp/garamond/sockets/<unix_socket> STDOUT"
-},
-
-{
     "location": "notes/#",
     "page": "Notes",
     "title": "Notes",
@@ -145,6 +169,38 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "notes/#Unix-socket-tips-and-tricks-1",
+    "page": "Notes",
+    "title": "Unix socket tips and tricks",
+    "category": "section",
+    "text": "The examples below assume the existence of a Unix socket at the location /tmp/<unix_socket> (the socket name is not specified).To redirect a TCP socket to a UNIX socket: socat TCP-LISTEN:<tcp_port>,reuseaddr,fork UNIX-CLIENT:/tmp/<unix_socket> or socat TCP-LISTEN:<tcp_port>,bind=127.0.0.1,reuseaddr,fork,su=nobody,range=127.0.0.0/8 UNIX-CLIENT:/tmp/<unix_socket>\nTo send a query to a Garamond server (no reply, for debugging purposes): echo \'find me a needle\' | socat - UNIX-CONNECT:/tmp/garamond/sockets/<unix_socket>\nFor interactive send/receive, socat UNIX-CONNECT:/tmp/garamond/sockets/<unix_socket> STDOUT"
+},
+
+{
+    "location": "features/#",
+    "page": "Feature list",
+    "title": "Feature list",
+    "category": "page",
+    "text": ""
+},
+
+{
+    "location": "features/#Search-engine-features-1",
+    "page": "Feature list",
+    "title": "Search engine features",
+    "category": "section",
+    "text": "This is a list of the features supported by Garamond.Document Indexing/Modelling:\n[x] Summarization support (index TextRank-based summary)\n[ ] Parallelism: green light or hardware threads\n[x] Basic update or \'re-indexing\' support\n[x] Single file support (parts of the file are treated as documents)\n[x] Multiple files / directory support (a file is a document)\n[x] File format support:\n[x] Text formats\n[x] .csv, .tsv etc.\n[x] .json (custom parser must be built)\n[x] .html (custom parser must be built)\n[x] .xml (custom parser must be built)\n[x] Binary formats\n[x] .pdf (through external program pdftotext from libpoppler)\n[ ] Compressed files (.tar, .zip, .gz, etc.)\n[ ] Microsoft new .xml formats(.docx, .xlsx, etc.)\n? Microsoft old binary formats(.doc, .xls, etc.)\nEngine configuration:\n[x] Single file for multiple data configurations\n[x] Multiple files for data configurations\n[x] General engine configuration (~/.garamondrc.jl, gets re-compiled into Garamond at startup)\nSearch types:\nClassic Search:\nLanguage support:\n[x] Uniform language: query language same as doc language\n[ ] Different languages for query / docs\nWhere to search:\n[x] Document data\n[x] Document metadata\n[x] Document data + metadata\nHow to search for patterns:\n[x] exact match\n[x] regular expression\nDocument term importance\n[x] term frequency\n[x] tf-idf\n[x] BM25\nSuggestion support\n[x] BK Trees (through BKTrees.jl)\n? Levenshtein Automata\n? SymSpell and others\nSemantic Search:\nLanguage support:\n[x] Uniform language: query language same as doc language (English, German, Romanian)(\n[x] Different languages for query / docs (ALMOST English, German, Romanian; to test :))\nWhere to search:\n[x] Document data\n[x] Document metadata\n[x] Document data + metadata\nDocument embedding:\n[x] Bag of words\n[x] Arora et al.\nEmbedding Vector libraries\n[x] Word2Vec\n[x] ConceptnetNumberbatch\n[x] GloVe\nSearch Models (for semantic vectors)\n[x] Naive i.e. cosine similarity\n[x] Brute-force \"tree\", uses Euclidean metrics\n[x] KD-tree, uses Euclidean metrics\n[x] HNSW, uses Euclidean metrics\nI/O Iterface\n[x] Server: communication through UNIX/Web sockets\n[x] CLI Client: input and output are STDIN and STDOUT (communication through Unix sockets)\n[x] HTTP Client: input and output are in a webpage (communication through Web sockets)\nEmbedding training support\n[x] Word2Vec (offline training)\n[x] GloVe (offline training)\n? Conceptnet\nParallelism forms supported\n[x] Multi-threading (each corpus is searched withing a hardware thread; support is EXPERIMENTAL and it is disabled by default)\n[ ] Multi-core + task scheduling Dispatcher.jl for distributed corpora\n[ ] Cluster support\nOther:\n[x] Logging mechanism\n[x] Client/server functionality\n[x] Pretty version support :)"
+},
+
+{
+    "location": "features/#Status-of-features-1",
+    "page": "Feature list",
+    "title": "Status of features",
+    "category": "section",
+    "text": "[x] supported\n[ ] to be added\n? not decided whether to add or not"
+},
+
+{
     "location": "api/#Garamond.search-Union{Tuple{E}, Tuple{NaiveEmbeddingModel{E},Array{E,1},Int64}} where E<:AbstractFloat",
     "page": "API Reference",
     "title": "Garamond.search",
@@ -161,7 +217,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api/#Garamond.search-Union{Tuple{V}, Tuple{V,Any}} where V<:(Array{#s264,1} where #s264<:(Searcher{D,E,M} where D<:StringAnalysis.AbstractDocument where E where M<:Garamond.AbstractSearchData))",
+    "location": "api/#Garamond.search-Union{Tuple{V}, Tuple{V,Any}} where V<:(Array{#s289,1} where #s289<:(Searcher{D,E,M} where D<:StringAnalysis.AbstractDocument where E where M<:Garamond.AbstractSearchData))",
     "page": "API Reference",
     "title": "Garamond.search",
     "category": "method",
@@ -209,19 +265,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api/#ConceptnetNumberbatch.embed_document-Union{Tuple{S2}, Tuple{H}, Tuple{T}, Tuple{S1}, Tuple{WordVectors{S1,T,H},Array{S2,1}}} where S2<:AbstractString where H<:Integer where T<:Real where S1<:AbstractString",
+    "location": "api/#ConceptnetNumberbatch.embed_document-Union{Tuple{S2}, Tuple{H}, Tuple{T}, Tuple{S1}, Tuple{Union{WordVectors{S1,T,H}, WordVectors{S1,T,H}},Array{S2,1}}} where S2<:AbstractString where H<:Integer where T<:Real where S1<:AbstractString",
     "page": "API Reference",
     "title": "ConceptnetNumberbatch.embed_document",
     "category": "method",
-    "text": "Function that embeds a document i.e. returns an embedding matrix, columns are word embeddings, using the word2vec WordVectors object. The function has an identical signature as the one from the ConceptnetNumberbatch package.\n\n\n\n\n\n"
+    "text": "Function that embeds a document i.e. returns an embedding matrix, columns are word embeddings, using the Word2Vec or Glowe WordVectors object. The function has an identical signature as the one from the ConceptnetNumberbatch package.\n\n\n\n\n\n"
 },
 
 {
-    "location": "api/#ConceptnetNumberbatch.embed_document-Union{Tuple{T}, Tuple{Union{ConceptNet{#s254,#s253,T} where #s253<:AbstractString where #s254<:Language, WordVectors{#s57,T,#s56} where #s56<:Integer where #s57<:AbstractString},Dict{String,Int64},Array{String,1}}} where T<:AbstractFloat",
+    "location": "api/#ConceptnetNumberbatch.embed_document-Union{Tuple{T}, Tuple{Union{ConceptNet{#s57,#s56,T} where #s56<:AbstractString where #s57<:Language, WordVectors{#s53,T,#s52} where #s52<:Integer where #s53<:AbstractString, WordVectors{#s55,T,#s54} where #s54<:Integer where #s55<:AbstractString},Dict{String,Int64},Array{String,1}}} where T<:AbstractFloat",
     "page": "API Reference",
     "title": "ConceptnetNumberbatch.embed_document",
     "category": "method",
-    "text": "embed_document(embeddings_library, lexicon, document[; embedding_method])\n\nFunction to get from multiple sentencea to a document embedding. The embedding_method option controls how multiple sentence embeddings are combined into a single document embedding. Avalilable options for embedding_method:     :bow - calculates document embedding as the mean of the sentence embeddings     :arora - subtracts paragraph/phrase vector from each sentence embedding\n\n\n\n\n\n"
+    "text": "embed_document(embeddings_library, lexicon, document[; embedding_method])\n\nFunction to get from multiple sentencea to a document embedding. The embedding_method option controls how multiple sentence embeddings are combined into a single document embedding. Avalilable options for embedding_method:     :bow - calculates document embedding as the mean of the sentence embeddings     :sif - smooth-inverse-frequency subtracts paragraph/phrase vector            from each sentence embedding\n\n\n\n\n\n"
 },
 
 {
