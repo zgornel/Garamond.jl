@@ -1,4 +1,4 @@
-# Search engine features
+# Features
 
 This is a list of the features supported by Garamond.
 
@@ -18,7 +18,6 @@ This is a list of the features supported by Garamond.
             - [x] `.pdf` (through external program `pdftotext` from [libpoppler](https://poppler.freedesktop.org/))
             - [ ] Compressed files (`.tar`, `.zip`, `.gz`, etc.)
             - [ ] Microsoft [new .xml formats(`.docx`, `.xlsx`, etc.)](https://docs.microsoft.com/en-us/office/open-xml/open-xml-sdk)
-            - **?** Microsoft old binary formats(`.doc`, `.xls`, etc.)
 - Engine configuration:
     - [x] Single file for multiple data configurations
     - [x] Multiple files for data configurations
@@ -41,8 +40,8 @@ This is a list of the features supported by Garamond.
             - [x] [BM25](https://en.wikipedia.org/wiki/Okapi_BM25)
         - Suggestion support
             - [x] [BK Trees](https://en.wikipedia.org/wiki/BK-tree) (through [BKTrees.jl](https://github.com/zgornel/BKTrees.jl))
-            - **?** [Levenshtein Automata](https://en.wikipedia.org/wiki/Levenshtein_automaton)
-            - **?** [SymSpell](https://github.com/mammothb/symspellpy) and others
+            - [ ] [Levenshtein automata](https://en.wikipedia.org/wiki/Levenshtein_automaton)
+            - [ ] [SymSpell-like approaches](https://github.com/mammothb/symspellpy)
     - Semantic Search:
         - Language support:
             - [x] Uniform language: query language same as doc language (English, German, Romanian)(
@@ -53,7 +52,7 @@ This is a list of the features supported by Garamond.
             - [x] Document data + metadata
         - Document embedding:
             - [x] Bag of words
-            - [x] [Arora et al.](https://openreview.net/pdf?id=SyK00v5xx)
+            - [x] [SIF (Smooth inverse frequency)](https://openreview.net/pdf?id=SyK00v5xx)
         - Embedding Vector libraries
             - [x] [Word2Vec](https://en.wikipedia.org/wiki/Word2vec)
             - [x] [ConceptnetNumberbatch](https://github.com/commonsense/conceptnet-numberbatch)
@@ -70,7 +69,7 @@ This is a list of the features supported by Garamond.
     - Embedding training support
         - [x] Word2Vec (offline training)
         - [x] GloVe (offline training)
-        - **?** Conceptnet
+        - [ ] Conceptnet
     - Parallelism forms supported
         - [x] Multi-threading (each corpus is searched withing a hardware thread; support is EXPERIMENTAL and it is _disabled_ by default)
         - [ ] Multi-core + task scheduling [Dispatcher.jl](https://github.com/invenia/Dispatcher.jl) for distributed corpora
@@ -81,7 +80,6 @@ This is a list of the features supported by Garamond.
     - [x] Pretty version support :)
 
 
-## Status of features
- - [x] _supported_
- - [ ] _to be added_
- - **?** _not decided whether to add or not_
+The status of the features is as follows:
+- [x] supported
+- [ ] not available (yet)
