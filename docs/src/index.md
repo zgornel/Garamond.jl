@@ -4,7 +4,7 @@ CurrentModule=Garamond
 
 # Introduction
 
-Garamond is a search engine that supports both classical and semantic search. The documentation is work in progress and has little coverage right now.
+Garamond is a search engine that supports both classical and semantic search. It is designed to be used both as a Julia package, with search functionality available through API method calls, as well as a standalone search server with search functionality accessible through clients that connect to and query the server.
 
 ## Installation
 
