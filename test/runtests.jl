@@ -107,7 +107,7 @@ function generate_test_configurations(data_path::String,
     dir = @__DIR__
     _id = 1
     for _embs_library in ["conceptnet", "word2vec", "glove"]
-        for _emb_method in ["bow", "arora"]
+        for _emb_method in ["bow", "sif"]
             for _emb_model in ["naive", "brutetree", "kdtree", "hnsw"]
                 for _emb_eltype in ["Float32","Float64"]
                     for _build_summary in [false, true]

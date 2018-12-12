@@ -13,7 +13,7 @@ const DEFAULT_SEARCH_METHOD = :exact  #can be :exact or :regex
 const DEFAULT_HEURISTIC = :hamming
 const DEFAULT_COUNT_ELEMENT_TYPE = Float32  # used in classic search
 # Semantic search related
-const DEFAULT_EMBEDDING_METHOD = :bow  # can be :bow or :arora
+const DEFAULT_EMBEDDING_METHOD = :bow  # can be :bow or :sif
 const DEFAULT_EMBEDDINGS_LIBRARY = :conceptnet  # can be :conceptnet, :word2vec or :glove
 const DEFAULT_EMBEDDINGS_KIND = :binary  # can be :binary or :text
 const DEFAULT_EMBEDDING_SEARCH_MODEL = :naive  # can be :naive, :kdtree or :hnsw

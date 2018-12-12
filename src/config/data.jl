@@ -39,7 +39,7 @@ mutable struct SearchConfig
     embeddings_path::String         # path to the embeddings file
     embeddings_library::Symbol      # embeddings library i.e. :conceptnet, :word2vec, :glove (semantic search)
     embeddings_kind::Symbol         # Type of the embedding file for Word2Vec, GloVe i.e. :text, :binary
-    embedding_method::Symbol        # How to arrive at a single embedding from multiple i.e. :bow, :arora (semantic search)
+    embedding_method::Symbol        # How to arrive at a single embedding from multiple i.e. :bow, :sif (semantic search)
     embedding_search_model::Symbol  # type of the search model i.e. :naive, :kdtree, :hnsw (semantic search)
     embedding_element_type::Symbol  # Type of the embedding elements
     glove_vocabulary::Union{Nothing, String}  # Path to a GloVe-generated vocabulary file (only for binary embeddings)
@@ -253,7 +253,7 @@ function load_search_configs(filename::AbstractString)
                 sconfig.embeddings_kind = DEFAULT_EMBEDDINGS_KIND
             end
             # embedding method
-            if !(sconfig.embedding_method in [:bow, :arora])
+            if !(sconfig.embedding_method in [:bow, :sif])
                 @warn "$(sconfig.id) Defaulting embedding_method=$DEFAULT_EMBEDDING_METHOD."
                 sconfig.embedding_method = DEFAULT_EMBEDDING_METHOD
             end
