@@ -1,9 +1,9 @@
 # Running Garamond in server/client mode
 
 Garamond is designed as a [client-server architecture](http://catb.org/~esr/writings/taoup/html/ch11s06.html#id2958899) in which the server receives queries, performs the search action and returns the results to a client that handles the interaction. The client can be either human or machine controlled. There are three utilities designed to handle the search process, all of which can be found in the root directory of the package:
-- **./gars** - starts the search server. The operations performed by the search engine server at this point are indexing data at a given location and listening to a socket.
-- **./garc** - command line client supporting Unix socket communication. It is the most feature complete of the two clients. Through it, a single search can be performed and all search parameters can be specified. It supports pretty printing as well as a means of visually investigating the results of the search.
-- **./garw** - web client supporting Web socket communication (EXPERIMENTAL). The basic principle is that the client starts a HTTP server which serves a page at a given HTTP port. If the web page is not specified, a default one is generated internally and served. The user connects with a web browser of choice at the local address (i.e. `127.0.0.1`) and specified port and performs the search queries from the page. It naturally supports multiple queries however, the parameters of the search cannot be changed.
+- **gars** - starts the search server. The operations performed by the search engine server at this point are indexing data at a given location and listening to a socket.
+- **garc** - command line client supporting Unix socket communication. It is the most feature complete of the two clients. Through it, a single search can be performed and all search parameters can be specified. It supports pretty printing as well as a means of visually investigating the results of the search.
+- **garw** - web client supporting Web socket communication (EXPERIMENTAL). The basic principle is that the client starts a HTTP server which serves a page at a given HTTP port. If the web page is not specified, a default one is generated internally and served. The user connects with a web browser of choice at the local address (i.e. `127.0.0.1`) and specified port and performs the search queries from the page. It naturally supports multiple queries however, the parameters of the search cannot be changed.
 
 Notes:
 - The clients do not depend on the Garamond package and are very lightweight.
