@@ -1,4 +1,10 @@
 """
+Standard deconstructed request corresponding to an error request.
+"""
+const ERRORED_REQUEST = ("request_error", "", 0, :nothing, :nothing, 0, "")
+
+
+"""
     ioserver(socket_or_port::Union{UInt16, AbstractString}, channel::Channel{String})
 
 Wrapper for the UNIX- or WEB- socket servers.
@@ -10,6 +16,7 @@ ioserver(port::UInt16, channel::Channel{String}) =
     web_socket_server(port, channel)
 
 ioserver(port::Nothing, channel::Channel{String}) = nothing  # missing argument sink
+
 
 """
     web_socket_server(port::UInt16, channel::Channel{String})
@@ -168,7 +175,6 @@ end
 Function that deconstructs a Garamond request received from a client into
 individual search engine operations and search parameters.
 """
-const ERRORED_REQUEST = ("request_error", "", 0, :nothing, :nothing, 0, "")
 function deconstruct_request(request::String)
     try
         # Parse JSON request
