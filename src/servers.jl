@@ -126,16 +126,12 @@ function search_server(data_config_paths, socket, ws_port)
             srchers = take!(srchers_channel)
             @debug "FSM: Searchers updated."
         else
+            # Read and deconstruct request
             request = take!(io_channel)
             @debug "FSM: Received request=$request"
-            (operation,
-             query,
-             max_matches,
-             search_type,
-             search_method,
-             max_suggestions,
-             what_to_return
-            ) = deconstruct_request(request)
+            (operation, query, max_matches,
+             search_type, search_method,
+             max_suggestions, what_to_return) = deconstruct_request(request)
             if operation == "search"
                 ### Search ###
                 @info "FSM: Performing search operation query='$query'..."
@@ -202,26 +198,19 @@ end
 Function that constructs a response for a Garamond client using
 the search `results`, data from `srchers` and specifier `what`.
 """
-function construct_response(srchers,
-                            results,
-                            what::String;
-                            max_suggestions::Int=0,
-                            elapsed_time::Float64=0)
+function construct_response(srchers, results, what::String;
+                            max_suggestions::Int=0, elapsed_time::Float64=0)
     buf = IOBuffer()
-    if what == "pretty-print"
-        # Unix-socket client, pretty print
-        print_search_results(buf, srchers, results,
-                             max_suggestions=max_suggestions)
-        println(buf, "-----")
-        print(buf, "Elapsed search time: $elapsed_time seconds.")
-        buf.data[buf.data.==0x0a] .= 0x09  # replace "\n" with "\t"
-    elseif what == "json-index"
-        # Unix-/Web- socket client, return indices of the documents
+    if what == "json-index"
+        # Write to buffer indices of the documents
         write(buf, JSON.json(results))
     elseif what == "json-data"
-        # Web-socket client, return document metadata
-        write(buf, JSON.json(
-            export_results_for_web(srchers, results, max_suggestions, elapsed_time)))
+        # Write to buffer document metadata
+        result_data = export_results_for_web(srchers, results,
+                        max_suggestions, elapsed_time)
+        write(buf, JSON.json(result_data))
+    else
+        @error "Unknown response type."  # should not reach this point
     end
     response = join(Char.(buf.data))
     return response

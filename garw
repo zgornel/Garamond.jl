@@ -162,7 +162,6 @@ function _default_webpage(ws_port::UInt16)
 			var matches = jr.matches;
 
 			results_text = \"<p>Elapsed search time: <b>\" + jr.etime + \"</b>s.</br></p>\";
-			results_text += \"<br>\";
 			results_text += \"<p>Found \" + jr.n_matches + \" results in \" + jr.n_corpora_match +
 					\" corpora (out of a total of \" + jr.n_corpora + \"):</p>\";
 			results_text += \"<p>\";
@@ -172,12 +171,12 @@ function _default_webpage(ws_port::UInt16)
 				results_text +=\"<p><b>\" + crps_id +\"</b></br></p>\"
 				for (i=0; i < crps_matches.length; i++){
 					results_text += \"&emsp;\"+
-                        crps_matches[i][0] +
+                        crps_matches[i][0] + \" ~ \" +
                         \"<i> \\\"\" +
 						crps_matches[i][1].name + \"\\\"</i>\" + \" by \" +
-						crps_matches[i][1].author + \" <b>\" +
-						crps_matches[i][1].publisher + \"</b>, \" +
-						crps_matches[i][1].published_year + \"<br>\"
+						crps_matches[i][1].author + \", <b>\" +
+						crps_matches[i][1].publisher + \"</b> \" +
+						\"(\" + crps_matches[i][1].published_year + \")\" + \"<br>\"
 				}
 			}
 			results_text += \"</p>\"

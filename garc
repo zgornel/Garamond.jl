@@ -68,8 +68,22 @@ function iosearch(connection, request, pretty=false)
     # Deconstruct response
     data = deconstruct_response(response)
     if pretty
-        # Replace all tabs with newlines
-        println(stdout, replace(data, "\t"=>"\n"))
+        jr = JSON.parse(data)  # builds a Dict
+        # Print search results in a way similar to that
+        # of the web client (`garw` web page)
+        println("Elapsed search time: $(jr["etime"])s.")
+        println("Found $(jr["n_matches"]) results in $(jr["n_corpora_match"])" *
+                " corpora (out of a total of $(jr["n_corpora"])):")
+        for (id, crps_matches) in jr["matches"]
+            println("$id")
+            for (score, metadata) in crps_matches
+                # format: score ~ name by author, publisher (year)
+                println("\t$(score) ~ \"$(metadata["name"])\" "*
+                        "by $(metadata["author"]), "*
+                        "[$(metadata["publisher"])] "*
+                        "($(metadata["published_year"]))")
+            end
+        end
     else
         println(stdout, data)
     end
@@ -89,7 +103,7 @@ function construct_request(query, max_matches, search_type,
     else
         op = "search"
     end
-    what_to_return = ifelse(pretty, "pretty-print", "json-index")
+    what_to_return = ifelse(pretty, "json-data", "json-index")
     return JSON.json(
             Dict("operation" => op,
                  "query" => query,
@@ -118,18 +132,9 @@ function main()
                       "info" => Logging.Info,
                       "warning" => Logging.Warn,
                       "error" => Logging.Error)
-    logger = ConsoleLogger(stdout, get(log_levels,
-                                       args["log-level"],
-                                       Logging.Info))
+    logger = ConsoleLogger(stdout,
+                get(log_levels, args["log-level"], Logging.Info))
     global_logger(logger)
-    # Construct Garamond request
-    request = construct_request(args["query"],
-                                args["max-matches"],
-                                args["search-type"],
-                                args["search-method"],
-                                args["max-suggestions"],
-                                args["pretty"],
-                                args["kill"])
     # Start client
     @debug "~ GARAMOND~ (unix-socket client)"
     unixsocket = args["unix-socket"]
@@ -137,8 +142,18 @@ function main()
         @error "$unixsocket is not a proper UNIX socket."
     end
     conn = connect(unixsocket)
-    # Search
-    !isempty(request) && iosearch(conn, request, args["pretty"])
+    # Construct Garamond request
+    if isempty(args["query"])
+        @warn "Empty query, nothing to search, exiting..."
+    else
+        request = construct_request(args["query"],
+            args["max-matches"], args["search-type"],
+            args["search-method"], args["max-suggestions"],
+            args["pretty"], args["kill"])
+        # Search
+        iosearch(conn, request, args["pretty"])
+    end
+    # Close connection and exit
     close(conn)
     return 0
 end
