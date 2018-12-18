@@ -45,9 +45,9 @@ version = "1.0.0"
 
 [[CMake]]
 deps = ["BinDeps", "Libdl", "Test"]
-git-tree-sha1 = "74853a75c26a4a73ac391ee26ee29ebeb5583d9f"
+git-tree-sha1 = "6e39bef3cbb8321e8a464b18a5c20d7cef813938"
 uuid = "631607c0-34d2-5d66-819e-eb0f9aa2061a"
-version = "1.1.0"
+version = "1.1.1"
 
 [[CMakeWrapper]]
 deps = ["BinDeps", "CMake", "Libdl", "Parameters", "Test"]
@@ -92,9 +92,9 @@ uuid = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 
 [[Distances]]
 deps = ["LinearAlgebra", "Printf", "Random", "Statistics", "Test"]
-git-tree-sha1 = "2f38605722542f1c0a32dd2856fb529d8c226c69"
+git-tree-sha1 = "0e37d8a95bafbeb9c800ef27ab6f443d29e17610"
 uuid = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
-version = "0.7.3"
+version = "0.7.4"
 
 [[Distributed]]
 deps = ["LinearAlgebra", "Random", "Serialization", "Sockets"]
@@ -250,9 +250,9 @@ version = "1.0.2"
 
 [[Parameters]]
 deps = ["Markdown", "OrderedCollections", "REPL", "Test"]
-git-tree-sha1 = "eec0fe16344cc14aa2e6251874ab30d62aff4f7c"
+git-tree-sha1 = "70bdbfb2bceabb15345c0b54be4544813b3444e4"
 uuid = "d96e819e-fc66-5662-9728-84c9c7592b0a"
-version = "0.10.2"
+version = "0.10.3"
 
 [[Pkg]]
 deps = ["Dates", "LibGit2", "Markdown", "Printf", "REPL", "Random", "SHA", "UUIDs"]
@@ -264,9 +264,9 @@ uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 
 [[ProgressMeter]]
 deps = ["Distributed", "Printf", "Random", "Test"]
-git-tree-sha1 = "37e7d3982c8d4610196829c01387dd561756aedc"
+git-tree-sha1 = "48058bc11607676e5bbc0b974af79106c6200787"
 uuid = "92933f4c-e287-5a05-a399-4b506db050ca"
-version = "0.8.0"
+version = "0.9.0"
 
 [[REPL]]
 deps = ["InteractiveUtils", "Markdown", "Sockets"]
