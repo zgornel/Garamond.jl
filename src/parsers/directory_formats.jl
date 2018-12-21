@@ -96,11 +96,11 @@ function __parser_directory_format_1(directory::AbstractString,
                                   flags=summarization_strip_flags)
         end
         documents[i] = sentences
-        # TODO(Corneliu) Add language support for supported languages
-        # through language detection
-        metadata_vector[i] = DocumentMetadata(Languages.English(),
-                                "", "", "", "", "", "", "", "", "")
+        # Language detection (from 3 sentences max)
+        some_text = join(sentences[1:min(3, length(sentences))], " ")
+        language = detect_language(some_text)
         # Add some real metadata
+        metadata_vector[i] = DocumentMetadata(language, ["" for _ in 1:9]...)
         setfield!(metadata_vector[i], :name, readuntil(file,"\n"))  # set name the first line
         setfield!(metadata_vector[i], :id, file)  # set id the filename
         # Update progressbar

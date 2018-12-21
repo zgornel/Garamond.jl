@@ -85,26 +85,15 @@ function __parser_delimited_format_1(filename::AbstractString,
                                 "", "", "", "", "", "", "", "", "")
         # Set parsed values for document metadata
         for (column, metafield) in config_meta
-            local _language
             # Metadata field is to be parsed
+            field_data = lowercase(vline[column])
             if metafield == :language
                 # Get Language object from string
-                _lang = lowercase(vline[column])
-                try
-                    #_language = STR_TO_LANG[_lang]()
-                    # HACK, force Languages.English() as there is little
-                    # reason to use other languages. Preprocessing fails
-                    # as dictionaries are needed
-                    # TODO(Corneliu): Add language support for supported languages.
-                    _language = STR_TO_LANG["english"]()
-                catch
-                    @warn "Language $_lang not supported. Using default."
-                    _language = Languages.English()
-                end
-                setfield!(metadata_vector[i], metafield, _language)
+                lang_type = get(STR_TO_LANG, field_data, DEFAULT_LANGUAGE)
+                setfield!(metadata_vector[i], metafield, lang_type())
             else
                 # Non-language field
-                setfield!(metadata_vector[i], metafield, lowercase(vline[column]))
+                setfield!(metadata_vector[i], metafield, field_data)
             end
         end
     end

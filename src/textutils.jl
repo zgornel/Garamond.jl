@@ -55,15 +55,21 @@ lowercase(v::T) where T<:AbstractArray{S} where S<:AbstractString =
 
 
 """
-    detect_language(text)
+    detect_language(text [; default=DEFAULT_LANGUAGE])
 
-Detects the language of a piece of text.
+Detects the language of a piece of `text`. Returns a language of
+type `Languages.Language`. If the text is empty of the confidence
+is low, return the `default` language.
 """
-# TODO(Corneliu) Find a use for this or remove
-function detect_language(text::AbstractString)
+function detect_language(text::AbstractString; default=DEFAULT_LANGUAGE)
+    isempty(text) && return default
     detector = LanguageDetector()
-    l::Language = detector(text)[1]  # returns (language, script, confidence)
-    return l
+    l, _, c = detector(text)  # returns (language, script, confidence)
+    if c < 0.15
+        return default
+    else
+        return l
+    end
 end
 
 
@@ -117,13 +123,19 @@ function build_corpus(documents::Vector{Vector{S}},
                       metadata_vector::Vector{DocumentMetadata}
                      ) where {S<:AbstractString, T<:AbstractDocument}
     @assert length(documents) == length(metadata_vector)
-    n = length(documents)
-    v = Vector{T}(undef, n)
-    @inbounds for i in 1:n
-        v[i] = T(join(documents[i]," "))
-        v[i].metadata = metadata_vector[i]
+    docs = Vector{T}()
+    @inbounds for (sentences, meta) in zip(documents, metadata_vector)
+        lang_type = typeof(meta.language)
+        if lang_type in SUPPORTED_LANGUAGES
+            doc = T(join(sentences," "))
+            doc.metadata = meta
+            push!(docs, doc)
+        else
+            @warn """Unsupported language $lang_type for document id=$(meta.id).
+                     The document will be ignored."""
+        end
     end
-    return Corpus(v)
+    return Corpus(docs)
 end
 
 

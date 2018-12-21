@@ -124,10 +124,10 @@ function build_searcher(sconf::SearchConfig)
     crps_meta = build_corpus(documents_meta, DOCUMENT_TYPE,
                              metadata_vector)
     # Pre-process documents
-    prepare!(crps, sconf.text_strip_flags |
-             (sconf.stem_words ? stem_words : 0x0))
-    prepare!(crps_meta, sconf.metadata_strip_flags |
-             (sconf.stem_words ? stem_words : 0x0))
+    prepare!.(crps, sconf.text_strip_flags |
+              (sconf.stem_words ? stem_words : 0x0))
+    prepare!.(crps_meta, sconf.metadata_strip_flags |
+              (sconf.stem_words ? stem_words : 0x0))
     # Update lexicons
     update_lexicon!(crps)
     update_lexicon!(crps_meta)
