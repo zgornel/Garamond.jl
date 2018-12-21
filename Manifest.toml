@@ -109,10 +109,8 @@ version = "1.2.0"
 [[Glowe]]
 deps = ["LinearAlgebra", "Statistics", "Test"]
 git-tree-sha1 = "8969388b206c55a8bf81415da93aa4ea1dcfed0a"
-repo-rev = "master"
-repo-url = "https://github.com/zgornel/Glowe.jl"
-uuid = "41444f52-fbde-11e8-14fe-eb60a09dbaaa"
-version = "0.1.0"
+uuid = "d04f5788-f3bf-50c4-8044-9206750af6c9"
+version = "0.1.1"
 
 [[HDF5]]
 deps = ["BinDeps", "Blosc", "CRC32c", "Distributed", "Homebrew", "Libdl", "LinearAlgebra", "Mmap", "Pkg", "Test", "WinRPM"]
