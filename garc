@@ -10,6 +10,14 @@ using ArgParse
 using Logging
 using JSON
 
+import ArgParse: parse_item
+
+
+# Support for parsing to Symbol for the ArgParse package
+function ArgParse.parse_item(::Type{Symbol}, x::AbstractString)
+    return Symbol(x)
+end
+
 
 # Function that parses Garamond's unix-socket client arguments
 function get_unix_socket_client_arguments(args::Vector{String})
@@ -34,11 +42,11 @@ function get_unix_socket_client_arguments(args::Vector{String})
             arg_type = Int
             default = 10
         "--search-type"
-            help = "type of search"
+            help = "where to search"
             arg_type = Symbol
             default = :metadata
         "--search-method"
-            help = "type of search"
+            help = "type of match done during search"
             arg_type = Symbol
             default = :exact
         "--max-suggestions"

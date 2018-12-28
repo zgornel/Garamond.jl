@@ -72,9 +72,9 @@ version = "1.4.0"
 
 [[ConceptnetNumberbatch]]
 deps = ["CodecZlib", "HDF5", "Languages", "Pkg", "Random", "Serialization", "Test", "TranscodingStreams"]
-git-tree-sha1 = "b342d17e261dab661f17b08e493b5307618b0a7b"
+git-tree-sha1 = "4c116b1b8bb103056face999b60b4547339a0c01"
 uuid = "6bdbf80b-0969-53f9-8443-f41591bd656e"
-version = "0.1.4"
+version = "0.1.5"
 
 [[DataStructures]]
 deps = ["InteractiveUtils", "OrderedCollections", "Random", "Serialization", "Test"]
@@ -174,7 +174,7 @@ version = "0.20.0"
 
 [[Languages]]
 deps = ["JSON", "Test"]
-git-tree-sha1 = "787528647403ef964f2443986914ba92e4dfd364"
+git-tree-sha1 = "4af230f39531380add43b8d768d58300b7b9cec3"
 repo-rev = "master"
 repo-url = "https://github.com/JuliaText/Languages.jl"
 uuid = "8ef0a80b-9436-5d2c-a485-80b904378c43"
@@ -307,9 +307,9 @@ uuid = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [[StaticArrays]]
 deps = ["InteractiveUtils", "LinearAlgebra", "Random", "Statistics", "Test"]
-git-tree-sha1 = "97c4bf0f647488dd7ac01ea12be5885f88762938"
+git-tree-sha1 = "1eb114d6e23a817cd3e99abc3226190876d7c898"
 uuid = "90137ffa-7385-5640-81b9-e52037218182"
-version = "0.10.0"
+version = "0.10.2"
 
 [[Statistics]]
 deps = ["LinearAlgebra", "SparseArrays"]
