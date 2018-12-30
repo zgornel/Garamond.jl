@@ -66,7 +66,7 @@ function detect_language(text::AbstractString; default=DEFAULT_LANGUAGE)
     detector = LanguageDetector()
     l, _, c = detector(text)  # returns (language, script, confidence)
     if c < 0.15
-        return default
+        return default()
     else
         return l
     end
