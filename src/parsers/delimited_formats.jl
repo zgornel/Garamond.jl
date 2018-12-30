@@ -41,6 +41,7 @@ function __parser_delimited_format_1(filename::AbstractString,
                                      config::Dict;
                                      header::Bool = false,
                                      delimiter::String=DEFAULT_DELIMITER,
+                                     language::String=DEFAULT_LANGUAGE_STR,
                                      show_progress::Bool=DEFAULT_SHOW_PROGRESS,
                                      kwargs...  # unused kw arguments (used in other parsers)
                                     ) where T<:AbstractDocument
@@ -81,30 +82,24 @@ function __parser_delimited_format_1(filename::AbstractString,
         iszero(mod(i, _nl)) && show_progress && next!(progressbar)
         # Create document
         documents[i] = vline[data_fields]
-        metadata_vector[i] = DocumentMetadata(Languages.English(),
-                                "", "", "", "", "", "", "", "", "")
+        # Language detection
+        if language == "auto"
+            lang = detect_language(join(vline, " "))  # detect from the whole data line
+        else
+            lang = get(STR_TO_LANG, language, DEFAULT_LANGUAGE)()  # instantiate as well
+        end
+        metadata_vector[i] = DocumentMetadata(lang, ("" for _ in 1:9)...)
         # Set parsed values for document metadata
         for (column, metafield) in config_meta
-            local _language
             # Metadata field is to be parsed
+            field_data = lowercase(vline[column])
             if metafield == :language
-                # Get Language object from string
-                _lang = lowercase(vline[column])
-                try
-                    #_language = STR_TO_LANG[_lang]()
-                    # HACK, force Languages.English() as there is little
-                    # reason to use other languages. Preprocessing fails
-                    # as dictionaries are needed
-                    # TODO(Corneliu): Add language support for supported languages.
-                    _language = STR_TO_LANG["english"]()
-                catch
-                    @warn "Language $_lang not supported. Using default."
-                    _language = Languages.English()
-                end
-                setfield!(metadata_vector[i], metafield, _language)
+                # Explicitly override language if a language field is present
+                lang = get(STR_TO_LANG, field_data, DEFAULT_LANGUAGE)()
+                setfield!(metadata_vector[i], metafield, lang)
             else
                 # Non-language field
-                setfield!(metadata_vector[i], metafield, lowercase(vline[column]))
+                setfield!(metadata_vector[i], metafield, field_data)
             end
         end
     end

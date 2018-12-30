@@ -115,3 +115,10 @@ const STR_TO_LANG = Dict("english"=>Languages.English,
                         )
 
 const LANG_TO_STR = Dict((v=>k) for (k,v) in STR_TO_LANG)
+const SUPPORTED_LANGUAGES=[Languages.English,
+                           Languages.German,
+                           Languages.Romanian,
+                           Languages.French,
+                           Languages.Italian]
+const DEFAULT_LANGUAGE=Languages.English
+const DEFAULT_LANGUAGE_STR=LANG_TO_STR[DEFAULT_LANGUAGE]
