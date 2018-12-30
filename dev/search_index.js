@@ -53,7 +53,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Introduction",
     "title": "Classic search",
     "category": "section",
-    "text": "To run a quick and dirty search in a given dataset:# Use packages\nusing Pkg;\nPkg.activate(\".\");\nusing Garamond\n\n# Load searchers\nfilepath = [\"/home/zgornel/projects/extras_for_Garamond/data/Cornel/delimited/config_cornel_data_classic.json\"]\nsrchers = load_searchers(filepath);\n\n# Search\nQUERY = \"arthur clarke pattern\"\nresults = search(srchers, QUERY)The search results promptly appear:# 2-element Array{SearchResult,1}:\n#  Search results for id=\"biglib-classic\":  7 hits, 2 query terms, 0 suggestions.\n#  Search results for id=\"techlib-classic\":  2 hits, 1 query terms, 0 suggestions.To view them in a more detailed fashion i.e. including metadata:print_search_results(srchers, results)which will print:9 search results from 2 corpora\n`-[id=\"biglib-classic\"] 7 search results:\n  2.9344456 ~ 1-[\"The last theorem\" by Arthur C. Clarke, 2008 (2010)]\n  2.5842855 ~ 2-[\"2010: odyssey two\" by Arthur C. Clarke, 1982 (2010)]\n  2.059056 ~ 4-[\"Childhood\'s end\" by Arthur C. Clarke, 1954 (2013)]\n  2.059056 ~ 6-[\"3001: the final odyssey\" by Arthur C. Clarke, 1968 (1997)]\n  2.059056 ~ 7-[\"2061: odyssey three\" by Arthur C. Clarke, 1987 (1988)]\n  1.8586512 ~ 3-[\"The city and the stars\" by Arthur C. Clarke, 1956 (2003)]\n  1.8586512 ~ 5-[\"2001: a space odyssey\" by Arthur C. Clarke, 1968 (2001)]\n`-[id=\"techlib-classic\"] 2 search results:\n  0.6101619 ~ 3-[\"Pattern recognition 4\'th edition\" by Sergios Theodoridis, Konstantinos Koutroumbas, 2008 (2008)]\n  0.37574464 ~ 2-[\"Pattern classification, 2\'nd edition\" by Richard O. Douda, Peter E. Hart, David G. Stork, 2000 (2000)]"
+    "text": "The following code snippet runs a quick and dirty search:# Use packages\nusing Pkg;\nPkg.activate(\".\");\nusing Garamond\n\n# Load searchers\nfilepath = [\"/home/zgornel/projects/extras_for_Garamond/data/Cornel/delimited/config_cornel_data_classic.json\"]\nsrchers = load_searchers(filepath);\n\n# Search\nQUERY = \"arthur clarke pattern\"\nresults = search(srchers, QUERY)The search results promptly appear:# 2-element Array{SearchResult,1}:\n#  Search results for id=\"biglib-classic\":  7 hits, 2 query terms, 0 suggestions.\n#  Search results for id=\"techlib-classic\":  2 hits, 1 query terms, 0 suggestions.To view them in a more detailed fashion i.e. including metadata, one can run:print_search_results(srchers, results)which prints:# 9 search results from 2 corpora\n# `-[id=\"biglib-classic\"] 7 search results:\n#   2.9344456 ~ 1-[\"The last theorem\" by Arthur C. Clarke, 2008 (2010)]\n#   2.5842855 ~ 2-[\"2010: odyssey two\" by Arthur C. Clarke, 1982 (2010)]\n#   2.059056 ~ 4-[\"Childhood\'s end\" by Arthur C. Clarke, 1954 (2013)]\n#   2.059056 ~ 6-[\"3001: the final odyssey\" by Arthur C. Clarke, 1968 (1997)]\n#   2.059056 ~ 7-[\"2061: odyssey three\" by Arthur C. Clarke, 1987 (1988)]\n#   1.8586512 ~ 3-[\"The city and the stars\" by Arthur C. Clarke, 1956 (2003)]\n#   1.8586512 ~ 5-[\"2001: a space odyssey\" by Arthur C. Clarke, 1968 (2001)]\n# `-[id=\"techlib-classic\"] 2 search results:\n#   0.6101619 ~ 3-[\"Pattern recognition 4\'th edition\" by Sergios Theodoridis, Konstantinos Koutroumbas, 2008 (2008)]\n#   0.37574464 ~ 2-[\"Pattern classification, 2\'nd edition\" by Richard O. Douda, Peter E. Hart, David G. Stork, 2000 (2000)]"
 },
 
 {
@@ -61,7 +61,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Introduction",
     "title": "Semantic search",
     "category": "section",
-    "text": "Performing a semantic search is very similar to performing a classic one, the difference being that another data configuration file must be provided:# Load searchers\nfilepath = [\"/home/zgornel/projects/extras_for_Garamond/data/Cornel/delimited/config_cornel_data_semantic.json\"]\nsrchers = load_searchers(filepath);\n\n# Search\nQUERY = \"space fiction and planets galore\"\nresults = search(srchers, QUERY, max_matches=10)which yields:# 2-element Array{SearchResult,1}:\n#  Search results for id=\"biglib-semantic\":  10 hits, 0 query terms, 0 suggestions.\n#  Search results for id=\"techlib-semantic\":  5 hits, 0 query terms, 0 suggestions.Looking at the detailed results withprint_search_results(srchers, results)prints:15 search results from 2 corpora\n`-[id=\"biglib-semantic\"] 10 search results:\n  1.4016596138408786 ~ 5-[\"2001: a space odyssey\" by Arthur C. Clarke, 1968 (2001)]\n  1.3030687835002375 ~ 3-[\"The city and the stars\" by Arthur C. Clarke, 1956 (2003)]\n  1.1831628403122616 ~ 2-[\"2010: odyssey two\" by Arthur C. Clarke, 1982 (2010)]\n  1.1558528687320448 ~ 65-[\"Of love and other demons\" by Gabriel Garcia Marquez, 1994 (2012)]\n  1.1384422864227708 ~ 10-[\"A legend of the future\" by Augustin De Rojas, 1985 (2014)]\n  1.0947549384771254 ~ 62-[\"Love in the time of cholera\" by Gabriel Garcia Marquez, 1985 (2012)]\n  1.0729641968647925 ~ 31-[\"The devil and the good lord\" by Jean-Paul Sartre, 1951 (2007)]\n  1.0320209929919373 ~ 1-[\"The last theorem\" by Arthur C. Clarke, 2008 (2010)]\n  1.0250176565568312 ~ 21-[\"In the miso soup\" by Ryu Murakami, 1997 (2006)]\n  1.0 ~ 47-[\"Jailbird\" by Kurt Vonnegut, 1979 (2009)]\n`-[id=\"techlib-semantic\"] 5 search results:\n  1.1470548192935575 ~ 1-[\"Data classification: algorithms and applications\" by Charu C. Aggarwal, 2014 (2014)]\n  0.9473624595100231 ~ 5-[\"Numerical methods for engineers\" by Steven C. Chapra, Raymond P. Canale, 2014 (2014)]\n  0.8689249981976931 ~ 3-[\"Pattern recognition 4\'th edition\" by Sergios Theodoridis, Konstantinos Koutroumbas, 2008 (2008)]\n  0.8644211963883863 ~ 4-[\"Artificial intelligence, a modern approach 3\'rd edition\" by Stuart Russel, Peter Norvig, 2009 (2016)]\n  0.7924568154973227 ~ 2-[\"Pattern classification, 2\'nd edition\" by Richard O. Douda, Peter E. Hart, David G. Stork, 2000 (2000)]"
+    "text": "Performing a semantic search is very similar to performing a classic one, the difference being that another data configuration file must be provided:# Load searchers\nfilepath = [\"/home/zgornel/projects/extras_for_Garamond/data/Cornel/delimited/config_cornel_data_semantic.json\"]\nsrchers = load_searchers(filepath);\n\n# Search\nQUERY = \"space fiction and planets galore\"\nresults = search(srchers, QUERY, max_matches=10)which yields:# 2-element Array{SearchResult,1}:\n#  Search results for id=\"biglib-semantic\":  10 hits, 0 query terms, 0 suggestions.\n#  Search results for id=\"techlib-semantic\":  5 hits, 0 query terms, 0 suggestions.In this case,print_search_results(srchers, results)prints:# 15 search results from 2 corpora\n# `-[id=\"biglib-semantic\"] 10 search results:\n#   1.4016596138408786 ~ 5-[\"2001: a space odyssey\" by Arthur C. Clarke, 1968 (2001)]\n#   1.3030687835002375 ~ 3-[\"The city and the stars\" by Arthur C. Clarke, 1956 (2003)]\n#   1.1831628403122616 ~ 2-[\"2010: odyssey two\" by Arthur C. Clarke, 1982 (2010)]\n#   1.1558528687320448 ~ 65-[\"Of love and other demons\" by Gabriel Garcia Marquez, 1994 (2012)]\n#   1.1384422864227708 ~ 10-[\"A legend of the future\" by Augustin De Rojas, 1985 (2014)]\n#   1.0947549384771254 ~ 62-[\"Love in the time of cholera\" by Gabriel Garcia Marquez, 1985 (2012)]\n#   1.0729641968647925 ~ 31-[\"The devil and the good lord\" by Jean-Paul Sartre, 1951 (2007)]\n#   1.0320209929919373 ~ 1-[\"The last theorem\" by Arthur C. Clarke, 2008 (2010)]\n#   1.0250176565568312 ~ 21-[\"In the miso soup\" by Ryu Murakami, 1997 (2006)]\n#   1.0 ~ 47-[\"Jailbird\" by Kurt Vonnegut, 1979 (2009)]\n# `-[id=\"techlib-semantic\"] 5 search results:\n#   1.1470548192935575 ~ 1-[\"Data classification: algorithms and applications\" by Charu C. Aggarwal, 2014 (2014)]\n#   0.9473624595100231 ~ 5-[\"Numerical methods for engineers\" by Steven C. Chapra, Raymond P. Canale, 2014 (2014)]\n#   0.8689249981976931 ~ 3-[\"Pattern recognition 4\'th edition\" by Sergios Theodoridis, Konstantinos Koutroumbas, 2008 (2008)]\n#   0.8644211963883863 ~ 4-[\"Artificial intelligence, a modern approach 3\'rd edition\" by Stuart Russel, Peter Norvig, 2009 (2016)]\n#   0.7924568154973227 ~ 2-[\"Pattern classification, 2\'nd edition\" by Richard O. Douda, Peter E. Hart, David G. Stork, 2000 (2000)]"
 },
 
 {
@@ -185,19 +185,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "features/#Search-engine-features-1",
+    "location": "features/#Features-1",
     "page": "Feature list",
-    "title": "Search engine features",
+    "title": "Features",
     "category": "section",
-    "text": "This is a list of the features supported by Garamond.Document Indexing/Modelling:\n[x] Summarization support (index TextRank-based summary)\n[ ] Parallelism: green light or hardware threads\n[x] Basic update or \'re-indexing\' support\n[x] Single file support (parts of the file are treated as documents)\n[x] Multiple files / directory support (a file is a document)\n[x] File format support:\n[x] Text formats\n[x] .csv, .tsv etc.\n[x] .json (custom parser must be built)\n[x] .html (custom parser must be built)\n[x] .xml (custom parser must be built)\n[x] Binary formats\n[x] .pdf (through external program pdftotext from libpoppler)\n[ ] Compressed files (.tar, .zip, .gz, etc.)\n[ ] Microsoft new .xml formats(.docx, .xlsx, etc.)\n? Microsoft old binary formats(.doc, .xls, etc.)\nEngine configuration:\n[x] Single file for multiple data configurations\n[x] Multiple files for data configurations\n[x] General engine configuration (~/.garamondrc.jl, gets re-compiled into Garamond at startup)\nSearch types:\nClassic Search:\nLanguage support:\n[x] Uniform language: query language same as doc language\n[ ] Different languages for query / docs\nWhere to search:\n[x] Document data\n[x] Document metadata\n[x] Document data + metadata\nHow to search for patterns:\n[x] exact match\n[x] regular expression\nDocument term importance\n[x] term frequency\n[x] tf-idf\n[x] BM25\nSuggestion support\n[x] BK Trees (through BKTrees.jl)\n? Levenshtein Automata\n? SymSpell and others\nSemantic Search:\nLanguage support:\n[x] Uniform language: query language same as doc language (English, German, Romanian)(\n[x] Different languages for query / docs (ALMOST English, German, Romanian; to test :))\nWhere to search:\n[x] Document data\n[x] Document metadata\n[x] Document data + metadata\nDocument embedding:\n[x] Bag of words\n[x] Arora et al.\nEmbedding Vector libraries\n[x] Word2Vec\n[x] ConceptnetNumberbatch\n[x] GloVe\nSearch Models (for semantic vectors)\n[x] Naive i.e. cosine similarity\n[x] Brute-force \"tree\", uses Euclidean metrics\n[x] KD-tree, uses Euclidean metrics\n[x] HNSW, uses Euclidean metrics\nI/O Iterface\n[x] Server: communication through UNIX/Web sockets\n[x] CLI Client: input and output are STDIN and STDOUT (communication through Unix sockets)\n[x] HTTP Client: input and output are in a webpage (communication through Web sockets)\nEmbedding training support\n[x] Word2Vec (offline training)\n[x] GloVe (offline training)\n? Conceptnet\nParallelism forms supported\n[x] Multi-threading (each corpus is searched withing a hardware thread; support is EXPERIMENTAL and it is disabled by default)\n[ ] Multi-core + task scheduling Dispatcher.jl for distributed corpora\n[ ] Cluster support\nOther:\n[x] Logging mechanism\n[x] Client/server functionality\n[x] Pretty version support :)"
-},
-
-{
-    "location": "features/#Status-of-features-1",
-    "page": "Feature list",
-    "title": "Status of features",
-    "category": "section",
-    "text": "[x] supported\n[ ] to be added\n? not decided whether to add or not"
+    "text": "This is a list of the features supported by Garamond.Document Indexing/Modelling:\n[x] Summarization support (index TextRank-based summary)\n[ ] Parallelism: green light or hardware threads\n[x] Basic update or \'re-indexing\' support\n[x] Single file support (parts of the file are treated as documents)\n[x] Multiple files / directory support (a file is a document)\n[x] File format support:\n[x] Text formats\n[x] .csv, .tsv etc.\n[x] .json (custom parser must be built)\n[x] .html (custom parser must be built)\n[x] .xml (custom parser must be built)\n[x] Binary formats\n[x] .pdf (through external program pdftotext from libpoppler)\n[ ] Compressed files (.tar, .zip, .gz, etc.)\n[ ] Microsoft new .xml formats(.docx, .xlsx, etc.)\nEngine configuration:\n[x] Single file for multiple data configurations\n[x] Multiple files for data configurations\n[x] General engine configuration (~/.garamondrc.jl, gets re-compiled into Garamond at startup)\nSearch types:\nClassic Search:\nLanguage support:\n[x] Uniform language: query language same as doc language\n[ ] Different languages for query / docs\nWhere to search:\n[x] Document data\n[x] Document metadata\n[x] Document data + metadata\nHow to search for patterns:\n[x] exact match\n[x] regular expression\nDocument term importance\n[x] term frequency\n[x] tf-idf\n[x] BM25\nSuggestion support\n[x] BK Trees (through BKTrees.jl)\n[ ] Levenshtein automata\n[ ] SymSpell-like approaches\nSemantic Search:\nLanguage support:\n[x] Uniform language: query language same as doc language (English, German, Romanian)(\n[x] Different languages for query / docs (ALMOST English, German, Romanian; to test :))\nWhere to search:\n[x] Document data\n[x] Document metadata\n[x] Document data + metadata\nDocument embedding:\n[x] Bag of words\n[x] SIF (Smooth inverse frequency)\nEmbedding Vector libraries\n[x] Word2Vec\n[x] ConceptnetNumberbatch\n[x] GloVe\nSearch Models (for semantic vectors)\n[x] Naive i.e. cosine similarity\n[x] Brute-force \"tree\", uses Euclidean metrics\n[x] KD-tree, uses Euclidean metrics\n[x] HNSW, uses Euclidean metrics\nI/O Iterface\n[x] Server: communication through UNIX/Web sockets\n[x] CLI Client: input and output are STDIN and STDOUT (communication through Unix sockets)\n[x] HTTP Client: input and output are in a webpage (communication through Web sockets)\nEmbedding training support\n[x] Word2Vec (offline training)\n[x] GloVe (offline training)\n[ ] Conceptnet\nParallelism forms supported\n[x] Multi-threading (each corpus is searched withing a hardware thread; support is EXPERIMENTAL and it is disabled by default)\n[ ] Multi-core + task scheduling Dispatcher.jl for distributed corpora\n[ ] Cluster support\nOther:\n[x] Logging mechanism\n[x] Client/server functionality\n[x] Pretty version support :)The status of the features is as follows:[x] supported\n[ ] not available (yet)"
 },
 
 {
@@ -217,7 +209,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api/#Garamond.search-Union{Tuple{V}, Tuple{V,Any}} where V<:(Array{#s289,1} where #s289<:(Searcher{D,E,M} where D<:StringAnalysis.AbstractDocument where E where M<:Garamond.AbstractSearchData))",
+    "location": "api/#Garamond.search-Union{Tuple{V}, Tuple{V,Any}} where V<:(Array{#s304,1} where #s304<:(Searcher{D,E,M} where D<:StringAnalysis.AbstractDocument where E where M<:Garamond.AbstractSearchData))",
     "page": "API Reference",
     "title": "Garamond.search",
     "category": "method",
@@ -229,7 +221,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "Garamond.ERRORED_REQUEST",
     "category": "constant",
-    "text": "deconstruct_request(request)\n\nFunction that deconstructs a Garamond request received from a client into individual search engine operations and search parameters.\n\n\n\n\n\n"
+    "text": "Standard deconstructed request corresponding to an error request.\n\n\n\n\n\n"
 },
 
 {
@@ -273,7 +265,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api/#ConceptnetNumberbatch.embed_document-Union{Tuple{T}, Tuple{Union{ConceptNet{#s57,#s56,T} where #s56<:AbstractString where #s57<:Language, WordVectors{#s53,T,#s52} where #s52<:Integer where #s53<:AbstractString, WordVectors{#s55,T,#s54} where #s54<:Integer where #s55<:AbstractString},Dict{String,Int64},Array{String,1}}} where T<:AbstractFloat",
+    "location": "api/#ConceptnetNumberbatch.embed_document-Union{Tuple{T}, Tuple{Union{ConceptNet{#s288,#s59,T} where #s59<:AbstractString where #s288<:Language, WordVectors{#s56,T,#s55} where #s55<:Integer where #s56<:AbstractString, WordVectors{#s58,T,#s57} where #s57<:Integer where #s58<:AbstractString},Dict{String,Int64},Array{String,1}}} where T<:AbstractFloat",
     "page": "API Reference",
     "title": "ConceptnetNumberbatch.embed_document",
     "category": "method",
@@ -313,6 +305,22 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "api/#Garamond.deconstruct_request-Tuple{String}",
+    "page": "API Reference",
+    "title": "Garamond.deconstruct_request",
+    "category": "method",
+    "text": "deconstruct_request(request)\n\nFunction that deconstructs a Garamond request received from a client into individual search engine operations and search parameters.\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#Garamond.detect_language-Tuple{AbstractString}",
+    "page": "API Reference",
+    "title": "Garamond.detect_language",
+    "category": "method",
+    "text": "detect_language(text [; default=DEFAULT_LANGUAGE])\n\nDetects the language of a piece of text. Returns a language of type Languages.Language. If the text is empty of the confidence is low, return the default language.\n\n\n\n\n\n"
+},
+
+{
     "location": "api/#Garamond.garamond_log_formatter-NTuple{6,Any}",
     "page": "API Reference",
     "title": "Garamond.garamond_log_formatter",
@@ -321,11 +329,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api/#Garamond.get_parsing_function-Tuple{Symbol,Union{Nothing, Dict},Bool,String,String,Bool,Int64,UInt32,Bool}",
+    "location": "api/#Garamond.get_parsing_function-Tuple{Symbol,Union{Nothing, Dict},Bool,String,String,String,Bool,Int64,UInt32,Bool}",
     "page": "API Reference",
     "title": "Garamond.get_parsing_function",
     "category": "method",
-    "text": "get_parsing_function(args...)\n\nFunction that generates a parsing function from its input arguments and returns it.\n\nArguments\n\nparser::Symbol is the name of the parser\nparser_config::Union{Nothing, Dict} can contain optional configuration data for the parser (for delimited parsers)\nheader::Bool whether the file has a header or not (for delimited files only)\ndelimiter::String the delimiting character (for delimited files only)\nglobbing_pattern::String globbing pattern for gathering file lists from directories (for directory parsers only)\nbuild_summary::Bool whether to use a summary instead of the full document (for directory parsers only)\nsummary_ns::Int how many sentences to use in the summary (for directory parsers only)\nsummarization_strip_flags::UInt32 flags used to strip text before summarization (for directory parsers only)\nshow_progress::Bool whether to show the progress when loading files\n\nNote: parser must be in the keys of the PARSER_CONFIGS constant. The name       of the data parsing function is created as: :__parser_<parser> so,       the function name :__parser_delimited_format_1 corresponds to the       parser :delimited_format_1. The function must be defined apriori.\n\n\n\n\n\n"
+    "text": "get_parsing_function(args...)\n\nFunction that generates a parsing function from its input arguments and returns it.\n\nArguments\n\nparser::Symbol is the name of the parser\nparser_config::Union{Nothing, Dict} can contain optional configuration data for the parser (for delimited parsers)\nheader::Bool whether the file has a header or not (for delimited files only)\ndelimiter::String the delimiting character (for delimited files only)\nglobbing_pattern::String globbing pattern for gathering file lists from directories (for directory parsers only)\nlanguage::String the plain English name of the language; use \"auto\" for\n\ndocument-level language autodetection\n\nbuild_summary::Bool whether to use a summary instead of the full document (for directory parsers only)\nsummary_ns::Int how many sentences to use in the summary (for directory parsers only)\nsummarization_strip_flags::UInt32 flags used to strip text before summarization (for directory parsers only)\nshow_progress::Bool whether to show the progress when loading files\n\nNote: parser must be in the keys of the PARSER_CONFIGS constant. The name       of the data parsing function is created as: :__parser_<parser> so,       the function name :__parser_delimited_format_1 corresponds to the       parser :delimited_format_1. The function must be defined apriori.\n\n\n\n\n\n"
 },
 
 {
@@ -405,7 +413,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "Garamond.summarize",
     "category": "method",
-    "text": "summarize(sentences [;ns=1, flags=DEFAULT_SUMMARIZATION_FLAGS])\n\nBuild a summary of the text\'s sentences. The resulting summary will be a ns sentence document; each sentence is pre-procesed using the flags option.\n\n\n\n\n\n"
+    "text": "summarize(sentences [;ns=1, flags=DEFAULT_SUMMARIZATION_STRIP_FLAGS])\n\nBuild a summary of the text\'s sentences. The resulting summary will be a ns sentence document; each sentence is pre-procesed using the flags option.\n\n\n\n\n\n"
 },
 
 {
