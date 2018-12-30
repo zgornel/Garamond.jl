@@ -28,6 +28,7 @@ mutable struct SearchConfig
     data_path::String               # file/directory path for the data (depends on what the parser accepts)
     parser::Function                # parser function used to obtain corpus
     parser_config::Union{Nothing,Dict}  # parser configuration
+    language::String                # the corpus-level language (use "auto" for document-level autodetection)
     build_summary::Bool             # whether to summarize or not the documents
     summary_ns::Int                 # the number of sentences in the summary
     keep_data::Bool                 # whether to keep document data, metadata
@@ -62,11 +63,13 @@ SearchConfig(;
                                       false,
                                       DEFAULT_DELIMITER,
                                       DEFAULT_GLOBBING_PATTERN,
+                                      DEFAULT_LANGUAGE_STR,
                                       DEFAULT_BUILD_SUMMARY,
                                       DEFAULT_SUMMARY_NS,
                                       DEFAULT_SUMMARIZATION_STRIP_FLAGS,
                                       DEFAULT_SHOW_PROGRESS),
           parser_config=DEFAULT_PARSER_CONFIG,
+          language=DEFAULT_LANGUAGE_STR,
           build_summary=DEFAULT_BUILD_SUMMARY,
           summary_ns=DEFAULT_SUMMARY_NS,
           keep_data=DEFAULT_KEEP_DATA,
@@ -86,7 +89,7 @@ SearchConfig(;
           summarization_strip_flags=DEFAULT_SUMMARIZATION_STRIP_FLAGS) =
     # Call normal constructor
     SearchConfig(id, search, description, enabled, data_path,
-                 parser, parser_config,
+                 parser, parser_config, language,
                  build_summary, summary_ns, keep_data, stem_words,
                  count_type, heuristic,
                  embeddings_path, embeddings_library, embeddings_kind,
@@ -141,6 +144,7 @@ function load_search_configs(filename::AbstractString)
         sconfig.description = get(dconfig, "description", "")
         sconfig.enabled = get(dconfig, "enabled", false)
         sconfig.data_path = get(dconfig, "data_path", "")
+        sconfig.language = lowercase(get(dconfig, "language", DEFAULT_LANGUAGE_STR))
         sconfig.build_summary = get(dconfig, "build_summary", DEFAULT_BUILD_SUMMARY)
         sconfig.summary_ns = get(dconfig, "summary_ns", DEFAULT_SUMMARY_NS)
         sconfig.keep_data = get(dconfig, "keep_data", DEFAULT_KEEP_DATA)
@@ -175,6 +179,7 @@ function load_search_configs(filename::AbstractString)
                                               header,
                                               delimiter,
                                               globbing_pattern,
+                                              sconfig.language,
                                               sconfig.build_summary,
                                               sconfig.summary_ns,
                                               sconfig.summarization_strip_flags,
@@ -200,6 +205,12 @@ function load_search_configs(filename::AbstractString)
             @warn "$(sconfig.id) Missing data, ignoring search configuration..."
             push!(removable, i)  # if there is no data file, cannot search
             continue
+        end
+        # language
+        if !(sconfig.language in [LANG_TO_STR[_lang] for _lang in SUPPORTED_LANGUAGES] ||
+             sconfig.language == "auto")
+            @warn "$(sconfig.language) Defaulting language=$DEFAULT_LANGUAGE_STR."
+            sconfig.language = DEFAULT_LANGUAGE_STR
         end
         # summary_ns i.e. the number of sentences in a summary
         if !(typeof(sconfig.summary_ns) <: Integer) || sconfig.summary_ns <= 0
@@ -308,6 +319,8 @@ returns it.
   * `delimiter::String` the delimiting character (for delimited files only)
   * `globbing_pattern::String` globbing pattern for gathering file lists
     from directories (for directory parsers only)
+  * `language::String` the plain English name of the language; use "auto" for
+  document-level language autodetection
   * `build_summary::Bool` whether to use a summary instead of the full document
     (for directory parsers only)
   * `summary_ns::Int` how many sentences to use in the summary (for directory
@@ -326,6 +339,7 @@ function get_parsing_function(parser::Symbol,
                               header::Bool,
                               delimiter::String,
                               globbing_pattern::String,
+                              language::String,
                               build_summary::Bool,
                               summary_ns::Int,
                               summarization_strip_flags::UInt32,
@@ -342,6 +356,7 @@ function get_parsing_function(parser::Symbol,
                                 header=header,
                                 delimiter=delimiter,
                                 globbing_pattern=globbing_pattern,
+                                language=language,
                                 build_summary=build_summary,
                                 summary_ns=summary_ns,
                                 summarization_strip_flags=

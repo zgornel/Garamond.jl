@@ -121,3 +121,4 @@ const SUPPORTED_LANGUAGES=[Languages.English,
                            Languages.French,
                            Languages.Italian]
 const DEFAULT_LANGUAGE=Languages.English
+const DEFAULT_LANGUAGE_STR=LANG_TO_STR[DEFAULT_LANGUAGE]

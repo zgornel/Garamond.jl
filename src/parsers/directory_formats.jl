@@ -40,6 +40,7 @@ end
 function __parser_directory_format_1(directory::AbstractString,
                                      config=nothing;  # not used
                                      globbing_pattern::String=DEFAULT_GLOBBING_PATTERN,
+                                     language::String=DEFAULT_LANGUAGE_STR,
                                      build_summary::Bool=DEFAULT_BUILD_SUMMARY,
                                      summary_ns::Int=DEFAULT_SUMMARY_NS,
                                      summarization_strip_flags::UInt32=
@@ -97,10 +98,14 @@ function __parser_directory_format_1(directory::AbstractString,
         end
         documents[i] = sentences
         # Language detection (from 3 sentences max)
-        some_text = join(sentences[1:min(3, length(sentences))], " ")
-        language = detect_language(some_text)
+        if language == "auto"
+            some_text = join(sentences[1:min(3, length(sentences))], " ")
+            lang = detect_language(some_text)
+        else
+            lang = get(STR_TO_LANG, language, DEFAULT_LANGUAGE)()  # instantiate as well
+        end
         # Add some real metadata
-        metadata_vector[i] = DocumentMetadata(language, ["" for _ in 1:9]...)
+        metadata_vector[i] = DocumentMetadata(lang, ("" for _ in 1:9)...)
         setfield!(metadata_vector[i], :name, readuntil(file,"\n"))  # set name the first line
         setfield!(metadata_vector[i], :id, file)  # set id the filename
         # Update progressbar
