@@ -15,17 +15,16 @@ Garamond is under development ...¯\\_(ツ)_/¯. For more information, visit the
 ## Backlog
 
 ### Short term
-- Fat binary compilation (binaries for server and clients)
-- Add actual support for supported Languages (English, German, Romanian)
-- Check whether adding support in `Languages.jl` for French, Italian
-- Take metadata search seriously (i.e. decide on facets, what fields to use/index etc)
-- Take testing seriously
-- Build scoring function (normalize document scores, map non-linearly to arbitrary scale)
-- Improve re-indexing mechanism (i.e. @spawn worker, use incremental approach)
-- Improve speed for suggestions, re-visit mechanism
-- Implement influence of search key-term hit-rate (=how many terms found in query)
-- Implement mechanism for query expansion
-- Define (decide on) mechanisms to combine semantic and classic searches (i.e. classic for filtering, semantic for ordering)
+- High priority
+    - Fat binary compilation (binaries for server and clients)
+    - Take testing seriously
+    - Take metadata search seriously (i.e. decide on facets, what fields to use/index etc)
+    - Take scoring seriously (build scoring function i.e. normalize document scores, map non-linearly to arbitrary scale; add influence of key-term hit-rate i.e. terms in query found)
+- Low priority
+    - Improve re-indexing mechanism (i.e. @spawn worker, use incremental approach)
+    - Improve speed for suggestions, re-visit mechanism
+    - Implement mechanism for query expansion
+    - Define (decide on) mechanisms to combine semantic and classic searches (i.e. classic for filtering, semantic for ordering)
 
 ### Long term
 - Data gathering: web crawler (either implement or support), data streaming sink APIs (should be in distinct support packages)
