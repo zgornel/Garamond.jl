@@ -37,7 +37,7 @@ end
 ########################
 # Main client function #
 ########################
-function main()
+Base.@ccallable function main(ARGS::Vector{String})::Cint
     # Parse command line arguments
     args = get_web_socket_client_arguments(ARGS)
     # Logging
@@ -236,6 +236,6 @@ end
 ##############
 # Run client #
 ##############
-main()
+main(ARGS)
 
 end  # GaramondWebClient

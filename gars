@@ -42,7 +42,7 @@ end
 ########################
 # Main module function #
 ########################
-function main()
+Base.@ccallable function main(ARGS::Vector{String})::Cint
     # Parse command line arguments
     args = get_server_commandline_arguments(ARGS)
     # Get the argument values
@@ -68,6 +68,6 @@ end
 ################################
 # Start main Garamond function #
 ################################
-main()
+main(ARGS)
 
 end # GaramondServer
