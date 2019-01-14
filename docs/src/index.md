@@ -4,11 +4,9 @@ CurrentModule=Garamond
 
 # Introduction
 
-Garamond is a search engine that supports both classical and semantic search. It is designed to be used both as a Julia package, with search functionality available through API method calls, as well as a standalone search server with search functionality accessible through clients that connect to and query the server.
+Garamond is a semantic search engine. Both classical and semantic search are supported. It is designed to be used both as a Julia package, with search functionality available through API method calls, as well as a standalone search server with search functionality accessible through clients that send queries and receive search results to and from the server.
 
 ## Installation
-
-Installation can be performed in several ways.
 
 ### Git cloning
 The `Garamond` repository can be downloaded through git:
@@ -21,7 +19,7 @@ The repository can also be downloaded from inside Julia. Entering the Pkg mode w
 ```
 add https://github.com/zgornel/Garamond.jl#master
 ```
-will download the `master` branch of the repository and add it to the current active development environment.
+This downloads the `master` branch of the repository and adds `Garamond` to the current active environment.
 
 ## Simple usage example
 

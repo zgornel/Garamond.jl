@@ -4,7 +4,6 @@ This is a list of the features supported by Garamond.
 
 - Document Indexing/Modelling:
     - [x] Summarization support (index [TextRank](https://en.wikipedia.org/wiki/Automatic_summarization#Unsupervised_approach:_TextRank)-based summary)
-    - [ ] Parallelism: green light or hardware threads
     - [x] Basic update or 're-indexing' support
     - [x] Single file support (parts of the file are treated as documents)
     - [x] Multiple files / directory support (a file is a document)
@@ -66,10 +65,6 @@ This is a list of the features supported by Garamond.
         - [x] Server: communication through UNIX/Web sockets
         - [x] CLI Client: input and output are STDIN and STDOUT (communication through Unix sockets)
         - [x] HTTP Client: input and output are in a webpage (communication through Web sockets)
-    - Embedding training support
-        - [x] Word2Vec (offline training)
-        - [x] GloVe (offline training)
-        - [ ] Conceptnet
     - Parallelism forms supported
         - [x] Multi-threading (each corpus is searched withing a hardware thread; support is EXPERIMENTAL and it is _disabled_ by default)
         - [ ] Multi-core + task scheduling [Dispatcher.jl](https://github.com/invenia/Dispatcher.jl) for distributed corpora
@@ -77,9 +72,10 @@ This is a list of the features supported by Garamond.
 - Other:
     - [x] Logging mechanism
     - [x] Client/server functionality
+    - [x] Compilable
     - [x] Pretty version support :)
 
 
 The status of the features is as follows:
 - [x] supported
-- [ ] not available (yet)
+- [ ] planned

@@ -1,0 +1,3 @@
+# Building
+
+Garamond can be compiled by running the `build/make.jl` script. To be continued...
