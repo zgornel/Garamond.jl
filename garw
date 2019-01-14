@@ -21,11 +21,11 @@ function get_web_socket_client_arguments(args::Vector{String})
         "--web-socket-port", "-w"
             help = "WEB socket data communication port"
             arg_type = UInt16
-            required = true
+            default = UInt16(0)
         "--http-port", "-p"
             help = "HTTP port for the http server"
             arg_type = Int
-            default = 9999
+            default = 8888
         "--web-page"
             help = "Search web page to serve"
             arg_type = String
@@ -37,7 +37,7 @@ end
 ########################
 # Main client function #
 ########################
-Base.@ccallable function main(ARGS::Vector{String})::Cint
+Base.@ccallable function julia_main(ARGS::Vector{String})::Cint
     # Parse command line arguments
     args = get_web_socket_client_arguments(ARGS)
     # Logging
@@ -52,27 +52,27 @@ Base.@ccallable function main(ARGS::Vector{String})::Cint
     # Start client
     @debug "~ GARAMOND~ (web-socket client)"
     ws_port = args["web-socket-port"]
-    if ws_port <= 0
-        @error "$ws_port is not a valid value for a web-socket."
-    end
-    # Get web page
-    webpage_file = args["web-page"]
-    if webpage_file != nothing && isfile(webpage_file)
-        webpage = read(webpage_file, String)
-    else
-        webpage = _default_webpage(ws_port)
-    end
-    # Start HTTP server
-    http_port = args["http-port"]
-    _handler(request::HTTP.Request) = begin
-        try
-            return HTTP.Response(200, webpage)
-        catch e
-            return HTTP.Response(404, "Error: $e")
+    if ws_port > 0
+        # Get web page
+        webpage_file = args["web-page"]
+        if webpage_file != nothing && isfile(webpage_file)
+            webpage = read(webpage_file, String)
+        else
+            webpage = _default_webpage(ws_port)
         end
+        # Start HTTP server
+        http_port = args["http-port"]
+        _handler(request::HTTP.Request) = begin
+            try
+                return HTTP.Response(200, webpage)
+            catch e
+                return HTTP.Response(404, "Error: $e")
+            end
+        end
+        HTTP.serve(host=ip"127.0.0.1", port=http_port, handler=_handler)
+    else
+        @warn "Wrong web-socket port value $ws_port (default is 0). Exiting..."
     end
-    HTTP.serve(host=ip"127.0.0.1", port=http_port, handler=_handler)
-
     return 0
 end
 
@@ -236,6 +236,6 @@ end
 ##############
 # Run client #
 ##############
-main(ARGS)
+julia_main(ARGS)
 
 end  # GaramondWebClient
