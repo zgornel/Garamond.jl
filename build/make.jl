@@ -7,11 +7,12 @@ const PROJECT = "\"Garamond\""
 const BASEDIR = @__DIR__                                                # base directory
 const BUILD_DIR = abspath(joinpath(BASEDIR, "bin"))                     # build directory
 const TARGETS = ["gars", "garc", "garw"]                                # files to be compiles
-const TARGETS_PATH = abspath.(joinpath.(BASEDIR, "..", "src", TARGETS)) # full path to the targes
-# Packages that need be specified by url, revision (i.e. unregistered, custom branches)
+const TARGETS_PATH = abspath.(joinpath.(BASEDIR, "..", TARGETS))        # full path to the targes
 const REQUIRED_PACKAGES = ["SnoopCompile", "PackageCompiler"]           # Base required packages
-const PACKAGE_REVS = Dict("HSWN"=>("https://github.com/zgornel/HNSW.jl", "master"),
-                          "Word2Vec"=>("https://github.com/zgornel/Word2Vec.jl", "latest"))
+const PACKAGE_REVS = Dict(                                              # Packag revisions/branches/etc
+    "HNSW"=>("https://github.com/zgornel/HNSW.jl", "master"),
+    "Word2Vec"=>("https://github.com/zgornel/Word2Vec.jl", "latest"),
+    "Distances"=>("https://github.com/zgornel/Distances.jl", "fixes"))
 
 
 ##############
@@ -21,6 +22,7 @@ const PACKAGE_REVS = Dict("HSWN"=>("https://github.com/zgornel/HNSW.jl", "master
 # Check that the upper directory has a Project.toml and the project is Garamond
 project_file = joinpath(BASEDIR, "..", "Project.toml")
 if isfile(project_file)
+    local key_name, project_name
     try
         key_name, project_name = strip.(split(readline(project_file), "="))
     catch
@@ -43,7 +45,7 @@ if !isfile(manifest_file)
 end
 
 # Check that all targets exist
-for target in TARGETS
+for target in TARGETS_PATH
     if !isfile(target)
         @warn "Could not find $target. Exiting..."
         exit()
@@ -77,6 +79,7 @@ catch e
 end
 @info "Dependencies are: $REQUIRED_PACKAGES"
 Pkg.activate()  # reactivate default environment
+Pkg.update()
 for pkg in REQUIRED_PACKAGES
     if  !(pkg in keys(Pkg.installed()))
         if pkg in keys(PACKAGE_REVS)
