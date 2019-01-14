@@ -1,6 +1,5 @@
 # Short term
 - High priority
-    - Fat binary compilation (binaries for server and clients)
     - Take testing seriously
     - Take metadata search seriously (i.e. decide on facets, what fields to use/index etc)
     - Take scoring seriously (build scoring function i.e. normalize document scores, map non-linearly to arbitrary scale; add influence of key-term hit-rate i.e. terms in query found)
