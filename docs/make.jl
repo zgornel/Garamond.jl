@@ -7,7 +7,7 @@ push!(LOAD_PATH,"../src/")
 makedocs(
     modules = [Garamond],
     format = Documenter.HTML(),
-    sitename = "Garamond.jl",
+    sitename = " ",
     authors = "Corneliu Cofaru, 0x0α Research",
     clean = true,
     debug = true,

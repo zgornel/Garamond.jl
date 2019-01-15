@@ -2,12 +2,12 @@
 
 This is a list of the features supported by Garamond.
 
-- Document Indexing/Modelling:
+- Document indexing
     - [x] Summarization support (index [TextRank](https://en.wikipedia.org/wiki/Automatic_summarization#Unsupervised_approach:_TextRank)-based summary)
     - [x] Basic update or 're-indexing' support
     - [x] Single file support (parts of the file are treated as documents)
     - [x] Multiple files / directory support (a file is a document)
-    - [x] File format support:
+    - [x] File format support
         - [x] Text formats
             - [x] `.csv`, `.tsv` etc.
             - [x] `.json` (custom parser must be built)
@@ -17,20 +17,20 @@ This is a list of the features supported by Garamond.
             - [x] `.pdf` (through external program `pdftotext` from [libpoppler](https://poppler.freedesktop.org/))
             - [ ] Compressed files (`.tar`, `.zip`, `.gz`, etc.)
             - [ ] Microsoft [new .xml formats(`.docx`, `.xlsx`, etc.)](https://docs.microsoft.com/en-us/office/open-xml/open-xml-sdk)
-- Engine configuration:
+- Configuration
     - [x] Single file for multiple data configurations
     - [x] Multiple files for data configurations
     - [x] General engine configuration (`~/.garamondrc.jl`, gets re-compiled into Garamond at startup)
-- Search types:
-    - Classic Search:
-        - Language support:
+- Search types
+    - Classic Search
+        - Language support
             - [x] Uniform language: query language same as doc language
             - [ ] Different languages for query / docs
-        - Where to search:
+        - Where to search
             - [x] Document data
             - [x] Document metadata
             - [x] Document data + metadata
-        - How to search for patterns:
+        - How to search for patterns
             - [x] exact match
             - [x] regular expression
         - Document term importance
@@ -41,18 +41,18 @@ This is a list of the features supported by Garamond.
             - [x] [BK Trees](https://en.wikipedia.org/wiki/BK-tree) (through [BKTrees.jl](https://github.com/zgornel/BKTrees.jl))
             - [ ] [Levenshtein automata](https://en.wikipedia.org/wiki/Levenshtein_automaton)
             - [ ] [SymSpell-like approaches](https://github.com/mammothb/symspellpy)
-    - Semantic Search:
-        - Language support:
-            - [x] Uniform language: query language same as doc language (English, German, Romanian)(
-            - [x] Different languages for query / docs (**ALMOST** English, German, Romanian; to test :))
-        - Where to search:
+    - Semantic Search
+        - Language support
+            - [x] Uniform language: query language same as doc language
+            - [ ] Different languages for query / docs
+        - Where to search
             - [x] Document data
             - [x] Document metadata
             - [x] Document data + metadata
-        - Document embedding:
+        - Document embedding
             - [x] Bag of words
             - [x] [SIF (Smooth inverse frequency)](https://openreview.net/pdf?id=SyK00v5xx)
-        - Embedding Vector libraries
+        - Word embeddings
             - [x] [Word2Vec](https://en.wikipedia.org/wiki/Word2vec)
             - [x] [ConceptnetNumberbatch](https://github.com/commonsense/conceptnet-numberbatch)
             - [x] [GloVe](https://nlp.stanford.edu/projects/glove/)
@@ -69,7 +69,7 @@ This is a list of the features supported by Garamond.
         - [x] Multi-threading (each corpus is searched withing a hardware thread; support is EXPERIMENTAL and it is _disabled_ by default)
         - [ ] Multi-core + task scheduling [Dispatcher.jl](https://github.com/invenia/Dispatcher.jl) for distributed corpora
         - [ ] Cluster support
-- Other:
+- Other
     - [x] Logging mechanism
     - [x] Client/server functionality
     - [x] Compilable

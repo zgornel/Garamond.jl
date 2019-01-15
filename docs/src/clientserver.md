@@ -1,4 +1,4 @@
-# Running Garamond in server/client mode
+# Search server and clients
 
 Garamond is designed as a [client-server architecture](http://catb.org/~esr/writings/taoup/html/ch11s06.html#id2958899) in which the server receives queries, performs the search action and returns the results to a client that handles the interaction. The client can be either human or machine controlled. There are three utilities designed to handle the search process, all of which can be found in the root directory of the package:
 - **gars** - starts the search server. The operations performed by the search engine server at this point are indexing data at a given location and listening to a socket.
