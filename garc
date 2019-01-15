@@ -25,15 +25,15 @@ function get_unix_socket_client_arguments(args::Vector{String})
 	@add_arg_table s begin
         "query"
             help = "the search query"
-            required = true
+            arg_type = String
             default = ""
         "--log-level"
             help = "logging level"
             default = "warn"
         "--unix-socket", "-u"
             help = "UNIX socket for data communication"
+            default = ""
             arg_type = String
-            required = true
         "--pretty"
             help = "output is a pretty print of the results"
             action = :store_true
@@ -132,7 +132,7 @@ deconstruct_response(response) = response
 ########################
 # Main client function #
 ########################
-function main()
+Base.@ccallable function julia_main(ARGS::Vector{String})::Cint
     # Parse command line arguments
     args = get_unix_socket_client_arguments(ARGS)
     # Logging
@@ -146,23 +146,24 @@ function main()
     # Start client
     @debug "~ GARAMOND~ (unix-socket client)"
     unixsocket = args["unix-socket"]
-    if !issocket(unixsocket)
-        @error "$unixsocket is not a proper UNIX socket."
-    end
-    conn = connect(unixsocket)
-    # Construct Garamond request
-    if isempty(args["query"])
-        @warn "Empty query, nothing to search, exiting..."
+    if issocket(unixsocket)
+        conn = connect(unixsocket)
+        # Construct Garamond request
+        if isempty(args["query"])
+            @warn "Empty query, nothing to search. Exiting..."
+        else
+            request = construct_request(args["query"],
+                args["max-matches"], args["search-type"],
+                args["search-method"], args["max-suggestions"],
+                args["pretty"], args["kill"])
+            # Search
+            iosearch(conn, request, args["pretty"])
+        end
+        # Close connection and exit
+        close(conn)
     else
-        request = construct_request(args["query"],
-            args["max-matches"], args["search-type"],
-            args["search-method"], args["max-suggestions"],
-            args["pretty"], args["kill"])
-        # Search
-        iosearch(conn, request, args["pretty"])
+        @warn "$unixsocket is not a proper UNIX socket. Exiting..."
     end
-    # Close connection and exit
-    close(conn)
     return 0
 end
 
@@ -170,6 +171,6 @@ end
 ##############
 # Run client #
 ##############
-main()
+julia_main(ARGS)
 
 end  # GaramondCLIClient

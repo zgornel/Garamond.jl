@@ -78,9 +78,9 @@ version = "0.1.5"
 
 [[DataStructures]]
 deps = ["InteractiveUtils", "OrderedCollections", "Random", "Serialization", "Test"]
-git-tree-sha1 = "8fc6e166e24fda04b2b648d4260cdad241788c54"
+git-tree-sha1 = "ca971f03e146cf144a9e2f2ce59674f5bf0e8038"
 uuid = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
-version = "0.14.0"
+version = "0.15.0"
 
 [[Dates]]
 deps = ["Printf"]
@@ -91,8 +91,10 @@ deps = ["Mmap"]
 uuid = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 
 [[Distances]]
-deps = ["LinearAlgebra", "Printf", "Random", "Statistics", "Test"]
-git-tree-sha1 = "0e37d8a95bafbeb9c800ef27ab6f443d29e17610"
+deps = ["LinearAlgebra", "Statistics"]
+git-tree-sha1 = "8ed0a816fb3f2dec1adf1bd39c8241053cafa3f0"
+repo-rev = "fixes"
+repo-url = "https://github.com/zgornel/Distances.jl"
 uuid = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
 version = "0.7.4"
 
@@ -114,13 +116,13 @@ version = "0.1.1"
 
 [[HDF5]]
 deps = ["BinDeps", "Blosc", "CRC32c", "Distributed", "Homebrew", "Libdl", "LinearAlgebra", "Mmap", "Pkg", "Test", "WinRPM"]
-git-tree-sha1 = "2b55a7e957923fa15688c97e91198a3ff24155d2"
+git-tree-sha1 = "d1b46002defcf8be75ac75ce665b61b941082213"
 uuid = "f67ccb44-e63f-5c2f-98bd-6dc0ccc4ba2f"
-version = "0.10.3"
+version = "0.10.4"
 
 [[HNSW]]
-deps = ["Distances", "LightGraphs", "LinearAlgebra", "Reexport"]
-git-tree-sha1 = "ed331149592409b977bbd39193baa212092461b7"
+deps = ["Distances", "LinearAlgebra", "Reexport"]
+git-tree-sha1 = "a9aa4e2495245b9a03db019d77caaca68336a019"
 repo-rev = "master"
 repo-url = "https://github.com/zgornel/HNSW.jl"
 uuid = "540f64fa-c57e-11e8-081c-41422cda4629"
@@ -140,9 +142,9 @@ version = "0.2.1"
 
 [[Homebrew]]
 deps = ["BinDeps", "InteractiveUtils", "JSON", "Libdl", "Test", "Unicode"]
-git-tree-sha1 = "5582ec74f735cf8d12e562a2e65c47f34063bd51"
+git-tree-sha1 = "f01fb2f34675f9839d55ba7238bab63ebd2e531e"
 uuid = "d9be37ee-ecc9-5288-90f1-b9ca67657a75"
-version = "0.7.0"
+version = "0.7.1"
 
 [[Inflate]]
 deps = ["Pkg", "Printf", "Random", "Test"]
@@ -174,11 +176,9 @@ version = "0.20.0"
 
 [[Languages]]
 deps = ["JSON", "Test"]
-git-tree-sha1 = "4af230f39531380add43b8d768d58300b7b9cec3"
-repo-rev = "master"
-repo-url = "https://github.com/JuliaText/Languages.jl"
+git-tree-sha1 = "fc6ee05e35074a66dc12a716065a25d9deece6fb"
 uuid = "8ef0a80b-9436-5d2c-a485-80b904378c43"
-version = "0.4.1+"
+version = "0.4.2"
 
 [[LibCURL]]
 deps = ["BinaryProvider", "Compat", "Libdl", "Printf"]
@@ -238,9 +238,9 @@ uuid = "a63ad114-7e13-5084-954f-fe012c677804"
 
 [[NearestNeighbors]]
 deps = ["Distances", "LinearAlgebra", "Mmap", "StaticArrays", "Test"]
-git-tree-sha1 = "aab46b96ae5c2a9c08146188016d6312276094e5"
+git-tree-sha1 = "f47c5d97cf9a8caefa47e9fa9d99d8fda1a65154"
 uuid = "b8a86587-4115-5ab1-83bc-aa920d37bbce"
-version = "0.4.2"
+version = "0.4.3"
 
 [[OrderedCollections]]
 deps = ["Random", "Serialization", "Test"]
@@ -316,15 +316,21 @@ deps = ["LinearAlgebra", "SparseArrays"]
 uuid = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [[StringAnalysis]]
-deps = ["BinaryProvider", "Languages", "Libdl", "LinearAlgebra", "SparseArrays", "Statistics", "Test", "Unicode", "WordTokenizers"]
-git-tree-sha1 = "81f99e98875923bdfa1ccdfea50324c3c74bf431"
+deps = ["BinaryProvider", "Dates", "DelimitedFiles", "Languages", "Libdl", "LinearAlgebra", "Pkg", "SparseArrays", "Statistics", "TSVD", "Test", "Unicode", "WordTokenizers"]
+git-tree-sha1 = "9274a2d8bc95dec55b4175f417220528a4871d54"
 uuid = "b66b7d2f-f536-51df-9f97-4dfb9d27c005"
-version = "0.1.1"
+version = "0.3.0"
 
 [[StringDistances]]
 deps = ["Distances", "IterTools", "Test"]
 git-tree-sha1 = "41fddd579b75e0cd0d1bbdb2d68a2a9cc588c164"
 uuid = "88034a9c-02f8-509d-84a9-84ec65e18404"
+version = "0.3.0"
+
+[[TSVD]]
+deps = ["LinearAlgebra", "SparseArrays", "Test"]
+git-tree-sha1 = "714329116fe2765856c018791470dcc1549f49e4"
+uuid = "9449cd9e-2762-5aa3-a617-5413e99d722e"
 version = "0.3.0"
 
 [[Test]]

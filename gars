@@ -19,7 +19,6 @@ function get_server_commandline_arguments(args::Vector{String})
 	@add_arg_table s begin
         "--data-config", "-d"
             help = "data configuration file"
-            required = true
             action = :append_arg
         "--log-level"
             help = "logging level"
@@ -42,7 +41,7 @@ end
 ########################
 # Main module function #
 ########################
-function main()
+Base.@ccallable function julia_main(ARGS::Vector{String})::Cint
     # Parse command line arguments
     args = get_server_commandline_arguments(ARGS)
     # Get the argument values
@@ -54,13 +53,19 @@ function main()
     # Select one entry point
     unixsocket = args["unix-socket"]
     ws_port = args["web-socket-port"]
-    if unixsocket == nothing && ws_port == nothing
-        @error """At least a UNIX-socket or WEB-socket port has to
-                  be specified through the -u and -p switches."""
-    end
     # Start Server #
     data_config_paths = String.(args["data-config"])
-    Garamond.search_server(data_config_paths, unixsocket, ws_port)
+    if !isempty(data_config_paths)
+        if unixsocket != nothing || ws_port != nothing
+            Garamond.search_server(data_config_paths, unixsocket, ws_port)
+        else
+            @warn """At least a UNIX-socket or WEB-socket port have to be
+                     specified through the -u and -p switches. Exiting..."""
+        end
+    else
+        @warn """At least one data configuration file has to be provided
+                 through the -d option. Exiting..."""
+    end
     return 0
 end
 
@@ -68,6 +73,6 @@ end
 ################################
 # Start main Garamond function #
 ################################
-main()
+julia_main(ARGS)
 
 end # GaramondServer
