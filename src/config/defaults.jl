@@ -15,7 +15,7 @@ const DEFAULT_EMBEDDINGS_KIND = :binary  # can be :binary or :text
 const DEFAULT_DOC2VEC_METHOD = :bow  # can be :bow or :sif
 const DEFAULT_SEARCH_TYPE = :data  # can be :data or :metadata
 const DEFAULT_SEARCH_METHOD = :exact  #can be :exact or :regex
-const DEFAULT_HEURISTIC = :hamming
+const DEFAULT_HEURISTIC = nothing #  i.e. :hamming, :levenshtein (nothing for no suggestions)
 # Various document parsing constants
 const DEFAULT_PARSER = :no_parse
 const DEFAULT_GLOBBING_PATTERN = "*"  # Can be any regexp-like pattern
@@ -63,7 +63,7 @@ const HEURISTIC_TO_DISTANCE = Dict(  # heuristic to distance object mapping
     :dameraulevenshtein => StringDistances.DamerauLevenshtein(),
     :hamming => StringDistances.Hamming(),
     :jaro => StringDistances.Jaro())
-const DEFAULT_DISTANCE = HEURISTIC_TO_DISTANCE[DEFAULT_HEURISTIC]  # default distance
+const DEFAULT_DISTANCE = HEURISTIC_TO_DISTANCE[:jaro]  # default distance
 const DEFAULT_PARSER_CONFIG = nothing
 const DEFAULT_METADATA_FIELDS = [:author, :name, :note]  # Default metadata fields for search
 # Dictionaries for String <=>Languages.Language / Languages.Languages <=> String

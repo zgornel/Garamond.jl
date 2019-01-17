@@ -4,7 +4,7 @@
 Updates a Searcher from using its SearchConfig.
 """
 #TODO(Corneliu): Make this efficient
-function update(searcher::T) where T<:AbstractSearcher
+function update(searcher::T) where T<:Searcher
     sconf = searcher.config
     @debug "Updating searcher $(sconf.id)..."
     return build_searcher(sconf)::T
@@ -25,7 +25,7 @@ Function that regularly updates the `searchers` at each
 function updater(searchers::Vector{S};
                  channel=Channel{Vector{S}}(0),
                  update_interval::Float64=DEFAULT_SEARCHER_UPDATE_INTERVAL
-                ) where S<:AbstractSearcher
+                ) where S<:Searcher
     if update_interval==Inf
         # Task exits and the searcher update channel in the
         # Garamond FSM will never be ready ergo, no update.

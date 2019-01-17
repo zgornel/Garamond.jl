@@ -11,7 +11,7 @@ The function returns the search results in the form of
 a `Vector{SearchResult}`.
 
 # Arguments
-  * `srcher::AbstractVector{AbstractSearcher}` is the corpora searcher
+  * `srcher::AbstractVector{Searcher}` is the corpora searcher
   * `query` the query
 
 # Keyword arguments
@@ -34,7 +34,7 @@ function search(srchers::V,
                 max_matches::Int=MAX_MATCHES,
                 max_corpus_suggestions::Int=MAX_CORPUS_SUGGESTIONS) where
         {V<:Vector{<:Searcher{D,E,M} where D<:AbstractDocument
-                   where E where M<:AbstractSearchData}}
+                   where E where M<:AbstractSearchModel}}
     # Checks
     @assert search_type in [:data, :metadata, :all]
     @assert search_method in [:exact, :regex]

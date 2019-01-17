@@ -1,15 +1,12 @@
 ######################################
 # Word embeddings related structures #
 ######################################
-abstract type AbstractEmbeddingModel <: AbstractSearchData
-end
-
 """
 Naive model type for storing text embeddings. It is a wrapper
 around a matrix of embeddings and performs brute search using
 the cosine similarity between vectors.
 """
-struct NaiveEmbeddingModel{E} <: AbstractEmbeddingModel
+struct NaiveEmbeddingModel{E} <: AbstractSearchModel
     data::Matrix{E}
 end
 
@@ -19,7 +16,7 @@ BruteTree model type for storing text embeddings. It is a wrapper
 around a `BruteTree` NN structure and performs brute search using
 a distance-based similarity between vectors.
 """
-struct BruteTreeEmbeddingModel{A,D} <: AbstractEmbeddingModel
+struct BruteTreeEmbeddingModel{A,D} <: AbstractSearchModel
     tree::BruteTree{A,D}  # Array, Distance and Element types
 end
 
@@ -32,7 +29,7 @@ K-D Tree model type for storing text embeddings. It is a wrapper
 around a `KDTree` NN structure and performs a more efficient
 search using a distance-based similarity between vectors.
 """
-struct KDTreeEmbeddingModel{A,D} <: AbstractEmbeddingModel
+struct KDTreeEmbeddingModel{A,D} <: AbstractSearchModel
     tree::KDTree{A,D}
 end
 
@@ -49,7 +46,7 @@ similarity between vectors.
     neighbor search using Hierarchical Navigable Small World graphs"
     (https://arxiv.org/abs/1603.09320)
 """
-struct HNSWEmbeddingModel{I,E,A,D} <: AbstractEmbeddingModel
+struct HNSWEmbeddingModel{I,E,A,D} <: AbstractSearchModel
     tree::HierarchicalNSW{I,E,A,D}
 end
 
@@ -277,4 +274,22 @@ function embed_document(word_vectors::Union{Word2Vec.WordVectors{S1,T,H},
         println("Mismatched words: $(tokens[missing_tokens])")
     end
     return embedding, missing_tokens
+end
+
+# Replicate ConceptnetNumberbatch embed_document function
+function embed_document(conceptnet::ConceptNet{L,K,E},
+                        document_tokens::Vector{S};
+                        language=Languages.English(),
+                        keep_size::Bool=true,
+                        compound_word_separator::String="_",
+                        max_compound_word_length::Int=1,
+                        wildcard_matching::Bool=false,
+                        print_matched_words::Bool=false
+                       ) where {L<:Language, K, E<:Real, S<:AbstractString}
+    return ConceptnetNumberbatch.embed_document(conceptnet, document_tokens,
+                language=language, keep_size=keep_size,
+                compound_word_separator=compound_word_separator,
+                max_compound_word_length=max_compound_word_length,
+                wildcard_matching=wildcard_matching,
+                print_matched_words=print_matched_words)
 end

@@ -40,10 +40,10 @@ mutable struct SearchConfig
     search_model::Symbol            # type of the search model i.e. :naive, :kdtree, :hnsw
     embeddings_path::Union{Nothing, String}  # path to the embeddings file
     embeddings_kind::Symbol         # Type of the embedding file for Word2Vec, GloVe i.e. :text, :binary
-    doc2vec_method::Symbol          # How to arrive at a single embedding from multiple i.e. :bow, :sif (semantic search)
+    doc2vec_method::Symbol          # How to arrive at a single embedding from multiple i.e. :bow, :sif
     glove_vocabulary::Union{Nothing, String}  # Path to a GloVe-generated vocabulary file (only for binary embeddings)
     # other
-    heuristic::Symbol               # search heuristic for recommendtations (classic search)
+    heuristic::Union{Nothing, Symbol} #search heuristic for suggesting mispelled words (nothing means no recommendations)
     # text stripping flags
     text_strip_flags::UInt32        # How to strip text data before indexing
     metadata_strip_flags::UInt32    # How to strip text metadata before indexing
@@ -171,7 +171,11 @@ function load_search_configs(filename::AbstractString)
         sconfig.embeddings_kind = Symbol(get(dconfig, "embeddings_kind", DEFAULT_EMBEDDINGS_KIND))
         sconfig.doc2vec_method = Symbol(get(dconfig, "doc2vec_method", DEFAULT_DOC2VEC_METHOD))
         sconfig.glove_vocabulary= get(dconfig, "glove_vocabulary", nothing)
-        sconfig.heuristic = Symbol(get(dconfig, "heuristic", DEFAULT_HEURISTIC))
+        if haskey(dconfig, "heuristic")
+            sconfig.heuristic = Symbol(dconfig["heuristic"])
+        else
+            sconfig.heuristic = DEFAULT_HEURISTIC
+        end
         sconfig.text_strip_flags = UInt32(get(dconfig, "text_strip_flags", DEFAULT_TEXT_STRIP_FLAGS))
         sconfig.metadata_strip_flags = UInt32(get(dconfig, "metadata_strip_flags", DEFAULT_METADATA_STRIP_FLAGS))
         sconfig.query_strip_flags = UInt32(get(dconfig, "query_strip_flags", DEFAULT_QUERY_STRIP_FLAGS))
@@ -293,7 +297,7 @@ function load_search_configs(filename::AbstractString)
                 sconfig.doc2vec_method = DEFAULT_DOC2VEC_METHOD
             end
             # GloVe embeddings vocabulary (only for binary embedding files)
-            if  sconfig.vectors == :glove && sconfig.embeddings_kind == :binary
+            if sconfig.vectors == :glove && sconfig.embeddings_kind == :binary
                 if (sconfig.glove_vocabulary == nothing) ||
                         (sconfig.glove_vocabulary isa AbstractString && !isfile(sconfig.glove_vocabulary))
                     @warn "$(sconfig.id) Missing GloVe vocabulary file, ignoring search configuration..."
@@ -303,8 +307,8 @@ function load_search_configs(filename::AbstractString)
             end
         end
         # heuristic
-        if !(sconfig.heuristic in keys(HEURISTIC_TO_DISTANCE))
-            @warn "$(sconfig.id) Defaulting heuristic=$DEFAULT_HEURISTIC."
+        if !(typeof(sconfig.heuristic) <: Nothing) && !(sconfig.heuristic in keys(HEURISTIC_TO_DISTANCE))
+            @warn "$(sconfig.id) Defaulting heuristic=nothing."
             sconfig.heuristic = DEFAULT_HEURISTIC
         end
     end

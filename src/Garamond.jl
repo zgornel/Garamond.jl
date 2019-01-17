@@ -46,19 +46,16 @@ module Garamond
     import Base: size, length, show, keys, values, push!,
                  delete!, getindex, names, convert, lowercase,
                  occursin, isempty
-    import StringAnalysis: id
-    import ConceptnetNumberbatch: embed_document
+    import StringAnalysis: id, embed_document
     import Word2Vec: WordVectors
 
     # Abstract types
-    abstract type AbstractSearcher end
-    abstract type AbstractSearchData end
+    abstract type AbstractSearchModel end
 
     # Exports
     export
         search,
         load_searchers,
-        AbstractSearcher,
         Searcher,
         SearchConfig,
         SearchResult,
