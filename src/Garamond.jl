@@ -16,7 +16,7 @@
 #MXl'.    .,oXMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM#
 ##################################################################################################################
 #
-# ~Garamond~ - Search engine written at 0x0α Research by Corneliu Cofaru, 2018.
+# ~Garamond~ - Search engine written at 0x0α Research by Corneliu Cofaru, 2018, 2019.
 #
 module Garamond
 
