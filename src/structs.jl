@@ -124,8 +124,8 @@ function build_searcher(sconf::SearchConfig)
         sconf.vectors_transform == :lsa && (SubspaceModel = LSAModel; dims = sconf.vectors_dimension)
         embedder = Dict(:data => SubspaceModel(dtm, k=dims, stats=sconf.vectors),
                         :metadata => SubspaceModel(dtm_meta, k=dims, stats=sconf.vectors))
-        _srchdata = SearchModel(embed_document(embedder[:data], dtm)')
-        _srchdata_meta = SearchModel(embed_document(embedder[:metadata], dtm_meta)')
+        _srchdata = SearchModel(embed_document(embedder[:data], dtm))
+        _srchdata_meta = SearchModel(embed_document(embedder[:metadata], dtm_meta))
     # Semantic searcher
     elseif sconf.vectors in [:word2vec, :glove, :conceptnet]
         # Read word embeddings
