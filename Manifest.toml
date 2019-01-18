@@ -316,10 +316,12 @@ deps = ["LinearAlgebra", "SparseArrays"]
 uuid = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [[StringAnalysis]]
-deps = ["BinaryProvider", "Dates", "DelimitedFiles", "Languages", "Libdl", "LinearAlgebra", "Pkg", "SparseArrays", "Statistics", "TSVD", "Test", "Unicode", "WordTokenizers"]
-git-tree-sha1 = "e3424d71fa8e001e3831a83e1ff030b3b149abc5"
-uuid = "b66b7d2f-f536-51df-9f97-4dfb9d27c005"
-version = "0.3.1"
+deps = ["BinaryProvider", "Dates", "DelimitedFiles", "Languages", "Libdl", "LinearAlgebra", "SparseArrays", "Statistics", "TSVD", "Test", "Unicode", "WordTokenizers"]
+git-tree-sha1 = "bd69744e51685e512ff7eda67ae2d7fe87d8cd05"
+repo-rev = "master"
+repo-url = "https://github.com/zgornel/StringAnalysis.jl"
+uuid = "f2e5b97c-ed87-11e8-3fa8-a300efcc83e4"
+version = "0.3.2"
 
 [[StringDistances]]
 deps = ["Distances", "IterTools", "Test"]
@@ -370,11 +372,9 @@ version = "0.4.2"
 
 [[Word2Vec]]
 deps = ["LinearAlgebra", "Statistics", "Test"]
-git-tree-sha1 = "9a49490ac176409264cb71aa302e54a098702bb8"
-repo-rev = "latest"
-repo-url = "https://github.com/zgornel/Word2Vec.jl"
-uuid = "3e5e13d1-f1b1-11e8-0a34-b72730d7b11b"
-version = "0.0.3"
+git-tree-sha1 = "94d341dcb4a3844ab969b2c057f6a3423f930785"
+uuid = "c64b6f0f-98cd-51d1-af78-58ae84944834"
+version = "0.5.0"
 
 [[WordTokenizers]]
 deps = ["Test"]
