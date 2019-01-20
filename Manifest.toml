@@ -116,9 +116,9 @@ version = "0.1.1"
 
 [[HDF5]]
 deps = ["BinDeps", "Blosc", "CRC32c", "Distributed", "Homebrew", "Libdl", "LinearAlgebra", "Mmap", "Pkg", "Test", "WinRPM"]
-git-tree-sha1 = "d1b46002defcf8be75ac75ce665b61b941082213"
+git-tree-sha1 = "dd83e1e9c72e44e3a156438b552cf75dbdda722f"
 uuid = "f67ccb44-e63f-5c2f-98bd-6dc0ccc4ba2f"
-version = "0.10.4"
+version = "0.11.0"
 
 [[HNSW]]
 deps = ["Distances", "LinearAlgebra", "Reexport"]
@@ -317,7 +317,7 @@ uuid = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [[StringAnalysis]]
 deps = ["BinaryProvider", "Dates", "DelimitedFiles", "Languages", "Libdl", "LinearAlgebra", "SparseArrays", "Statistics", "TSVD", "Test", "Unicode", "WordTokenizers"]
-git-tree-sha1 = "bd69744e51685e512ff7eda67ae2d7fe87d8cd05"
+git-tree-sha1 = "731f6279ae5e5c90dab7c3fca8a352152f613c40"
 repo-rev = "master"
 repo-url = "https://github.com/zgornel/StringAnalysis.jl"
 uuid = "f2e5b97c-ed87-11e8-3fa8-a300efcc83e4"

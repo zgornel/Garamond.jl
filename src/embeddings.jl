@@ -30,7 +30,6 @@ squash(vv::Vector{Vector{T}}, m::Int) where T<:AbstractFloat = begin
 end
 
 
-
 """
     embed_document(embeddings_library, lexicon, document[; embedding_method])
 
@@ -83,7 +82,6 @@ function embed_document(embeddings_library::Union{
 end
 
 
-
 """
     smooth_inverse_frequency(document_embedding, lexicon, embedded_words)
 
@@ -112,14 +110,12 @@ function smooth_inverse_frequency(document_embedding::Vector{Matrix{T}},
             X[:,i] += 1/(length(s)) * (a/(a+p[w]) .* s[:,w])
         end
     end
-    u, _, _ = svd(X)
-    u = u[:,1]
+    u, _, _ = tsvd(X, 1)
     @inbounds @simd for i in 1:n
         X[:,i] -= u'u * X[:,i]
     end
     return X
 end
-
 
 
 """

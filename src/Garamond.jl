@@ -41,6 +41,7 @@ module Garamond
     using JSON
     using Glob
     using HTTP
+    using TSVD
 
     # Import section (extendable methods)
     import Base: size, length, show, keys, values, push!,
@@ -74,7 +75,7 @@ module Garamond
     include("structs.jl")
     include("srchmodels.jl")
     include("update.jl")
-    #include("search.jl")
+    include("search.jl")
     include("results.jl")
     include("servers.jl")
     include("version.jl")
