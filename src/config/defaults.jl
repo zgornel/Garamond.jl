@@ -120,3 +120,4 @@ const SUPPORTED_LANGUAGES=[Languages.English,
                            Languages.Italian]
 const DEFAULT_LANGUAGE=Languages.English
 const DEFAULT_LANGUAGE_STR=LANG_TO_STR[DEFAULT_LANGUAGE]
+const DEFAULT_TOKENIZER=:fast

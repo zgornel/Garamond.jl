@@ -31,7 +31,7 @@ end
 
 
 """
-    embed_document(embeddings_library, lexicon, document[; embedding_method])
+    embed_document(embedder, lexicon, document[; embedding_method])
 
 Function to get from multiple sentencea to a document embedding.
 The `embedding_method` option controls how multiple sentence embeddings
@@ -41,23 +41,24 @@ Avalilable options for `embedding_method`:
     :sif - smooth-inverse-frequency subtracts paragraph/phrase vector
            from each sentence embedding
 """
-function embed_document(embeddings_library::Union{
+function embed_document(embedder::Union{
                             ConceptNet{<:Languages.Language, <:AbstractString, T},
                             Word2Vec.WordVectors{<:AbstractString, T, <:Integer},
                             Glowe.WordVectors{<:AbstractString, T, <:Integer}},
                         lexicon::Dict{String, Int},
                         document::Vector{String};  # a vector of sentences
-                        embedding_method::Symbol=DEFAULT_EMBEDDING_METHOD
+                        embedding_method::Symbol=DEFAULT_DOC2VEC_METHOD,
+                        isregex::Bool=false  # not used
                        ) where T<:AbstractFloat
     # Initializations
     n = length(document)
-    m = size(embeddings_library)[1]  # number of vector components
+    m = size(embedder)[1]  # number of vector components
     embedded_words = Vector{Vector{String}}(undef, n)
     sentence_embeddings = Vector{Matrix{T}}(undef, n)
     # Embed sentences individually
     @inbounds for i in 1:n
         words = tokenize_fast(document[i])
-        _embs, _mtoks = embed_document(embeddings_library,
+        _embs, _mtoks = embed_document(embedder,
                                        words,
                                        keep_size=false,
                                        max_compound_word_length=1,
@@ -79,6 +80,22 @@ function embed_document(embeddings_library::Union{
     else
         return squash(squash.(sentence_embeddings),m)
     end
+end
+
+# Classic search method i.e. tf, tfidf, bm25 and possibly lsa or random projections
+function embed_document(embedder::Union{RPModel{S,T,A,H}, LSAModel{S,T,A,H}},
+                        lexicon::Dict{S, Int},
+                        document::Vector{String};  # a vector of sentences
+                        embedding_method::Symbol=DEFAULT_DOC2VEC_METHOD,  # not used
+                        isregex::Bool = false
+                       ) where {S<:AbstractString, T<:AbstractFloat, A<:AbstractMatrix{T}, H<:Integer}
+    if isregex
+        v = dtv_regex(document, embedder.vocab_hash, T, tokenizer=DEFAULT_TOKENIZER)
+    else
+        v = dtv(document, embedder.vocab_hash, T, tokenizer=DEFAULT_TOKENIZER)
+    end
+    embedded_document = embed_document(embedder, v)
+    return embedded_document
 end
 
 

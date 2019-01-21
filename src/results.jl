@@ -6,7 +6,7 @@
 struct SearchResult{T<:AbstractFloat}
     id::StringId
     query_matches::MultiDict{T, Int}  # score => document indices
-    needle_matches::Dict{String, T}  # needle => sum of scores
+    needle_matches::Vector{String}
     suggestions::MultiDict{String, Tuple{T,String}} # needle => tuples of (score,partial match)
 end
 
@@ -124,7 +124,7 @@ function squash_suggestions(results::Vector{SearchResult},
 
         # Get the needles not found across all corpus results
         matched_needles = (needle for _result in results
-                           for needle in keys(_result.needle_matches))
+                           for needle in _result.needle_matches)
         missed_needles = union((keys(_result.suggestions)
                                 for _result in results)...)
         # Construct suggestions for the whole AggregateSearcher

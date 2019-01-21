@@ -97,6 +97,9 @@ function build_searcher(sconf::SearchConfig)
     # Update lexicons
     update_lexicon!(crps)
     update_lexicon!(crps_meta)
+    # Update inverse index
+    update_inverse_index!(crps)
+    update_inverse_index!(crps_meta)
     # Construct element type
     T = eval(sconf.vectors_eltype)
     # Get search model types
@@ -161,18 +164,16 @@ function build_searcher(sconf::SearchConfig)
         _srchtree_data = BKTree{String}()
         _srchtree_meta = BKTree{String}()
     end
-    # Remove corpus data if keep_data is false
+    # Remove corpus data if keep_data is false (the lexicon and inverse index are kept!)
     if !sconf.keep_data
-        crps = Corpus(DOCUMENT_TYPE[])
+        crps.documents = DOCUMENT_TYPE[]
     end
     # Build searcher
     srcher = Searcher(sconf, crps, embedder,
                       Dict(:data=>_srchdata, :metadata=>_srchdata_meta),
-                      Dict(:data=>_srchtree_data, :metadata=>_srchtree_meta)
-                     )
+                      Dict(:data=>_srchtree_data, :metadata=>_srchtree_meta))
     return srcher
 end
-
 
 
 ##################
@@ -193,7 +194,6 @@ function load_searchers(sconfs::Vector{SearchConfig})
     srchers = [build_searcher(sconf) for sconf in sconfs]
     return srchers
 end
-
 
 
 # Indexing for vectors of searchers

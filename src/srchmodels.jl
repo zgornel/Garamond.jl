@@ -101,18 +101,21 @@ end
 
 # Length methods
 length(model::NaiveEmbeddingModel) = size(model.data, 2)
+
 length(model::BruteTreeEmbeddingModel) = length(model.tree.data)
+
 length(model::KDTreeEmbeddingModel) = length(model.tree.data)
+
 length(model::HNSWEmbeddingModel) = length(model.tree.data)
 
 
 # Post-processing score function:
-#   - map distances [0, Inf) --> [1, 0]
+#   - map distances [0, Inf) --> [-1, 1]
 #TODO(Corneliu) Analylically/empirically adapt alpha do vector dimensionality
 function score_transform!(x::Vector{T}, alpha::T=T(0.5)) where T<:AbstractFloat
     n = length(x)
     @inbounds @simd for i in 1:n
-        x[i] = 1 - tanh(alpha * x[i])
+        x[i] = 1 - 2.0*tanh(alpha * x[i])
     end
     return x
 end
