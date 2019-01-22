@@ -186,9 +186,10 @@ function search_heuristically!(suggestions::MultiDict{String, Tuple{T, String}},
                               ) where {S<:AbstractString, T<:AbstractFloat}
     if isempty(needles)
         return suggestions
+    elseif BKTrees.is_empty_node(search_tree.root)
+        @debug "Suggestion tree is empty, no suggestions will be added."
+        return suggestions
     else  # there are terms that have not been found
-        # Checks
-        @assert !BKTrees.is_empty_node(search_tree.root) "FATAL: empty search tree."
         for needle in needles
             _suggestions = sort!(find(search_tree, String(needle),
                                       MAX_EDIT_DISTANCE,

@@ -46,7 +46,8 @@ function print_search_results(io::IO, srcher::Searcher, result::SearchResult)
     ch = ifelse(nm==0, ".", ":"); printstyled(io, "$ch\n")
     for score in sort(collect(keys(result.query_matches)), rev=true)
         if isempty(documents(srcher.corpus))
-            printstyled(io, "*** Corpus data is missing ***", color=:normal)
+            printstyled(io, "*** Corpus data is missing ***",
+                        color=:red, bold=true)
         else
             for doc in (srcher.corpus[i] for i in result.query_matches[score])
                 printstyled(io, "  $score ~ ", color=:normal, bold=true)
@@ -83,7 +84,8 @@ function print_search_results(io::IO, srchers::S, results::T;
         printstyled(io, "$(nm) search results", bold=true)
         ch = ifelse(nm==0, ".", ":"); printstyled(io, "$ch\n")
         if isempty(crps)
-            printstyled(io, "*** Corpus data is missing ***\n", color=:normal)
+            printstyled(io, "*** Corpus data is missing ***\n",
+                        color=:red, bold=true)
         else
             for score in sort(collect(keys(_result.query_matches)), rev=true)
                 for doc in (crps[i] for i in _result.query_matches[score])
