@@ -21,54 +21,52 @@ This is a list of the features supported by Garamond.
     - [x] Single file for multiple data configurations
     - [x] Multiple files for data configurations
     - [x] General engine configuration (`~/.garamondrc.jl`, gets re-compiled into Garamond at startup)
-- Search types
-    - Classic Search
-        - Language support
-            - [x] Uniform language: query language same as doc language
-            - [ ] Different languages for query / docs
-        - Where to search
-            - [x] Document data
-            - [x] Document metadata
-            - [x] Document data + metadata
-        - How to search for patterns
-            - [x] exact match
-            - [x] regular expression
-        - Document term importance
+- Search
+    - Language support
+        - [x] Uniform language: query language same as doc language
+        - [ ] Different languages for query / docs (neural vectors only)
+    - Where to search
+        - [x] Document data
+        - [x] Document metadata
+        - [x] Document data + metadata
+    - How to search for patterns
+        - [x] exact match
+        - [x] regular expression (classic vectors only)
+    - Document vectors
+        - Classic vectors
+            - [x] term counts
             - [x] [term frequency](https://en.wikipedia.org/wiki/Tf%E2%80%93idf#Term_frequency_2)
             - [x] [tf-idf](https://en.wikipedia.org/wiki/Tf%E2%80%93idf#Term_frequency%E2%80%93Inverse_document_frequency)
-            - [x] [BM25](https://en.wikipedia.org/wiki/Okapi_BM25)
-        - Suggestion support
-            - [x] [BK Trees](https://en.wikipedia.org/wiki/BK-tree) (through [BKTrees.jl](https://github.com/zgornel/BKTrees.jl))
-            - [ ] [Levenshtein automata](https://en.wikipedia.org/wiki/Levenshtein_automaton)
-            - [ ] [SymSpell-like approaches](https://github.com/mammothb/symspellpy)
-    - Semantic Search
-        - Language support
-            - [x] Uniform language: query language same as doc language
-            - [ ] Different languages for query / docs
-        - Where to search
-            - [x] Document data
-            - [x] Document metadata
-            - [x] Document data + metadata
-        - Document embedding
-            - [x] Bag of words
-            - [x] [SIF (Smooth inverse frequency)](https://openreview.net/pdf?id=SyK00v5xx)
-        - Word embeddings
+            - [x] [bm25](https://en.wikipedia.org/wiki/Okapi_BM25)
+        - Neural vectors
             - [x] [Word2Vec](https://en.wikipedia.org/wiki/Word2vec)
             - [x] [ConceptnetNumberbatch](https://github.com/commonsense/conceptnet-numberbatch)
             - [x] [GloVe](https://nlp.stanford.edu/projects/glove/)
-        - Search Models (for semantic vectors)
-            - [x] Naive i.e. cosine similarity
-            - [x] [Brute-force "tree"](https://en.wikipedia.org/wiki/Brute-force_search), uses Euclidean metrics
-            - [x] [KD-tree](https://en.wikipedia.org/wiki/K-d_tree), uses Euclidean metrics
-            - [x] [HNSW](https://arxiv.org/abs/1603.09320), uses Euclidean metrics
-    - I/O Iterface
-        - [x] Server: communication through UNIX/Web sockets
-        - [x] CLI Client: input and output are STDIN and STDOUT (communication through Unix sockets)
-        - [x] HTTP Client: input and output are in a webpage (communication through Web sockets)
-    - Parallelism forms supported
-        - [x] Multi-threading (each corpus is searched withing a hardware thread; support is EXPERIMENTAL and it is _disabled_ by default)
-        - [ ] Multi-core + task scheduling [Dispatcher.jl](https://github.com/invenia/Dispatcher.jl) for distributed corpora
-        - [ ] Cluster support
+    - Suggestion support
+        - [x] [BK Trees](https://en.wikipedia.org/wiki/BK-tree) (through [BKTrees.jl](https://github.com/zgornel/BKTrees.jl))
+        - [ ] [Levenshtein automata](https://en.wikipedia.org/wiki/Levenshtein_automaton)
+        - [ ] [SymSpell-like approaches](https://github.com/mammothb/symspellpy)
+    - Language support
+        - [x] Uniform language: query language same as doc language
+        - [ ] Different languages for query / docs
+    - Document embedding
+        - [x] Bag of words (neural vectors only)
+        - [x] [SIF (Smooth inverse frequency)](https://openreview.net/pdf?id=SyK00v5xx) (neural vectors only)
+        - [x] [LSA (Latent semantic analysis)](https://en.wikipedia.org/wiki/Latent_semantic_analysis) (classic vectors only)
+        - [x] [Random projections](https://en.wikipedia.org/wiki/Random_projection) (classic vectors only)
+    - Vector search models
+        - [x] Naive i.e. matrix + cosine similarity
+        - [x] [Brute-force "tree"](https://en.wikipedia.org/wiki/Brute-force_search), uses Euclidean metrics
+        - [x] [KD-tree](https://en.wikipedia.org/wiki/K-d_tree), uses Euclidean metrics
+        - [x] [HNSW](https://arxiv.org/abs/1603.09320), uses Euclidean metrics
+- I/O Iterface
+    - [x] Server: communication through UNIX/Web sockets
+    - [x] CLI Client: input and output are STDIN and STDOUT (communication through Unix sockets)
+    - [x] HTTP Client: input and output are in a webpage (communication through Web sockets)
+- Parallelism forms supported
+    - [x] Multi-threading (each corpus is searched withing a hardware thread; support is EXPERIMENTAL and it is _disabled_ by default)
+    - [ ] Multi-core + task scheduling [Dispatcher.jl](https://github.com/invenia/Dispatcher.jl) for distributed corpora
+    - [ ] Cluster support
 - Other
     - [x] Logging mechanism
     - [x] Client/server functionality

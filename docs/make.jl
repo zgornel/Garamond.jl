@@ -13,6 +13,7 @@ makedocs(
     debug = true,
     pages = [
         "Introduction" => "index.md",
+        "Simple example" => "simple_example.md",
         "Configuration" => "configuration.md",
         "Client/Server" => "clientserver.md",
         "Building" => "build.md",
