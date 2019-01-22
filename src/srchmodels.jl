@@ -23,6 +23,10 @@ end
 BruteTreeEmbeddingModel(data::AbstractMatrix) =
     BruteTreeEmbeddingModel(BruteTree(data))
 
+BruteTreeEmbeddingModel(data::SparseMatrixCSC{T,I}
+        ) where {T<:AbstractFloat, I<:Integer} =
+    BruteTreeEmbeddingModel(Matrix{T}(data))
+
 
 """
 K-D Tree model type for storing text embeddings. It is a wrapper
@@ -35,6 +39,10 @@ end
 
 KDTreeEmbeddingModel(data::AbstractMatrix) =
     KDTreeEmbeddingModel(KDTree(data))
+
+KDTreeEmbeddingModel(data::SparseMatrixCSC{T,I}
+        ) where {T<:AbstractFloat, I<:Integer} =
+    KDTreeEmbeddingModel(Matrix{T}(data))
 
 
 """
@@ -59,6 +67,10 @@ HNSWEmbeddingModel(data::AbstractMatrix) = begin
     add_to_graph!(hnsw)
     return HNSWEmbeddingModel(hnsw)
 end
+
+HNSWEmbeddingModel(data::SparseMatrixCSC{T,I}
+        ) where {T<:AbstractFloat, I<:Integer} =
+    HNSWEmbeddingModel(Matrix{T}(data))
 
 
 # Nearest neighbor search methods
