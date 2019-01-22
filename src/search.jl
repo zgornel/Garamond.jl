@@ -33,7 +33,8 @@ function search(srchers::V,
                 search_method::Symbol=DEFAULT_SEARCH_METHOD,
                 max_matches::Int=MAX_MATCHES,
                 max_corpus_suggestions::Int=MAX_CORPUS_SUGGESTIONS
-               ) where {V<:Vector{<:Searcher{D,E,M}
+               ) where {V<:Vector{<:Searcher{T,D,E,M}
+                                  where T<:AbstractFloat
                                   where D<:AbstractDocument
                                   where E
                                   where M<:AbstractSearchModel}}
@@ -100,21 +101,19 @@ The function returns an object of type SearchResult and the id of the searcher.
   * `max_suggestions::Int` is the maximum number of suggestions to return for
      each missing needle
 """
-function search(srcher::Searcher{D,E,M},
+function search(srcher::Searcher{T,D,E,M},
                 query;  # can be either a string or vector of strings
                 search_type::Symbol=:metadata,
                 search_method::Symbol=:exact,
                 max_matches::Int=10,
                 max_suggestions::Int=MAX_CORPUS_SUGGESTIONS  # not used
-                ) where
-        {D<:AbstractDocument, E, M<:AbstractSearchModel}
+                ) where {T<:AbstractFloat, D<:AbstractDocument, E, M<:AbstractSearchModel}
     needles = prepare_query(query, srcher.config.query_strip_flags)
     # Initializations
     isregex = (search_method == :regex)
     n = length(srcher.search_data[:data])  # number of embedded documents
     where_to_search = ifelse(search_type==:all, [:data, :metadata], [search_type])
     # Embed query (2 embeddings may be needed, separately for data and metadata)
-    T = get_embedding_eltype(srcher.embedder)
     query_embeddings = Dict{Symbol, Vector{T}}()
     if srcher.config.vectors in [:word2vec, :glove, :conceptnet]
         qe = embed_document(srcher.embedder, srcher.corpus.lexicon, needles,
@@ -203,36 +202,6 @@ function search_heuristically!(suggestions::MultiDict{String, Tuple{T, String}},
     end
     return suggestions
 end
-
-
-"""
-    get_embedding_eltype(embeddings)
-
-Function that returns the type of the embeddings' elements. The type is useful to
-generate score vectors. If the element type is and `Int8` (ConceptNet compressed),
-the returned type is the DEFAULT_EMBEDDING_TYPE.
-"""
-# Get embedding element types
-get_embedding_eltype(::Word2Vec.WordVectors{S,T,H}) where
-    {S<:AbstractString, T<:Real, H<:Integer} = T
-
-get_embedding_eltype(::Glowe.WordVectors{S,T,H}) where
-    {S<:AbstractString, T<:Real, H<:Integer} = T
-
-get_embedding_eltype(::ConceptNet{L,K,E}) where
-    {L<:Language, K<:AbstractString, E<:AbstractFloat} = E
-
-get_embedding_eltype(::ConceptNet{L,K,E}) where
-    {L<:Language, K<:AbstractString, E<:Integer} = DEFAULT_EMBEDDING_ELEMENT_TYPE
-
-get_embedding_eltype(::RPModel{S,T,A,H}) where
-    {S<:AbstractString, T<:AbstractFloat, A<:AbstractMatrix{T}, H<:Integer} = T
-
-get_embedding_eltype(::LSAModel{S,T,A,H}) where
-    {S<:AbstractString, T<:AbstractFloat, A<:AbstractMatrix{T}, H<:Integer} = T
-
-get_embedding_eltype(::Dict{Symbol, <:Union{RPModel{S,T,A,H}, LSAModel{S,T,A,H}}}) where
-    {S<:AbstractString, T<:AbstractFloat, A<:AbstractMatrix{T}, H<:Integer} = T
 
 
 """

@@ -3,7 +3,7 @@
 ##############################
 
 # Searcher structures
-mutable struct Searcher{D<:AbstractDocument, E, M<:AbstractSearchModel}
+mutable struct Searcher{T<:AbstractFloat, D<:AbstractDocument, E, M<:AbstractSearchModel}
     config::SearchConfig                        # most of what is not actual data
     corpus::Corpus{String,D}                    # corpus
     embedder::E                                 # needed to embed query
@@ -11,13 +11,51 @@ mutable struct Searcher{D<:AbstractDocument, E, M<:AbstractSearchModel}
     search_trees::Dict{Symbol, BKTree{String}}  # for suggestions
 end
 
+Searcher(config::SearchConfig,
+         corpus::Corpus{String, D},
+         embedder::E,
+         search_data::Dict{Symbol, M},
+         search_trees::Dict{Symbol, BKTree{String}}
+        ) where {D<:AbstractDocument, E, M<:AbstractSearchModel} =
+    Searcher{get_embedding_eltype(embedder), D, E, M}(
+        config, corpus, embedder, search_data, search_trees)
+"""
+    get_embedding_eltype(embeddings)
+
+Function that returns the type of the embeddings' elements. The type is useful to
+generate score vectors. If the element type is and `Int8` (ConceptNet compressed),
+the returned type is the DEFAULT_EMBEDDING_TYPE.
+"""
+# Get embedding element types
+get_embedding_eltype(::Word2Vec.WordVectors{S,T,H}) where
+    {S<:AbstractString, T<:Real, H<:Integer} = T
+
+get_embedding_eltype(::Glowe.WordVectors{S,T,H}) where
+    {S<:AbstractString, T<:Real, H<:Integer} = T
+
+get_embedding_eltype(::ConceptNet{L,K,E}) where
+    {L<:Language, K<:AbstractString, E<:AbstractFloat} = E
+
+get_embedding_eltype(::ConceptNet{L,K,E}) where
+    {L<:Language, K<:AbstractString, E<:Integer} = DEFAULT_EMBEDDING_ELEMENT_TYPE
+
+get_embedding_eltype(::RPModel{S,T,A,H}) where
+    {S<:AbstractString, T<:AbstractFloat, A<:AbstractMatrix{T}, H<:Integer} = T
+
+get_embedding_eltype(::LSAModel{S,T,A,H}) where
+    {S<:AbstractString, T<:AbstractFloat, A<:AbstractMatrix{T}, H<:Integer} = T
+
+get_embedding_eltype(::Dict{Symbol, <:Union{RPModel{S,T,A,H}, LSAModel{S,T,A,H}}}) where
+    {S<:AbstractString, T<:AbstractFloat, A<:AbstractMatrix{T}, H<:Integer} = T
+
+
 
 # Useful methods
-id(srcher::Searcher{D,E,M}) where {D,E,M} = srcher.config.id
+id(srcher::Searcher) = srcher.config.id
 
-description(srcher::Searcher{D,E,M}) where {D,E,M} = srcher.config.description
+description(srcher::Searcher) = srcher.config.description
 
-isenabled(srcher::Searcher{D,E,M}) where {D,E,M} = srcher.config.enabled
+isenabled(srcher::Searcher) = srcher.config.enabled
 
 disable!(srcher::Searcher) = begin
     srcher.config.enabled = false
@@ -30,7 +68,7 @@ enable!(srcher::Searcher) = begin
 end
 
 # Show method
-show(io::IO, srcher::Searcher{D,E,M}) where {D,E,M} = begin
+show(io::IO, srcher::Searcher{T,D,E,M}) where {T,D,E,M} = begin
     printstyled(io, "Searcher for $(id(srcher)), ")
     _status = ifelse(isenabled(srcher), "enabled", "disabled")
     _status_color = ifelse(isenabled(srcher), :light_green, :light_black)
@@ -69,7 +107,7 @@ show(io::IO, srcher::Searcher{D,E,M}) where {D,E,M} = begin
     end
     printstyled(io, "$_model_type", bold=true)
     #printstyled(io, "$(description(srcher))", color=:normal)
-    printstyled(io, ", $(length(srcher.search_data[:data])) embedded documents")
+    printstyled(io, ", $(length(srcher.search_data[:data])) $T embedded documents")
 end
 
 
@@ -197,8 +235,10 @@ end
 
 
 # Indexing for vectors of searchers
-getindex(srchers::V, an_id::StringId) where {V<:Vector{<:Searcher{D,E,M}
-        where D<:AbstractDocument where E where M<:AbstractSearchModel}} = begin
+function getindex(srchers::V, an_id::StringId
+        ) where {V<:Vector{<:Searcher{T,D,E,M}
+          where T<:AbstractFloat where D<:AbstractDocument
+          where E where M<:AbstractSearchModel}}
     idxs = Int[]
     for (i, srcher) in enumerate(srchers)
         id(srcher) == an_id && push!(idxs, i)
@@ -206,6 +246,9 @@ getindex(srchers::V, an_id::StringId) where {V<:Vector{<:Searcher{D,E,M}
     return srchers[idxs]
 end
 
-getindex(srchers::V, an_id::String) where {V<:Vector{<:Searcher{D,E,M}
-        where D<:AbstractDocument where E where M<:AbstractSearchModel}} =
+function getindex(srchers::V, an_id::String
+        ) where {V<:Vector{<:Searcher{T,D,E,M}
+          where T<:AbstractFloat where D<:AbstractDocument
+          where E where M<:AbstractSearchModel}}
     srchers[StringId(an_id)]
+end

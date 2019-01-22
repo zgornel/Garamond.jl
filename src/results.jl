@@ -41,10 +41,11 @@ function print_search_results(io::IO, srcher::Searcher, result::SearchResult)
     nm = valength(result.query_matches)
     ns = length(result.suggestions)
     @assert id(srcher) == result.id "Searcher and result id's do not match."
-    printstyled(io, "[$(id(srcher))] $nm search results")
+    printstyled(io, "[$(id(srcher))] ", color=:blue, bold=true)
+    printstyled(io, "$(nm) search results", bold=true)
     ch = ifelse(nm==0, ".", ":"); printstyled(io, "$ch\n")
     for score in sort(collect(keys(result.query_matches)), rev=true)
-        if isempty(srcher.corpus)
+        if isempty(documents(srcher.corpus))
             printstyled(io, "*** Corpus data is missing ***", color=:normal)
         else
             for doc in (srcher.corpus[i] for i in result.query_matches[score])
@@ -78,8 +79,8 @@ function print_search_results(io::IO, srchers::S, results::T;
     for (i, _result) in enumerate(results)
         crps = srchers[i].corpus
         nm = valength(_result.query_matches)
-        printstyled(io, "`-[$(_result.id)] ", color=:cyan)  # hash
-        printstyled(io, "$(nm) search results")
+        printstyled(io, "`-[$(_result.id)] ", color=:blue, bold=true)
+        printstyled(io, "$(nm) search results", bold=true)
         ch = ifelse(nm==0, ".", ":"); printstyled(io, "$ch\n")
         if isempty(crps)
             printstyled(io, "*** Corpus data is missing ***\n", color=:normal)
