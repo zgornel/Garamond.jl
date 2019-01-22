@@ -74,9 +74,9 @@ function embed_document(embedder::Union{
     # If nothing is embedded, return zeros
     isempty(sentence_embeddings) && return zeros(T, m)
     if embedding_method == :sif
-        return squash(smooth_inverse_frequency(sentence_embeddings,
-                                               lexicon,
-                                               embedded_words))
+        return squash(
+            smooth_inverse_frequency(
+                sentence_embeddings, lexicon, embedded_words))
     else
         return squash(squash.(sentence_embeddings),m)
     end
@@ -118,7 +118,7 @@ function smooth_inverse_frequency(document_embedding::Vector{Matrix{T}},
     m = size(document_embedding[1],1)  # number of vector elements
     n = length(document_embedding)  # number of sentences in document
     X = zeros(T, m, n)  # new document embedding
-    a = 1
+    a = 0.01
     # Loop over sentences
     for (i, s) in enumerate(document_embedding)
         p = [get(lexicon, word, eps(T))/L for word in embedded_words[i]]
@@ -127,9 +127,16 @@ function smooth_inverse_frequency(document_embedding::Vector{Matrix{T}},
             X[:,i] += 1/(length(s)) * (a/(a+p[w]) .* s[:,w])
         end
     end
-    u, _, _ = tsvd(X, 1)
+    local u::Vector{T}
+    try
+        u₀, _, _ = tsvd(X, 1)
+        u = vec(u₀)
+    catch
+        u₀, _, _ = svd(X)
+        u =u₀[:, 1]
+    end
     @inbounds @simd for i in 1:n
-        X[:,i] -= u'u * X[:,i]
+        X[:,i] -= (u*u') * X[:,i]
     end
     return X
 end
