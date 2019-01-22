@@ -11,7 +11,8 @@ const TARGETS_PATH = abspath.(joinpath.(BASEDIR, "..", TARGETS))        # full p
 const REQUIRED_PACKAGES = ["SnoopCompile", "PackageCompiler"]           # Base required packages
 const PACKAGE_REVS = Dict(                                              # Packag revisions/branches/etc
     "HNSW"=>("https://github.com/zgornel/HNSW.jl", "master"),
-    "Distances"=>("https://github.com/zgornel/Distances.jl", "fixes"))
+    "Distances"=>("https://github.com/zgornel/Distances.jl", "fixes"),
+    "StringAnalysis"=>("https://github.com/zgornel/StringAnalysis.jl", "master"))
 
 
 ##############
