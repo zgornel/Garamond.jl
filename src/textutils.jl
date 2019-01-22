@@ -90,12 +90,13 @@ function summarize(sentences::Vector{S};
     c = Corpus(s)
     prepare!(c, flags)
     update_lexicon!(c)
-    t = tf_idf(dtm(c))
+    t = dtm(DocumentTermMatrix{Float32}(c))
+    tf_idf!(t)
     # Page rank
     α = 0.85  # damping factor
     n = 100  # number of iterations
     ϵ = 1.0e-6  # convergence threhshold
-    G = Graph(t * t')
+    G = Graph(t' * t)
     try
         p = pagerank(G, α, n, ϵ)
         # Sort sentences and return
