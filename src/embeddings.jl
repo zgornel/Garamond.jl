@@ -1,116 +1,3 @@
-######################################
-# Word embeddings related structures #
-######################################
-abstract type AbstractEmbeddingModel <: AbstractSearchData
-end
-
-"""
-Naive model type for storing text embeddings. It is a wrapper
-around a matrix of embeddings and performs brute search using
-the cosine similarity between vectors.
-"""
-struct NaiveEmbeddingModel{E} <: AbstractEmbeddingModel
-    data::Matrix{E}
-end
-
-
-"""
-BruteTree model type for storing text embeddings. It is a wrapper
-around a `BruteTree` NN structure and performs brute search using
-a distance-based similarity between vectors.
-"""
-struct BruteTreeEmbeddingModel{A,D} <: AbstractEmbeddingModel
-    tree::BruteTree{A,D}  # Array, Distance and Element types
-end
-
-BruteTreeEmbeddingModel(data::AbstractMatrix) =
-    BruteTreeEmbeddingModel(BruteTree(data))
-
-
-"""
-K-D Tree model type for storing text embeddings. It is a wrapper
-around a `KDTree` NN structure and performs a more efficient
-search using a distance-based similarity between vectors.
-"""
-struct KDTreeEmbeddingModel{A,D} <: AbstractEmbeddingModel
-    tree::KDTree{A,D}
-end
-
-KDTreeEmbeddingModel(data::AbstractMatrix) =
-    KDTreeEmbeddingModel(KDTree(data))
-
-
-"""
-HNSW model type for storing text embeddings. It is a wrapper around a
-`HierarchicalNSW` (Hierarchical Navigable Small Worlds [1]) NN graph
-structure and performs a very efficient search using a distance-based
-similarity between vectors.
-[1] Yu. A. Malkov, D.A. Yashunin "Efficient and robust approximate nearest
-    neighbor search using Hierarchical Navigable Small World graphs"
-    (https://arxiv.org/abs/1603.09320)
-"""
-struct HNSWEmbeddingModel{I,E,A,D} <: AbstractEmbeddingModel
-    tree::HierarchicalNSW{I,E,A,D}
-end
-
-HNSWEmbeddingModel(data::AbstractMatrix) = begin
-    _data = [data[:,i] for i in 1:size(data,2)]
-    hnsw = HierarchicalNSW(_data;
-                           efConstruction=100,
-                           M=16,
-                           ef=50)
-    add_to_graph!(hnsw)
-    return HNSWEmbeddingModel(hnsw)
-end
-
-
-
-# Nearest neighbor search methods
-"""
-    search(model, point, k)
-
-Searches for the `k` nearest neighbors of `point` in data contained in
-the `model`. The model may vary from a simple wrapper inside a matrix
-to more complex structures such as k-d trees, etc.
-"""
-function search(model::NaiveEmbeddingModel{E}, point::Vector{E}, k::Int) where
-        E<:AbstractFloat
-    # Cosine similarity
-    scores = (model.data)'*point
-    idxs = sortperm(scores, rev=true)[1:k]
-    return (idxs, scores[idxs])
-end
-
-function search(model::BruteTreeEmbeddingModel{A,D}, point::AbstractVector, k::Int) where
-        {A<:AbstractArray, D<:Metric}
-    # Uses Euclidean distance by default
-    idxs, scores = knn(model.tree, point, k, true)
-    return idxs, 1 ./ (scores .+ eps())
-end
-
-function search(model::KDTreeEmbeddingModel{A,D}, point::AbstractVector, k::Int) where
-        {A<:AbstractArray, D<:Metric}
-    # Uses Euclidean distance by default
-    idxs, scores = knn(model.tree, point, k, true)
-    return idxs, 1 ./ (scores .+ eps())
-end
-
-function search(model::HNSWEmbeddingModel{I,E,A,D}, point::AbstractVector, k::Int) where
-        {I<:Unsigned, E<:Real, A<:AbstractArray, D<:Metric}
-    # Uses Euclidean distance by default
-    idxs, scores = knn_search(model.tree, point, k)
-    return Int.(idxs), 1 ./ (scores .+ eps())
-end
-
-
-# Length methods
-length(model::NaiveEmbeddingModel) = size(model.data, 2)
-length(model::BruteTreeEmbeddingModel) = length(model.tree.data)
-length(model::KDTreeEmbeddingModel) = length(model.tree.data)
-length(model::HNSWEmbeddingModel) = length(model.tree.data)
-
-
-
 ######################
 # Document Embedding #
 ######################
@@ -143,9 +30,8 @@ squash(vv::Vector{Vector{T}}, m::Int) where T<:AbstractFloat = begin
 end
 
 
-
 """
-    embed_document(embeddings_library, lexicon, document[; embedding_method])
+    embed_document(embedder, lexicon, document[; embedding_method])
 
 Function to get from multiple sentencea to a document embedding.
 The `embedding_method` option controls how multiple sentence embeddings
@@ -155,23 +41,24 @@ Avalilable options for `embedding_method`:
     :sif - smooth-inverse-frequency subtracts paragraph/phrase vector
            from each sentence embedding
 """
-function embed_document(embeddings_library::Union{
+function embed_document(embedder::Union{
                             ConceptNet{<:Languages.Language, <:AbstractString, T},
                             Word2Vec.WordVectors{<:AbstractString, T, <:Integer},
                             Glowe.WordVectors{<:AbstractString, T, <:Integer}},
                         lexicon::Dict{String, Int},
                         document::Vector{String};  # a vector of sentences
-                        embedding_method::Symbol=DEFAULT_EMBEDDING_METHOD
+                        embedding_method::Symbol=DEFAULT_DOC2VEC_METHOD,
+                        isregex::Bool=false  # not used
                        ) where T<:AbstractFloat
     # Initializations
     n = length(document)
-    m = size(embeddings_library)[1]  # number of vector components
+    m = size(embedder)[1]  # number of vector components
     embedded_words = Vector{Vector{String}}(undef, n)
     sentence_embeddings = Vector{Matrix{T}}(undef, n)
     # Embed sentences individually
     @inbounds for i in 1:n
         words = tokenize_fast(document[i])
-        _embs, _mtoks = embed_document(embeddings_library,
+        _embs, _mtoks = embed_document(embedder,
                                        words,
                                        keep_size=false,
                                        max_compound_word_length=1,
@@ -187,14 +74,29 @@ function embed_document(embeddings_library::Union{
     # If nothing is embedded, return zeros
     isempty(sentence_embeddings) && return zeros(T, m)
     if embedding_method == :sif
-        return squash(smooth_inverse_frequency(sentence_embeddings,
-                                               lexicon,
-                                               embedded_words))
+        return squash(
+            smooth_inverse_frequency(
+                sentence_embeddings, lexicon, embedded_words))
     else
         return squash(squash.(sentence_embeddings),m)
     end
 end
 
+# Classic search method i.e. tf, tfidf, bm25 and possibly lsa or random projections
+function embed_document(embedder::Union{RPModel{S,T,A,H}, LSAModel{S,T,A,H}},
+                        lexicon::Dict{S, Int},
+                        document::Vector{String};  # a vector of sentences
+                        embedding_method::Symbol=DEFAULT_DOC2VEC_METHOD,  # not used
+                        isregex::Bool = false
+                       ) where {S<:AbstractString, T<:AbstractFloat, A<:AbstractMatrix{T}, H<:Integer}
+    if isregex
+        v = dtv_regex(document, embedder.vocab_hash, T, tokenizer=DEFAULT_TOKENIZER)
+    else
+        v = dtv(document, embedder.vocab_hash, T, tokenizer=DEFAULT_TOKENIZER)
+    end
+    embedded_document = embed_document(embedder, v)
+    return embedded_document
+end
 
 
 """
@@ -216,7 +118,7 @@ function smooth_inverse_frequency(document_embedding::Vector{Matrix{T}},
     m = size(document_embedding[1],1)  # number of vector elements
     n = length(document_embedding)  # number of sentences in document
     X = zeros(T, m, n)  # new document embedding
-    a = 1
+    a = 0.01
     # Loop over sentences
     for (i, s) in enumerate(document_embedding)
         p = [get(lexicon, word, eps(T))/L for word in embedded_words[i]]
@@ -225,14 +127,19 @@ function smooth_inverse_frequency(document_embedding::Vector{Matrix{T}},
             X[:,i] += 1/(length(s)) * (a/(a+p[w]) .* s[:,w])
         end
     end
-    u, _, _ = svd(X)
-    u = u[:,1]
+    local u::Vector{T}
+    try
+        u₀, _, _ = tsvd(X, 1)
+        u = vec(u₀)
+    catch
+        u₀, _, _ = svd(X)
+        u =u₀[:, 1]
+    end
     @inbounds @simd for i in 1:n
-        X[:,i] -= u'u * X[:,i]
+        X[:,i] -= (u*u') * X[:,i]
     end
     return X
 end
-
 
 
 """
@@ -277,4 +184,22 @@ function embed_document(word_vectors::Union{Word2Vec.WordVectors{S1,T,H},
         println("Mismatched words: $(tokens[missing_tokens])")
     end
     return embedding, missing_tokens
+end
+
+# Replicate ConceptnetNumberbatch embed_document function
+function embed_document(conceptnet::ConceptNet{L,K,E},
+                        document_tokens::Vector{S};
+                        language=Languages.English(),
+                        keep_size::Bool=true,
+                        compound_word_separator::String="_",
+                        max_compound_word_length::Int=1,
+                        wildcard_matching::Bool=false,
+                        print_matched_words::Bool=false
+                       ) where {L<:Language, K, E<:Real, S<:AbstractString}
+    return ConceptnetNumberbatch.embed_document(conceptnet, document_tokens,
+                language=language, keep_size=keep_size,
+                compound_word_separator=compound_word_separator,
+                max_compound_word_length=max_compound_word_length,
+                wildcard_matching=wildcard_matching,
+                print_matched_words=print_matched_words)
 end

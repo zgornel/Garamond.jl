@@ -222,7 +222,7 @@ end
 # #TODO(Corneliu) Display suggestions as well, improve function
 function export_results_for_web(srchers::S, results::T, max_suggestions::Int,
                                 elapsed_time::Float64
-                               ) where {S<:AbstractVector{<:AbstractSearcher},
+                               ) where {S<:AbstractVector{<:Searcher},
                                         T<:AbstractVector{<:SearchResult}}
     # Count the total number of results
     if !isempty(results)

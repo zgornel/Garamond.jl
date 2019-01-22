@@ -20,11 +20,10 @@ make_id(::Type{StringId}, id::T) where T<:Number = StringId(string(id))
 ################
 # SearchConfigs can be built from a data configuration file or manually
 mutable struct SearchConfig
-    # general
+    # general, data, processing
     id::StringId                    # searcher/corpus id
-    search::Symbol                  # search type i.e. :classic, :semantic
-    description::String             # description of the searcher.corpus
-    enabled::Bool                   # whether to use the corpus in search or not
+    description::String             # description of the searcher
+    enabled::Bool                   # whether to use the searcher in search or not
     data_path::String               # file/directory path for the data (depends on what the parser accepts)
     parser::Function                # parser function used to obtain corpus
     parser_config::Union{Nothing,Dict}  # parser configuration
@@ -33,18 +32,19 @@ mutable struct SearchConfig
     summary_ns::Int                 # the number of sentences in the summary
     keep_data::Bool                 # whether to keep document data, metadata
     stem_words::Bool                # whether to stem data or not
-    # classic search
-    count_type::Symbol              # search term counting type i.e. :tf, :tfidf etc (classic search)
-    heuristic::Symbol               # search heuristic for recommendtations (classic search)
-    # semantic search
-    embeddings_path::String         # path to the embeddings file
-    embeddings_library::Symbol      # embeddings library i.e. :conceptnet, :word2vec, :glove (semantic search)
+    # vector representation (defines type of search i.e. classic, semantic, implicitly)
+    vectors::Symbol                 # how document vectors are calculated i.e. :count, :tf, :tfidf, :bm25, :word2vec, :glove, :conceptnet
+    vectors_transform::Symbol       # what transform to apply to the vectors i.e. :lsa, :rp, :none
+    vectors_dimension::Int          # desired dimensionality after transform (ignored for word2vec approaches)
+    vectors_eltype::Symbol          # type of the document vector elements
+    search_model::Symbol            # type of the search model i.e. :naive, :kdtree, :hnsw
+    embeddings_path::Union{Nothing, String}  # path to the embeddings file
     embeddings_kind::Symbol         # Type of the embedding file for Word2Vec, GloVe i.e. :text, :binary
-    embedding_method::Symbol        # How to arrive at a single embedding from multiple i.e. :bow, :sif (semantic search)
-    embedding_search_model::Symbol  # type of the search model i.e. :naive, :kdtree, :hnsw (semantic search)
-    embedding_element_type::Symbol  # Type of the embedding elements
+    doc2vec_method::Symbol          # How to arrive at a single embedding from multiple i.e. :bow, :sif
     glove_vocabulary::Union{Nothing, String}  # Path to a GloVe-generated vocabulary file (only for binary embeddings)
-    # test stripping flags
+    # other
+    heuristic::Union{Nothing, Symbol} #search heuristic for suggesting mispelled words (nothing means no recommendations)
+    # text stripping flags
     text_strip_flags::UInt32        # How to strip text data before indexing
     metadata_strip_flags::UInt32    # How to strip text metadata before indexing
     query_strip_flags::UInt32       # How to strip queries before searching
@@ -54,7 +54,6 @@ end
 # Keyword argument constructor; all arguments sho
 SearchConfig(;
           id=random_id(StringId),
-          search=DEFAULT_SEARCH,
           description="",
           enabled=false,
           data_path="",
@@ -74,40 +73,56 @@ SearchConfig(;
           summary_ns=DEFAULT_SUMMARY_NS,
           keep_data=DEFAULT_KEEP_DATA,
           stem_words=DEFAULT_STEM_WORDS,
-          count_type=DEFAULT_COUNT_TYPE,
-          heuristic=DEFAULT_HEURISTIC,
-          embeddings_path="",
-          embeddings_library=DEFAULT_EMBEDDINGS_LIBRARY,
+          vectors=DEFAULT_VECTORS,
+          vectors_transform=DEFAULT_VECTORS_TRANSFORM,
+          vectors_dimension=DEFAULT_VECTORS_DIMENSION,
+          vectors_eltype=DEFAULT_VECTORS_ELTYPE,
+          search_model=DEFAULT_SEARCH_MODEL,
+          embeddings_path=nothing,
           embeddings_kind=DEFAULT_EMBEDDINGS_KIND,
-          embedding_method=DEFAULT_EMBEDDING_METHOD,
-          embedding_search_model=DEFAULT_EMBEDDING_SEARCH_MODEL,
-          embedding_element_type=DEFAULT_EMBEDDING_ELEMENT_TYPE,
+          doc2vec_method=DEFAULT_DOC2VEC_METHOD,
           glove_vocabulary=nothing,
+          heuristic=DEFAULT_HEURISTIC,
           text_strip_flags=DEFAULT_TEXT_STRIP_FLAGS,
           metadata_strip_flags=DEFAULT_METADATA_STRIP_FLAGS,
           query_strip_flags=DEFAULT_QUERY_STRIP_FLAGS,
           summarization_strip_flags=DEFAULT_SUMMARIZATION_STRIP_FLAGS) =
     # Call normal constructor
-    SearchConfig(id, search, description, enabled, data_path,
-                 parser, parser_config, language,
-                 build_summary, summary_ns, keep_data, stem_words,
-                 count_type, heuristic,
-                 embeddings_path, embeddings_library, embeddings_kind,
-                 embedding_method, embedding_search_model,
-                 embedding_element_type,
-                 glove_vocabulary,
+    SearchConfig(id, description, enabled,
+                 data_path, parser, parser_config,
+                 language, build_summary, summary_ns, keep_data, stem_words,
+                 vectors, vectors_transform, vectors_dimension, vectors_eltype,
+                 search_model, embeddings_path, embeddings_kind, doc2vec_method,
+                 glove_vocabulary, heuristic,
                  text_strip_flags, metadata_strip_flags,
                  query_strip_flags, summarization_strip_flags)
 
 
+# Show method
 Base.show(io::IO, sconfig::SearchConfig) = begin
     printstyled(io, "SearchConfig for $(sconfig.id)\n")
-    _status = ifelse(sconfig.enabled, "enabled", "disabled")
-    _status_color = ifelse(sconfig.enabled, :light_green, :light_black)
-    printstyled(io, "`-[$_status]", color=_status_color)
-    _search_color = ifelse(sconfig.search==:classic, :cyan, :light_cyan)
-    printstyled(io, "-[$(sconfig.search)] ", color=_search_color)
-    printstyled(io, "$(sconfig.data_path)\n")
+    printstyled(io, "`-enabled = ")
+    printstyled(io, "$(sconfig.enabled)\n", bold=true)
+    _tf = ""
+    if sconfig.vectors in [:count, :tf, :tfidf, :b25]
+        if sconfig.vectors_transform == :lsa
+            _tf = " + LSA"
+        elseif sconfig.vectors_transform == :rp
+            _tf = " + random projection"
+        end
+    end
+    printstyled(io, "  vectors = ")
+    printstyled(io, "$(sconfig.vectors)$_tf", bold=true)
+    printstyled(io, ", ")
+    printstyled(io, "$(sconfig.vectors_eltype)\n", bold=true)
+    printstyled(io, "  search_model = ")
+    printstyled(io, "$(sconfig.search_model)\n", bold=true)
+    printstyled(io, "  data_path = ")
+    printstyled(io, "\"$(sconfig.data_path)\"\n", bold=true)
+    if sconfig.embeddings_path != nothing
+        printstyled(io, "  embeddings_path = ")
+        printstyled(io, "\"$(sconfig.embeddings_path)\"\n", bold=true)
+    end
 end
 
 
@@ -126,21 +141,19 @@ function load_search_configs(filename::AbstractString)
     # Create search configurations
     search_configs = [SearchConfig() for _ in 1:n]
     removable = Int[]  # search configs that have problems
-    must_have_keys = ["search", "data_path", "parser"]
+    must_have_keys = ["vectors", "data_path", "parser"]
     for (i, (sconfig, dconfig)) in enumerate(zip(search_configs, dict_configs))
         if !all(map(key->haskey(dconfig, key), must_have_keys))
             @warn "$(sconfig.id) Missing options from [$must_have_keys]. Ignoring search configuration..."
             push!(removable, i)  # if there is are no word embeddings, cannot search
             continue
         end
-        # Get search parameters accounting for missing values
-        # by using default parameters where the case
+        # Get searcher parameter values (assigning default values when the case)
         header = get(dconfig, "header", false)
-        sconfig.id = make_id(StringId, get(dconfig, "id", randstring(10)))
         globbing_pattern = get(dconfig, "globbing_pattern", DEFAULT_GLOBBING_PATTERN)
         show_progress = get(dconfig, "show_progress", DEFAULT_SHOW_PROGRESS)
         delimiter = get(dconfig, "delimiter", DEFAULT_DELIMITER)
-        sconfig.search = Symbol(get(dconfig, "search", DEFAULT_SEARCH))
+        sconfig.id = make_id(StringId, get(dconfig, "id", randstring(10)))
         sconfig.description = get(dconfig, "description", "")
         sconfig.enabled = get(dconfig, "enabled", false)
         sconfig.data_path = get(dconfig, "data_path", "")
@@ -149,29 +162,24 @@ function load_search_configs(filename::AbstractString)
         sconfig.summary_ns = get(dconfig, "summary_ns", DEFAULT_SUMMARY_NS)
         sconfig.keep_data = get(dconfig, "keep_data", DEFAULT_KEEP_DATA)
         sconfig.stem_words = get(dconfig, "stem_words", DEFAULT_STEM_WORDS)
-        sconfig.count_type = Symbol(get(dconfig, "count_type", DEFAULT_COUNT_TYPE))
-        sconfig.heuristic = Symbol(get(dconfig, "heuristic", DEFAULT_HEURISTIC))
-        sconfig.embeddings_path = get(dconfig, "embeddings_path", "")
-        sconfig.embeddings_library = Symbol(get(dconfig, "embeddings_library",
-                                                DEFAULT_EMBEDDINGS_LIBRARY))
-        sconfig.embeddings_kind = Symbol(get(dconfig, "embeddings_kind",
-                                             DEFAULT_EMBEDDINGS_KIND))
-        sconfig.embedding_method = Symbol(get(dconfig, "embedding_method",
-                                              DEFAULT_EMBEDDING_METHOD))
-        sconfig.embedding_search_model = Symbol(get(dconfig, "embedding_search_model",
-                                                    DEFAULT_EMBEDDING_SEARCH_MODEL))
-        sconfig.embedding_element_type = Symbol(get(dconfig, "embedding_element_type",
-                                                    DEFAULT_EMBEDDING_ELEMENT_TYPE))
+        sconfig.vectors = Symbol(get(dconfig, "vectors", DEFAULT_VECTORS))
+        sconfig.vectors_transform = Symbol(get(dconfig, "vectors_transform", DEFAULT_VECTORS_TRANSFORM))
+        sconfig.vectors_dimension = Int(get(dconfig, "vectors_dimension", DEFAULT_VECTORS_DIMENSION))
+        sconfig.vectors_eltype = Symbol(get(dconfig, "vectors_eltype", DEFAULT_VECTORS_ELTYPE))
+        sconfig.search_model = Symbol(get(dconfig, "search_model", DEFAULT_SEARCH_MODEL))
+        sconfig.embeddings_path = get(dconfig, "embeddings_path", nothing)
+        sconfig.embeddings_kind = Symbol(get(dconfig, "embeddings_kind", DEFAULT_EMBEDDINGS_KIND))
+        sconfig.doc2vec_method = Symbol(get(dconfig, "doc2vec_method", DEFAULT_DOC2VEC_METHOD))
         sconfig.glove_vocabulary= get(dconfig, "glove_vocabulary", nothing)
-        sconfig.text_strip_flags = UInt32(get(dconfig, "text_strip_flags",
-                                              DEFAULT_TEXT_STRIP_FLAGS))
-        sconfig.metadata_strip_flags = UInt32(get(dconfig, "metadata_strip_flags",
-                                                  DEFAULT_METADATA_STRIP_FLAGS))
-        sconfig.query_strip_flags = UInt32(get(dconfig, "query_strip_flags",
-                                               DEFAULT_QUERY_STRIP_FLAGS))
-        sconfig.summarization_strip_flags = UInt32(get(dconfig,
-                                                       "summarization_strip_flags",
-                                                        DEFAULT_SUMMARIZATION_STRIP_FLAGS))
+        if haskey(dconfig, "heuristic")
+            sconfig.heuristic = Symbol(dconfig["heuristic"])
+        else
+            sconfig.heuristic = DEFAULT_HEURISTIC
+        end
+        sconfig.text_strip_flags = UInt32(get(dconfig, "text_strip_flags", DEFAULT_TEXT_STRIP_FLAGS))
+        sconfig.metadata_strip_flags = UInt32(get(dconfig, "metadata_strip_flags", DEFAULT_METADATA_STRIP_FLAGS))
+        sconfig.query_strip_flags = UInt32(get(dconfig, "query_strip_flags", DEFAULT_QUERY_STRIP_FLAGS))
+        sconfig.summarization_strip_flags = UInt32(get(dconfig, "summarization_strip_flags", DEFAULT_SUMMARIZATION_STRIP_FLAGS))
         # Construct parser (built last as requires other parameters)
         sconfig.parser_config = get(dconfig, "parser_config", DEFAULT_PARSER_CONFIG)
         sconfig.parser = get_parsing_function(Symbol(dconfig["parser"]),
@@ -192,14 +200,8 @@ function load_search_configs(filename::AbstractString)
         # - parser (must fail if wrong)
         # - parser_config (must fail if wrong)
         # - globbing_pattern (must fail if wrong)
-        # - build_summary (should fail if wrong)
         # - text data/metadata/query/summarization flags (must fail if wrong)
         ###
-        # search
-        if !(sconfig.search in [:classic, :semantic])
-            @warn "$(sconfig.id) Defaulting search=$DEFAULT_SEARCH."
-            sconfig.search = DEFAULT_SEARCH
-        end
         # data path
         if !isfile(sconfig.data_path) && !isdir(sconfig.data_path)
             @warn "$(sconfig.id) Missing data, ignoring search configuration..."
@@ -209,8 +211,13 @@ function load_search_configs(filename::AbstractString)
         # language
         if !(sconfig.language in [LANG_TO_STR[_lang] for _lang in SUPPORTED_LANGUAGES] ||
              sconfig.language == "auto")
-            @warn "$(sconfig.language) Defaulting language=$DEFAULT_LANGUAGE_STR."
+            @warn "$(sconfig.id) Defaulting language=$DEFAULT_LANGUAGE_STR."
             sconfig.language = DEFAULT_LANGUAGE_STR
+        end
+        # build_summary
+        if !(typeof(sconfig.build_summary) <: Bool)
+            @warn "$(sconfig.id) Defaulting build_summary=$DEFAULT_BUILD_SUMMARY."
+            sconfig.build_summary = DEFAULT_BUILD_SUMMARY
         end
         # summary_ns i.e. the number of sentences in a summary
         if !(typeof(sconfig.summary_ns) <: Integer) || sconfig.summary_ns <= 0
@@ -219,12 +226,12 @@ function load_search_configs(filename::AbstractString)
         end
         # keep_data
         if !(typeof(sconfig.keep_data) <: Bool)
-            @warn "$(sconfig.keep_data) Defaulting keep_data=$DEFAULT_KEEP_DATA."
+            @warn "$(sconfig.id) Defaulting keep_data=$DEFAULT_KEEP_DATA."
             sconfig.keep_data = DEFAULT_KEEP_DATA
         end
         # stem_words
         if !(typeof(sconfig.stem_words) <: Bool)
-            @warn "$(sconfig.stem_words) Defaulting stem_words=$DEFAULT_STEM_WORDS."
+            @warn "$(sconfig.id) Defaulting stem_words=$DEFAULT_STEM_WORDS."
             sconfig.stem_words = DEFAULT_STEM_WORDS
         end
         # delimiter
@@ -232,63 +239,77 @@ function load_search_configs(filename::AbstractString)
             @warn "$(sconfig.id) Defaulting delimiter=$DEFAULT_DELIMITER."
             sconfig.delimiter = DEFAULT_DELIMITER
         end
-        # Classic search specific options
-        if sconfig.search == :classic
-            # count type
-            if !(sconfig.count_type in [:tf, :tfidf, :bm25])
-                @warn "$(sconfig.id) Defaulting count_type=$DEFAULT_COUNT_TYPE."
-                sconfig.count_type = DEFAULT_COUNT_TYPE
-            end
-            # heuristic
-            if !(sconfig.heuristic in keys(HEURISTIC_TO_DISTANCE))
-                @warn "$(sconfig.id) Defaulting heuristic=$DEFAULT_HEURISTIC."
-                sconfig.heuristic = DEFAULT_HEURISTIC
-            end
+        # vectors
+        if sconfig.vectors in [:count, :tf, :tfidf, :bm25]
+            classic_search_approach = true  # classic search (including lsa, random projections)
+        elseif sconfig.vectors in [:word2vec, :glove, :conceptnet]
+            classic_search_approach = false  # semantic search
+        else
+            @warn "$(sconfig.id) Defaulting vectors=$DEFAULT_VECTORS."
+            sconfig.vectors = DEFAULT_VECTORS  # bm25
+            classic_search_approach = true
         end
-        # Semantic search specific options
-        if sconfig.search == :semantic
-            # word embeddings library path
+        # vectors_eltype
+        if !(sconfig.vectors_eltype in [:Float32, :Float64])
+            @warn "$(sconfig.id) Defaulting vectors_eltype=$DEFAULT_VECTORS_ELTYPE."
+            sconfig.vectors_eltype= DEFAULT_VECTORS_ELTYPE
+        end
+        # search_model
+        if !(sconfig.search_model in [:naive, :brutetree, :kdtree, :hnsw])
+            @warn "$(sconfig.id) Defaulting search_model=$DEFAULT_SEARCH_MODEL."
+            sconfig.search_model = DEFAULT_SEARCH_MODEL
+        end
+        # Classic search specific options
+        if classic_search_approach
+            # vectors_transform
+            if !(sconfig.vectors_transform in [:none, :lsa, :rp])
+                @warn "$(sconfig.id) Defaulting vectors_transform=$DEFAULT_VECTORS_TRANSFORM."
+                sconfig.vectors_transform = DEFAULT_VECTORS_TRANSFORM
+            else
+                # vectors_dimension
+                if sconfig.vectors_dimension <= 0
+                    @warn "$(sconfig.id) Defaulting vectors_dimension=$DEFAULT_VECTORS_DIMENSION."
+                    sconfig.vectors_dimension = DEFAULT_VECTORS_DIMENSION
+                end
+            end
+            # embedings_path
+            if (typeof(sconfig.embeddings_path) <: AbstractString) && !isfile(sconfig.embeddings_path)
+                @warn "$(sconfig.id) Missing embeddings, ignoring search configuration..."
+                push!(removable, i)  # if there is are no word embeddings, cannot search
+                continue
+            end
+        else
+            # Semantic search specific options
+            # embedings_path
             if !isfile(sconfig.embeddings_path)
                 @warn "$(sconfig.id) Missing embeddings, ignoring search configuration..."
                 push!(removable, i)  # if there is are no word embeddings, cannot search
                 continue
             end
-            # type of embeddings
-            if !(sconfig.embeddings_library in [:conceptnet, :word2vec, :glove])
-                @warn "$(sconfig.id) Defaulting embeddings_library=$DEFAULT_EMBEDDINGS_LIBRARY."
-                sconfig.embeddings_library = DEFAULT_EMBEDDINGS_LIBRARY
-            end
-            # embeddings kind
+            # embeddings_kind
             if !(sconfig.embeddings_kind in [:binary, :text])
                 @warn "$(sconfig.id) Defaulting embeddings_kind=$DEFAULT_EMBEDDINGS_KIND."
                 sconfig.embeddings_kind = DEFAULT_EMBEDDINGS_KIND
             end
-            # embedding method
-            if !(sconfig.embedding_method in [:bow, :sif])
-                @warn "$(sconfig.id) Defaulting embedding_method=$DEFAULT_EMBEDDING_METHOD."
-                sconfig.embedding_method = DEFAULT_EMBEDDING_METHOD
-            end
-            # type of search model
-            if !(sconfig.embedding_search_model in [:naive, :brutetree, :kdtree, :hnsw])
-                @warn "$(sconfig.id) Defaulting embedding_search_model=$DEFAULT_EMBEDDING_SEARCH_MODEL."
-                sconfig.embedding_search_model = DEFAULT_EMBEDDING_SEARCH_MODEL
-            end
-            # type of the embedding elements
-            if !(sconfig.embedding_element_type in [:Float32, :Float64])
-                @warn "$(sconfig.id) Defaulting embedding_element_type=$DEFAULT_EMBEDDING_ELEMENT_TYPE."
-                sconfig.embedding_element_type = DEFAULT_EMBEDDING_ELEMENT_TYPE
+            # doc2vec_method
+            if !(sconfig.doc2vec_method in [:bow, :sif])
+                @warn "$(sconfig.id) Defaulting doc2vec_method=$DEFAULT_DOC2VEC_METHOD."
+                sconfig.doc2vec_method = DEFAULT_DOC2VEC_METHOD
             end
             # GloVe embeddings vocabulary (only for binary embedding files)
-            if  sconfig.embeddings_library == :glove && sconfig.embeddings_kind == :binary
+            if sconfig.vectors == :glove && sconfig.embeddings_kind == :binary
                 if (sconfig.glove_vocabulary == nothing) ||
-                   (sconfig.glove_vocabulary isa AbstractString &&
-                    !isfile(sconfig.glove_vocabulary))
-                    @warn """$(sconfig.id) Missing GloVe vocabulary file,
-                             ignoring search configuration..."""
+                        (sconfig.glove_vocabulary isa AbstractString && !isfile(sconfig.glove_vocabulary))
+                    @warn "$(sconfig.id) Missing GloVe vocabulary file, ignoring search configuration..."
                     push!(removable, i)
                     continue
                 end
             end
+        end
+        # heuristic
+        if !(typeof(sconfig.heuristic) <: Nothing) && !(sconfig.heuristic in keys(HEURISTIC_TO_DISTANCE))
+            @warn "$(sconfig.id) Defaulting heuristic=nothing."
+            sconfig.heuristic = DEFAULT_HEURISTIC
         end
     end
     # Remove search configs that have missing files

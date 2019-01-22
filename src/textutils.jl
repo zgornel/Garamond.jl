@@ -90,12 +90,13 @@ function summarize(sentences::Vector{S};
     c = Corpus(s)
     prepare!(c, flags)
     update_lexicon!(c)
-    t = tf_idf(dtm(c))
+    t = dtm(DocumentTermMatrix{Float32}(c))
+    tf_idf!(t)
     # Page rank
     α = 0.85  # damping factor
     n = 100  # number of iterations
     ϵ = 1.0e-6  # convergence threhshold
-    G = Graph(t * t')
+    G = Graph(t' * t)
     try
         p = pagerank(G, α, n, ϵ)
         # Sort sentences and return
@@ -145,7 +146,7 @@ end
 Prepares the query for search (tokenization if the case), pre-processing.
 """
 prepare_query(query::AbstractString, flags::UInt32) = begin
-    String.(tokenize_fast(prepare(query, flags)))
+    String.(tokenize(prepare(query, flags), method=DEFAULT_TOKENIZER))
 end
 
 prepare_query(needles::Vector{String}, flags::UInt32) = begin
@@ -155,5 +156,5 @@ prepare_query(needles::Vector{String}, flags::UInt32) = begin
 end
 
 prepare_query(query, flags::UInt32) = begin
-    @error "Query pre-processing requires `String` or Vector{String} inputs."
+    throw(ArgumentError("Query pre-processing requires `String` or Vector{String} inputs."))
 end

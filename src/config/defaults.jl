@@ -2,22 +2,20 @@
 # DATA Configuration: these are used to provide default values in case options in the #
 # data configuration files are missing.                                               #
 #######################################################################################
-const DEFAULT_SEARCH = :classic  # Search approach
 const DEFAULT_BUILD_SUMMARY = false  # whether to summarize text before indexing
 const DEFAULT_SUMMARY_NS = 1  # Default number of sentences for a summary
 const DEFAULT_STEM_WORDS = false  # whether to stem words or not
-# Classic seatch defaults
-const DEFAULT_COUNT_TYPE = :bm25  # can be :tf, :tfidf or :bm25
+# Search
+const DEFAULT_VECTORS = :bm25  # can be :count, :tf, :tfidf, :bm25, :word2vec, :glove or :conceptnet
+const DEFAULT_VECTORS_TRANSFORM = :none  # can be :none, :lsa or :rp
+const DEFAULT_VECTORS_DIMENSION = 1  # can be any positive Int
+const DEFAULT_VECTORS_ELTYPE = :Float32
+const DEFAULT_SEARCH_MODEL = :hnsw  # can be :naive, :brutetree, :kdtree or :hnsw
+const DEFAULT_EMBEDDINGS_KIND = :binary  # can be :binary or :text
+const DEFAULT_DOC2VEC_METHOD = :bow  # can be :bow or :sif
 const DEFAULT_SEARCH_TYPE = :data  # can be :data or :metadata
 const DEFAULT_SEARCH_METHOD = :exact  #can be :exact or :regex
-const DEFAULT_HEURISTIC = :hamming
-const DEFAULT_COUNT_ELEMENT_TYPE = Float32  # used in classic search
-# Semantic search related
-const DEFAULT_EMBEDDING_METHOD = :bow  # can be :bow or :sif
-const DEFAULT_EMBEDDINGS_LIBRARY = :conceptnet  # can be :conceptnet, :word2vec or :glove
-const DEFAULT_EMBEDDINGS_KIND = :binary  # can be :binary or :text
-const DEFAULT_EMBEDDING_SEARCH_MODEL = :naive  # can be :naive, :kdtree or :hnsw
-const DEFAULT_EMBEDDING_ELEMENT_TYPE = :Float32  # can be :Float32, :Float64
+const DEFAULT_HEURISTIC = nothing #  i.e. :hamming, :levenshtein (nothing for no suggestions)
 # Various document parsing constants
 const DEFAULT_PARSER = :no_parse
 const DEFAULT_GLOBBING_PATTERN = "*"  # Can be any regexp-like pattern
@@ -65,7 +63,7 @@ const HEURISTIC_TO_DISTANCE = Dict(  # heuristic to distance object mapping
     :dameraulevenshtein => StringDistances.DamerauLevenshtein(),
     :hamming => StringDistances.Hamming(),
     :jaro => StringDistances.Jaro())
-const DEFAULT_DISTANCE = HEURISTIC_TO_DISTANCE[DEFAULT_HEURISTIC]  # default distance
+const DEFAULT_DISTANCE = HEURISTIC_TO_DISTANCE[:jaro]  # default distance
 const DEFAULT_PARSER_CONFIG = nothing
 const DEFAULT_METADATA_FIELDS = [:author, :name, :note]  # Default metadata fields for search
 # Dictionaries for String <=>Languages.Language / Languages.Languages <=> String
@@ -122,3 +120,4 @@ const SUPPORTED_LANGUAGES=[Languages.English,
                            Languages.Italian]
 const DEFAULT_LANGUAGE=Languages.English
 const DEFAULT_LANGUAGE_STR=LANG_TO_STR[DEFAULT_LANGUAGE]
+const DEFAULT_TOKENIZER=:fast

@@ -4,14 +4,17 @@ A small, fast and flexible semantic search engine, written in Julia. Batteries n
 
 [![License](http://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat)](LICENSE.md) 
 [![Build Status (master)](https://travis-ci.com/zgornel/Garamond.jl.svg?token=8HcgFtAjpxwpdXiu8Fon&branch=master)](https://travis-ci.com/zgornel/Garamond.jl)
-[![Build Status (latest)](https://travis-ci.com/zgornel/Garamond.jl.svg?token=8HcgFtAjpxwpdXiu8Fon&branch=latest)](https://travis-ci.com/zgornel/Garamond.jl)
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://zgornel.github.io/Garamond.jl/stable)
 [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://zgornel.github.io/Garamond.jl/dev)
 
 
 ## Installation
 
-Installation can be performed by cloning the repository with `git clone https://github.com/zgornel/Garamond.jl` and instatiating dependencies by running `julia -e 'using Pkg; Pkg.instantiate()'` from the project root directory. Binary executables of the search server and clients can be built by running `./make.jl` from the `build/` directory.
+Installation can be performed by:
+ - first cloning with `git clone https://github.com/zgornel/Garamond.jl`
+ - then running `julia -e 'using Pkg; Pkg.activate("."); Pkg.instantiate()'` from the project root directory
+
+Binary executables of the search server and clients can be built by running `./make.jl` from the `build/` directory.
 
 
 ## Usage

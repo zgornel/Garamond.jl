@@ -116,9 +116,9 @@ version = "0.1.1"
 
 [[HDF5]]
 deps = ["BinDeps", "Blosc", "CRC32c", "Distributed", "Homebrew", "Libdl", "LinearAlgebra", "Mmap", "Pkg", "Test", "WinRPM"]
-git-tree-sha1 = "d1b46002defcf8be75ac75ce665b61b941082213"
+git-tree-sha1 = "dd83e1e9c72e44e3a156438b552cf75dbdda722f"
 uuid = "f67ccb44-e63f-5c2f-98bd-6dc0ccc4ba2f"
-version = "0.10.4"
+version = "0.11.0"
 
 [[HNSW]]
 deps = ["Distances", "LinearAlgebra", "Reexport"]
@@ -316,16 +316,18 @@ deps = ["LinearAlgebra", "SparseArrays"]
 uuid = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [[StringAnalysis]]
-deps = ["BinaryProvider", "Dates", "DelimitedFiles", "Languages", "Libdl", "LinearAlgebra", "Pkg", "SparseArrays", "Statistics", "TSVD", "Test", "Unicode", "WordTokenizers"]
-git-tree-sha1 = "9274a2d8bc95dec55b4175f417220528a4871d54"
-uuid = "b66b7d2f-f536-51df-9f97-4dfb9d27c005"
-version = "0.3.0"
+deps = ["BinaryProvider", "Dates", "DelimitedFiles", "Languages", "Libdl", "LinearAlgebra", "SparseArrays", "Statistics", "TSVD", "Test", "Unicode", "WordTokenizers"]
+git-tree-sha1 = "4a52adc12b56eb737c4d6f9d1434b90123dff534"
+repo-rev = "master"
+repo-url = "https://github.com/zgornel/StringAnalysis.jl"
+uuid = "f2e5b97c-ed87-11e8-3fa8-a300efcc83e4"
+version = "0.3.2"
 
 [[StringDistances]]
 deps = ["Distances", "IterTools", "Test"]
-git-tree-sha1 = "41fddd579b75e0cd0d1bbdb2d68a2a9cc588c164"
+git-tree-sha1 = "2d9e7e22e842da878744331de6895c504124021d"
 uuid = "88034a9c-02f8-509d-84a9-84ec65e18404"
-version = "0.3.0"
+version = "0.3.1"
 
 [[TSVD]]
 deps = ["LinearAlgebra", "SparseArrays", "Test"]
@@ -370,11 +372,9 @@ version = "0.4.2"
 
 [[Word2Vec]]
 deps = ["LinearAlgebra", "Statistics", "Test"]
-git-tree-sha1 = "9a49490ac176409264cb71aa302e54a098702bb8"
-repo-rev = "latest"
-repo-url = "https://github.com/zgornel/Word2Vec.jl"
-uuid = "3e5e13d1-f1b1-11e8-0a34-b72730d7b11b"
-version = "0.0.3"
+git-tree-sha1 = "94d341dcb4a3844ab969b2c057f6a3423f930785"
+uuid = "c64b6f0f-98cd-51d1-af78-58ae84944834"
+version = "0.5.0"
 
 [[WordTokenizers]]
 deps = ["Test"]

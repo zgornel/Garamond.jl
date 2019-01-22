@@ -1,13 +1,8 @@
 # Short term
-- High priority
-    - Take testing seriously
-    - Take metadata search seriously (i.e. decide on facets, what fields to use/index etc)
-    - Take scoring seriously (build scoring function i.e. normalize document scores, map non-linearly to arbitrary scale; add influence of key-term hit-rate i.e. terms in query found)
-- Low priority
-    - Improve re-indexing mechanism (i.e. @spawn worker, use incremental approach)
-    - Improve speed for suggestions, re-visit mechanism
-    - Implement mechanism for query expansion
-    - Define (decide on) mechanisms to combine semantic and classic searches (i.e. classic for filtering, semantic for ordering)
+- Resuming persistency mechanism (i.e. searcher cache)
+- Re-indexing mechanism (i.e. @spawn worker, use incremental approach)
+- Re-visit suggestion mechanism (too slow)
+- Mechanism for query expansion
 
 # Long term
 - Data gathering: web crawler (either implement or support), data streaming sink APIs (should be in distinct support packages)

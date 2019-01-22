@@ -16,7 +16,7 @@
 #MXl'.    .,oXMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM#
 ##################################################################################################################
 #
-# ~Garamond~ - Search engine written at 0x0α Research by Corneliu Cofaru, 2018.
+# ~Garamond~ - Search engine written at 0x0α Research by Corneliu Cofaru, 2018, 2019.
 #
 module Garamond
 
@@ -41,24 +41,22 @@ module Garamond
     using JSON
     using Glob
     using HTTP
+    using TSVD
 
     # Import section (extendable methods)
     import Base: size, length, show, keys, values, push!,
                  delete!, getindex, names, convert, lowercase,
                  occursin, isempty
-    import StringAnalysis: id
-    import ConceptnetNumberbatch: embed_document
+    import StringAnalysis: id, embed_document
     import Word2Vec: WordVectors
 
     # Abstract types
-    abstract type AbstractSearcher end
-    abstract type AbstractSearchData end
+    abstract type AbstractSearchModel end
 
     # Exports
     export
         search,
         load_searchers,
-        AbstractSearcher,
         Searcher,
         SearchConfig,
         SearchResult,
@@ -75,6 +73,7 @@ module Garamond
     include("textutils.jl")
     include("embeddings.jl")
     include("structs.jl")
+    include("srchmodels.jl")
     include("update.jl")
     include("search.jl")
     include("results.jl")

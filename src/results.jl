@@ -6,7 +6,7 @@
 struct SearchResult{T<:AbstractFloat}
     id::StringId
     query_matches::MultiDict{T, Int}  # score => document indices
-    needle_matches::Dict{String, T}  # needle => sum of scores
+    needle_matches::Vector{String}
     suggestions::MultiDict{String, Tuple{T,String}} # needle => tuples of (score,partial match)
 end
 
@@ -37,15 +37,17 @@ end
 
 
 # Pretty printer of results
-function print_search_results(io::IO, srcher::AbstractSearcher, result::SearchResult)
+function print_search_results(io::IO, srcher::Searcher, result::SearchResult)
     nm = valength(result.query_matches)
     ns = length(result.suggestions)
     @assert id(srcher) == result.id "Searcher and result id's do not match."
-    printstyled(io, "[$(id(srcher))] $nm search results")
+    printstyled(io, "[$(id(srcher))] ", color=:blue, bold=true)
+    printstyled(io, "$(nm) search results", bold=true)
     ch = ifelse(nm==0, ".", ":"); printstyled(io, "$ch\n")
     for score in sort(collect(keys(result.query_matches)), rev=true)
-        if isempty(srcher.corpus)
-            printstyled(io, "*** Corpus data is missing ***", color=:normal)
+        if isempty(documents(srcher.corpus))
+            printstyled(io, "*** Corpus data is missing ***",
+                        color=:red, bold=true)
         else
             for doc in (srcher.corpus[i] for i in result.query_matches[score])
                 printstyled(io, "  $score ~ ", color=:normal, bold=true)
@@ -60,14 +62,14 @@ function print_search_results(io::IO, srcher::AbstractSearcher, result::SearchRe
     end
 end
 
-print_search_results(srcher::AbstractSearcher, result::SearchResult) =
+print_search_results(srcher::Searcher, result::SearchResult) =
     print_search_results(stdout, srcher, result)
 
 
 # Pretty printer of results
 function print_search_results(io::IO, srchers::S, results::T;
                               max_suggestions=MAX_CORPUS_SUGGESTIONS
-                             ) where {S<:AbstractVector{<:AbstractSearcher},
+                             ) where {S<:AbstractVector{<:Searcher},
                                       T<:AbstractVector{<:SearchResult}}
     if !isempty(results)
         nt = mapreduce(x->valength(x.query_matches), +, results)
@@ -78,11 +80,12 @@ function print_search_results(io::IO, srchers::S, results::T;
     for (i, _result) in enumerate(results)
         crps = srchers[i].corpus
         nm = valength(_result.query_matches)
-        printstyled(io, "`-[$(_result.id)] ", color=:cyan)  # hash
-        printstyled(io, "$(nm) search results")
+        printstyled(io, "`-[$(_result.id)] ", color=:blue, bold=true)
+        printstyled(io, "$(nm) search results", bold=true)
         ch = ifelse(nm==0, ".", ":"); printstyled(io, "$ch\n")
         if isempty(crps)
-            printstyled(io, "*** Corpus data is missing ***\n", color=:normal)
+            printstyled(io, "*** Corpus data is missing ***\n",
+                        color=:red, bold=true)
         else
             for score in sort(collect(keys(_result.query_matches)), rev=true)
                 for doc in (crps[i] for i in _result.query_matches[score])
@@ -102,7 +105,7 @@ function print_search_results(io::IO, srchers::S, results::T;
 end
 
 print_search_results(srchers::S, results::T, max_suggestions=MAX_CORPUS_SUGGESTIONS
-                    ) where {S<:AbstractVector{<:AbstractSearcher},
+                    ) where {S<:AbstractVector{<:Searcher},
                              T<:AbstractVector{<:SearchResult}} =
     print_search_results(stdout,
                          srchers,
@@ -124,7 +127,7 @@ function squash_suggestions(results::Vector{SearchResult},
 
         # Get the needles not found across all corpus results
         matched_needles = (needle for _result in results
-                           for needle in keys(_result.needle_matches))
+                           for needle in _result.needle_matches)
         missed_needles = union((keys(_result.suggestions)
                                 for _result in results)...)
         # Construct suggestions for the whole AggregateSearcher

@@ -1,47 +1,61 @@
-###########################
-# Term Counting structure #
-###########################
-abstract type AbstractDocumentCount <: AbstractSearchData
-end
-
-struct TermCounts{T} <: AbstractDocumentCount
-    column_indices::Dict{String, Int}
-    values::SparseMatrixCSC{T, Int64}
-end
-
-# Useful methods
-length(tc::TermCounts) = size(tc.values, 1)  # number of documents
-
-# Show method
-show(io::IO, tc::TermCounts) = begin
-    m, n = size(tc.values)
-    print("Term importances for $m documents, $n unique terms.")
-end
-
-
-
-#################################################
-# Interface for the Searcher (classic, semantic #
-#################################################
+##############################
+# Interface for the Searcher #
+##############################
 
 # Searcher structures
-mutable struct Searcher{D<:AbstractDocument,
-                        E,
-                        M<:AbstractSearchData} <: AbstractSearcher
+mutable struct Searcher{T<:AbstractFloat, D<:AbstractDocument, E, M<:AbstractSearchModel}
     config::SearchConfig                        # most of what is not actual data
     corpus::Corpus{String,D}                    # corpus
-    embeddings::E                               # needed to embed query
-    search_data::Dict{Symbol, M}                # actual search data (classic and semantic)
+    embedder::E                                 # needed to embed query
+    search_data::Dict{Symbol, M}                # actual indexed search data
     search_trees::Dict{Symbol, BKTree{String}}  # for suggestions
 end
 
+Searcher(config::SearchConfig,
+         corpus::Corpus{String, D},
+         embedder::E,
+         search_data::Dict{Symbol, M},
+         search_trees::Dict{Symbol, BKTree{String}}
+        ) where {D<:AbstractDocument, E, M<:AbstractSearchModel} =
+    Searcher{get_embedding_eltype(embedder), D, E, M}(
+        config, corpus, embedder, search_data, search_trees)
+"""
+    get_embedding_eltype(embeddings)
+
+Function that returns the type of the embeddings' elements. The type is useful to
+generate score vectors. If the element type is and `Int8` (ConceptNet compressed),
+the returned type is the DEFAULT_EMBEDDING_TYPE.
+"""
+# Get embedding element types
+get_embedding_eltype(::Word2Vec.WordVectors{S,T,H}) where
+    {S<:AbstractString, T<:Real, H<:Integer} = T
+
+get_embedding_eltype(::Glowe.WordVectors{S,T,H}) where
+    {S<:AbstractString, T<:Real, H<:Integer} = T
+
+get_embedding_eltype(::ConceptNet{L,K,E}) where
+    {L<:Language, K<:AbstractString, E<:AbstractFloat} = E
+
+get_embedding_eltype(::ConceptNet{L,K,E}) where
+    {L<:Language, K<:AbstractString, E<:Integer} = DEFAULT_EMBEDDING_ELEMENT_TYPE
+
+get_embedding_eltype(::RPModel{S,T,A,H}) where
+    {S<:AbstractString, T<:AbstractFloat, A<:AbstractMatrix{T}, H<:Integer} = T
+
+get_embedding_eltype(::LSAModel{S,T,A,H}) where
+    {S<:AbstractString, T<:AbstractFloat, A<:AbstractMatrix{T}, H<:Integer} = T
+
+get_embedding_eltype(::Dict{Symbol, <:Union{RPModel{S,T,A,H}, LSAModel{S,T,A,H}}}) where
+    {S<:AbstractString, T<:AbstractFloat, A<:AbstractMatrix{T}, H<:Integer} = T
+
+
 
 # Useful methods
-id(srcher::Searcher{D,E,M}) where {D,E,M} = srcher.config.id
+id(srcher::Searcher) = srcher.config.id
 
-description(srcher::Searcher{D,E,M}) where {D,E,M} = srcher.config.description
+description(srcher::Searcher) = srcher.config.description
 
-isenabled(srcher::Searcher{D,E,M}) where {D,E,M} = srcher.config.enabled
+isenabled(srcher::Searcher) = srcher.config.enabled
 
 disable!(srcher::Searcher) = begin
     srcher.config.enabled = false
@@ -54,56 +68,47 @@ enable!(srcher::Searcher) = begin
 end
 
 # Show method
-show(io::IO, srcher::Searcher{D,E,M}) where {D,E,M} = begin
-    _srcher_type = ifelse(M<:AbstractDocumentCount,
-                          "Classic Searcher",
-                          "Semantic Searcher")
-    printstyled(io, "$_srcher_type, ")
-    printstyled(io, "[$(id(srcher))] ", color=:cyan)
+show(io::IO, srcher::Searcher{T,D,E,M}) where {T,D,E,M} = begin
+    printstyled(io, "Searcher for $(id(srcher)), ")
     _status = ifelse(isenabled(srcher), "enabled", "disabled")
     _status_color = ifelse(isenabled(srcher), :light_green, :light_black)
-    printstyled(io, "[$_status]", color=_status_color)
+    printstyled(io, "$_status", color=_status_color, bold=true)
+    printstyled(io, ", ")
     # Get embeddings type string
     if E <: Word2Vec.WordVectors
-        _embs_type = "Word2Vec"
+        _embedder = "Word2Vec"
     elseif E <: Glowe.WordVectors
-        _embs_type = "GloVe"
-    elseif E <: ConceptNet
-        _embs_type = "Conceptnet"
-    elseif E <: Nothing
-        _embs_type = "no embeddings"
+        _embedder = "GloVe"
+    elseif E <: ConceptnetNumberbatch.ConceptNet
+        _embedder = "Conceptnet"
+    elseif E <: Dict{Symbol, <:StringAnalysis.LSAModel}
+        _embedder = "DTV+LSA"
+    elseif E <: Dict{Symbol, <:StringAnalysis.RPModel}
+        _embedder = "DTV"
+        if srcher.config.vectors_transform==:rp
+            _embedder *= "+RP"
+        end
     else
-        _embs_type = "unknown embeddings"
+        _embedder = "<Unknown>"
     end
+    printstyled(io, "$_embedder", bold=true)
+    printstyled(io, ", ")
     # Get model type string
-    if M <: AbstractDocumentCount
-        _model_type = "tf/tf-idf"
-    elseif M <: NaiveEmbeddingModel
-        _model_type = "naive model"
+    if M <: NaiveEmbeddingModel
+        _model_type = "Naive"
     elseif M <: BruteTreeEmbeddingModel
-        _model_type = "brute tree model"
+        _model_type = "Brute-Tree"
     elseif M<: KDTreeEmbeddingModel
-        _model_type = "kd-tree model"
+        _model_type = "KD-Tree"
     elseif M <: HNSWEmbeddingModel
-        _model_type = "hnsw model"
+        _model_type = "HNSW"
     else
-        _model_type = "unknown model"
+        _model_type = "<Unknown>"
     end
-    printstyled(io, "-[$_embs_type]-[$_model_type] ")
-    printstyled(io, "$(description(srcher))", color=:normal)
-    printstyled(io, ", $(length(srcher.search_data[:data])) embedded documents")
+    printstyled(io, "$_model_type", bold=true)
+    #printstyled(io, "$(description(srcher))", color=:normal)
+    printstyled(io, ", $(length(srcher.search_data[:data])) $T embedded documents")
 end
-
-# Function that returns a similar matrix with
-# a last column of zeros
-function add_final_zeros(a::A) where A<:AbstractMatrix
-    m, n = size(a)
-    new_a = similar(a, (m,n+1))
-    new_a[1:m,1:n] = a
-    new_a[:,n+1] .= 0.0
-    return new_a::A
-end
-
 
 
 """
@@ -121,8 +126,7 @@ function build_searcher(sconf::SearchConfig)
     #       converying information regarding what is being
     #       searched. The only use for it is when displaying
     crps = build_corpus(documents, DOCUMENT_TYPE, metadata_vector)
-    crps_meta = build_corpus(documents_meta, DOCUMENT_TYPE,
-                             metadata_vector)
+    crps_meta = build_corpus(documents_meta, DOCUMENT_TYPE, metadata_vector)
     # Pre-process documents
     prepare!.(crps, sconf.text_strip_flags |
               (sconf.stem_words ? stem_words : 0x0))
@@ -131,85 +135,64 @@ function build_searcher(sconf::SearchConfig)
     # Update lexicons
     update_lexicon!(crps)
     update_lexicon!(crps_meta)
-    # Classic searcher
-    if sconf.search == :classic
+    # Update inverse index
+    update_inverse_index!(crps)
+    update_inverse_index!(crps_meta)
+    # Construct element type
+    T = eval(sconf.vectors_eltype)
+    # Get search model types
+    sconf.search_model == :naive && (SearchModel = NaiveEmbeddingModel)
+    sconf.search_model == :brutetree && (SearchModel = BruteTreeEmbeddingModel)
+    sconf.search_model == :kdtree && (SearchModel = KDTreeEmbeddingModel)
+    sconf.search_model == :hnsw && (SearchModel = HNSWEmbeddingModel)
+    # Load or construct document embedder data
+    if sconf.vectors in [:count, :tf, :tfidf, :bm25]
         # Calculate term importances
-        dtm = DocumentTermMatrix(crps)
-        dtm_meta = DocumentTermMatrix(crps_meta)
-        # Get document importance calculation function
-        if sconf.count_type == :tf
-            count_func = StringAnalysis.tf
-        elseif sconf.count_type == :tfidf
-            count_func = StringAnalysis.tf_idf
-        elseif sconf.count_type == :bm25
-            count_func = StringAnalysis.bm_25
-        else
-            @error "Unknown document importance $(sconf.count_type)."
-        end
-        # No word embeddings
-        word_embeddings = nothing
-        # Calculate doc importances
-        _srchdata = TermCounts{DEFAULT_COUNT_ELEMENT_TYPE}(
-                        dtm.column_indices, add_final_zeros(count_func(dtm)))
-        _srchdata_meta = TermCounts{DEFAULT_COUNT_ELEMENT_TYPE}(
-                            dtm_meta.column_indices, add_final_zeros(count_func(dtm_meta)))
+        dtm = DocumentTermMatrix{T}(crps)
+        dtm_meta = DocumentTermMatrix{T}(crps_meta)
+        # Get document-term statistic function
+        sconf.vectors == :count && (fstatistic = identity)
+        sconf.vectors == :tf && (fstatistic = StringAnalysis.tf!)
+        sconf.vectors == :tfidf && (fstatistic = StringAnalysis.tf_idf!)
+        sconf.vectors == :bm25 && (fstatistic = StringAnalysis.bm_25!)
+        # Apply document-term statistic function
+        fstatistic(dtm.dtm)
+        fstatistic(dtm_meta.dtm)
+        # Embedder
+        local SubspaceModel, dims
+        sconf.vectors_transform == :none && (SubspaceModel = RPModel; dims = 0)
+        sconf.vectors_transform == :rp && (SubspaceModel = RPModel; dims = sconf.vectors_dimension)
+        sconf.vectors_transform == :lsa && (SubspaceModel = LSAModel; dims = sconf.vectors_dimension)
+        embedder = Dict(:data => SubspaceModel(dtm, k=dims, stats=sconf.vectors),
+                        :metadata => SubspaceModel(dtm_meta, k=dims, stats=sconf.vectors))
+        _srchdata = SearchModel(embed_document(embedder[:data], dtm))
+        _srchdata_meta = SearchModel(embed_document(embedder[:metadata], dtm_meta))
     # Semantic searcher
-    elseif sconf.search == :semantic
-        # Construct element type
-        _eltype = eval(sconf.embedding_element_type)
+    elseif sconf.vectors in [:word2vec, :glove, :conceptnet]
         # Read word embeddings
-        if sconf.embeddings_library == :conceptnet
-            word_embeddings = load_embeddings(sconf.embeddings_path,
-                                              languages=[Languages.English()],
-                                              data_type=_eltype)
-        elseif sconf.embeddings_library == :word2vec
-            word_embeddings = Word2Vec.wordvectors(sconf.embeddings_path,
-                                                   _eltype,
-                                                   kind=sconf.embeddings_kind,
-                                                   normalize=false)
-        elseif sconf.embeddings_library == :glove
-            word_embeddings = Glowe.wordvectors(sconf.embeddings_path,
-                                                _eltype,
-                                                kind=sconf.embeddings_kind,
-                                                vocabulary=sconf.glove_vocabulary,
-                                                normalize=false,
-                                                load_bias=false)
-        else
-            @error "$(sconf.embeddings_library) embeddings library not supported."
-        end
-        # Get search model types
-        if sconf.embedding_search_model == :naive
-            model_type = NaiveEmbeddingModel
-        elseif sconf.embedding_search_model == :brutetree
-            model_type = BruteTreeEmbeddingModel
-        elseif sconf.embedding_search_model == :kdtree
-            model_type = KDTreeEmbeddingModel
-        elseif sconf.embedding_search_model == :hnsw
-            model_type = HNSWEmbeddingModel
-        else
-            @error "$(sconf.embedding_search_model) embedding model not supported."
+        if sconf.vectors == :conceptnet
+            embedder = load_embeddings(sconf.embeddings_path,
+                languages=[Languages.English()], data_type=T)
+        elseif sconf.vectors == :word2vec
+            embedder = Word2Vec.wordvectors(sconf.embeddings_path, T,
+                kind=sconf.embeddings_kind, normalize=false)
+        elseif sconf.vectors == :glove
+            embedder = Glowe.wordvectors(sconf.embeddings_path, T,
+                kind=sconf.embeddings_kind,
+                vocabulary=sconf.glove_vocabulary,
+                normalize=false, load_bias=false)
         end
         # Construct document data model
-        _srchdata = model_type(
-            hcat((embed_document(word_embeddings,
-                                 crps.lexicon,
-                                 doc,
-                                 embedding_method=sconf.embedding_method)
-                  for doc in documents)...))
+        _srchdata = SearchModel(hcat(
+                (embed_document(embedder, crps.lexicon, doc, embedding_method=sconf.doc2vec_method)
+                 for doc in documents)...))
         # Construct document metadata model
-        _srchdata_meta = model_type(
-            hcat((embed_document(word_embeddings,
-                                 crps_meta.lexicon,
-                                 doc,
-                                 embedding_method=sconf.embedding_method)
-                  for doc in documents_meta)...))
-    else
-        # This statement should never be reached in practice
-        # as the search option should be checked prior (during parsing)
-        @error "Unknown search $(sconf.search)."
+        _srchdata_meta = SearchModel(hcat(
+                (embed_document(embedder, crps_meta.lexicon, doc, embedding_method=sconf.doc2vec_method)
+                 for doc in documents_meta)...))
     end
     # Build search trees (for suggestions)
-    if sconf.search == :classic
+    if sconf.heuristic != nothing
         distance = get(HEURISTIC_TO_DISTANCE, sconf.heuristic, DEFAULT_DISTANCE)
         _srchtree_data = BKTree((x,y)->evaluate(distance, x, y),
                                 collect(keys(crps.lexicon)))
@@ -219,20 +202,16 @@ function build_searcher(sconf::SearchConfig)
         _srchtree_data = BKTree{String}()
         _srchtree_meta = BKTree{String}()
     end
-    # Remove corpus data if keep_data is false
+    # Remove corpus data if keep_data is false (the lexicon and inverse index are kept!)
     if !sconf.keep_data
-        crps = Corpus(DOCUMENT_TYPE[])
+        crps.documents = DOCUMENT_TYPE[]
     end
     # Build searcher
-    srcher = Searcher(sconf,
-                      crps,
-                      word_embeddings,
+    srcher = Searcher(sconf, crps, embedder,
                       Dict(:data=>_srchdata, :metadata=>_srchdata_meta),
-                      Dict(:data=>_srchtree_data, :metadata=>_srchtree_meta)
-                     )
+                      Dict(:data=>_srchtree_data, :metadata=>_srchtree_meta))
     return srcher
 end
-
 
 
 ##################
@@ -255,10 +234,11 @@ function load_searchers(sconfs::Vector{SearchConfig})
 end
 
 
-
 # Indexing for vectors of searchers
-getindex(srchers::V, an_id::StringId) where {V<:Vector{<:Searcher{D,E,M}
-        where D<:AbstractDocument where E where M<:AbstractSearchData}} = begin
+function getindex(srchers::V, an_id::StringId
+        ) where {V<:Vector{<:Searcher{T,D,E,M}
+          where T<:AbstractFloat where D<:AbstractDocument
+          where E where M<:AbstractSearchModel}}
     idxs = Int[]
     for (i, srcher) in enumerate(srchers)
         id(srcher) == an_id && push!(idxs, i)
@@ -266,6 +246,9 @@ getindex(srchers::V, an_id::StringId) where {V<:Vector{<:Searcher{D,E,M}
     return srchers[idxs]
 end
 
-getindex(srchers::V, an_id::String) where {V<:Vector{<:Searcher{D,E,M}
-        where D<:AbstractDocument where E where M<:AbstractSearchData}} =
+function getindex(srchers::V, an_id::String
+        ) where {V<:Vector{<:Searcher{T,D,E,M}
+          where T<:AbstractFloat where D<:AbstractDocument
+          where E where M<:AbstractSearchModel}}
     srchers[StringId(an_id)]
+end
