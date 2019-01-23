@@ -46,6 +46,7 @@ function __parser_delimited_format_1(filename::AbstractString,
                                      kwargs...  # unused kw arguments (used in other parsers)
                                     ) where T<:AbstractDocument
     # Initializations
+    filename = expanduser(filename)
     nlines = linecount(filename) - ifelse(header,1,0)
     nlines==0 && error("$filename contains no data lines.")
     # Read the file

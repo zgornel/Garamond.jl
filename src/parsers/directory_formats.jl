@@ -49,13 +49,12 @@ function __parser_directory_format_1(directory::AbstractString,
                                      kwargs...  # unused kw arguments (used in other parsers)
                                     ) where T<:AbstractDocument
     # Initializations
-    files = recursive_glob(globbing_pattern, directory)
+    files = recursive_glob(globbing_pattern, expanduser(directory))
     n = length(files)
     n==0 && @error "No files found in $directory with glob: $globbing_pattern."
     # Initialize outputs
     documents = Vector{Vector{String}}(undef, n)
     metadata_vector = Vector{DocumentMetadata}(undef, n)
-    metadata_fields = fieldnames(DocumentMetadata)
     # Progressbar
     progressbar = Progress(n,
                     desc="Parsing $(split(directory,"/")[end])...",
@@ -77,39 +76,55 @@ function __parser_directory_format_1(directory::AbstractString,
     end
     for (i, file) in enumerate(files)
         # Read data
-        if endswith(file, ".pdf")
-            if can_read_pdfs
-                raw_data = read(`$PDFTOTEXT_PROGRAM $file -`, String)
-            else
-                raw_data = ""
-            end
-        else
-            raw_data = open(fid->read(fid, String), file)
-        end
-        # Split into sentences
-        sentences = sentence_tokenize(raw_data)
-        # Create summary if the case
-        if build_summary
-            # TODO(Corneliu): Optimize this bit for performance
-            #                 i.e. investigate PageRank parameters
-            sentences = summarize(sentences,
-                                  ns=summary_ns,
-                                  flags=summarization_strip_flags)
-        end
+        sentences, meta = _read_file_data(file,
+                                          language,
+                                          can_read_pdfs,
+                                          build_summary,
+                                          summary_ns,
+                                          summarization_strip_flags)
+        # Update document and metadata vectors
         documents[i] = sentences
-        # Language detection (from 3 sentences max)
-        if language == "auto"
-            some_text = join(sentences[1:min(3, length(sentences))], " ")
-            lang = detect_language(some_text)
-        else
-            lang = get(STR_TO_LANG, language, DEFAULT_LANGUAGE)()  # instantiate as well
-        end
-        # Add some real metadata
-        metadata_vector[i] = DocumentMetadata(lang, ("" for _ in 1:9)...)
-        setfield!(metadata_vector[i], :name, readuntil(file,"\n"))  # set name the first line
-        setfield!(metadata_vector[i], :id, file)  # set id the filename
+        metadata_vector[i] = meta
         # Update progressbar
         show_progress && next!(progressbar)
     end
     return documents, metadata_vector
+end
+
+function _read_file_data(file::AbstractString,
+                         language::String,
+                         can_read_pdfs::Bool=false,
+                         build_summary::Bool=false,
+                         summary_ns::Int=1,
+                         summarization_strip_flags::UInt32=0)
+    if endswith(file, ".pdf")
+        if can_read_pdfs
+            raw_data = read(`$PDFTOTEXT_PROGRAM $file -`, String)
+        else
+            raw_data = ""
+        end
+    else
+        raw_data = open(fid->read(fid, String), file)
+    end
+    # Split into sentences
+    sentences = sentence_tokenize(raw_data)
+    # Create summary if the case
+    if build_summary
+        # TODO(Corneliu): Optimize this bit for performance
+        #                 i.e. investigate PageRank parameters
+        sentences = summarize(sentences, ns=summary_ns,
+                              flags=summarization_strip_flags)
+    end
+    # Language detection (from 3 sentences max)
+    if language == "auto"
+        some_text = join(sentences[1:min(3, length(sentences))], " ")
+        lang = detect_language(some_text)
+    else
+        lang = get(STR_TO_LANG, language, DEFAULT_LANGUAGE)()  # instantiate as well
+    end
+    # Add some real metadata
+    meta = DocumentMetadata(lang, ("" for _ in 1:9)...)
+    setfield!(meta, :name, readuntil(file,"\n"))  # set name the first line
+    setfield!(meta, :id, file)  # set id the filename
+    return sentences, meta
 end
