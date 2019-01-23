@@ -14,7 +14,6 @@ make_id(::Type{StringId}, id::T) where T<:AbstractString = StringId(String(id))
 make_id(::Type{StringId}, id::T) where T<:Number = StringId(string(id))
 
 
-
 ################
 # SearchConfig #
 ################
@@ -124,7 +123,6 @@ Base.show(io::IO, sconfig::SearchConfig) = begin
         printstyled(io, "\"$(sconfig.embeddings_path)\"\n", bold=true)
     end
 end
-
 
 
 """
@@ -320,16 +318,47 @@ function load_search_configs(filename::AbstractString)
     end
     # Remove search configs that have missing files
     deleteat!(search_configs, removable)
-    isempty(search_configs) &&
+    # Last checks
+    if isempty(search_configs)
         @error """The search configuration does not contain searchable entities.
-                  Please review $filename, add entries or fix the configuration errors."""
+                  Please review $filename, add entries or fix the
+                  configuration errors. Exiting..."""
+        exit(-1)
+    else
+        all_ids = Vector{StringId}()
+        for config in search_configs
+            if config.id in all_ids          # check id uniqueness
+                @error """Multiple occurences of $(config.id) detected. Data id's
+                          have to be unique. Please correct the error in $filename.
+                          Exiting..."""
+                exit(-1)
+            else
+                push!(all_ids, config.id)
+            end
+        end
+    end
     return search_configs
 end
 
 function load_search_configs(filenames::Vector{S}) where S<:AbstractString
-    return vcat((load_search_configs(file) for file in filenames)...)
+    all_configs = Vector{SearchConfig}()
+    all_ids = Vector{StringId}()
+    for filename in filenames
+        configs = load_search_configs(filename)  # read all configs from a file
+        for config in configs
+            if config.id in all_ids          # check id uniqueness
+                @error """Multiple occurences of $(config.id) detected. Data id's
+                          have to be unique. Please correct the error in $filename.
+                          Exiting..."""
+                exit(-1)
+            else
+                push!(all_ids, config.id)
+                push!(all_configs, config)
+            end
+        end
+    end
+    return all_configs
 end
-
 
 
 """
