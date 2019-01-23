@@ -136,7 +136,13 @@ to build the `Searcher` objects with which search is performed.
 """
 function load_search_configs(filename::AbstractString)
     # Read config (this should fail if config not found)
-    dict_configs = JSON.parse(open(fid->read(fid, String), filename))
+    local dict_configs::Vector{Dict{String, Any}}
+    try
+        dict_configs = JSON.parse(open(fid->read(fid, String), expanduser(filename)))
+    catch
+        @error "Could not read data configuration file $filename. Exiting..."
+        exit(-1)
+    end
     n = length(dict_configs)
     # Create search configurations
     search_configs = [SearchConfig() for _ in 1:n]
