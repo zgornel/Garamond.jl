@@ -271,7 +271,7 @@ function load_search_configs(filename::AbstractString)
                 sconfig.vectors_transform = DEFAULT_VECTORS_TRANSFORM
             else
                 # vectors_dimension
-                if sconfig.vectors_dimension <= 0
+                if sconfig.vectors_transform != :none && sconfig.vectors_dimension <= 0
                     @warn "$(sconfig.id) Defaulting vectors_dimension=$DEFAULT_VECTORS_DIMENSION."
                     sconfig.vectors_dimension = DEFAULT_VECTORS_DIMENSION
                 end
