@@ -102,7 +102,10 @@ using PackageCompiler
 COPY_JULIALIBS = false
 for (i, target) in enumerate(TARGETS_PATH)
     @info "*** Building $(uppercase(TARGETS[i])) ***"
-    build_executable(target, builddir=BUILD_DIR, copy_julialibs=COPY_JULIALIBS)
+    build_executable(target,
+                     builddir=BUILD_DIR,
+                     copy_julialibs=COPY_JULIALIBS,
+                     optimize="2")  # -O2
 end
 
 @info "Build complete."
