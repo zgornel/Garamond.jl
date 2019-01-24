@@ -235,7 +235,7 @@ function merge_indices_and_scores(idxs, scores, k)
 end
 
 
-function find_matching_needles(iv::Dict{String, Vector{Int}}, needles::Vector{String}, method::Symbol)
+function find_matching_needles(iv::OrderedDict{String, Vector{Int}}, needles::Vector{String}, method::Symbol)
     # Initializations
     p = length(needles)
     needle_matches = Set{String}()
