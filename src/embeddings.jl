@@ -45,7 +45,7 @@ function embed_document(embedder::Union{
                             ConceptNet{<:Languages.Language, <:AbstractString, T},
                             Word2Vec.WordVectors{<:AbstractString, T, <:Integer},
                             Glowe.WordVectors{<:AbstractString, T, <:Integer}},
-                        lexicon::Dict{String, Int},
+                        lexicon::OrderedDict{String, Int},
                         document::Vector{String};  # a vector of sentences
                         embedding_method::Symbol=DEFAULT_DOC2VEC_METHOD,
                         isregex::Bool=false  # not used
@@ -84,15 +84,17 @@ end
 
 # Classic search method i.e. tf, tfidf, bm25 and possibly lsa or random projections
 function embed_document(embedder::Union{RPModel{S,T,A,H}, LSAModel{S,T,A,H}},
-                        lexicon::Dict{S, Int},
+                        lexicon::OrderedDict{S, Int},
                         document::Vector{String};  # a vector of sentences
                         embedding_method::Symbol=DEFAULT_DOC2VEC_METHOD,  # not used
                         isregex::Bool = false
                        ) where {S<:AbstractString, T<:AbstractFloat, A<:AbstractMatrix{T}, H<:Integer}
     if isregex
-        v = dtv_regex(document, embedder.vocab_hash, T, tokenizer=DEFAULT_TOKENIZER)
+        v = dtv_regex(document, embedder.vocab_hash, T, tokenizer=DEFAULT_TOKENIZER,
+                      lex_is_row_indices=true)
     else
-        v = dtv(document, embedder.vocab_hash, T, tokenizer=DEFAULT_TOKENIZER)
+        v = dtv(document, embedder.vocab_hash, T, tokenizer=DEFAULT_TOKENIZER,
+                lex_is_row_indices=true)
     end
     embedded_document = embed_document(embedder, v)
     return embedded_document
@@ -111,7 +113,7 @@ occur.
 """
 #TODO(Corneliu): Make the calculation of `a` automatic using some heuristic
 function smooth_inverse_frequency(document_embedding::Vector{Matrix{T}},
-                                  lexicon::Dict{String, Int},
+                                  lexicon::OrderedDict{String, Int},
                                   embedded_words::Vector{Vector{S}}
                                  ) where {T<:AbstractFloat, S<:AbstractString}
     L = sum(values(lexicon))

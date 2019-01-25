@@ -30,7 +30,7 @@ module Garamond
     using LinearAlgebra
     using SparseArrays
     using Statistics
-    using DataStructures: Set, MultiDict
+    using DataStructures
     using StringAnalysis, Languages
     using StringDistances, BKTrees
     using ArgParse

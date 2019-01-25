@@ -122,17 +122,17 @@ version = "0.11.0"
 
 [[HNSW]]
 deps = ["Distances", "LinearAlgebra", "Reexport"]
-git-tree-sha1 = "a9aa4e2495245b9a03db019d77caaca68336a019"
+git-tree-sha1 = "cd5460e77934111ca6c0e73c3ac30113eed43ad6"
 repo-rev = "master"
 repo-url = "https://github.com/zgornel/HNSW.jl"
 uuid = "540f64fa-c57e-11e8-081c-41422cda4629"
 version = "0.1.0"
 
 [[HTTP]]
-deps = ["Base64", "Dates", "Distributed", "IniFile", "MbedTLS", "Sockets", "Test"]
-git-tree-sha1 = "b881f69331e85642be315c63d05ed65d6fc8a05b"
+deps = ["Base64", "Dates", "Distributed", "IniFile", "MbedTLS", "Random", "Sockets", "Test"]
+git-tree-sha1 = "25db0e3f27bd5715814ca7e4ad22025fdcf5cc6e"
 uuid = "cd3eb016-35fb-5094-929b-558a96fad6f3"
-version = "0.7.1"
+version = "0.8.0"
 
 [[HTTPClient]]
 deps = ["Compat", "LibCURL"]
@@ -316,12 +316,10 @@ deps = ["LinearAlgebra", "SparseArrays"]
 uuid = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [[StringAnalysis]]
-deps = ["BinaryProvider", "Dates", "DelimitedFiles", "Languages", "Libdl", "LinearAlgebra", "SparseArrays", "Statistics", "TSVD", "Test", "Unicode", "WordTokenizers"]
-git-tree-sha1 = "4a52adc12b56eb737c4d6f9d1434b90123dff534"
-repo-rev = "master"
-repo-url = "https://github.com/zgornel/StringAnalysis.jl"
-uuid = "f2e5b97c-ed87-11e8-3fa8-a300efcc83e4"
-version = "0.3.2"
+deps = ["BinaryProvider", "DataStructures", "Dates", "DelimitedFiles", "Languages", "Libdl", "LinearAlgebra", "Pkg", "SparseArrays", "Statistics", "TSVD", "Test", "Unicode", "WordTokenizers"]
+git-tree-sha1 = "f8f2b53041f55aad62b08e4c8cd2a8c0e3184f74"
+uuid = "b66b7d2f-f536-51df-9f97-4dfb9d27c005"
+version = "0.3.3"
 
 [[StringDistances]]
 deps = ["Distances", "IterTools", "Test"]

@@ -2,6 +2,7 @@
 *.jl.*.cov
 *.jl.mem
 *~
+__*
 *.swp
 build/bin/
 docs/build/

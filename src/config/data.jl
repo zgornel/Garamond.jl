@@ -14,7 +14,6 @@ make_id(::Type{StringId}, id::T) where T<:AbstractString = StringId(String(id))
 make_id(::Type{StringId}, id::T) where T<:Number = StringId(string(id))
 
 
-
 ################
 # SearchConfig #
 ################
@@ -126,7 +125,6 @@ Base.show(io::IO, sconfig::SearchConfig) = begin
 end
 
 
-
 """
     load_search_configs(filename)
 
@@ -136,7 +134,13 @@ to build the `Searcher` objects with which search is performed.
 """
 function load_search_configs(filename::AbstractString)
     # Read config (this should fail if config not found)
-    dict_configs = JSON.parse(open(fid->read(fid, String), filename))
+    local dict_configs::Vector{Dict{String, Any}}
+    try
+        dict_configs = JSON.parse(open(fid->read(fid, String), expanduser(filename)))
+    catch
+        @error "Could not read data configuration file $filename. Exiting..."
+        exit(-1)
+    end
     n = length(dict_configs)
     # Create search configurations
     search_configs = [SearchConfig() for _ in 1:n]
@@ -267,7 +271,7 @@ function load_search_configs(filename::AbstractString)
                 sconfig.vectors_transform = DEFAULT_VECTORS_TRANSFORM
             else
                 # vectors_dimension
-                if sconfig.vectors_dimension <= 0
+                if sconfig.vectors_transform != :none && sconfig.vectors_dimension <= 0
                     @warn "$(sconfig.id) Defaulting vectors_dimension=$DEFAULT_VECTORS_DIMENSION."
                     sconfig.vectors_dimension = DEFAULT_VECTORS_DIMENSION
                 end
@@ -314,16 +318,47 @@ function load_search_configs(filename::AbstractString)
     end
     # Remove search configs that have missing files
     deleteat!(search_configs, removable)
-    isempty(search_configs) &&
+    # Last checks
+    if isempty(search_configs)
         @error """The search configuration does not contain searchable entities.
-                  Please review $filename, add entries or fix the configuration errors."""
+                  Please review $filename, add entries or fix the
+                  configuration errors. Exiting..."""
+        exit(-1)
+    else
+        all_ids = Vector{StringId}()
+        for config in search_configs
+            if config.id in all_ids          # check id uniqueness
+                @error """Multiple occurences of $(config.id) detected. Data id's
+                          have to be unique. Please correct the error in $filename.
+                          Exiting..."""
+                exit(-1)
+            else
+                push!(all_ids, config.id)
+            end
+        end
+    end
     return search_configs
 end
 
 function load_search_configs(filenames::Vector{S}) where S<:AbstractString
-    return vcat((load_search_configs(file) for file in filenames)...)
+    all_configs = Vector{SearchConfig}()
+    all_ids = Vector{StringId}()
+    for filename in filenames
+        configs = load_search_configs(filename)  # read all configs from a file
+        for config in configs
+            if config.id in all_ids          # check id uniqueness
+                @error """Multiple occurences of $(config.id) detected. Data id's
+                          have to be unique. Please correct the error in $filename.
+                          Exiting..."""
+                exit(-1)
+            else
+                push!(all_ids, config.id)
+                push!(all_configs, config)
+            end
+        end
+    end
+    return all_configs
 end
-
 
 
 """

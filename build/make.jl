@@ -11,8 +11,7 @@ const TARGETS_PATH = abspath.(joinpath.(BASEDIR, "..", TARGETS))        # full p
 const REQUIRED_PACKAGES = ["SnoopCompile", "PackageCompiler"]           # Base required packages
 const PACKAGE_REVS = Dict(                                              # Packag revisions/branches/etc
     "HNSW"=>("https://github.com/zgornel/HNSW.jl", "master"),
-    "Distances"=>("https://github.com/zgornel/Distances.jl", "fixes"),
-    "StringAnalysis"=>("https://github.com/zgornel/StringAnalysis.jl", "master"))
+    "Distances"=>("https://github.com/zgornel/Distances.jl", "fixes"))
 
 
 ##############
@@ -103,7 +102,10 @@ using PackageCompiler
 COPY_JULIALIBS = false
 for (i, target) in enumerate(TARGETS_PATH)
     @info "*** Building $(uppercase(TARGETS[i])) ***"
-    build_executable(target, builddir=BUILD_DIR, copy_julialibs=COPY_JULIALIBS)
+    build_executable(target,
+                     builddir=BUILD_DIR,
+                     copy_julialibs=COPY_JULIALIBS,
+                     optimize="2")  # -O2
 end
 
 @info "Build complete."

@@ -103,9 +103,9 @@ The function returns an object of type SearchResult and the id of the searcher.
 """
 function search(srcher::Searcher{T,D,E,M},
                 query;  # can be either a string or vector of strings
-                search_type::Symbol=:metadata,
-                search_method::Symbol=:exact,
-                max_matches::Int=10,
+                search_type::Symbol=DEFAULT_SEARCH_TYPE,
+                search_method::Symbol=DEFAULT_SEARCH_METHOD,
+                max_matches::Int=MAX_MATCHES,
                 max_suggestions::Int=MAX_CORPUS_SUGGESTIONS  # not used
                 ) where {T<:AbstractFloat, D<:AbstractDocument, E, M<:AbstractSearchModel}
     needles = prepare_query(query, srcher.config.query_strip_flags)
@@ -235,7 +235,7 @@ function merge_indices_and_scores(idxs, scores, k)
 end
 
 
-function find_matching_needles(iv::Dict{String, Vector{Int}}, needles::Vector{String}, method::Symbol)
+function find_matching_needles(iv::OrderedDict{String, Vector{Int}}, needles::Vector{String}, method::Symbol)
     # Initializations
     p = length(needles)
     needle_matches = Set{String}()
