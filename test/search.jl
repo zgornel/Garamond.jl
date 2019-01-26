@@ -27,10 +27,15 @@ for parser in PARSERS
             for search_type in ST
                 for search_method in SM
                     for max_suggestions in MAX_SUGGESTIONS
-                        # Do one search
-                        search(srchers, needles, search_type=search_type,
-                               max_corpus_suggestions=max_suggestions,
-                               search_method=search_method)
+                        # Do one search (skipping non-relevant cases)
+                        if search_method == :regex &&
+                                srchers[1].config.vectors in [:word2vec, :conceptnet, :glove]
+                            continue
+                        else
+                            search(srchers, needles, search_type=search_type,
+                                   max_corpus_suggestions=max_suggestions,
+                                   search_method=search_method)
+                        end
                     end
                 end
             end

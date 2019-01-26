@@ -65,12 +65,12 @@ function generate_test_confs(data_path::String, parser::Symbol)
     config_path = abspath(joinpath(tmp_path, "garamond", "test", "configs"))
     mkpath(config_path)
     # Generate data configuration files
-    for vectors in ["count", "tf", "tfidf", "bm25", "conceptnet", "word2vec", "glove"]
+    for vectors in ["bm25", "conceptnet", "word2vec", "glove"]  # "count", "tf", "tfidf" ommitted
         for vectors_transform in ["none", "rp", "lsa"]
             for search_model in ["naive", "brutetree", "kdtree", "hnsw"]
                 for doc2vec_method in ["bow", "sif"]
                 for heuristic in [nothing, "levenshtein"]
-                for vectors_eltype in ["Float32","Float64"]
+                for vectors_eltype in ["Float16", "Float32", "Float64"]
                 for build_summary in [false, true]
                 for keep_data in [false, true]
                     local embeddings_path, embeddings_kind

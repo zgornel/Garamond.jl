@@ -254,7 +254,7 @@ function load_search_configs(filename::AbstractString)
             classic_search_approach = true
         end
         # vectors_eltype
-        if !(sconfig.vectors_eltype in [:Float32, :Float64])
+        if !(sconfig.vectors_eltype in [:Float16, :Float32, :Float64])
             @warn "$(sconfig.id) Defaulting vectors_eltype=$DEFAULT_VECTORS_ELTYPE."
             sconfig.vectors_eltype= DEFAULT_VECTORS_ELTYPE
         end
