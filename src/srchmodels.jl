@@ -68,10 +68,6 @@ HNSWEmbeddingModel(data::AbstractMatrix) = begin
     return HNSWEmbeddingModel(hnsw)
 end
 
-HNSWEmbeddingModel(data::SparseMatrixCSC{T,I}
-        ) where {T<:AbstractFloat, I<:Integer} =
-    HNSWEmbeddingModel(Matrix{T}(data))
-
 
 # Nearest neighbor search methods
 """
