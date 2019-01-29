@@ -48,7 +48,8 @@ function embed_document(embedder::Union{
                         lexicon::OrderedDict{String, Int},
                         document::Vector{String};  # a vector of sentences
                         embedding_method::Symbol=DEFAULT_DOC2VEC_METHOD,
-                        isregex::Bool=false  # not used
+                        isregex::Bool=false,  # not used
+                        sif_alpha::Float64=DEFAULT_SIF_ALPHA
                        ) where T<:AbstractFloat
     # Initializations
     n = length(document)
@@ -76,7 +77,7 @@ function embed_document(embedder::Union{
     if embedding_method == :sif
         return squash(
             smooth_inverse_frequency(
-                sentence_embeddings, lexicon, embedded_words))
+                sentence_embeddings, lexicon, embedded_words, alpha=sif_alpha))
     else
         return squash(squash.(sentence_embeddings),m)
     end
@@ -87,7 +88,8 @@ function embed_document(embedder::Union{RPModel{S,T,A,H}, LSAModel{S,T,A,H}},
                         lexicon::OrderedDict{S, Int},
                         document::Vector{String};  # a vector of sentences
                         embedding_method::Symbol=DEFAULT_DOC2VEC_METHOD,  # not used
-                        isregex::Bool = false
+                        isregex::Bool=false,
+                        sif_alpha::Float64=DEFAULT_SIF_ALPHA  # not used
                        ) where {S<:AbstractString, T<:AbstractFloat, A<:AbstractMatrix{T}, H<:Integer}
     if isregex
         v = dtv_regex(document, embedder.vocab_hash, T, tokenizer=DEFAULT_TOKENIZER,
@@ -114,19 +116,20 @@ occur.
 #TODO(Corneliu): Make the calculation of `a` automatic using some heuristic
 function smooth_inverse_frequency(document_embedding::Vector{Matrix{T}},
                                   lexicon::OrderedDict{String, Int},
-                                  embedded_words::Vector{Vector{S}}
+                                  embedded_words::Vector{Vector{S}};
+                                  alpha::Float64=DEFAULT_SIF_ALPHA
                                  ) where {T<:AbstractFloat, S<:AbstractString}
     L = sum(values(lexicon))
     m = size(document_embedding[1],1)  # number of vector elements
     n = length(document_embedding)  # number of sentences in document
     X = zeros(T, m, n)  # new document embedding
-    a = 0.01
+    α = T(alpha)
     # Loop over sentences
     for (i, s) in enumerate(document_embedding)
         p = [get(lexicon, word, eps(T))/L for word in embedded_words[i]]
         W = size(s,2)  # no. of words
         @inbounds for w in 1:W
-            X[:,i] += 1/(length(s)) * (a/(a+p[w]) .* s[:,w])
+            X[:,i] += 1/(length(s)) * (α/(α+p[w]) .* s[:,w])
         end
     end
     local u::Vector{T}

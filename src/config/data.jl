@@ -48,6 +48,11 @@ mutable struct SearchConfig
     metadata_strip_flags::UInt32    # How to strip text metadata before indexing
     query_strip_flags::UInt32       # How to strip queries before searching
     summarization_strip_flags::UInt32 # How to strip text before summarization
+    # parameters for embedding, scoring
+    bm25_kappa::Int                 # κ parameter for BM25 (employed in BM25 only)
+    bm25_beta::Float64              # β parameter for BM25 (employed in BM25 only)
+    sif_alpha::Float64              # smooth inverse frequency α parameter (for 'sif' doc2vec method only)
+    score_alpha::Float64            # score alpha (parameter for the scoring function)
 end
 
 # Keyword argument constructor; all arguments sho
@@ -85,7 +90,11 @@ SearchConfig(;
           text_strip_flags=DEFAULT_TEXT_STRIP_FLAGS,
           metadata_strip_flags=DEFAULT_METADATA_STRIP_FLAGS,
           query_strip_flags=DEFAULT_QUERY_STRIP_FLAGS,
-          summarization_strip_flags=DEFAULT_SUMMARIZATION_STRIP_FLAGS) =
+          summarization_strip_flags=DEFAULT_SUMMARIZATION_STRIP_FLAGS,
+          bm25_kappa=DEFAULT_BM25_KAPPA,
+          bm25_beta=DEFAULT_BM25_BETA,
+          sif_alpha=DEFAULT_SIF_ALPHA,
+          score_alpha=DEFAULT_SCORE_ALPHA) =
     # Call normal constructor
     SearchConfig(id, description, enabled,
                  data_path, parser, parser_config,
@@ -94,7 +103,8 @@ SearchConfig(;
                  search_model, embeddings_path, embeddings_kind, doc2vec_method,
                  glove_vocabulary, heuristic,
                  text_strip_flags, metadata_strip_flags,
-                 query_strip_flags, summarization_strip_flags)
+                 query_strip_flags, summarization_strip_flags,
+                 bm25_kappa, bm25_beta, sif_alpha, score_alpha)
 
 
 # Show method
@@ -163,10 +173,10 @@ function load_search_configs(filename::AbstractString)
             sconfig.enabled = get(dconfig, "enabled", false)
             sconfig.data_path = get(dconfig, "data_path", "")
             sconfig.language = lowercase(get(dconfig, "language", DEFAULT_LANGUAGE_STR))
-            sconfig.build_summary = get(dconfig, "build_summary", DEFAULT_BUILD_SUMMARY)
-            sconfig.summary_ns = get(dconfig, "summary_ns", DEFAULT_SUMMARY_NS)
-            sconfig.keep_data = get(dconfig, "keep_data", DEFAULT_KEEP_DATA)
-            sconfig.stem_words = get(dconfig, "stem_words", DEFAULT_STEM_WORDS)
+            sconfig.build_summary = Bool(get(dconfig, "build_summary", DEFAULT_BUILD_SUMMARY))
+            sconfig.summary_ns = Int(get(dconfig, "summary_ns", DEFAULT_SUMMARY_NS))
+            sconfig.keep_data = Bool(get(dconfig, "keep_data", DEFAULT_KEEP_DATA))
+            sconfig.stem_words = Bool(get(dconfig, "stem_words", DEFAULT_STEM_WORDS))
             sconfig.vectors = Symbol(get(dconfig, "vectors", DEFAULT_VECTORS))
             sconfig.vectors_transform = Symbol(get(dconfig, "vectors_transform", DEFAULT_VECTORS_TRANSFORM))
             sconfig.vectors_dimension = Int(get(dconfig, "vectors_dimension", DEFAULT_VECTORS_DIMENSION))
@@ -185,6 +195,10 @@ function load_search_configs(filename::AbstractString)
             sconfig.metadata_strip_flags = UInt32(get(dconfig, "metadata_strip_flags", DEFAULT_METADATA_STRIP_FLAGS))
             sconfig.query_strip_flags = UInt32(get(dconfig, "query_strip_flags", DEFAULT_QUERY_STRIP_FLAGS))
             sconfig.summarization_strip_flags = UInt32(get(dconfig, "summarization_strip_flags", DEFAULT_SUMMARIZATION_STRIP_FLAGS))
+            sconfig.bm25_kappa = Int(get(dconfig, "bm25_kappa", DEFAULT_BM25_KAPPA))
+            sconfig.bm25_beta = Float64(get(dconfig, "bm25_beta", DEFAULT_BM25_BETA))
+            sconfig.sif_alpha = Float64(get(dconfig, "sif_alpha", DEFAULT_SIF_ALPHA))
+            sconfig.score_alpha = Float64(get(dconfig, "score_alpha", DEFAULT_SCORE_ALPHA))
             # Construct parser (built last as requires other parameters)
             sconfig.parser_config = get(dconfig, "parser_config", DEFAULT_PARSER_CONFIG)
             sconfig.parser = get_parsing_function(Symbol(dconfig["parser"]),
@@ -198,15 +212,6 @@ function load_search_configs(filename::AbstractString)
                                                   sconfig.summarization_strip_flags,
                                                   show_progress)
             # Checks of the configuration parameter values;
-            # No checks performed for:
-            # - id (always works)
-            # - description (always works)
-            # - enabled (must fail if wrong)
-            # - parser (must fail if wrong)
-            # - parser_config (must fail if wrong)
-            # - globbing_pattern (must fail if wrong)
-            # - text data/metadata/query/summarization flags (must fail if wrong)
-            ###
             # data path
             if !isfile(sconfig.data_path) && !isdir(sconfig.data_path)
                 @warn "$(sconfig.id) Missing data, ignoring search configuration..."
@@ -218,26 +223,6 @@ function load_search_configs(filename::AbstractString)
                  sconfig.language == "auto")
                 @warn "$(sconfig.id) Defaulting language=$DEFAULT_LANGUAGE_STR."
                 sconfig.language = DEFAULT_LANGUAGE_STR
-            end
-            # build_summary
-            if !(typeof(sconfig.build_summary) <: Bool)
-                @warn "$(sconfig.id) Defaulting build_summary=$DEFAULT_BUILD_SUMMARY."
-                sconfig.build_summary = DEFAULT_BUILD_SUMMARY
-            end
-            # summary_ns i.e. the number of sentences in a summary
-            if !(typeof(sconfig.summary_ns) <: Integer) || sconfig.summary_ns <= 0
-                @warn "$(sconfig.id) Defaulting summary_ns=$DEFAULT_SUMMARY_NS."
-                sconfig.summary_ns = DEFAULT_SUMMARY_NS
-            end
-            # keep_data
-            if !(typeof(sconfig.keep_data) <: Bool)
-                @warn "$(sconfig.id) Defaulting keep_data=$DEFAULT_KEEP_DATA."
-                sconfig.keep_data = DEFAULT_KEEP_DATA
-            end
-            # stem_words
-            if !(typeof(sconfig.stem_words) <: Bool)
-                @warn "$(sconfig.id) Defaulting stem_words=$DEFAULT_STEM_WORDS."
-                sconfig.stem_words = DEFAULT_STEM_WORDS
             end
             # delimiter
             if !(typeof(delimiter) <: AbstractString) || length(delimiter) == 0
@@ -278,7 +263,7 @@ function load_search_configs(filename::AbstractString)
                     end
                 end
                 # embedings_path
-                if (typeof(sconfig.embeddings_path) <: AbstractString) && !isfile(sconfig.embeddings_path)
+                if sconfig.embeddings_path isa AbstractString && !isfile(sconfig.embeddings_path)
                     @warn "$(sconfig.id) Missing embeddings, ignoring search configuration..."
                     push!(removable, i)  # if there is are no word embeddings, cannot search
                     continue
@@ -316,9 +301,10 @@ function load_search_configs(filename::AbstractString)
                 @warn "$(sconfig.id) Defaulting heuristic=nothing."
                 sconfig.heuristic = DEFAULT_HEURISTIC
             end
-        catch
+        catch e
             @warn """$(sconfig.id) Could not correctly parse configuration in $(filename).
-                  Ignoring search configuration..."""
+                     Exception: $(e)
+                     Ignoring search configuration..."""
             push!(removable, i)
         end
     end
