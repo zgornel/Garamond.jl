@@ -6,8 +6,8 @@ Naive model type for storing text embeddings. It is a wrapper
 around a matrix of embeddings and performs brute search using
 the cosine similarity between vectors.
 """
-struct NaiveEmbeddingModel{E} <: AbstractSearchModel
-    data::AbstractMatrix{E}
+struct NaiveEmbeddingModel{E, A<:AbstractMatrix{E}} <: AbstractSearchModel
+    data::A
 end
 
 
@@ -58,7 +58,7 @@ struct HNSWEmbeddingModel{I,E,A,D} <: AbstractSearchModel
     tree::HierarchicalNSW{I,E,A,D}
 end
 
-HNSWEmbeddingModel(data::AbstractMatrix) = begin
+HNSWEmbeddingModel(data::AbstractMatrix{T}) where T<:AbstractFloat = begin
     _data = [data[:,i] for i in 1:size(data,2)]
     hnsw = HierarchicalNSW(_data;
                            efConstruction=100,
@@ -77,8 +77,8 @@ Searches for the `k` nearest neighbors of `point` in data contained in
 the `model`. The model may vary from a simple wrapper inside a matrix
 to more complex structures such as k-d trees, etc.
 """
-function search(model::NaiveEmbeddingModel{E}, point::Vector{E}, k::Int) where
-        E<:AbstractFloat
+function search(model::NaiveEmbeddingModel{E,A}, point::Vector{E}, k::Int) where
+        {E<:AbstractFloat, A<:AbstractMatrix{E}}
     # Cosine similarity
     scores = (model.data)'*point
     idxs = sortperm(scores, rev=true)[1:k]
