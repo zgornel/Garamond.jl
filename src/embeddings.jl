@@ -58,28 +58,27 @@ function embed_document(embedder::Union{
     sentence_embeddings = Vector{Matrix{T}}(undef, n)
     # Embed sentences individually
     @inbounds for i in 1:n
-        words = tokenize_fast(document[i])
+        words = tokenize(document[i], method=:fast)
         _embs, _mtoks = embed_document(embedder,
                                        words,
                                        keep_size=false,
                                        max_compound_word_length=1,
                                        wildcard_matching=true,
                                        print_matched_words=false)
-        sentence_embeddings[i] = T.(_embs)
+        sentence_embeddings[i] = _embs
         embedded_words[i] = words[setdiff(1:length(words), _mtoks)]
     end
     # Remove empty embeddings
-    embedded = map(!isempty, sentence_embeddings)
-    sentence_embeddings = sentence_embeddings[embedded]
-    embedded_words = embedded_words[embedded]
+    filter!(!isempty, sentence_embeddings)
+    filter!(!isempty, embedded_words)
     # If nothing is embedded, return zeros
     isempty(sentence_embeddings) && return zeros(T, m)
     if embedding_method == :sif
-        return squash(
-            smooth_inverse_frequency(
-                sentence_embeddings, lexicon, embedded_words, alpha=sif_alpha))
+        return squash(smooth_inverse_frequency(
+                        sentence_embeddings, lexicon,
+                        embedded_words, alpha=sif_alpha))
     else
-        return squash(squash.(sentence_embeddings),m)
+        return squash(squash.(sentence_embeddings), m)
     end
 end
 
@@ -91,13 +90,10 @@ function embed_document(embedder::Union{RPModel{S,T,A,H}, LSAModel{S,T,A,H}},
                         isregex::Bool=false,
                         sif_alpha::Float64=DEFAULT_SIF_ALPHA  # not used
                        ) where {S<:AbstractString, T<:AbstractFloat, A<:AbstractMatrix{T}, H<:Integer}
-    if isregex
-        v = dtv_regex(document, embedder.vocab_hash, T, tokenizer=DEFAULT_TOKENIZER,
-                      lex_is_row_indices=true)
-    else
-        v = dtv(document, embedder.vocab_hash, T, tokenizer=DEFAULT_TOKENIZER,
-                lex_is_row_indices=true)
-    end
+    dtv_function = ifelse(isregex, dtv_regex, dtv)
+    v::Vector{T} = dtv_function(document, embedder.vocab_hash, T,
+                                tokenizer=DEFAULT_TOKENIZER,
+                                lex_is_row_indices=true)
     embedded_document = embed_document(embedder, v)
     return embedded_document
 end
