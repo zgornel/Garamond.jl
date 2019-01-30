@@ -163,8 +163,10 @@ function build_searcher(sconf::SearchConfig)
         sconf.vectors_transform == :none && (SubspaceModel = RPModel; dims = 0)
         sconf.vectors_transform == :rp && (SubspaceModel = RPModel; dims = sconf.vectors_dimension)
         sconf.vectors_transform == :lsa && (SubspaceModel = LSAModel; dims = sconf.vectors_dimension)
-        embedder = Dict(:data => SubspaceModel(dtm, k=dims, stats=sconf.vectors),
-                        :metadata => SubspaceModel(dtm_meta, k=dims, stats=sconf.vectors))
+        embedder = Dict(:data => SubspaceModel(dtm, k=dims, stats=sconf.vectors,
+                                               κ=sconf.bm25_kappa, β=sconf.bm25_beta),
+                        :metadata => SubspaceModel(dtm_meta, k=dims, stats=sconf.vectors,
+                                                   κ=sconf.bm25_kappa, β=sconf.bm25_beta))
         _srchdata = SearchModel(embed_document(embedder[:data], dtm))
         _srchdata_meta = SearchModel(embed_document(embedder[:metadata], dtm_meta))
     # Semantic searcher
@@ -184,11 +186,15 @@ function build_searcher(sconf::SearchConfig)
         end
         # Construct document data model
         _srchdata = SearchModel(hcat(
-                (embed_document(embedder, crps.lexicon, doc, embedding_method=sconf.doc2vec_method)
+                (embed_document(embedder, crps.lexicon, doc,
+                                embedding_method=sconf.doc2vec_method,
+                                sif_alpha=sconf.sif_alpha)
                  for doc in documents)...))
         # Construct document metadata model
         _srchdata_meta = SearchModel(hcat(
-                (embed_document(embedder, crps_meta.lexicon, doc, embedding_method=sconf.doc2vec_method)
+                (embed_document(embedder, crps_meta.lexicon, doc,
+                                embedding_method=sconf.doc2vec_method,
+                                sif_alpha=sconf.sif_alpha)
                  for doc in documents_meta)...))
     end
     # Build search trees (for suggestions)

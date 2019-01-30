@@ -118,6 +118,7 @@ function search(srcher::Searcher{T,D,E,M},
     if srcher.config.vectors in [:word2vec, :glove, :conceptnet]
         qe = embed_document(srcher.embedder, srcher.corpus.lexicon, needles,
                             embedding_method=srcher.config.doc2vec_method,
+                            sif_alpha=srcher.config.sif_alpha,
                             isregex=isregex)
         push!(query_embeddings, :data=>qe)
         push!(query_embeddings, :metadata=>qe)
@@ -138,13 +139,14 @@ function search(srcher::Searcher{T,D,E,M},
         if !iszero(query_embeddings[wts])
             ### Search
             _idxs, _scores = search(srcher.search_data[wts], query_embeddings[wts], k)
+            score_transform!(_scores, alpha=srcher.config.score_alpha)
             ###
             idxs = vcat(idxs, _idxs)
             scores = vcat(scores, _scores)
         end
-        if search_type == :all
-            idxs, scores = merge_indices_and_scores(idxs, scores, k)
-        end
+    end
+    if search_type == :all
+        idxs, scores = merge_indices_and_scores(idxs, scores, k)
     end
     # Construct additional structures
     suggestions = MultiDict{String, Tuple{T, String}}()
@@ -262,4 +264,17 @@ function find_matching_needles(iv::OrderedDict{String, Vector{Int}}, needles::Ve
         end
     end
     return needle_matches, doc_matches
+end
+
+
+# Post-processing score function:
+#   - map distances [0, Inf) --> [-1, 1]
+#TODO(Corneliu) Analylically/empirically adapt alpha do vector dimensionality
+function score_transform!(x::Vector{T}; alpha::Float64=DEFAULT_SCORE_ALPHA) where T<:AbstractFloat
+    n = length(x)
+    α = T(alpha)
+    @inbounds @simd for i in 1:n
+        x[i] = 1 - 2.0*tanh(α * x[i])
+    end
+    return x
 end

@@ -6,8 +6,8 @@ Naive model type for storing text embeddings. It is a wrapper
 around a matrix of embeddings and performs brute search using
 the cosine similarity between vectors.
 """
-struct NaiveEmbeddingModel{E} <: AbstractSearchModel
-    data::AbstractMatrix{E}
+struct NaiveEmbeddingModel{E, A<:AbstractMatrix{E}} <: AbstractSearchModel
+    data::A
 end
 
 
@@ -58,7 +58,7 @@ struct HNSWEmbeddingModel{I,E,A,D} <: AbstractSearchModel
     tree::HierarchicalNSW{I,E,A,D}
 end
 
-HNSWEmbeddingModel(data::AbstractMatrix) = begin
+HNSWEmbeddingModel(data::AbstractMatrix{T}) where T<:AbstractFloat = begin
     _data = [data[:,i] for i in 1:size(data,2)]
     hnsw = HierarchicalNSW(_data;
                            efConstruction=100,
@@ -77,8 +77,8 @@ Searches for the `k` nearest neighbors of `point` in data contained in
 the `model`. The model may vary from a simple wrapper inside a matrix
 to more complex structures such as k-d trees, etc.
 """
-function search(model::NaiveEmbeddingModel{E}, point::Vector{E}, k::Int) where
-        E<:AbstractFloat
+function search(model::NaiveEmbeddingModel{E,A}, point::Vector{E}, k::Int) where
+        {E<:AbstractFloat, A<:AbstractMatrix{E}}
     # Cosine similarity
     scores = (model.data)'*point
     idxs = sortperm(scores, rev=true)[1:k]
@@ -89,21 +89,21 @@ function search(model::BruteTreeEmbeddingModel{A,D}, point::AbstractVector, k::I
         {A<:AbstractArray, D<:Metric}
     # Uses Euclidean distance by default
     idxs, scores = knn(model.tree, point, k, true)
-    return idxs, score_transform!(scores)
+    return idxs, scores
 end
 
 function search(model::KDTreeEmbeddingModel{A,D}, point::AbstractVector, k::Int) where
         {A<:AbstractArray, D<:Metric}
     # Uses Euclidean distance by default
     idxs, scores = knn(model.tree, point, k, true)
-    return idxs, score_transform!(scores)
+    return idxs, scores
 end
 
 function search(model::HNSWEmbeddingModel{I,E,A,D}, point::AbstractVector, k::Int) where
         {I<:Unsigned, E<:Real, A<:AbstractArray, D<:Metric}
     # Uses Euclidean distance by default
     idxs, scores = knn_search(model.tree, point, k)
-    return Int.(idxs), score_transform!(scores)
+    return Int.(idxs), scores
 end
 
 
@@ -115,15 +115,3 @@ length(model::BruteTreeEmbeddingModel) = length(model.tree.data)
 length(model::KDTreeEmbeddingModel) = length(model.tree.data)
 
 length(model::HNSWEmbeddingModel) = length(model.tree.data)
-
-
-# Post-processing score function:
-#   - map distances [0, Inf) --> [-1, 1]
-#TODO(Corneliu) Analylically/empirically adapt alpha do vector dimensionality
-function score_transform!(x::Vector{T}, alpha::T=T(0.5)) where T<:AbstractFloat
-    n = length(x)
-    @inbounds @simd for i in 1:n
-        x[i] = 1 - 2.0*tanh(alpha * x[i])
-    end
-    return x
-end
