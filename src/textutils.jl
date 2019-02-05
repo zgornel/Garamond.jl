@@ -111,24 +111,21 @@ end
 
 
 """
-    build_corpus(documents, doctype, metadata_vector)
+    build_corpus(documents, metadata_vector, doctype)
 
 Builds a corpus of documents of type `doctype` using the data in `documents`
 and metadata from `metadata_vector`.
-
-Note: No preprocessing is performed at this step, it is assumed that the data
-      has already been preprocessed and is ready to be searched in.
 """
 function build_corpus(documents::Vector{Vector{S}},
+                      metadata_vector::Vector{DocumentMetadata},
                       doctype::Type{T},
-                      metadata_vector::Vector{DocumentMetadata}
                      ) where {S<:AbstractString, T<:AbstractDocument}
     @assert length(documents) == length(metadata_vector)
     docs = Vector{T}()
     @inbounds for (sentences, meta) in zip(documents, metadata_vector)
         lang_type = typeof(meta.language)
         if lang_type in SUPPORTED_LANGUAGES
-            doc = T(join(sentences," "))
+            doc = T(join(sentences, " "))
             doc.metadata = meta
             push!(docs, doc)
         else

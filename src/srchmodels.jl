@@ -82,7 +82,7 @@ function search(model::NaiveEmbeddingModel{E,A}, point::Vector{E}, k::Int) where
     # Cosine similarity
     scores = (model.data)'*point
     idxs = sortperm(scores, rev=true)[1:k]
-    return (idxs, scores[idxs])
+    return (idxs, 1 .- scores[idxs])
 end
 
 function search(model::BruteTreeEmbeddingModel{A,D}, point::AbstractVector, k::Int) where
