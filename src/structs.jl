@@ -111,10 +111,60 @@ show(io::IO, srcher::Searcher{T,D,E,M}) where {T,D,E,M} = begin
 end
 
 
-"""
-    build_searcher(sconf)
+# Indexing for vectors of searchers
+function getindex(srchers::V, an_id::StringId
+        ) where {V<:Vector{<:Searcher{T,D,E,M}
+          where T<:AbstractFloat where D<:AbstractDocument
+          where E where M<:AbstractSearchModel}}
+    idxs = Int[]
+    for (i, srcher) in enumerate(srchers)
+        id(srcher) == an_id && push!(idxs, i)
+    end
+    return srchers[idxs]
+end
 
-Creates a Searcher from a SearchConfig.
+function getindex(srchers::V, an_id::String
+        ) where {V<:Vector{<:Searcher{T,D,E,M}
+          where T<:AbstractFloat where D<:AbstractDocument
+          where E where M<:AbstractSearchModel}}
+    srchers[StringId(an_id)]
+end
+
+
+##################
+# Load searchers #
+##################
+"""
+    load_searchers(configs)
+
+Loads or builds searchers from the configuration vector `configs`. The
+latter can be either a vector of paths to searcher configuration files
+or a vector of `SearchConfig` objects.
+
+Loading process flow:
+   1. Parse configuration files using `load_search_configs` (if `configs`
+      contains paths to configuration files)
+   2. The resulting `Vector{SearchConfig}` is passed to `load_searchers`
+      (each `SearchConfig` contains the data filepath, parameters etc.)
+   3. Each searcher is build using `build_searcher` and a vector of
+      searcher objects is returned.
+"""
+function load_searchers(configs)
+    sconfs = load_search_configs(configs)  # load searcher configs
+    srchers = load_searchers(sconfs)       # load searchers
+    return srchers
+end
+
+function load_searchers(configs::Vector{SearchConfig})
+    srchers = [build_searcher(sconf) for sconf in configs]  # build searchers
+    return srchers
+end
+
+
+"""
+    build_searcher(sconf::SearchConfig)
+
+Creates a Searcher from a searcher configuration `sconf`.
 """
 function build_searcher(sconf::SearchConfig)
     # Parse file
@@ -218,44 +268,4 @@ function build_searcher(sconf::SearchConfig)
                       Dict(:data=>_srchdata, :metadata=>_srchdata_meta),
                       Dict(:data=>_srchtree_data, :metadata=>_srchtree_meta))
     return srcher
-end
-
-
-##################
-# Load searchers #
-##################
-# Loading process flow:
-#   1. Parse configuration file using `load_search_configs`
-#   2. The resulting Vector{SearchConfig} is passed to `load_searchers`
-#      (each SearchConfig contains the data filepath, corpus name etc.
-#   3. Parse the data file, obtain Corpus and create specified Searcher
-function load_searchers(paths)
-    sconfs = load_search_configs(paths)
-    srchers = load_searchers(sconfs)
-    return srchers
-end
-
-function load_searchers(sconfs::Vector{SearchConfig})
-    srchers = [build_searcher(sconf) for sconf in sconfs]
-    return srchers
-end
-
-
-# Indexing for vectors of searchers
-function getindex(srchers::V, an_id::StringId
-        ) where {V<:Vector{<:Searcher{T,D,E,M}
-          where T<:AbstractFloat where D<:AbstractDocument
-          where E where M<:AbstractSearchModel}}
-    idxs = Int[]
-    for (i, srcher) in enumerate(srchers)
-        id(srcher) == an_id && push!(idxs, i)
-    end
-    return srchers[idxs]
-end
-
-function getindex(srchers::V, an_id::String
-        ) where {V<:Vector{<:Searcher{T,D,E,M}
-          where T<:AbstractFloat where D<:AbstractDocument
-          where E where M<:AbstractSearchModel}}
-    srchers[StringId(an_id)]
 end
