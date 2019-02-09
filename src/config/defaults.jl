@@ -69,7 +69,7 @@ const HEURISTIC_TO_DISTANCE = Dict(  # heuristic to distance object mapping
     :jaro => StringDistances.Jaro())
 const DEFAULT_DISTANCE = HEURISTIC_TO_DISTANCE[:jaro]  # default distance
 const DEFAULT_PARSER_CONFIG = nothing
-const DEFAULT_METADATA_FIELDS = [:author, :name, :note]  # Default metadata fields for search
+const DEFAULT_METADATA_FIELDS = [:author, :name]  # Default metadata fields for search
 # Dictionaries for String <=>Languages.Language / Languages.Languages <=> String
 # conversion
 const STR_TO_LANG = Dict("english"=>Languages.English,

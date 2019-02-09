@@ -91,7 +91,13 @@ function embed_document(embedder::Union{RPModel{S,T,A,H}, LSAModel{S,T,A,H}},
                         sif_alpha::Float64=DEFAULT_SIF_ALPHA  # not used
                        ) where {S<:AbstractString, T<:AbstractFloat, A<:AbstractMatrix{T}, H<:Integer}
     dtv_function = ifelse(isregex, dtv_regex, dtv)
-    v::Vector{T} = dtv_function(document, embedder.vocab_hash, T,
+    words = Vector{String}()
+    for sentence in document
+        for word in tokenize(sentence, method=:fast)
+            push!(words, word)
+        end
+    end
+    v::Vector{T} = dtv_function(words, embedder.vocab_hash, T,
                                 tokenizer=DEFAULT_TOKENIZER,
                                 lex_is_row_indices=true)
     embedded_document = embed_document(embedder, v)

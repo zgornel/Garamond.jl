@@ -192,7 +192,7 @@ function find_matching_needles(iv::OrderedDict{String, Vector{Int}}, needles::Ve
         for (j, pattern) in enumerate(patterns)
             for k in haystack
                 if occursin(pattern, k)
-                    push!(needle_matches, k)
+                    push!(needle_matches, needles[j])
                     push!(doc_matches, iv[k]...)
                 end
             end
