@@ -13,7 +13,6 @@ const DEFAULT_VECTORS_ELTYPE = :Float32
 const DEFAULT_SEARCH_MODEL = :hnsw  # can be :naive, :brutetree, :kdtree or :hnsw
 const DEFAULT_EMBEDDINGS_KIND = :binary  # can be :binary or :text
 const DEFAULT_DOC2VEC_METHOD = :bow  # can be :bow or :sif
-const DEFAULT_SEARCH_TYPE = :data  # can be :data or :metadata
 const DEFAULT_SEARCH_METHOD = :exact  #can be :exact or :regex
 const DEFAULT_HEURISTIC  = nothing #  i.e. :hamming, :levenshtein (nothing for no suggestions)
 const DEFAULT_BM25_KAPPA = 2  # default value for BM25 κ parameter
