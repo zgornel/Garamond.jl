@@ -192,7 +192,6 @@ function _default_webpage(ws_port::UInt16)
 				operation: \"search\",
 				query: q,
                 max_matches: 1000,
-                search_type: \"metadata\",
                 search_method: \"exact\",
                 max_suggestions: 0,
                 what_to_return: \"json-data\"

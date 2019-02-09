@@ -233,6 +233,7 @@ function get_search_model_type(sconf::SearchConfig)
 end
 
 
+# Function that returns and embedder which will be used to embed documents
 function get_embedder(sconf::SearchConfig, crps::C, eltype::Type{T}) where {C<:Corpus, T<:AbstractFloat}
     # Load or construct document embedder data
     if sconf.vectors in [:count, :tf, :tfidf, :bm25]
