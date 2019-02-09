@@ -15,10 +15,6 @@ a `Vector{SearchResult}`.
   * `query` the query
 
 # Keyword arguments
-  * `search_type::Symbol` is the type of the search; can be `:metadata`,
-     `:data` or `:all`; the options specify that the query can be found in
-     the metadata of the documents of the corpus, the document content or both
-     respectively
   * `search_method::Symbol` controls the type of matching: `:exact`
      searches for the very same string while `:regex` searches for a string
      in the corpus that includes the needle
@@ -29,7 +25,6 @@ a `Vector{SearchResult}`.
 """
 function search(srchers::V,
                 query;
-                search_type::Symbol=DEFAULT_SEARCH_TYPE,
                 search_method::Symbol=DEFAULT_SEARCH_METHOD,
                 max_matches::Int=MAX_MATCHES,
                 max_corpus_suggestions::Int=MAX_CORPUS_SUGGESTIONS
@@ -39,7 +34,6 @@ function search(srchers::V,
                                   where E
                                   where M<:AbstractSearchModel}}
     # Checks
-    @assert search_type in [:data, :metadata, :all]
     @assert search_method in [:exact, :regex]
     @assert max_matches >= 0
     @assert max_corpus_suggestions >=0
@@ -68,7 +62,6 @@ function search(srchers::V,
         # Get corpus search results
         results[i] = search(srchers[enabled_searchers[i]],
                             queries[enabled_searchers[i]],
-                            search_type=search_type,
                             search_method=search_method,
                             max_matches=max_matches,
                             max_suggestions=max_corpus_suggestions)
@@ -90,10 +83,6 @@ The function returns an object of type SearchResult and the id of the searcher.
   * `query` the query, can be either a `String` or `Vector{String}`
 
 # Keyword arguments
-  * `search_type::Symbol` is the type of the search; can be `:metadata`,
-     `:data` or `:all`; the options specify that the query can be found in
-     the metadata of the documents of the corpus, the document content or both
-     respectively
   * `search_method::Symbol` controls the type of matching: `:exact`
      searches for the very same string while `:regex` searches for a string
      in the corpus that includes the needle
@@ -103,7 +92,6 @@ The function returns an object of type SearchResult and the id of the searcher.
 """
 function search(srcher::Searcher{T,D,E,M},
                 query;  # can be either a string or vector of strings
-                search_type::Symbol=DEFAULT_SEARCH_TYPE,
                 search_method::Symbol=DEFAULT_SEARCH_METHOD,
                 max_matches::Int=MAX_MATCHES,
                 max_suggestions::Int=MAX_CORPUS_SUGGESTIONS  # not used
@@ -111,42 +99,21 @@ function search(srcher::Searcher{T,D,E,M},
     needles = prepare_query(query, srcher.config.query_strip_flags)
     # Initializations
     isregex = (search_method == :regex)
-    n = length(srcher.search_data[:data])  # number of embedded documents
-    where_to_search = ifelse(search_type==:all, [:data, :metadata], [search_type])
-    # Embed query (2 embeddings may be needed, separately for data and metadata)
-    query_embeddings = Dict{Symbol, Vector{T}}()
-    if srcher.config.vectors in [:word2vec, :glove, :conceptnet]
-        qe = embed_document(srcher.embedder, srcher.corpus.lexicon, needles,
-                            embedding_method=srcher.config.doc2vec_method,
-                            sif_alpha=srcher.config.sif_alpha,
-                            isregex=isregex)
-        push!(query_embeddings, :data=>qe)
-        push!(query_embeddings, :metadata=>qe)
-    else
-        for wts in where_to_search
-            qe = embed_document(srcher.embedder[wts], srcher.corpus.lexicon, needles,
-                                embedding_method=srcher.config.doc2vec_method,
-                                isregex=isregex)
-            push!(query_embeddings, wts=>qe)
-        end
-    end
+    n = length(srcher.search_data)  # number of embedded documents
+    query_embedding = embed_document(srcher.embedder, srcher.corpus.lexicon, needles,
+                                     embedding_method=srcher.config.doc2vec_method,
+                                     sif_alpha=srcher.config.sif_alpha,
+                                     isregex=isregex)
     # Search for neighbors in embedding space
     k = min(n, max_matches)
     idxs = Int[]
     scores = T[]
-    for wts in where_to_search
-        # search if vector is not zero
-        if !iszero(query_embeddings[wts])
-            ### Search
-            _idxs, _scores = search(srcher.search_data[wts], query_embeddings[wts], k)
-            score_transform!(_scores, alpha=srcher.config.score_alpha)
-            ###
-            idxs = vcat(idxs, _idxs)
-            scores = vcat(scores, _scores)
-        end
-    end
-    if search_type == :all
-        idxs, scores = merge_indices_and_scores(idxs, scores, k)
+    # search if vector is not zero
+    if !iszero(query_embedding)
+        ### Search
+        idxs, scores = search(srcher.search_data, query_embedding, k)
+        ###
+        score_transform!(scores, alpha=srcher.config.score_alpha)
     end
     # Construct additional structures
     suggestions = MultiDict{String, Tuple{T, String}}()
@@ -165,12 +132,10 @@ function search(srcher::Searcher{T,D,E,M},
     query_matches = MultiDict(zip(scores[mask], idxs[mask]))
     if max_suggestions > 0 && !isempty(missing_needles)
         # Get suggestions
-        for wts in where_to_search
-            search_heuristically!(suggestions,
-                                  srcher.search_trees[wts],
-                                  missing_needles,
-                                  max_suggestions=max_suggestions)
-        end
+        search_heuristically!(suggestions,
+                              srcher.search_trees,
+                              missing_needles,
+                              max_suggestions=max_suggestions)
     end
     return SearchResult(id(srcher), query_matches, collect(needle_matches), suggestions)
 end
@@ -204,36 +169,6 @@ function search_heuristically!(suggestions::MultiDict{String, Tuple{T, String}},
         end
     end
     return suggestions
-end
-
-
-"""
-    merge_indices_and_scores(idxs, scores, k)
-
-Small function that processes two vectors a and b where
-a is assumed to be a vector of document idices (with possible
-duplicates and b the corresponding scores)
-"""
-function merge_indices_and_scores(idxs, scores, k)
-    seen = Dict{Int,Int}()  # idx=>i
-    removable = Int[]
-    for (i, idx) in enumerate(idxs)
-        if !(idx in keys(seen))
-            push!(seen, idx=>i)
-        else
-            # Already seen (duplicate)
-            scores[[i, seen[idx]]] .= (scores[i] + scores[seen[idx]])/2
-            push!(removable, i)
-        end
-    end
-    deleteat!(idxs, removable)
-    deleteat!(scores, removable)
-    # Precaution for HSNW which may not return
-    # an *exact* number of neighbors
-    k = min(k, length(idxs))
-    # Sort, take first k neighbors and return
-    order = sortperm(scores)[1:k]
-    return idxs[order], scores[order]
 end
 
 
