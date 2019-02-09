@@ -177,9 +177,9 @@ function build_searcher(sconf::SearchConfig)
     flags = sconf.text_strip_flags | (sconf.stem_words ? stem_words : 0x0)
     flags_meta = sconf.metadata_strip_flags | (sconf.stem_words ? stem_words : 0x0)
     documents = map(sentences->prepare.(sentences, flags), documents)
-    document_meta = map(sentences->prepare.(sentences, flags_meta), documents_meta)
-    # Build corpus for data and metadata
+    documents_meta = map(sentences->prepare.(sentences, flags_meta), documents_meta)
 
+    # Build corpus for data and metadata
     merged_documents = [vcat(doc, meta) for (doc, meta) in zip(documents, documents_meta)]
     crps = build_corpus(merged_documents, metadata_vector, DOCUMENT_TYPE)
 
