@@ -97,7 +97,7 @@ function embed_document(embedder::Union{RPModel{S,T,A,H}, LSAModel{S,T,A,H}},
             push!(words, word)
         end
     end
-    v::Vector{T} = dtv_function(words, embedder.vocab_hash, T,
+    v::SparseVector{T, Int} = dtv_function(words, embedder.vocab_hash, T,
                                 tokenizer=DEFAULT_TOKENIZER,
                                 lex_is_row_indices=true)
     embedded_document = embed_document(embedder, v)

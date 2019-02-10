@@ -205,7 +205,7 @@ end
 # Post-processing score function:
 #   - map distances [0, Inf) --> [-1, 1]
 #TODO(Corneliu) Analylically/empirically adapt alpha do vector dimensionality
-function score_transform!(x::Vector{T}; alpha::Float64=DEFAULT_SCORE_ALPHA) where T<:AbstractFloat
+function score_transform!(x::AbstractVector{T}; alpha::Float64=DEFAULT_SCORE_ALPHA) where T<:AbstractFloat
     n = length(x)
     α = T(alpha)
     @inbounds @simd for i in 1:n
