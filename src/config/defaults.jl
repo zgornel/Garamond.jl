@@ -13,7 +13,6 @@ const DEFAULT_VECTORS_ELTYPE = :Float32
 const DEFAULT_SEARCH_MODEL = :hnsw  # can be :naive, :brutetree, :kdtree or :hnsw
 const DEFAULT_EMBEDDINGS_KIND = :binary  # can be :binary or :text
 const DEFAULT_DOC2VEC_METHOD = :bow  # can be :bow or :sif
-const DEFAULT_SEARCH_TYPE = :data  # can be :data or :metadata
 const DEFAULT_SEARCH_METHOD = :exact  #can be :exact or :regex
 const DEFAULT_HEURISTIC  = nothing #  i.e. :hamming, :levenshtein (nothing for no suggestions)
 const DEFAULT_BM25_KAPPA = 2  # default value for BM25 κ parameter
@@ -69,7 +68,7 @@ const HEURISTIC_TO_DISTANCE = Dict(  # heuristic to distance object mapping
     :jaro => StringDistances.Jaro())
 const DEFAULT_DISTANCE = HEURISTIC_TO_DISTANCE[:jaro]  # default distance
 const DEFAULT_PARSER_CONFIG = nothing
-const DEFAULT_METADATA_FIELDS = [:author, :name, :note]  # Default metadata fields for search
+const DEFAULT_METADATA_FIELDS = [:author, :name]  # Default metadata fields for search
 # Dictionaries for String <=>Languages.Language / Languages.Languages <=> String
 # conversion
 const STR_TO_LANG = Dict("english"=>Languages.English,

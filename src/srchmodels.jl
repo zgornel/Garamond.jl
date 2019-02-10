@@ -77,7 +77,7 @@ Searches for the `k` nearest neighbors of `point` in data contained in
 the `model`. The model may vary from a simple wrapper inside a matrix
 to more complex structures such as k-d trees, etc.
 """
-function search(model::NaiveEmbeddingModel{E,A}, point::Vector{E}, k::Int) where
+function search(model::NaiveEmbeddingModel{E,A}, point::AbstractVector, k::Int) where
         {E<:AbstractFloat, A<:AbstractMatrix{E}}
     # Cosine similarity
     scores = (model.data)'*point

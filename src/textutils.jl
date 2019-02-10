@@ -22,7 +22,7 @@ convert(::Type{Dict}, md::DocumentMetadata) =
 
 
 # Turn the document metadata into a vector of strings
-function meta2sv(md::T, fields=fieldnames(T)) where T<:DocumentMetadata
+function meta2sv(md::T, fields=DEFAULT_METADATA_FIELDS) where T<:DocumentMetadata
     msv = ["" for _ in 1:length(fields)]
     for (i, field) in enumerate(fields)
         if field in fieldnames(T)

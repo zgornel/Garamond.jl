@@ -7,15 +7,15 @@ mutable struct Searcher{T<:AbstractFloat, D<:AbstractDocument, E, M<:AbstractSea
     config::SearchConfig                        # most of what is not actual data
     corpus::Corpus{String,D}                    # corpus
     embedder::E                                 # needed to embed query
-    search_data::Dict{Symbol, M}                # actual indexed search data
-    search_trees::Dict{Symbol, BKTree{String}}  # for suggestions
+    search_data::M                              # actual indexed search data
+    search_trees::BKTree{String}                # for suggestions
 end
 
 Searcher(config::SearchConfig,
          corpus::Corpus{String, D},
          embedder::E,
-         search_data::Dict{Symbol, M},
-         search_trees::Dict{Symbol, BKTree{String}}
+         search_data::M,
+         search_trees::BKTree{String}
         ) where {D<:AbstractDocument, E, M<:AbstractSearchModel} =
     Searcher{get_embedding_eltype(embedder), D, E, M}(
         config, corpus, embedder, search_data, search_trees)
@@ -45,7 +45,7 @@ get_embedding_eltype(::RPModel{S,T,A,H}) where
 get_embedding_eltype(::LSAModel{S,T,A,H}) where
     {S<:AbstractString, T<:AbstractFloat, A<:AbstractMatrix{T}, H<:Integer} = T
 
-get_embedding_eltype(::Dict{Symbol, <:Union{RPModel{S,T,A,H}, LSAModel{S,T,A,H}}}) where
+get_embedding_eltype(::Union{<:RPModel{S,T,A,H}, <:LSAModel{S,T,A,H}}) where
     {S<:AbstractString, T<:AbstractFloat, A<:AbstractMatrix{T}, H<:Integer} = T
 
 
@@ -81,9 +81,9 @@ show(io::IO, srcher::Searcher{T,D,E,M}) where {T,D,E,M} = begin
         _embedder = "GloVe"
     elseif E <: ConceptnetNumberbatch.ConceptNet
         _embedder = "Conceptnet"
-    elseif E <: Dict{Symbol, <:StringAnalysis.LSAModel}
+    elseif E <: StringAnalysis.LSAModel
         _embedder = "DTV+LSA"
-    elseif E <: Dict{Symbol, <:StringAnalysis.RPModel}
+    elseif E <: StringAnalysis.RPModel
         _embedder = "DTV"
         if srcher.config.vectors_transform==:rp
             _embedder *= "+RP"
@@ -107,7 +107,7 @@ show(io::IO, srcher::Searcher{T,D,E,M}) where {T,D,E,M} = begin
     end
     printstyled(io, "$_model_type", bold=true)
     #printstyled(io, "$(description(srcher))", color=:normal)
-    printstyled(io, ", $(length(srcher.search_data[:data])) $T embedded documents")
+    printstyled(io, ", $(length(srcher.search_data)) $T embedded documents")
 end
 
 
@@ -169,103 +169,105 @@ Creates a Searcher from a searcher configuration `sconf`.
 function build_searcher(sconf::SearchConfig)
     # Parse file
     documents, metadata_vector = sconf.parser(sconf.data_path)
+
     # Create metadata documents; output is Vector{Vector{String}}
     documents_meta = meta2sv.(metadata_vector)
-    # Build document and document metadata corpora
-    # Note: the metadata is kept as well for the purpose of
-    #       converying information regarding what is being
-    #       searched. The only use for it is when displaying
+
     # Pre-process documents
     flags = sconf.text_strip_flags | (sconf.stem_words ? stem_words : 0x0)
     flags_meta = sconf.metadata_strip_flags | (sconf.stem_words ? stem_words : 0x0)
     documents = map(sentences->prepare.(sentences, flags), documents)
-    document_meta = map(sentences->prepare.(sentences, flags_meta), documents_meta)
+    documents_meta = map(sentences->prepare.(sentences, flags_meta), documents_meta)
+
     # Build corpus for data and metadata
-    crps = build_corpus(documents, metadata_vector, DOCUMENT_TYPE)
-    crps_meta = build_corpus(documents_meta, metadata_vector, DOCUMENT_TYPE)
-    # Update lexicons
+    merged_documents = [vcat(doc, meta) for (doc, meta) in zip(documents, documents_meta)]
+    crps = build_corpus(merged_documents, metadata_vector, DOCUMENT_TYPE)
+
+    # Update lexicon, inverse index
     update_lexicon!(crps)
-    update_lexicon!(crps_meta)
-    # Update inverse index
     update_inverse_index!(crps)
-    update_inverse_index!(crps_meta)
+
     # Construct element type
     T = eval(sconf.vectors_eltype)
-    # Get search model types
-    sconf.search_model == :naive && (SearchModel = NaiveEmbeddingModel)
-    sconf.search_model == :brutetree && (SearchModel = BruteTreeEmbeddingModel)
-    sconf.search_model == :kdtree && (SearchModel = KDTreeEmbeddingModel)
-    sconf.search_model == :hnsw && (SearchModel = HNSWEmbeddingModel)
-    # Load or construct document embedder data
-    if sconf.vectors in [:count, :tf, :tfidf, :bm25]
-        # Calculate term importances
-        dtm = DocumentTermMatrix{T}(crps)
-        dtm_meta = DocumentTermMatrix{T}(crps_meta)
-        # Get document-term statistic function
-        sconf.vectors == :count && (fstatistic = identity)
-        sconf.vectors == :tf && (fstatistic = StringAnalysis.tf!)
-        sconf.vectors == :tfidf && (fstatistic = StringAnalysis.tf_idf!)
-        sconf.vectors == :bm25 && (fstatistic = StringAnalysis.bm_25!)
-        # Apply document-term statistic function
-        fstatistic(dtm.dtm)
-        fstatistic(dtm_meta.dtm)
-        # Embedder
-        local SubspaceModel, dims
-        sconf.vectors_transform == :none && (SubspaceModel = RPModel; dims = 0)
-        sconf.vectors_transform == :rp && (SubspaceModel = RPModel; dims = sconf.vectors_dimension)
-        sconf.vectors_transform == :lsa && (SubspaceModel = LSAModel; dims = sconf.vectors_dimension)
-        embedder = Dict(:data => SubspaceModel(dtm, k=dims, stats=sconf.vectors,
-                                               κ=sconf.bm25_kappa, β=sconf.bm25_beta),
-                        :metadata => SubspaceModel(dtm_meta, k=dims, stats=sconf.vectors,
-                                                   κ=sconf.bm25_kappa, β=sconf.bm25_beta))
-        _srchdata = SearchModel(embed_document(embedder[:data], dtm))
-        _srchdata_meta = SearchModel(embed_document(embedder[:metadata], dtm_meta))
-    # Semantic searcher
-    elseif sconf.vectors in [:word2vec, :glove, :conceptnet]
-        # Read word embeddings
-        if sconf.vectors == :conceptnet
-            embedder = load_embeddings(sconf.embeddings_path,
-                languages=[Languages.English()], data_type=T)
-        elseif sconf.vectors == :word2vec
-            embedder = Word2Vec.wordvectors(sconf.embeddings_path, T,
-                kind=sconf.embeddings_kind, normalize=false)
-        elseif sconf.vectors == :glove
-            embedder = Glowe.wordvectors(sconf.embeddings_path, T,
-                kind=sconf.embeddings_kind,
-                vocabulary=sconf.glove_vocabulary,
-                normalize=false, load_bias=false)
-        end
-        # Construct document data model
-        _srchdata = SearchModel(hcat(
-                (embed_document(embedder, crps.lexicon, doc,
-                                embedding_method=sconf.doc2vec_method,
-                                sif_alpha=sconf.sif_alpha)
-                 for doc in documents)...))
-        # Construct document metadata model
-        _srchdata_meta = SearchModel(hcat(
-                (embed_document(embedder, crps_meta.lexicon, doc,
-                                embedding_method=sconf.doc2vec_method,
-                                sif_alpha=sconf.sif_alpha)
-                 for doc in documents_meta)...))
-    end
-    # Build search trees (for suggestions)
+
+    # Get embedder
+    embedder = get_embedder(sconf, crps, T)
+
+    # Calculate embeddings for each document
+    embedded_documents = hcat((embed_document(embedder, crps.lexicon, doc,
+                                              embedding_method=sconf.doc2vec_method,
+                                              sif_alpha=sconf.sif_alpha)
+                               for doc in merged_documents)...)
+
+    # Get search model type
+    SearchModelType = get_search_model_type(sconf)
+    # Build search model
+    srchmodel = SearchModelType(embedded_documents)
+
+    # Build search tree (for suggestions)
+    distance = get(HEURISTIC_TO_DISTANCE, sconf.heuristic, DEFAULT_DISTANCE)
+    srchtree = BKTree{String}()
     if sconf.heuristic != nothing
-        distance = get(HEURISTIC_TO_DISTANCE, sconf.heuristic, DEFAULT_DISTANCE)
-        _srchtree_data = BKTree((x,y)->evaluate(distance, x, y),
-                                collect(keys(crps.lexicon)))
-        _srchtree_meta = BKTree((x,y)->evaluate(distance, x, y),
-                                collect(keys(crps_meta.lexicon)))
-    else
-        _srchtree_data = BKTree{String}()
-        _srchtree_meta = BKTree{String}()
+        srchtree = BKTree((x,y)->evaluate(distance, x, y), collect(keys(crps.lexicon)))
     end
+
     # Remove corpus data if keep_data is false (the lexicon and inverse index are kept!)
     if !sconf.keep_data
         crps.documents = DOCUMENT_TYPE[]
     end
+
     # Build searcher
-    srcher = Searcher(sconf, crps, embedder,
-                      Dict(:data=>_srchdata, :metadata=>_srchdata_meta),
-                      Dict(:data=>_srchtree_data, :metadata=>_srchtree_meta))
+    srcher = Searcher(sconf, crps, embedder, srchmodel, srchtree)
     return srcher
+end
+
+
+# Function that returns the search model constructor
+function get_search_model_type(sconf::SearchConfig)
+    # Get search model types
+    search_model = sconf.search_model
+    search_model == :naive && return NaiveEmbeddingModel
+    search_model == :brutetree && return SearchModel = BruteTreeEmbeddingModel
+    search_model == :kdtree && return KDTreeEmbeddingModel
+    search_model == :hnsw && return HNSWEmbeddingModel
+end
+
+
+# Function that returns and embedder which will be used to embed documents
+function get_embedder(sconf::SearchConfig, crps::C, eltype::Type{T}) where {C<:Corpus, T<:AbstractFloat}
+    # Load or construct document embedder data
+    if sconf.vectors in [:count, :tf, :tfidf, :bm25]
+        dtm = DocumentTermMatrix{T}(crps)
+        sconf.vectors_transform == :none &&
+            return RPModel(dtm, k=0, stats=sconf.vectors,
+                           κ=sconf.bm25_kappa,
+                           β=sconf.bm25_beta)
+        sconf.vectors_transform == :rp &&
+            return RPModel(dtm, k=sconf.vectors_dimension,
+                           stats=sconf.vectors,
+                           κ=sconf.bm25_kappa,
+                           β=sconf.bm25_beta)
+        sconf.vectors_transform == :lsa && (SubspaceModel = LSAModel; dims = sconf.vectors_dimension)
+            return LSAModel(dtm, k=sconf.vectors_dimension,
+                            stats=sconf.vectors,
+                            κ=sconf.bm25_kappa,
+                            β=sconf.bm25_beta)
+    # Semantic searcher
+    elseif sconf.vectors in [:word2vec, :glove, :conceptnet]
+        # Read word embeddings
+        if sconf.vectors == :conceptnet
+            return load_embeddings(sconf.embeddings_path,
+                                   languages=[Languages.English()],
+                                   data_type=T)
+        elseif sconf.vectors == :word2vec
+            return Word2Vec.wordvectors(sconf.embeddings_path, T,
+                                        kind=sconf.embeddings_kind,
+                                        normalize=false)
+        elseif sconf.vectors == :glove
+            return Glowe.wordvectors(sconf.embeddings_path, T,
+                                     kind=sconf.embeddings_kind,
+                                     vocabulary=sconf.glove_vocabulary,
+                                     normalize=false, load_bias=false)
+        end
+    end
 end

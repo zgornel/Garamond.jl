@@ -129,8 +129,7 @@ function search_server(data_config_paths, socket, ws_port)
             # Read and deconstruct request
             request = take!(io_channel)
             @debug "FSM: Received request=$request"
-            (operation, query, max_matches,
-             search_type, search_method,
+            (operation, query, max_matches, search_method,
              max_suggestions, what_to_return) = deconstruct_request(request)
             if operation == "search"
                 ### Search ###
@@ -139,7 +138,6 @@ function search_server(data_config_paths, socket, ws_port)
                 # Get search results
                 results = search(srchers,
                                  query,
-                                 search_type=search_type,
                                  search_method=search_method,
                                  max_matches=max_matches,
                                  max_corpus_suggestions=max_suggestions)
@@ -179,11 +177,10 @@ function deconstruct_request(request::String)
         op = req["operation"]
         query = req["query"]
         max_matches = req["max_matches"]
-        search_type = Symbol(req["search_type"])
         search_method = Symbol(req["search_method"])
         max_suggestions = req["max_suggestions"]
         what_to_return = req["what_to_return"]
-        return op, query, max_matches, search_type, search_method,
+        return op, query, max_matches, search_method,
                max_suggestions, what_to_return
     catch
         return ERRORED_REQUEST
