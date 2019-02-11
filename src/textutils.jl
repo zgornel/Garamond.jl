@@ -20,8 +20,12 @@ convert(::Type{Dict}, md::DocumentMetadata) =
     Dict{String,String}((String(field) => getfield(md, field))
                          for field in fieldnames(DocumentMetadata))
 
+"""
+    meta2sv(metadata, fields=DEFAULT_METADATA_FIELDS)
 
-# Turn the document metadata into a vector of strings
+Turns the `metadata::DocumentMetadata` object's `fields` into a vector of strings,
+where the value of each field becomes an element in the resulting vector.
+"""
 function meta2sv(md::T, fields=DEFAULT_METADATA_FIELDS) where T<:DocumentMetadata
     msv = ["" for _ in 1:length(fields)]
     for (i, field) in enumerate(fields)

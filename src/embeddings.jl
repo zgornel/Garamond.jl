@@ -31,9 +31,12 @@ end
 
 
 """
-    embed_document(embedder, lexicon, document[; embedding_method])
+    embed_document(embedder, lexicon, document [;
+                   embedding_method=DEFAULT_DOC2VEC_METHOD,
+                   isregex=false,
+                   sif_alpha=DEFAULT_SIF_ALPHA])
 
-Function to get from multiple sentencea to a document embedding.
+Function to get from multiple sentences to a document embedding.
 The `embedding_method` option controls how multiple sentence embeddings
 are combined into a single document embedding.
 Avalilable options for `embedding_method`:
@@ -106,12 +109,11 @@ end
 
 
 """
-    smooth_inverse_frequency(document_embedding, lexicon, embedded_words)
+    smooth_inverse_frequency(document_embedding, lexicon, embedded_words, alpha=DEFAULT_SIF_ALPHA)
 
-Small function that transforms a document embedding based on word frequencies subtracting the
-paragraph vector i.e. principal vector from the word embeddings. Useful for transfer learning
-i.e. use word embeddings trained in a different context than the one where the matching has to
-occur.
+Implementation of sentence embedding principled on subtracting the paragraph vector i.e.
+principal vector of a sentence from the sentence's word embeddings.
+
 [1] "A simple but tough-to-beat baseline for sentence embeddings", Arora et al. ICLR 2017
     (https://openreview.net/pdf?id=SyK00v5xx)
 """

@@ -12,7 +12,7 @@ a `Vector{SearchResult}`.
 
 # Arguments
   * `srcher::Vector{Searcher}` is the corpora searcher
-  * `query` the query
+  * `query` the query, can be either a `String` or `Vector{String}`
 
 # Keyword arguments
   * `search_method::Symbol` controls the type of matching: `:exact`

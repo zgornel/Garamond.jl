@@ -19,6 +19,8 @@ Searcher(config::SearchConfig,
         ) where {D<:AbstractDocument, E, M<:AbstractSearchModel} =
     Searcher{get_embedding_eltype(embedder), D, E, M}(
         config, corpus, embedder, search_data, search_trees)
+
+
 """
     get_embedding_eltype(embeddings)
 
@@ -49,7 +51,6 @@ get_embedding_eltype(::Union{<:RPModel{S,T,A,H}, <:LSAModel{S,T,A,H}}) where
     {S<:AbstractString, T<:AbstractFloat, A<:AbstractMatrix{T}, H<:Integer} = T
 
 
-
 # Useful methods
 id(srcher::Searcher) = srcher.config.id
 
@@ -66,6 +67,7 @@ enable!(srcher::Searcher) = begin
     srcher.config.enabled = true
     return srcher
 end
+
 
 # Show method
 show(io::IO, srcher::Searcher{T,D,E,M}) where {T,D,E,M} = begin

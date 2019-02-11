@@ -17,7 +17,11 @@ make_id(::Type{StringId}, id::T) where T<:Number = StringId(string(id))
 ################
 # SearchConfig #
 ################
-# SearchConfigs can be built from a data configuration file or manually
+"""
+The search engine configuration object `SearchConfig` is used in building
+search objects of type `Searcher` and to provide information about them to
+other methods.
+"""
 mutable struct SearchConfig
     # general, data, processing
     id::StringId                    # searcher/corpus id
@@ -138,9 +142,11 @@ end
 """
     load_search_configs(filename)
 
-Function that creates search configurations from a data configuration file
-specified by `filename`. It returns a `Vector{SearchConfig}` that is used
-to build the `Searcher` objects with which search is performed.
+Creates search configuration objects from a data configuration file
+specified by `filename`. The file name can be either an `AbstractString`
+with the path to the configuration file or a `Vector{AbstractString}`
+specifying multiple configuration file paths. The function returns a
+`Vector{SearchConfig}` that is used to build the `Searcher` objects.
 """
 function load_search_configs(filename::AbstractString)
     # Read config (this should fail if config not found)
