@@ -1,3 +1,5 @@
+# This file is machine-generated - editing it directly is not advised
+
 [[ArgParse]]
 deps = ["Compat", "Test", "TextWrap"]
 git-tree-sha1 = "37159c768f28ae52ef9af1e70669d25a68ba7d61"
@@ -99,7 +101,7 @@ uuid = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
 version = "0.7.4"
 
 [[Distributed]]
-deps = ["LinearAlgebra", "Random", "Serialization", "Sockets"]
+deps = ["Random", "Serialization", "Sockets"]
 uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 
 [[Glob]]
@@ -159,7 +161,7 @@ uuid = "83e8ac13-25f8-5344-8a64-a9f2b223428f"
 version = "0.5.0"
 
 [[InteractiveUtils]]
-deps = ["LinearAlgebra", "Markdown"]
+deps = ["Markdown"]
 uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 
 [[IterTools]]
@@ -219,9 +221,9 @@ uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
 
 [[MacroTools]]
 deps = ["Compat"]
-git-tree-sha1 = "c443e1c8d58a4e9f61b708ad0a88286c7042145b"
+git-tree-sha1 = "3fd1a3022952128935b449c33552eb65895380c1"
 uuid = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
-version = "0.4.4"
+version = "0.4.5"
 
 [[Markdown]]
 deps = ["Base64"]
@@ -316,10 +318,12 @@ deps = ["LinearAlgebra", "SparseArrays"]
 uuid = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [[StringAnalysis]]
-deps = ["BinaryProvider", "DataStructures", "Dates", "DelimitedFiles", "Languages", "Libdl", "LinearAlgebra", "Pkg", "SparseArrays", "Statistics", "TSVD", "Test", "Unicode", "WordTokenizers"]
-git-tree-sha1 = "e21832d389badc2a7704ed128e67a77cb5fc9ba8"
+deps = ["BinaryProvider", "DataStructures", "Dates", "DelimitedFiles", "Languages", "Libdl", "LinearAlgebra", "SparseArrays", "Statistics", "TSVD", "Test", "Unicode", "WordTokenizers"]
+git-tree-sha1 = "ae8b64fa1be002cb1b0cc4cafe3cbcc2c42b90f0"
+repo-rev = "master"
+repo-url = "https://github.com/zgornel/StringAnalysis.jl"
 uuid = "b66b7d2f-f536-51df-9f97-4dfb9d27c005"
-version = "0.3.4"
+version = "0.3.5"
 
 [[StringDistances]]
 deps = ["Distances", "IterTools", "Test"]
@@ -356,7 +360,7 @@ uuid = "30578b45-9adc-5946-b283-645ec420af67"
 version = "0.4.0"
 
 [[UUIDs]]
-deps = ["Random"]
+deps = ["Random", "SHA"]
 uuid = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
 
 [[Unicode]]
@@ -376,6 +380,6 @@ version = "0.5.0"
 
 [[WordTokenizers]]
 deps = ["Test"]
-git-tree-sha1 = "e239c6cbc18248772b70595814a423e34fdba1ff"
+git-tree-sha1 = "38d923138dad462f068560af6a12c209912bf7b4"
 uuid = "796a5d58-b03d-544a-977e-18100b691f6e"
-version = "0.3.0"
+version = "0.4.0"

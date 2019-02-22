@@ -124,8 +124,8 @@ function search(srcher::Searcher{T,D,E,M},
     # and which needles have and have not been found
     if srcher.config.vectors in [:count, :tf, :tfidf, :bm25] &&
             srcher.config.vectors_transform in [:none, :rp]
-        needle_matches, doc_matches =
-            find_matching_needles(srcher.corpus.inverse_index, needles, search_method)
+        needle_matches, doc_matches = find_matching(srcher.corpus.inverse_index,
+                                                    needles, search_method, n)
         missing_needles = setdiff(needles, needle_matches)
     end
     mask = [i for i in 1:length(idxs) if idxs[i] in doc_matches]
@@ -172,17 +172,16 @@ function search_heuristically!(suggestions::MultiDict{String, Tuple{T, String}},
 end
 
 
-function find_matching_needles(iv::OrderedDict{String, Vector{Int}}, needles::Vector{String}, method::Symbol)
+function find_matching(iv::OrderedDict{String, Vector{Int}}, needles::Vector{String}, method::Symbol, ndocs::Int)
     # Initializations
     p = length(needles)
-    needle_matches = Set{String}()
-    doc_matches = Set{Int}()
+    needle_matches = Vector{String}()
+    doc_matches = falses(ndocs)
     # Search
     if method == :exact
         for (j, needle) in enumerate(needles)
             if haskey(iv, needle)
                 push!(needle_matches, needle)
-                push!(doc_matches, iv[needle]...)
             end
         end
     end
@@ -193,12 +192,16 @@ function find_matching_needles(iv::OrderedDict{String, Vector{Int}}, needles::Ve
             for k in haystack
                 if occursin(pattern, k)
                     push!(needle_matches, needles[j])
-                    push!(doc_matches, iv[k]...)
+                    break
                 end
             end
         end
     end
-    return needle_matches, doc_matches
+    #doc_matches = union(map(k->iv[k], needle_matches)...)
+    for needle in needle_matches
+        doc_matches[iv[needle]] .= true
+    end
+    return needle_matches, findall(doc_matches)
 end
 
 
