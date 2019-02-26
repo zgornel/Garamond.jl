@@ -170,58 +170,85 @@ Creates a Searcher from a searcher configuration `sconf`.
 """
 function build_searcher(sconf::SearchConfig)
     # Parse file
-    documents, metadata_vector = sconf.parser(sconf.data_path)
+    raw_documents, metadata_vector = @op sconf.parser(sconf.data_path)
 
     # Create metadata documents; output is Vector{Vector{String}}
-    documents_meta = meta2sv.(metadata_vector)
+    raw_documents_meta = @op meta2sv(metadata_vector)
 
     # Pre-process documents
     flags = sconf.text_strip_flags | (sconf.stem_words ? stem_words : 0x0)
     flags_meta = sconf.metadata_strip_flags | (sconf.stem_words ? stem_words : 0x0)
-    documents = map(sentences->prepare.(sentences, flags), documents)
-    documents_meta = map(sentences->prepare.(sentences, flags_meta), documents_meta)
+    prepared_documents = @op document_preparation(raw_documents, flags)
+    prepared_documents_meta = @op document_preparation(raw_documents_meta, flags_meta)
 
     # Build corpus for data and metadata
-    merged_documents = [vcat(doc, meta) for (doc, meta) in zip(documents, documents_meta)]
-    crps = build_corpus(merged_documents, metadata_vector, DOCUMENT_TYPE)
-
-    # Update lexicon, inverse index
-    update_lexicon!(crps)
-    update_inverse_index!(crps)
+    merged_documents = @op merge_documents(prepared_documents, prepared_documents_meta)
+    crps = @op build_corpus(merged_documents, metadata_vector, DOCUMENT_TYPE)
+    crps_documents = @op documents(crps)
+    lex = @op lexicon(crps)
 
     # Construct element type
     T = eval(sconf.vectors_eltype)
 
     # Get embedder
-    embedder = get_embedder(sconf, crps, T)
+    embedder = @op get_embedder(sconf.vectors, sconf.vectors_transform, sconf.bm25_kappa,
+                                sconf.bm25_beta, sconf.vectors_dimension, sconf.embeddings_path,
+                                sconf.embeddings_kind, sconf.glove_vocabulary,
+                                crps_documents, lex, T)  # cannot use directly crps, does not hash well
 
     # Calculate embeddings for each document
-    embedded_documents = hcat((embed_document(embedder, crps.lexicon, doc,
-                                              embedding_method=sconf.doc2vec_method,
-                                              sif_alpha=sconf.sif_alpha)
-                               for doc in merged_documents)...)
-
+    embedded_documents = @op embed_all_documents(embedder, lex, merged_documents,
+                                                 sconf.doc2vec_method, sconf.sif_alpha)
     # Get search model type
     SearchModelType = get_search_model_type(sconf)
     # Build search model
-    srchmodel = SearchModelType(embedded_documents)
+    srchmodel = @op SearchModelType(embedded_documents)
 
     # Build search tree (for suggestions)
     distance = get(HEURISTIC_TO_DISTANCE, sconf.heuristic, DEFAULT_DISTANCE)
-    srchtree = BKTree{String}()
+    lexkeys = @op get_lex_keys(lex)
+    bk_disteval = @op bk_distance_eval(distance)
     if sconf.heuristic != nothing
-        srchtree = BKTree((x,y)->evaluate(distance, x, y), collect(keys(crps.lexicon)))
+        srchtree = @op bktree(bk_disteval, lexkeys)
+    else
+        srchtree = @op bktree()
     end
 
     # Remove corpus data if keep_data is false (the lexicon and inverse index are kept!)
-    if !sconf.keep_data
-        crps.documents = DOCUMENT_TYPE[]
-    end
+    #if !sconf.keep_data
+    #    crps.documents = DOCUMENT_TYPE[]
+    #end
 
     # Build searcher
-    srcher = Searcher(sconf, crps, embedder, srchmodel, srchtree)
-    return srcher
+    srcher = @op searcher_constructor(sconf, crps, embedder, srchmodel, srchtree)
+
+    # Execute dispatch graph
+    graph = DispatchGraph(srcher)
+    extract(r) = fetch(r[1].result.value)
+    cachedir = "./__cache__"
+    return extract(DispatcherCache.run!(AsyncExecutor(),
+                                        graph,
+                                        [srcher],
+                                        [srcher, raw_documents, metadata_vector],
+                                        cachedir=cachedir))
 end
+
+
+# Function wrappers
+merge_documents(docs, docs_meta) = [vcat(doc, meta) for (doc, meta) in zip(docs, docs_meta)]
+bk_distance_eval(distance) = (x,y)->evaluate(distance, x, y)
+bktree() = BKTree{String}()
+bktree(f, keys) = BKTree(f, keys)
+get_lex_keys(lex) = collect(keys(lex))
+searcher_constructor(args...) = Searcher(args...)
+document_preparation(documents, flags) = map(sentences->prepare.(sentences, flags), documents)
+embed_all_documents(embedder, lexicon, documents, method, alpha) =
+    hcat((embed_document(embedder, lexicon, doc,
+                       embedding_method=method,
+                       sif_alpha=alpha)
+          for doc in documents)...)
+
+
 
 
 # Function that returns the search model constructor
@@ -236,39 +263,39 @@ end
 
 
 # Function that returns and embedder which will be used to embed documents
-function get_embedder(sconf::SearchConfig, crps::C, eltype::Type{T}) where {C<:Corpus, T<:AbstractFloat}
+function get_embedder(vectors, vectors_transform, bm25_kappa, bm25_beta, vectors_dimension, embeddings_path, embeddings_kind, glove_vocabulary, documents, lex, ::Type{T}) where T<:AbstractFloat
     # Load or construct document embedder data
-    if sconf.vectors in [:count, :tf, :tfidf, :bm25]
-        dtm = DocumentTermMatrix{T}(crps)
-        sconf.vectors_transform == :none &&
-            return RPModel(dtm, k=0, stats=sconf.vectors,
-                           κ=sconf.bm25_kappa,
-                           β=sconf.bm25_beta)
-        sconf.vectors_transform == :rp &&
-            return RPModel(dtm, k=sconf.vectors_dimension,
-                           stats=sconf.vectors,
-                           κ=sconf.bm25_kappa,
-                           β=sconf.bm25_beta)
-        sconf.vectors_transform == :lsa && (SubspaceModel = LSAModel; dims = sconf.vectors_dimension)
-            return LSAModel(dtm, k=sconf.vectors_dimension,
-                            stats=sconf.vectors,
-                            κ=sconf.bm25_kappa,
-                            β=sconf.bm25_beta)
+    if vectors in [:count, :tf, :tfidf, :bm25]
+        dtm = DocumentTermMatrix{T}(Corpus(documents), lex)
+        vectors_transform == :none &&
+            return RPModel(dtm, k=0, stats=vectors,
+                           κ=bm25_kappa,
+                           β=bm25_beta)
+        vectors_transform == :rp &&
+            return RPModel(dtm, k=vectors_dimension,
+                           stats=vectors,
+                           κ=bm25_kappa,
+                           β=bm25_beta)
+        vectors_transform == :lsa && (SubspaceModel = LSAModel; dims = vectors_dimension)
+            return LSAModel(dtm, k=vectors_dimension,
+                            stats=vectors,
+                            κ=bm25_kappa,
+                            β=bm25_beta)
     # Semantic searcher
-    elseif sconf.vectors in [:word2vec, :glove, :conceptnet]
+    elseif vectors in [:word2vec, :glove, :conceptnet]
         # Read word embeddings
-        if sconf.vectors == :conceptnet
-            return load_embeddings(sconf.embeddings_path,
+        if vectors == :conceptnet
+            return load_embeddings(embeddings_path,
                                    languages=[Languages.English()],
                                    data_type=T)
-        elseif sconf.vectors == :word2vec
-            return Word2Vec.wordvectors(sconf.embeddings_path, T,
-                                        kind=sconf.embeddings_kind,
+        elseif vectors == :word2vec
+            return Word2Vec.wordvectors(embeddings_path, T,
+                                        kind=embeddings_kind,
                                         normalize=false)
-        elseif sconf.vectors == :glove
-            return Glowe.wordvectors(sconf.embeddings_path, T,
-                                     kind=sconf.embeddings_kind,
-                                     vocabulary=sconf.glove_vocabulary,
+        elseif vectors == :glove
+            return Glowe.wordvectors(embeddings_path, T,
+                                     kind=embeddings_kind,
+                                     vocabulary=glove_vocabulary,
                                      normalize=false, load_bias=false)
         end
     end
