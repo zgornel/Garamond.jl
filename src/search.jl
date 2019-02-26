@@ -182,6 +182,7 @@ function find_matching(iv::OrderedDict{String, Vector{Int}}, needles::Vector{Str
         for (j, needle) in enumerate(needles)
             if haskey(iv, needle)
                 push!(needle_matches, needle)
+                doc_matches[iv[needle]].= true
             end
         end
     end
@@ -192,14 +193,10 @@ function find_matching(iv::OrderedDict{String, Vector{Int}}, needles::Vector{Str
             for k in haystack
                 if occursin(pattern, k)
                     push!(needle_matches, needles[j])
-                    break
+                    doc_matches[iv[k]] .= true
                 end
             end
         end
-    end
-    #doc_matches = union(map(k->iv[k], needle_matches)...)
-    for needle in needle_matches
-        doc_matches[iv[needle]] .= true
     end
     return needle_matches, findall(doc_matches)
 end
