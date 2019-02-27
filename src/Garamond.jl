@@ -31,6 +31,7 @@ module Garamond
     using SparseArrays
     using Statistics
     using DataStructures
+    using Memento
     using Dispatcher
     using DispatcherCache
     using StringAnalysis, Languages

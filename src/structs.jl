@@ -231,6 +231,10 @@ function build_searcher(sconf::SearchConfig)
     endpoints = [srcher]
     uncacheable = [srcher, documents_sentences, metadata_vector]
     sconf.search_model == :hnsw && push!(uncacheable, srchmodel)
+
+    # Set Dispatcher logging level to warning
+    setlevel!(getlogger("Dispatcher"), "warn")
+
     _r_ = DispatcherCache.run!(AsyncExecutor(), graph, endpoints, uncacheable, cachedir=cachedir)
     return extract(_r_)
 end
