@@ -96,7 +96,7 @@ function summarize(sentences::Vector{S};
     # Get document term matrix
     s = StringDocument{String}.(sentences)
     c = Corpus(s)
-    prepare!(c, flags)
+    StringAnalysis.prepare!(c, flags)
     update_lexicon!(c)
     t = dtm(DocumentTermMatrix{Float32}(c))
     tf_idf!(t)

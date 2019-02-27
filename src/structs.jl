@@ -200,7 +200,7 @@ function build_searcher(sconf::SearchConfig)
     elseif sconf.vectors in [:count, :tf, :tfidf, :bm25]
         embedder = @op get_embedder(sconf.vectors, sconf.vectors_transform,
                             sconf.bm25_kappa, sconf.bm25_beta,
-                            sconf.vectors_dimension, crps_documents, lex, T)
+                            sconf.vectors_dimension, documents, lex, T)
     end
 
     # Calculate embeddings for each document
@@ -212,36 +212,51 @@ function build_searcher(sconf::SearchConfig)
     srchmodel = @op SearchModelType(embedded_documents)
 
     # Build search tree (for suggestions)
-    distance = get(HEURISTIC_TO_DISTANCE, sconf.heuristic, DEFAULT_DISTANCE)
-    lexkeys = @op get_lexicon_keys(lex)
-    bktree_distance = @op bk_distance_eval(distance)
-    if sconf.heuristic != nothing
-        srchtree = @op BKTree(bktree_distance, lexkeys)
-    else
-        srchtree = @op BKTree{String}()
-    end
+    srchtree = @op get_bktree(sconf.heuristic, lex)
 
     # Build searcher
     srcher = @op Searcher(sconf, crps, embedder, srchmodel, srchtree)
 
-    # Execute dispatch graph
-    graph = DispatchGraph(srcher)
-    extract(r) = fetch(r[1].result.value)
-    cachedir = "./__cache__"
+    # Set Dispatcher logging level to warning
+    setlevel!(getlogger("Dispatcher"), "warn")
+
+    # Prepare for dispatch graph execution
     endpoint = srcher
     uncacheable = [srcher]
     sconf.search_model == :hnsw && push!(uncacheable, srchmodel)
 
-    # Set Dispatcher logging level to warning
-    setlevel!(getlogger("Dispatcher"), "warn")
-
-    _r_ = DispatcherCache.run!(AsyncExecutor(), graph, [endpoint], uncacheable,
-                               cachedir=cachedir, compression="none")
-    return extract(_r_)
+    # Execute dispatch graph
+    return extract(
+                run_dispatch_graph(
+                    endpoint, uncacheable,
+                    sconf.cache_directory,
+                    sconf.cache_compression))
 end
 
 
-# Function wrappers
+# Functions used throughout the searcher build process
+extract(r) = fetch(r[1].result.value)
+
+function run_dispatch_graph(endpoint, uncacheable, cachedir::Nothing, compression)
+    run!(AsyncExecutor(), [endpoint])
+end
+
+function run_dispatch_graph(endpoint, uncacheable, cachedir::AbstractString, compression)
+graph = DispatchGraph(endpoint)
+    DispatcherCache.run!(AsyncExecutor(), graph, [endpoint], uncacheable,
+                         cachedir=cachedir, compression=compression)
+end
+
+function get_bktree(heuristic, lexicon)
+    if heuristic != nothing
+        distance = get(HEURISTIC_TO_DISTANCE, heuristic, DEFAULT_DISTANCE)
+        fdist = (x,y) -> evaluate(distance, x, y)
+        return BKTree(fdist, collect(keys(lexicon)))
+    else
+        return BKTree{String}()
+    end
+end
+
 function merge_documents(docs, docs_meta)
     [vcat(doc, meta) for (doc, meta) in zip(docs, docs_meta)]
 end
@@ -251,10 +266,6 @@ function get_corpus_documents(crps, keep_data)
     !keep_data && (crps.documents = DOCUMENT_TYPE[])
     return crps, docs
 end
-
-bk_distance_eval(distance) = (x,y)->evaluate(distance, x, y)
-
-get_lexicon_keys(lex) = collect(keys(lex))
 
 function document_preparation(documents, flags)
     map(sentences->prepare.(sentences, flags), documents)
@@ -267,7 +278,6 @@ function embed_all_documents(embedder, lexicon, documents, method, alpha)
           for doc in documents)...)
 end
 
-# Function that returns the search model constructor
 function get_search_model_type(sconf::SearchConfig)
     # Get search model types
     search_model = sconf.search_model
@@ -277,7 +287,6 @@ function get_search_model_type(sconf::SearchConfig)
     search_model == :hnsw && return HNSWEmbeddingModel
 end
 
-# Function that returns and embedder which will be used to embed documents
 function get_embedder(vectors, vectors_transform, bm25_kappa,
                       bm25_beta, vectors_dimension, documents,
                       lex, ::Type{T}) where T<:AbstractFloat
@@ -298,7 +307,6 @@ function get_embedder(vectors, vectors_transform, bm25_kappa,
                         β=bm25_beta)
 end
 
-# Function that returns and embedder which will be used to embed documents
 function get_embedder(vectors, embeddings_path, embeddings_kind,
                       glove_vocabulary, ::Type{T}) where T<:AbstractFloat
     # Read word embeddings

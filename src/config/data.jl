@@ -57,6 +57,9 @@ mutable struct SearchConfig
     bm25_beta::Float64              # β parameter for BM25 (employed in BM25 only)
     sif_alpha::Float64              # smooth inverse frequency α parameter (for 'sif' doc2vec method only)
     score_alpha::Float64            # score alpha (parameter for the scoring function)
+    # cache parameters
+    cache_directory::Union{Nothing, String}  # path to the DispatcherCache cache directory
+    cache_compression::String       # DispatcherCache compression option
 end
 
 # Keyword argument constructor; all arguments sho
@@ -98,7 +101,9 @@ SearchConfig(;
           bm25_kappa=DEFAULT_BM25_KAPPA,
           bm25_beta=DEFAULT_BM25_BETA,
           sif_alpha=DEFAULT_SIF_ALPHA,
-          score_alpha=DEFAULT_SCORE_ALPHA) =
+          score_alpha=DEFAULT_SCORE_ALPHA,
+          cache_directory=DEFAULT_CACHE_DIRECTORY,
+          cache_compression=DEFAULT_CACHE_COMPRESSION) =
     # Call normal constructor
     SearchConfig(id, description, enabled,
                  data_path, parser, parser_config,
@@ -108,7 +113,8 @@ SearchConfig(;
                  glove_vocabulary, heuristic,
                  text_strip_flags, metadata_strip_flags,
                  query_strip_flags, summarization_strip_flags,
-                 bm25_kappa, bm25_beta, sif_alpha, score_alpha)
+                 bm25_kappa, bm25_beta, sif_alpha, score_alpha,
+                 cache_directory, cache_compression)
 
 
 # Show method
@@ -205,6 +211,8 @@ function load_search_configs(filename::AbstractString)
             sconfig.bm25_beta = Float64(get(dconfig, "bm25_beta", DEFAULT_BM25_BETA))
             sconfig.sif_alpha = Float64(get(dconfig, "sif_alpha", DEFAULT_SIF_ALPHA))
             sconfig.score_alpha = Float64(get(dconfig, "score_alpha", DEFAULT_SCORE_ALPHA))
+            sconfig.cache_directory = get(dconfig, "cache_directory", DEFAULT_CACHE_DIRECTORY)
+            sconfig.cache_compression = get(dconfig, "cache_compression", DEFAULT_CACHE_COMPRESSION)
             # Construct parser (built last as requires other parameters)
             sconfig.parser_config = get(dconfig, "parser_config", DEFAULT_PARSER_CONFIG)
             sconfig.parser = get_parsing_function(Symbol(dconfig["parser"]),
@@ -304,8 +312,14 @@ function load_search_configs(filename::AbstractString)
             end
             # heuristic
             if !(typeof(sconfig.heuristic) <: Nothing) && !(sconfig.heuristic in keys(HEURISTIC_TO_DISTANCE))
-                @warn "$(sconfig.id) Defaulting heuristic=nothing."
+                @warn "$(sconfig.id) Defaulting heuristic=$DEFAULT_HEURISTIC."
                 sconfig.heuristic = DEFAULT_HEURISTIC
+            end
+            # cache directory - should work with any directory with write acess
+            # cache compression
+            if !(sconfig.cache_compression in ["bz2", "bzip2", "gz", "gzip", "none"])
+                @warn "$(sconfig.id) Defaulting cache_compression=$DEFAULT_CACHE_COMPRESSION."
+                sconfig.cache_compression = DEFAULT_CACHE_COMPRESSION
             end
         catch e
             @warn """$(sconfig.id) Could not correctly parse configuration in $(filename).
