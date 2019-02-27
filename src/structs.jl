@@ -170,7 +170,7 @@ Creates a Searcher from a searcher configuration `sconf`.
 """
 function build_searcher(sconf::SearchConfig)
     # Parse file
-    documents_sentences, metadata_vector = @op sconf.parser(sconf.data_path)
+    documents_sentences, metadata_vector = sconf.parser(sconf.data_path)
 
     # Create metadata sentences
     metadata_sentences = @op meta2sv(metadata_vector)
@@ -228,14 +228,15 @@ function build_searcher(sconf::SearchConfig)
     graph = DispatchGraph(srcher)
     extract(r) = fetch(r[1].result.value)
     cachedir = "./__cache__"
-    endpoints = [srcher]
-    uncacheable = [srcher, documents_sentences, metadata_vector]
+    endpoint = srcher
+    uncacheable = [srcher]
     sconf.search_model == :hnsw && push!(uncacheable, srchmodel)
 
     # Set Dispatcher logging level to warning
     setlevel!(getlogger("Dispatcher"), "warn")
 
-    _r_ = DispatcherCache.run!(AsyncExecutor(), graph, endpoints, uncacheable, cachedir=cachedir)
+    _r_ = DispatcherCache.run!(AsyncExecutor(), graph, [endpoint], uncacheable,
+                               cachedir=cachedir, compression="none")
     return extract(_r_)
 end
 
