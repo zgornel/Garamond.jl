@@ -117,7 +117,7 @@ version = "0.5.0"
 
 [[DispatcherCache]]
 deps = ["CodecBzip2", "CodecZlib", "Dispatcher", "IterTools", "JSON", "Memento", "Serialization", "Test", "TranscodingStreams"]
-git-tree-sha1 = "2c82b2de422e124731492dd693e94dce925aaf11"
+git-tree-sha1 = "8ddcd10d80b37773ed4a65098a091923655e160d"
 repo-rev = "master"
 repo-url = "https://github.com/zgornel/DispatcherCache.jl.git"
 uuid = "38708fd2-87cb-5685-8cf6-f81d134ed590"
@@ -163,7 +163,7 @@ version = "0.11.0"
 deps = ["Distances", "LinearAlgebra", "Reexport"]
 git-tree-sha1 = "cd5460e77934111ca6c0e73c3ac30113eed43ad6"
 repo-rev = "master"
-repo-url = "https://github.com/zgornel/HNSW.jl"
+repo-url = "https://github.com/zgornel/HNSW.jl.git"
 uuid = "540f64fa-c57e-11e8-081c-41422cda4629"
 version = "0.1.0"
 

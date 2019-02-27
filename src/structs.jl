@@ -184,21 +184,27 @@ function build_searcher(sconf::SearchConfig)
     # Build corpus for data and metadata
     merged_documents = @op merge_documents(prepared_documents, prepared_documents_meta)
     crps = @op build_corpus(merged_documents, metadata_vector, DOCUMENT_TYPE)
-    crps_documents = @op documents(crps)
+    crps, crps_documents = @op get_corpus_documents(crps, sconf.keep_data)
     lex = @op lexicon(crps)
 
     # Construct element type
     T = eval(sconf.vectors_eltype)
 
-    # Get embedder
-    embedder = @op get_embedder(sconf.vectors, sconf.vectors_transform, sconf.bm25_kappa,
-                                sconf.bm25_beta, sconf.vectors_dimension, sconf.embeddings_path,
-                                sconf.embeddings_kind, sconf.glove_vocabulary,
-                                crps_documents, lex, T)  # cannot use directly crps, does not hash well
+    # Get embedder (split into two separate call ways so that unused changed
+    #               parameters do not influence the cache consistency)
+    if sconf.vectors in [:word2vec, :glove, :conceptnet]
+         embedder = @op get_embedder(sconf.vectors, sconf.embeddings_path,
+                            sconf.embeddings_kind, sconf.glove_vocabulary, T)
+
+    elseif sconf.vectors in [:count, :tf, :tfidf, :bm25]
+        embedder = @op get_embedder(sconf.vectors, sconf.vectors_transform,
+                            sconf.bm25_kappa, sconf.bm25_beta,
+                            sconf.vectors_dimension, crps_documents, lex, T)
+    end
 
     # Calculate embeddings for each document
     embedded_documents = @op embed_all_documents(embedder, lex, merged_documents,
-                                                 sconf.doc2vec_method, sconf.sif_alpha)
+                                sconf.doc2vec_method, sconf.sif_alpha)
     # Get search model type
     SearchModelType = get_search_model_type(sconf)
     # Build search model
@@ -214,11 +220,6 @@ function build_searcher(sconf::SearchConfig)
         srchtree = @op bktree()
     end
 
-    # Remove corpus data if keep_data is false (the lexicon and inverse index are kept!)
-    #if !sconf.keep_data
-    #    crps.documents = DOCUMENT_TYPE[]
-    #end
-
     # Build searcher
     srcher = @op searcher_constructor(sconf, crps, embedder, srchmodel, srchtree)
 
@@ -226,16 +227,21 @@ function build_searcher(sconf::SearchConfig)
     graph = DispatchGraph(srcher)
     extract(r) = fetch(r[1].result.value)
     cachedir = "./__cache__"
-    return extract(DispatcherCache.run!(AsyncExecutor(),
-                                        graph,
-                                        [srcher],
-                                        [srcher, raw_documents, metadata_vector],
-                                        cachedir=cachedir))
+    endpoints = [srcher]
+    uncacheable = [srcher, raw_documents, metadata_vector]
+    sconf.search_model == :hnsw && push!(uncacheable, srchmodel)
+    _r_ = DispatcherCache.run!(AsyncExecutor(), graph, endpoints, uncacheable, cachedir=cachedir)
+    return extract(_r_)
 end
 
 
 # Function wrappers
 merge_documents(docs, docs_meta) = [vcat(doc, meta) for (doc, meta) in zip(docs, docs_meta)]
+get_corpus_documents(crps, keep_data) = begin
+    docs = documents(crps)
+    !keep_data && (crps.documents = DOCUMENT_TYPE[])
+    return crps, docs
+end
 bk_distance_eval(distance) = (x,y)->evaluate(distance, x, y)
 bktree() = BKTree{String}()
 bktree(f, keys) = BKTree(f, keys)
@@ -263,40 +269,42 @@ end
 
 
 # Function that returns and embedder which will be used to embed documents
-function get_embedder(vectors, vectors_transform, bm25_kappa, bm25_beta, vectors_dimension, embeddings_path, embeddings_kind, glove_vocabulary, documents, lex, ::Type{T}) where T<:AbstractFloat
-    # Load or construct document embedder data
-    if vectors in [:count, :tf, :tfidf, :bm25]
-        dtm = DocumentTermMatrix{T}(Corpus(documents), lex)
-        vectors_transform == :none &&
-            return RPModel(dtm, k=0, stats=vectors,
-                           κ=bm25_kappa,
-                           β=bm25_beta)
-        vectors_transform == :rp &&
-            return RPModel(dtm, k=vectors_dimension,
-                           stats=vectors,
-                           κ=bm25_kappa,
-                           β=bm25_beta)
-        vectors_transform == :lsa && (SubspaceModel = LSAModel; dims = vectors_dimension)
-            return LSAModel(dtm, k=vectors_dimension,
-                            stats=vectors,
-                            κ=bm25_kappa,
-                            β=bm25_beta)
-    # Semantic searcher
-    elseif vectors in [:word2vec, :glove, :conceptnet]
-        # Read word embeddings
-        if vectors == :conceptnet
-            return load_embeddings(embeddings_path,
-                                   languages=[Languages.English()],
-                                   data_type=T)
-        elseif vectors == :word2vec
-            return Word2Vec.wordvectors(embeddings_path, T,
-                                        kind=embeddings_kind,
-                                        normalize=false)
-        elseif vectors == :glove
-            return Glowe.wordvectors(embeddings_path, T,
-                                     kind=embeddings_kind,
-                                     vocabulary=glove_vocabulary,
-                                     normalize=false, load_bias=false)
-        end
+function get_embedder(vectors, vectors_transform, bm25_kappa,
+                      bm25_beta, vectors_dimension, documents,
+                      lex, ::Type{T}) where T<:AbstractFloat
+    dtm = DocumentTermMatrix{T}(Corpus(documents), lex)
+    vectors_transform == :none &&
+        return RPModel(dtm, k=0, stats=vectors,
+                       κ=bm25_kappa,
+                       β=bm25_beta)
+    vectors_transform == :rp &&
+        return RPModel(dtm, k=vectors_dimension,
+                       stats=vectors,
+                       κ=bm25_kappa,
+                       β=bm25_beta)
+    vectors_transform == :lsa && (SubspaceModel = LSAModel; dims = vectors_dimension)
+        return LSAModel(dtm, k=vectors_dimension,
+                        stats=vectors,
+                        κ=bm25_kappa,
+                        β=bm25_beta)
+end
+
+# Function that returns and embedder which will be used to embed documents
+function get_embedder(vectors, embeddings_path, embeddings_kind,
+                      glove_vocabulary, ::Type{T}) where T<:AbstractFloat
+    # Read word embeddings
+    if vectors == :conceptnet
+        return load_embeddings(embeddings_path,
+                               languages=[Languages.English()],
+                               data_type=T)
+    elseif vectors == :word2vec
+        return Word2Vec.wordvectors(embeddings_path, T,
+                                    kind=embeddings_kind,
+                                    normalize=false)
+    elseif vectors == :glove
+        return Glowe.wordvectors(embeddings_path, T,
+                                 kind=embeddings_kind,
+                                 vocabulary=glove_vocabulary,
+                                 normalize=false, load_bias=false)
     end
 end
