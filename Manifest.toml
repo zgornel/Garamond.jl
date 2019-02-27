@@ -12,6 +12,11 @@ git-tree-sha1 = "2b6845cea546604fb4dca4e31414a6a59d39ddcd"
 uuid = "ec485272-7323-5ecc-a04f-4719b315124d"
 version = "0.0.4"
 
+[[AutoHashEquals]]
+git-tree-sha1 = "45bb6705d93be619b81451bb2006b7ee5d4e4453"
+uuid = "15f4f7f2-30c1-5605-9d31-71845cf9641f"
+version = "0.2.0"
+
 [[BKTrees]]
 deps = ["DataStructures", "Pkg", "Random", "Test"]
 git-tree-sha1 = "85fea78936ddf31e24b08a3151eb996ddbd2479e"
@@ -60,6 +65,12 @@ version = "0.2.2"
 [[CRC32c]]
 uuid = "8bf52ea8-c179-5cab-976a-9e18b702a9bc"
 
+[[CodecBzip2]]
+deps = ["BinDeps", "Libdl", "Test", "TranscodingStreams", "WinRPM"]
+git-tree-sha1 = "6baeaa476f6495c282829abdef0ecdca18d33bbe"
+uuid = "523fee87-0ab8-5b00-afb7-3ecf72e48cfd"
+version = "0.5.0"
+
 [[CodecZlib]]
 deps = ["BinaryProvider", "Libdl", "Test", "TranscodingStreams"]
 git-tree-sha1 = "e3df104c84dfc108f0ca203fd7f5bbdc98641ae9"
@@ -88,9 +99,29 @@ version = "0.15.0"
 deps = ["Printf"]
 uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
 
+[[DeferredFutures]]
+deps = ["AutoHashEquals", "Compat", "Serialization"]
+git-tree-sha1 = "7634d72cd59a0e91c42789d77749b7e597fddc30"
+uuid = "d2772ebe-fee8-5277-ba6e-705bb5633645"
+version = "0.6.0"
+
 [[DelimitedFiles]]
 deps = ["Mmap"]
 uuid = "8bb1440f-4735-579b-a4ab-409b98df4dab"
+
+[[Dispatcher]]
+deps = ["AutoHashEquals", "Compat", "DataStructures", "DeferredFutures", "IterTools", "LightGraphs", "Memento", "ResultTypes"]
+git-tree-sha1 = "01d6d79ae62d4cb364ac10104b8de3fffa30b0d7"
+uuid = "a48d5fe2-965b-541b-8ad8-ab19b69f3f25"
+version = "0.5.0"
+
+[[DispatcherCache]]
+deps = ["CodecBzip2", "CodecZlib", "Dispatcher", "IterTools", "JSON", "Memento", "Serialization", "Test", "TranscodingStreams"]
+git-tree-sha1 = "004d32b4bc4ec628ae48f3ead703dc4448fe0faa"
+repo-rev = "master"
+repo-url = "https://github.com/zgornel/DispatcherCache.jl.git"
+uuid = "38708fd2-87cb-5685-8cf6-f81d134ed590"
+version = "0.1.1"
 
 [[Distances]]
 deps = ["LinearAlgebra", "Statistics"]
@@ -103,6 +134,12 @@ version = "0.7.4"
 [[Distributed]]
 deps = ["Random", "Serialization", "Sockets"]
 uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
+
+[[EzXML]]
+deps = ["BinaryProvider", "Libdl", "Printf", "Test"]
+git-tree-sha1 = "5623d1486bfaadd815f5c4ca501adda02b5337f1"
+uuid = "8f5d6c58-4d21-5cfd-889c-e3ad7ee6a615"
+version = "0.9.0"
 
 [[Glob]]
 deps = ["Compat", "Test"]
@@ -126,7 +163,7 @@ version = "0.11.0"
 deps = ["Distances", "LinearAlgebra", "Reexport"]
 git-tree-sha1 = "cd5460e77934111ca6c0e73c3ac30113eed43ad6"
 repo-rev = "master"
-repo-url = "https://github.com/zgornel/HNSW.jl"
+repo-url = "https://github.com/zgornel/HNSW.jl.git"
 uuid = "540f64fa-c57e-11e8-081c-41422cda4629"
 version = "0.1.0"
 
@@ -235,14 +272,32 @@ git-tree-sha1 = "40b4a9149f0967714991328b8155c9ff5f91e755"
 uuid = "739be429-bea8-5141-9913-cc70e7f3736d"
 version = "0.6.7"
 
+[[Memento]]
+deps = ["Compat", "JSON", "Nullables", "Syslogs", "TimeZones"]
+git-tree-sha1 = "c4ade3575bcc2c180cfa14cf8b3b63eebca51629"
+uuid = "f28f55f0-a522-5efc-85c2-fe41dfb9b2d9"
+version = "0.10.0"
+
 [[Mmap]]
 uuid = "a63ad114-7e13-5084-954f-fe012c677804"
+
+[[Mocking]]
+deps = ["Compat", "Dates"]
+git-tree-sha1 = "4bf69aaf823b119b034e091e16b18311aa191663"
+uuid = "78c3b35d-d492-501b-9361-3d52fe80e533"
+version = "0.5.7"
 
 [[NearestNeighbors]]
 deps = ["Distances", "LinearAlgebra", "Mmap", "StaticArrays", "Test"]
 git-tree-sha1 = "f47c5d97cf9a8caefa47e9fa9d99d8fda1a65154"
 uuid = "b8a86587-4115-5ab1-83bc-aa920d37bbce"
 version = "0.4.3"
+
+[[Nullables]]
+deps = ["Compat"]
+git-tree-sha1 = "ae1a63457e14554df2159b0b028f48536125092d"
+uuid = "4d1e1d77-625e-5b40-9113-a560ec7a8ecd"
+version = "0.0.8"
 
 [[OrderedCollections]]
 deps = ["Random", "Serialization", "Test"]
@@ -284,6 +339,12 @@ git-tree-sha1 = "7b1d07f411bc8ddb7977ec7f377b97b158514fe0"
 uuid = "189a3867-3050-52da-a836-e630ba90ab69"
 version = "0.2.0"
 
+[[ResultTypes]]
+deps = ["Test"]
+git-tree-sha1 = "b073e5565568f1735da33ffc58fbf23c594cc4ee"
+uuid = "08a2b407-ddc3-586a-afd6-c784ad1fffe2"
+version = "3.0.0"
+
 [[SHA]]
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
 
@@ -318,8 +379,8 @@ deps = ["LinearAlgebra", "SparseArrays"]
 uuid = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [[StringAnalysis]]
-deps = ["BinaryProvider", "DataStructures", "Dates", "DelimitedFiles", "Languages", "Libdl", "LinearAlgebra", "SparseArrays", "Statistics", "TSVD", "Test", "Unicode", "WordTokenizers"]
-git-tree-sha1 = "ae8b64fa1be002cb1b0cc4cafe3cbcc2c42b90f0"
+deps = ["AutoHashEquals", "BinaryProvider", "DataStructures", "Dates", "DelimitedFiles", "Languages", "Libdl", "LinearAlgebra", "SparseArrays", "Statistics", "TSVD", "Test", "Unicode", "WordTokenizers"]
+git-tree-sha1 = "8c48d70130dfcd489a4bcdad2965faa70b3588ba"
 repo-rev = "master"
 repo-url = "https://github.com/zgornel/StringAnalysis.jl"
 uuid = "b66b7d2f-f536-51df-9f97-4dfb9d27c005"
@@ -330,6 +391,12 @@ deps = ["Distances", "IterTools", "Test"]
 git-tree-sha1 = "2d9e7e22e842da878744331de6895c504124021d"
 uuid = "88034a9c-02f8-509d-84a9-84ec65e18404"
 version = "0.3.1"
+
+[[Syslogs]]
+deps = ["Compat", "Nullables"]
+git-tree-sha1 = "d3e512a044cc8873c741d88758f8e1888c7c47d3"
+uuid = "cea106d9-e007-5e6c-ad93-58fe2094e9c4"
+version = "0.2.0"
 
 [[TSVD]]
 deps = ["LinearAlgebra", "SparseArrays", "Test"]
@@ -346,6 +413,12 @@ deps = ["Compat", "Test"]
 git-tree-sha1 = "8355cc559e85469cd4dbe927c375f61d3750e002"
 uuid = "b718987f-49a8-5099-9789-dcd902bef87d"
 version = "0.3.0"
+
+[[TimeZones]]
+deps = ["Compat", "EzXML", "Mocking", "Nullables"]
+git-tree-sha1 = "5437144a2bbb5b661783ad34b0d19d5696845b25"
+uuid = "f269a46b-ccf7-5d73-abea-4c690281aa53"
+version = "0.8.5"
 
 [[TranscodingStreams]]
 deps = ["Pkg", "Random", "Test"]

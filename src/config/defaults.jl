@@ -37,7 +37,9 @@ const DEFAULT_METADATA_STRIP_FLAGS = strip_case | strip_punctuation | strip_arti
                                      strip_corrupt_utf8
 const DEFAULT_SUMMARIZATION_STRIP_FLAGS = strip_corrupt_utf8 | strip_case |
                                           strip_stopwords
-
+# Caching options
+const DEFAULT_CACHE_DIRECTORY = nothing
+const DEFAULT_CACHE_COMPRESSION = "none"
 
 
 #################

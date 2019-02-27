@@ -41,6 +41,10 @@ function meta2sv(md::T, fields=DEFAULT_METADATA_FIELDS) where T<:DocumentMetadat
     return msv
 end
 
+function meta2sv(md::Vector{T}, fields=DEFAULT_METADATA_FIELDS) where T<:DocumentMetadata
+    map((meta)->meta2sv(meta, fields), md)
+end
+
 
 
 ##########################################
@@ -92,7 +96,7 @@ function summarize(sentences::Vector{S};
     # Get document term matrix
     s = StringDocument{String}.(sentences)
     c = Corpus(s)
-    prepare!(c, flags)
+    StringAnalysis.prepare!(c, flags)
     update_lexicon!(c)
     t = dtm(DocumentTermMatrix{Float32}(c))
     tf_idf!(t)
@@ -137,7 +141,11 @@ function build_corpus(documents::Vector{Vector{S}},
                      The document will be ignored."""
         end
     end
-    return Corpus(docs)
+    crps = Corpus(docs)
+    # Update lexicon, inverse index
+    update_lexicon!(crps)
+    update_inverse_index!(crps)
+    return crps
 end
 
 
