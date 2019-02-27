@@ -170,22 +170,23 @@ Creates a Searcher from a searcher configuration `sconf`.
 """
 function build_searcher(sconf::SearchConfig)
     # Parse file
-    raw_documents, metadata_vector = @op sconf.parser(sconf.data_path)
+    documents_sentences, metadata_vector = @op sconf.parser(sconf.data_path)
 
-    # Create metadata documents; output is Vector{Vector{String}}
-    raw_documents_meta = @op meta2sv(metadata_vector)
+    # Create metadata sentences
+    metadata_sentences = @op meta2sv(metadata_vector)
 
     # Pre-process documents
     flags = sconf.text_strip_flags | (sconf.stem_words ? stem_words : 0x0)
     flags_meta = sconf.metadata_strip_flags | (sconf.stem_words ? stem_words : 0x0)
-    prepared_documents = @op document_preparation(raw_documents, flags)
-    prepared_documents_meta = @op document_preparation(raw_documents_meta, flags_meta)
+    document_sentences_prepared = @op document_preparation(documents_sentences, flags)
+    metadata_sentences_prepared = @op document_preparation(metadata_sentences, flags_meta)
 
-    # Build corpus for data and metadata
-    merged_documents = @op merge_documents(prepared_documents, prepared_documents_meta)
-    crps = @op build_corpus(merged_documents, metadata_vector, DOCUMENT_TYPE)
-    crps, crps_documents = @op get_corpus_documents(crps, sconf.keep_data)
-    lex = @op lexicon(crps)
+    # Build corpus
+    merged_sentences = @op merge_documents(document_sentences_prepared,
+                                           metadata_sentences_prepared)
+    full_crps = @op build_corpus(merged_sentences, metadata_vector, DOCUMENT_TYPE)
+    crps, documents = @op get_corpus_documents(full_crps, sconf.keep_data)
+    lex = @op lexicon(full_crps)
 
     # Construct element type
     T = eval(sconf.vectors_eltype)
@@ -203,7 +204,7 @@ function build_searcher(sconf::SearchConfig)
     end
 
     # Calculate embeddings for each document
-    embedded_documents = @op embed_all_documents(embedder, lex, merged_documents,
+    embedded_documents = @op embed_all_documents(embedder, lex, merged_sentences,
                                 sconf.doc2vec_method, sconf.sif_alpha)
     # Get search model type
     SearchModelType = get_search_model_type(sconf)
@@ -212,23 +213,23 @@ function build_searcher(sconf::SearchConfig)
 
     # Build search tree (for suggestions)
     distance = get(HEURISTIC_TO_DISTANCE, sconf.heuristic, DEFAULT_DISTANCE)
-    lexkeys = @op get_lex_keys(lex)
-    bk_disteval = @op bk_distance_eval(distance)
+    lexkeys = @op get_lexicon_keys(lex)
+    bktree_distance = @op bk_distance_eval(distance)
     if sconf.heuristic != nothing
-        srchtree = @op bktree(bk_disteval, lexkeys)
+        srchtree = @op BKTree(bktree_distance, lexkeys)
     else
-        srchtree = @op bktree()
+        srchtree = @op BKTree{String}()
     end
 
     # Build searcher
-    srcher = @op searcher_constructor(sconf, crps, embedder, srchmodel, srchtree)
+    srcher = @op Searcher(sconf, crps, embedder, srchmodel, srchtree)
 
     # Execute dispatch graph
     graph = DispatchGraph(srcher)
     extract(r) = fetch(r[1].result.value)
     cachedir = "./__cache__"
     endpoints = [srcher]
-    uncacheable = [srcher, raw_documents, metadata_vector]
+    uncacheable = [srcher, documents_sentences, metadata_vector]
     sconf.search_model == :hnsw && push!(uncacheable, srchmodel)
     _r_ = DispatcherCache.run!(AsyncExecutor(), graph, endpoints, uncacheable, cachedir=cachedir)
     return extract(_r_)
@@ -236,26 +237,30 @@ end
 
 
 # Function wrappers
-merge_documents(docs, docs_meta) = [vcat(doc, meta) for (doc, meta) in zip(docs, docs_meta)]
-get_corpus_documents(crps, keep_data) = begin
+function merge_documents(docs, docs_meta)
+    [vcat(doc, meta) for (doc, meta) in zip(docs, docs_meta)]
+end
+
+function get_corpus_documents(crps, keep_data)
     docs = documents(crps)
     !keep_data && (crps.documents = DOCUMENT_TYPE[])
     return crps, docs
 end
+
 bk_distance_eval(distance) = (x,y)->evaluate(distance, x, y)
-bktree() = BKTree{String}()
-bktree(f, keys) = BKTree(f, keys)
-get_lex_keys(lex) = collect(keys(lex))
-searcher_constructor(args...) = Searcher(args...)
-document_preparation(documents, flags) = map(sentences->prepare.(sentences, flags), documents)
-embed_all_documents(embedder, lexicon, documents, method, alpha) =
+
+get_lexicon_keys(lex) = collect(keys(lex))
+
+function document_preparation(documents, flags)
+    map(sentences->prepare.(sentences, flags), documents)
+end
+
+function embed_all_documents(embedder, lexicon, documents, method, alpha)
     hcat((embed_document(embedder, lexicon, doc,
                        embedding_method=method,
                        sif_alpha=alpha)
           for doc in documents)...)
-
-
-
+end
 
 # Function that returns the search model constructor
 function get_search_model_type(sconf::SearchConfig)
@@ -266,7 +271,6 @@ function get_search_model_type(sconf::SearchConfig)
     search_model == :kdtree && return KDTreeEmbeddingModel
     search_model == :hnsw && return HNSWEmbeddingModel
 end
-
 
 # Function that returns and embedder which will be used to embed documents
 function get_embedder(vectors, vectors_transform, bm25_kappa,
