@@ -80,6 +80,7 @@ module Garamond
     include("update.jl")
     include("search.jl")
     include("results.jl")
+    include("requests.jl")
     include("servers.jl")
     include("version.jl")
     include("parsers/delimited_formats.jl")
