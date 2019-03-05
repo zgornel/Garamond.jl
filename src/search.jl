@@ -119,7 +119,7 @@ function search(srcher::Searcher{T,D,E,M},
     suggestions = MultiDict{String, Tuple{T, String}}()
     needle_matches = Vector{String}()
     missing_needles = Vector{String}()
-    doc_matches = Set(1:n)
+    doc_matches = Vector(1:n)
     # For certain types of search, check out which documents can be displayed
     # and which needles have and have not been found
     if srcher.config.vectors in [:count, :tf, :tfidf, :bm25] &&
@@ -128,7 +128,7 @@ function search(srcher::Searcher{T,D,E,M},
                                                     needles, search_method, n)
         missing_needles = setdiff(needles, needle_matches)
     end
-    mask = [i for i in 1:length(idxs) if idxs[i] in doc_matches]
+    mask = [i for (i,idx) in enumerate(idxs) if idx in doc_matches]
     query_matches = MultiDict(zip(scores[mask], idxs[mask]))
     if max_suggestions > 0 && !isempty(missing_needles)
         # Get suggestions
@@ -192,7 +192,9 @@ function find_matching(iv::OrderedDict{String, Vector{Int}}, needles::Vector{Str
         for (j, pattern) in enumerate(patterns)
             for k in haystack
                 if occursin(pattern, k)
-                    push!(needle_matches, needles[j])
+                    needle = needles[j]
+                    !(needle in needle_matches) &&
+                        push!(needle_matches, needles[j])
                     doc_matches[iv[k]] .= true
                 end
             end

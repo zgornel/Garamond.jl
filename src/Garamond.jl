@@ -86,5 +86,6 @@ module Garamond
     include("parsers/delimited_formats.jl")
     include("parsers/directory_formats.jl")
     include("parsers/no_parse.jl")
+    include("parsers/json.jl")
 
 end # module
