@@ -41,10 +41,6 @@ function get_unix_socket_client_arguments(args::Vector{String})
             help = "maximum results to return"
             arg_type = Int
             default = 10
-        "--search-type"
-            help = "where to search"
-            arg_type = Symbol
-            default = :metadata
         "--search-method"
             help = "type of match done during search"
             arg_type = Symbol
@@ -102,9 +98,8 @@ end
 # Function that constructs a search server request (can be a
 # search request or a command) from a set of arguments
 # that come usually from parsed client input arguments
-function construct_request(query, max_matches, search_type,
-                           search_method, max_suggestions,
-                           pretty, kill)
+function construct_request(query, max_matches, search_method,
+                           max_suggestions, pretty, kill)
     # Check wether the query is actually a query or another command
     if kill
         op = "kill"
@@ -116,7 +111,6 @@ function construct_request(query, max_matches, search_type,
             Dict("operation" => op,
                  "query" => query,
                  "max_matches" => max_matches,
-                 "search_type" => search_type,
                  "search_method" => search_method,
                  "max_suggestions" => max_suggestions,
                  "what_to_return" => what_to_return
@@ -153,8 +147,8 @@ Base.@ccallable function julia_main(ARGS::Vector{String})::Cint
             @warn "Empty query, nothing to search. Exiting..."
         else
             request = construct_request(args["query"],
-                args["max-matches"], args["search-type"],
-                args["search-method"], args["max-suggestions"],
+                args["max-matches"], args["search-method"],
+                args["max-suggestions"],
                 args["pretty"], args["kill"])
             # Search
             iosearch(conn, request, args["pretty"])

@@ -31,6 +31,9 @@ module Garamond
     using SparseArrays
     using Statistics
     using DataStructures
+    using Memento
+    using Dispatcher
+    using DispatcherCache
     using StringAnalysis, Languages
     using StringDistances, BKTrees
     using ArgParse
@@ -77,10 +80,12 @@ module Garamond
     include("update.jl")
     include("search.jl")
     include("results.jl")
+    include("requests.jl")
     include("servers.jl")
     include("version.jl")
     include("parsers/delimited_formats.jl")
     include("parsers/directory_formats.jl")
     include("parsers/no_parse.jl")
+    include("parsers/json.jl")
 
 end # module

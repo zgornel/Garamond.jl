@@ -70,7 +70,7 @@ function generate_test_confs(data_path::String, parser::Symbol)
             for search_model in ["naive", "brutetree", "kdtree", "hnsw"]
                 for doc2vec_method in ["bow", "sif"]
                 for heuristic in [nothing, "levenshtein"]
-                for vectors_eltype in ["Float16", "Float32", "Float64"]
+                for vectors_eltype in ["Float32"]
                 for build_summary in [false, true]
                 for keep_data in [false, true]
                     local embeddings_path, embeddings_kind

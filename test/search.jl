@@ -19,23 +19,20 @@ for parser in PARSERS
             #    continue
             #end
             # Initialize search parameters
-            ST = [:data, :metadata, :all]
             SM = [:exact, :regex]
             MAX_SUGGESTIONS=[0, 5]
             needles = [randstring(rand([1,2,3])) for _ in 1:3]
             # Loop over minor search options
-            for search_type in ST
-                for search_method in SM
-                    for max_suggestions in MAX_SUGGESTIONS
-                        # Do one search (skipping non-relevant cases)
-                        if search_method == :regex &&
-                                srchers[1].config.vectors in [:word2vec, :conceptnet, :glove]
-                            continue
-                        else
-                            search(srchers, needles, search_type=search_type,
-                                   max_corpus_suggestions=max_suggestions,
-                                   search_method=search_method)
-                        end
+            for search_method in SM
+                for max_suggestions in MAX_SUGGESTIONS
+                    # Do one search (skipping non-relevant cases)
+                    if search_method == :regex &&
+                            srchers[1].config.vectors in [:word2vec, :conceptnet, :glove]
+                        continue
+                    else
+                        search(srchers, needles,
+                               max_corpus_suggestions=max_suggestions,
+                               search_method=search_method)
                     end
                 end
             end

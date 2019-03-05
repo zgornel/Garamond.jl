@@ -20,9 +20,13 @@ convert(::Type{Dict}, md::DocumentMetadata) =
     Dict{String,String}((String(field) => getfield(md, field))
                          for field in fieldnames(DocumentMetadata))
 
+"""
+    meta2sv(metadata, fields=DEFAULT_METADATA_FIELDS)
 
-# Turn the document metadata into a vector of strings
-function meta2sv(md::T, fields=fieldnames(T)) where T<:DocumentMetadata
+Turns the `metadata::DocumentMetadata` object's `fields` into a vector of strings,
+where the value of each field becomes an element in the resulting vector.
+"""
+function meta2sv(md::T, fields=DEFAULT_METADATA_FIELDS) where T<:DocumentMetadata
     msv = ["" for _ in 1:length(fields)]
     for (i, field) in enumerate(fields)
         if field in fieldnames(T)
@@ -35,6 +39,10 @@ function meta2sv(md::T, fields=fieldnames(T)) where T<:DocumentMetadata
     end
     filter!(!isempty, msv)
     return msv
+end
+
+function meta2sv(md::Vector{T}, fields=DEFAULT_METADATA_FIELDS) where T<:DocumentMetadata
+    map((meta)->meta2sv(meta, fields), md)
 end
 
 
@@ -88,7 +96,7 @@ function summarize(sentences::Vector{S};
     # Get document term matrix
     s = StringDocument{String}.(sentences)
     c = Corpus(s)
-    prepare!(c, flags)
+    StringAnalysis.prepare!(c, flags)
     update_lexicon!(c)
     t = dtm(DocumentTermMatrix{Float32}(c))
     tf_idf!(t)
@@ -133,7 +141,11 @@ function build_corpus(documents::Vector{Vector{S}},
                      The document will be ignored."""
         end
     end
-    return Corpus(docs)
+    crps = Corpus(docs)
+    # Update lexicon, inverse index
+    update_lexicon!(crps)
+    update_inverse_index!(crps)
+    return crps
 end
 
 

@@ -1,3 +1,4 @@
+Pkg.add("Documenter")
 using Documenter, Garamond
 
 # Make src directory available
