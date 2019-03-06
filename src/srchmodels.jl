@@ -77,30 +77,47 @@ Searches for the `k` nearest neighbors of `point` in data contained in
 the `model`. The model may vary from a simple wrapper inside a matrix
 to more complex structures such as k-d trees, etc.
 """
-function search(model::NaiveEmbeddingModel{E,A}, point::AbstractVector, k::Int) where
-        {E<:AbstractFloat, A<:AbstractMatrix{E}}
+function search(model::NaiveEmbeddingModel{E,A},
+                point::AbstractVector,
+                k::Int,
+                keep::Vector{Int}=collect(1:length(model))
+               ) where {E<:AbstractFloat, A<:AbstractMatrix{E}}
+    _k = min(k, length(keep))
     # Cosine similarity
-    scores = (model.data)'*point
-    idxs = sortperm(scores, rev=true)[1:k]
-    return (idxs, 1 .- scores[idxs])
+    scores = model.data[:, keep]' * point
+    idxs = sortperm(scores, rev=true)[1:_k]
+    return keep[idxs], one(E) .- scores[idxs]
 end
 
-function search(model::BruteTreeEmbeddingModel{A,D}, point::AbstractVector, k::Int) where
-        {A<:AbstractArray, D<:Metric}
+function search(model::BruteTreeEmbeddingModel{A,D},
+                point::AbstractVector,
+                k::Int,
+                keep::Vector{Int}=collect(1:length(model))
+               ) where {A<:AbstractArray, D<:Metric}
     # Uses Euclidean distance by default
-    idxs, scores = knn(model.tree, point, k, true)
+    _k = min(k, length(keep))
+    skip = idx->!in(idx, keep)
+    idxs, scores = knn(model.tree, Vector(point), _k, true, skip)
     return idxs, scores
 end
 
-function search(model::KDTreeEmbeddingModel{A,D}, point::AbstractVector, k::Int) where
-        {A<:AbstractArray, D<:Metric}
+function search(model::KDTreeEmbeddingModel{A,D},
+                point::AbstractVector,
+                k::Int,
+                keep::Vector{Int}=collect(1:length(model))
+               ) where {A<:AbstractArray, D<:Metric}
     # Uses Euclidean distance by default
-    idxs, scores = knn(model.tree, point, k, true)
+    _k = min(k, length(keep))
+    skip = idx->!in(idx, keep)
+    idxs, scores = knn(model.tree, Vector(point), _k, true, skip)
     return idxs, scores
 end
 
-function search(model::HNSWEmbeddingModel{I,E,A,D}, point::AbstractVector, k::Int) where
-        {I<:Unsigned, E<:Real, A<:AbstractArray, D<:Metric}
+function search(model::HNSWEmbeddingModel{I,E,A,D},
+                point::AbstractVector,
+                k::Int,
+                keep::Vector{Int}=Int[]  # not used
+               ) where {I<:Unsigned, E<:Real, A<:AbstractArray, D<:Metric}
     # Uses Euclidean distance by default
     idxs, scores = knn_search(model.tree, point, k)
     return Int.(idxs), scores

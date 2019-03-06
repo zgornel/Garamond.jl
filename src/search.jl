@@ -108,15 +108,7 @@ function search(srcher::Searcher{T,D,E,M},
     k = min(n, max_matches)
     idxs = Int[]
     scores = T[]
-    # search if vector is not zero
-    if !iszero(query_embedding)
-        ### Search
-        idxs, scores = search(srcher.search_data, query_embedding, k)
-        ###
-        score_transform!(scores, alpha=srcher.config.score_alpha)
-    end
-    # Construct additional structures
-    suggestions = MultiDict{String, Tuple{T, String}}()
+    # First, find documents with matching needles
     needle_matches = Vector{String}()
     missing_needles = Vector{String}()
     doc_matches = Vector(1:n)
@@ -125,13 +117,21 @@ function search(srcher::Searcher{T,D,E,M},
     if srcher.config.vectors in [:count, :tf, :tfidf, :bm25] &&
             srcher.config.vectors_transform in [:none, :rp]
         needle_matches, doc_matches = find_matching(srcher.corpus.inverse_index,
-                                                    needles, search_method, n)
+                                        needles, search_method, n)
         missing_needles = setdiff(needles, needle_matches)
+    end
+    # Search (if document vector is not zero)
+    if !iszero(query_embedding)
+        ### Search
+        idxs, scores = search(srcher.search_data, query_embedding, k, doc_matches)
+        ###
+        score_transform!(scores, alpha=srcher.config.score_alpha)
     end
     mask = [i for (i,idx) in enumerate(idxs) if idx in doc_matches]
     query_matches = MultiDict(zip(scores[mask], idxs[mask]))
+    # Get suggestions
+    suggestions = MultiDict{String, Tuple{T, String}}()
     if max_suggestions > 0 && !isempty(missing_needles)
-        # Get suggestions
         search_heuristically!(suggestions,
                               srcher.search_trees,
                               missing_needles,
@@ -172,7 +172,10 @@ function search_heuristically!(suggestions::MultiDict{String, Tuple{T, String}},
 end
 
 
-function find_matching(iv::OrderedDict{String, Vector{Int}}, needles::Vector{String}, method::Symbol, ndocs::Int)
+function find_matching(iv::OrderedDict{String, Vector{Int}},
+                       needles::Vector{String},
+                       method::Symbol,
+                       ndocs::Int)
     # Initializations
     p = length(needles)
     needle_matches = Vector{String}()
