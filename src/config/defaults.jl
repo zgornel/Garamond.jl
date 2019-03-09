@@ -126,3 +126,11 @@ const SUPPORTED_LANGUAGES=[Languages.English,
 const DEFAULT_LANGUAGE=Languages.English
 const DEFAULT_LANGUAGE_STR=LANG_TO_STR[DEFAULT_LANGUAGE]
 const DEFAULT_TOKENIZER=:fast
+
+
+##########################
+# OTHER USEFUL CONSTANTS #
+##########################
+const DEFAULT_VERSION = "0.0.0"
+const DEFAULT_VERSION_DATE = "2019"
+const DEFAULT_VERSION_COMMIT = "unknown"

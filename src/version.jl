@@ -6,22 +6,20 @@ If the `Project.toml`, `git` are not available, the version defaults to
 an empty string.
 """
 function version()
-	commit = ""
-	date = ""
-	try
-	    readmethod = x->read(x,String)
-		commit = open(`git show --oneline -s`) do x
-				readmethod(x)[1:7]
-		end
-		date = open(`git show -s --format="%ci"`) do x
-			readmethod(x)[1:10]
-		end
-	catch
-		commit = "unknown"
-		date = "unknown"
-	end
-
-    v = ""
+    commit = DEFAULT_VERSION_COMMIT
+    date = DEFAULT_VERSION_DATE
+    try
+    readmethod = x->read(x,String)
+        commit = open(`git show --oneline -s`) do x
+            readmethod(x)[1:7]
+        end
+        date = open(`git show -s --format="%ci"`) do x
+            readmethod(x)[1:10]
+        end
+    catch
+        # do nothing
+    end
+    v = DEFAULT_VERSION
     try
         project_file = abspath(joinpath(@__DIR__, "..", "Project.toml"))
         open(project_file) do fid
@@ -33,10 +31,10 @@ function version()
             end
         end
     catch
+        # do nothing
     end
 	return v, commit, date
 end
-
 
 
 """
