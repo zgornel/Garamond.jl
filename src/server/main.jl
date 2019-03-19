@@ -1,19 +1,5 @@
 """
-    ioserver(socket_or_port::Union{UInt16, AbstractString}, channel::Channel{String})
-
-Wrapper for the UNIX- or WEB- socket servers.
-"""
-ioserver(socket::AbstractString, channel::Channel{String}) =
-    unix_socket_server(socket, channel)
-
-ioserver(port::UInt16, channel::Channel{String}) =
-    web_socket_server(port, channel)
-
-ioserver(port::Nothing, channel::Channel{String}) = nothing  # missing argument sink
-
-
-"""
-    search_server(data_config_paths, socket, ws_port)
+    search_server(data_config_paths, socket, ws_port, http_port)
 
 Main server function of Garamond. It is a finite-state-machine that
 when called, creates the searchers i.e. search objects using the
@@ -27,7 +13,7 @@ in order to:
 
 Both searcher update and I/O communication are performed asynchronously.
 """
-function search_server(data_config_paths, socket, ws_port)
+function search_server(data_config_paths, socket, ws_port, http_port)
     # Info message
     @info "~ GARAMOND ~ $(Garamond.printable_version())\n"
 
@@ -42,8 +28,9 @@ function search_server(data_config_paths, socket, ws_port)
     @async updater(srchers, channels=srchers_channel)
 
     # Start I/O server(s)
-    @async ioserver(socket, io_channel)
-    @async ioserver(ws_port, io_channel)
+    socket != nothing && @async unix_socket_server(socket, io_channel)
+    ws_port != nothing && @async web_socket_server(ws_port, io_channel)
+    http_port != nothing && @async rest_server(http_port, io_channel)
 
     # Main loop
     while true

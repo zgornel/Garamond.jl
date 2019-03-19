@@ -32,6 +32,9 @@ function get_server_commandline_arguments(args::Vector{String})
         "--web-socket-port", "-w"
             help = "WEB socket data communication port"
             arg_type = UInt16
+        "--http-port", "-p"
+            help = "HTTP port for REST services"
+            arg_type = Int
 	end
 
 	return parse_args(args,s)
@@ -53,11 +56,12 @@ Base.@ccallable function julia_main(ARGS::Vector{String})::Cint
     # Select one entry point
     unixsocket = args["unix-socket"]
     ws_port = args["web-socket-port"]
+    http_port = args["http-port"]
     # Start Server #
     data_config_paths = String.(args["data-config"])
     if !isempty(data_config_paths)
-        if unixsocket != nothing || ws_port != nothing
-            Garamond.search_server(data_config_paths, unixsocket, ws_port)
+        if unixsocket != nothing || ws_port != nothing || http_port != nothing
+            Garamond.search_server(data_config_paths, unixsocket, ws_port, http_port)
         else
             @warn """At least a UNIX-socket or WEB-socket port have to be
                      specified through the -u and -p switches. Exiting..."""
