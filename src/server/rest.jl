@@ -22,7 +22,7 @@ function construct_request(req::HTTP.Request)
     what_to_return, query = parts[offset+1:end]
     return JSON.json(
             Dict("operation" => op,
-                 "query" => query,
+                 "query" => replace(query, "%20"=>" "),
                  "max_matches" => parse(Int, max_matches),
                  "search_method" => Symbol(search_method),
                  "max_suggestions" => parse(Int, max_suggestions),
@@ -49,7 +49,7 @@ where:
     <query> can be any string
 
 Example:
-    http://localhost:port/api/v1/search/100/exact/0/json-index/"something to search into"
+    `http://localhost:port/api/v1/search/100/exact/0/json-index/something%20to%20search`
 """
 function rest_server(port::Integer, channel::Channel{String})
     #Checks
@@ -65,14 +65,15 @@ function rest_server(port::Integer, channel::Channel{String})
     @async HTTP.serve(Sockets.localhost, port, readtimeout=0) do req::HTTP.Request
         # Check for request body (there should not be any)
         body = IOBuffer(HTTP.payload(req))
-        local response
         if eof(body)
             # no request body
             request = HTTP.Handlers.handle(GARAMOND_REST_ROUTER, req)
             # Send request to FSM and get response
-            put!(channel, request)
-            response = take!(channel)
-            return HTTP.Response(200, response)
+            if request isa AbstractString
+                put!(channel, request)
+                response = take!(channel)
+                return HTTP.Response(200, response)
+            end
         end
         return HTTP.Response(200, "")
     end
