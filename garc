@@ -129,6 +129,7 @@ deconstruct_response(response) = response
 Base.@ccallable function julia_main(ARGS::Vector{String})::Cint
     # Parse command line arguments
     args = get_unix_socket_client_arguments(ARGS)
+
     # Logging
     log_levels = Dict("debug" => Logging.Debug,
                       "info" => Logging.Info,
@@ -137,22 +138,27 @@ Base.@ccallable function julia_main(ARGS::Vector{String})::Cint
     logger = ConsoleLogger(stdout,
                 get(log_levels, args["log-level"], Logging.Info))
     global_logger(logger)
+
     # Start client
     @debug "~ GARAMOND~ (unix-socket client)"
     unixsocket = args["unix-socket"]
     if issocket(unixsocket)
         conn = connect(unixsocket)
+
         # Construct Garamond request
         if isempty(args["query"])
             @warn "Empty query, nothing to search. Exiting..."
         else
-            request = construct_request(args["query"],
+            request = construct_request(
+                args["query"],
                 args["max-matches"], args["search-method"],
                 args["max-suggestions"],
                 args["pretty"], args["kill"])
+
             # Search
             iosearch(conn, request, args["pretty"])
         end
+
         # Close connection and exit
         close(conn)
     else

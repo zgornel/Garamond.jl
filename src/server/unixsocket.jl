@@ -20,8 +20,10 @@ function unix_socket_server(socket::AbstractString, channel::Channel{String})
         directory = join(_path[1:end-1], "/")
         !isdir(directory) && mkpath(directory)
     end
+
     # Start Server
     server = listen(socket)
+
     # Start serving
     @info "I/O: Waiting for data @unix-socket:$socket..."
     while true
