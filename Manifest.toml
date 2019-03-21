@@ -79,9 +79,9 @@ version = "0.5.2"
 
 [[Compat]]
 deps = ["Base64", "Dates", "DelimitedFiles", "Distributed", "InteractiveUtils", "LibGit2", "Libdl", "LinearAlgebra", "Markdown", "Mmap", "Pkg", "Printf", "REPL", "Random", "Serialization", "SharedArrays", "Sockets", "SparseArrays", "Statistics", "Test", "UUIDs", "Unicode"]
-git-tree-sha1 = "49269e311ffe11ac5b334681d212329002a9832a"
+git-tree-sha1 = "195a3ffcb8b0762684b6821de18f83a16455c6ea"
 uuid = "34da2185-b29b-5c13-b0c7-acf172513d20"
-version = "1.5.1"
+version = "2.0.0"
 
 [[ConceptnetNumberbatch]]
 deps = ["CodecZlib", "HDF5", "Languages", "Pkg", "Random", "Serialization", "Test", "TranscodingStreams"]
@@ -159,7 +159,7 @@ version = "0.11.0"
 
 [[HNSW]]
 deps = ["Distances", "LinearAlgebra", "Reexport"]
-git-tree-sha1 = "cd5460e77934111ca6c0e73c3ac30113eed43ad6"
+git-tree-sha1 = "21a41600cd8fec9a9ab6051c7caac5c95dc0bc1c"
 repo-rev = "master"
 repo-url = "https://github.com/zgornel/HNSW.jl.git"
 uuid = "540f64fa-c57e-11e8-081c-41422cda4629"
@@ -218,10 +218,10 @@ uuid = "8ef0a80b-9436-5d2c-a485-80b904378c43"
 version = "0.4.2"
 
 [[LibCURL]]
-deps = ["BinaryProvider", "Compat", "Libdl", "Printf"]
-git-tree-sha1 = "6339c87cb76923a3cf947fcd213cbc364355c9c9"
+deps = ["BinaryProvider", "Libdl", "Printf", "Test"]
+git-tree-sha1 = "d051c8057512ca38a273aaa514145a0b25f24d46"
 uuid = "b27032c2-a3e7-50c8-80cd-2d36dbcbfd21"
-version = "0.4.1"
+version = "0.5.0"
 
 [[LibExpat]]
 deps = ["Compat"]
@@ -418,9 +418,9 @@ version = "0.8.5"
 
 [[TranscodingStreams]]
 deps = ["Pkg", "Random", "Test"]
-git-tree-sha1 = "8a032ceb5cf7a28bf1bdb77746b250b9e9fda565"
+git-tree-sha1 = "d4718bd4db6b7850af3c3833556c6aedbb8e9904"
 uuid = "3bb67fe8-82b1-5028-8e26-92a6c54297fa"
-version = "0.9.0"
+version = "0.9.2"
 
 [[URIParser]]
 deps = ["Test", "Unicode"]

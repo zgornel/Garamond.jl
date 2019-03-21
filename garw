@@ -40,15 +40,16 @@ end
 Base.@ccallable function julia_main(ARGS::Vector{String})::Cint
     # Parse command line arguments
     args = get_web_socket_client_arguments(ARGS)
+
     # Logging
     log_levels = Dict("debug" => Logging.Debug,
                       "info" => Logging.Info,
                       "warning" => Logging.Warn,
                       "error" => Logging.Error)
-    logger = ConsoleLogger(stdout, get(log_levels,
-                                       args["log-level"],
-                                       Logging.Info))
+    logger = ConsoleLogger(stdout,
+                get(log_levels, args["log-level"], Logging.Info))
     global_logger(logger)
+
     # Start client
     @debug "~ GARAMOND~ (web-socket client)"
     ws_port = args["web-socket-port"]
@@ -60,6 +61,7 @@ Base.@ccallable function julia_main(ARGS::Vector{String})::Cint
         else
             webpage = _default_webpage(ws_port)
         end
+
         # Start HTTP server
         http_port = args["http-port"]
         _handler(request::HTTP.Request) = begin
