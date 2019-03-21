@@ -44,6 +44,8 @@ end
 # Main module function #
 ########################
 Base.@ccallable function julia_main(ARGS::Vector{String})::Cint
+    @info "~ GARAMOND ~ $(Garamond.printable_version())\n"
+
     # Parse command line arguments
     args = get_server_commandline_arguments(ARGS)
 
@@ -55,25 +57,33 @@ Base.@ccallable function julia_main(ARGS::Vector{String})::Cint
     logger = Garamond.build_logger(logging_stream, log_level)
     global_logger(logger)
 
-    # Get ports
+    # Get sockets/ports and check
     unixsocket = args["unix-socket"]
     ws_port = args["web-socket-port"]
     http_port = args["http-port"]
+    if unixsocket == nothing && ws_port == nothing && http_port == nothing
+        @warn """At least a UNIX-socket, WEB-socket port or HTTP port
+                 have to be specified through the -u, -w or -p switches.
+                 Exiting..."""
+        return 0
+    end
 
-    # Start Server #
+    # Check data path
     data_config_paths = String.(args["data-config"])
-    if !isempty(data_config_paths)
-        if unixsocket != nothing || ws_port != nothing || http_port != nothing
-            Garamond.search_server(data_config_paths, unixsocket, ws_port, http_port)
-        else
-            @warn """At least a UNIX-socket, WEB-socket port or HTTP port
-                     have to be specified through the -u, -w or -p switches.
-                     Exiting..."""
-        end
-    else
+    if isempty(data_config_paths)
         @warn """At least one data configuration file has to be provided
                  through the -d option. Exiting..."""
+        return 0
     end
+
+    # Start I/O server(s)
+    io_channel = Channel{String}(0)
+    unixsocket != nothing && @async unix_socket_server(unixsocket, io_channel)
+    ws_port != nothing && @async web_socket_server(ws_port, io_channel)
+    http_port != nothing && @async rest_server(http_port, io_channel)
+
+    # Start Search server
+    Garamond.search_server(data_config_paths, io_channel)
     return 0
 end
 

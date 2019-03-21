@@ -66,7 +66,10 @@ module Garamond
         id, description,
         isenabled, enable!,
         disable!,
-        print_search_results
+        print_search_results,
+        unix_socket_server,
+        web_socket_server,
+        rest_server
 
     # Include section
     include("config/defaults.jl")
