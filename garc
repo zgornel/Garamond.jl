@@ -146,7 +146,7 @@ Base.@ccallable function julia_main(ARGS::Vector{String})::Cint
         conn = connect(unixsocket)
 
         # Construct Garamond request
-        if isempty(args["query"])
+        if isempty(args["query"]) && !args["kill"]
             @warn "Empty query, nothing to search. Exiting..."
         else
             request = construct_request(
