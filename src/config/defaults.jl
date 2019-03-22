@@ -131,6 +131,6 @@ const DEFAULT_TOKENIZER=:fast
 ##########################
 # OTHER USEFUL CONSTANTS #
 ##########################
-const DEFAULT_VERSION = "0.0.0"
+const DEFAULT_VERSION = "0.1.0"
 const DEFAULT_VERSION_DATE = "2019"
 const DEFAULT_VERSION_COMMIT = "unknown"
