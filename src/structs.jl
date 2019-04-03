@@ -69,50 +69,6 @@ enable!(srcher::Searcher) = begin
 end
 
 
-# Show method
-show(io::IO, srcher::Searcher{T,D,E,M}) where {T,D,E,M} = begin
-    printstyled(io, "Searcher for $(id(srcher)), ")
-    _status = ifelse(isenabled(srcher), "enabled", "disabled")
-    _status_color = ifelse(isenabled(srcher), :light_green, :light_black)
-    printstyled(io, "$_status", color=_status_color, bold=true)
-    printstyled(io, ", ")
-    # Get embeddings type string
-    if E <: Word2Vec.WordVectors
-        _embedder = "Word2Vec"
-    elseif E <: Glowe.WordVectors
-        _embedder = "GloVe"
-    elseif E <: ConceptnetNumberbatch.ConceptNet
-        _embedder = "Conceptnet"
-    elseif E <: StringAnalysis.LSAModel
-        _embedder = "DTV+LSA"
-    elseif E <: StringAnalysis.RPModel
-        _embedder = "DTV"
-        if srcher.config.vectors_transform==:rp
-            _embedder *= "+RP"
-        end
-    else
-        _embedder = "<Unknown>"
-    end
-    printstyled(io, "$_embedder", bold=true)
-    printstyled(io, ", ")
-    # Get model type string
-    if M <: NaiveEmbeddingModel
-        _model_type = "Naive"
-    elseif M <: BruteTreeEmbeddingModel
-        _model_type = "Brute-Tree"
-    elseif M<: KDTreeEmbeddingModel
-        _model_type = "KD-Tree"
-    elseif M <: HNSWEmbeddingModel
-        _model_type = "HNSW"
-    else
-        _model_type = "<Unknown>"
-    end
-    printstyled(io, "$_model_type", bold=true)
-    #printstyled(io, "$(description(srcher))", color=:normal)
-    printstyled(io, ", $(length(srcher.search_data)) $T embedded documents")
-end
-
-
 # Indexing for vectors of searchers
 function getindex(srchers::V, an_id::StringId
         ) where {V<:Vector{<:Searcher{T,D,E,M}

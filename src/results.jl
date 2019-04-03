@@ -26,16 +26,6 @@ valength(md::MultiDict) = begin
 end
 
 
-# Show method
-show(io::IO, result::SearchResult) = begin
-    n = valength(result.query_matches)
-    nm = length(result.needle_matches)
-    ns = length(result.suggestions)
-    printstyled(io, "Search results for $(result.id): ")
-    printstyled(io, " $n hits, $nm query terms, $ns suggestions.", bold=true)
-end
-
-
 # Pretty printer of results
 function print_search_results(io::IO, srcher::Searcher, result::SearchResult)
     nm = valength(result.query_matches)

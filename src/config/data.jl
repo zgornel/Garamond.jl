@@ -6,7 +6,6 @@ struct StringId
 end
 
 # Utils
-show(io::IO, id::StringId) = print(io, "id=\"$(id.id)\"")
 random_id(::Type{StringId}) = StringId(randstring())
 
 # Construct IDs
@@ -115,34 +114,6 @@ SearchConfig(;
                  query_strip_flags, summarization_strip_flags,
                  bm25_kappa, bm25_beta, sif_alpha, score_alpha,
                  cache_directory, cache_compression)
-
-
-# Show method
-Base.show(io::IO, sconfig::SearchConfig) = begin
-    printstyled(io, "SearchConfig for $(sconfig.id)\n")
-    printstyled(io, "`-enabled = ")
-    printstyled(io, "$(sconfig.enabled)\n", bold=true)
-    _tf = ""
-    if sconfig.vectors in [:count, :tf, :tfidf, :b25]
-        if sconfig.vectors_transform == :lsa
-            _tf = " + LSA"
-        elseif sconfig.vectors_transform == :rp
-            _tf = " + random projection"
-        end
-    end
-    printstyled(io, "  vectors = ")
-    printstyled(io, "$(sconfig.vectors)$_tf", bold=true)
-    printstyled(io, ", ")
-    printstyled(io, "$(sconfig.vectors_eltype)\n", bold=true)
-    printstyled(io, "  search_model = ")
-    printstyled(io, "$(sconfig.search_model)\n", bold=true)
-    printstyled(io, "  data_path = ")
-    printstyled(io, "\"$(sconfig.data_path)\"\n", bold=true)
-    if sconfig.embeddings_path != nothing
-        printstyled(io, "  embeddings_path = ")
-        printstyled(io, "\"$(sconfig.embeddings_path)\"\n", bold=true)
-    end
-end
 
 
 """

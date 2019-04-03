@@ -84,6 +84,7 @@ module Garamond
     include("search.jl")
     include("results.jl")
     include("version.jl")
+    include("show.jl")
     include("server/requests.jl")
     include("server/unixsocket.jl")
     include("server/websocket.jl")
