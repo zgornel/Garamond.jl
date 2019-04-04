@@ -6,11 +6,13 @@ struct StringId
 end
 
 # Utils
-random_id(::Type{StringId}) = StringId(randstring())
+random_hash_string() = string(hash(rand()), base=16)
+random_string_id() = StringId(random_hash_string())
 
 # Construct IDs
 make_id(::Type{StringId}, id::T) where T<:AbstractString = StringId(String(id))
 make_id(::Type{StringId}, id::T) where T<:Number = StringId(string(id))
+make_id(::Type{StringId}, id::T) where T<:Nothing = random_string_id()
 
 
 ################
@@ -63,7 +65,7 @@ end
 
 # Keyword argument constructor; all arguments sho
 SearchConfig(;
-          id=random_id(StringId),
+          id=random_string_id(),
           description="",
           enabled=false,
           data_path="",
@@ -151,7 +153,7 @@ function load_search_configs(filename::AbstractString)
             globbing_pattern = get(dconfig, "globbing_pattern", DEFAULT_GLOBBING_PATTERN)
             show_progress = get(dconfig, "show_progress", DEFAULT_SHOW_PROGRESS)
             delimiter = get(dconfig, "delimiter", DEFAULT_DELIMITER)
-            sconfig.id = make_id(StringId, get(dconfig, "id", randstring(10)))
+            sconfig.id = make_id(StringId, get(dconfig, "id", nothing))
             sconfig.description = get(dconfig, "description", "")
             sconfig.enabled = get(dconfig, "enabled", false)
             sconfig.data_path = get(dconfig, "data_path", "")
