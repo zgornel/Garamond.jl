@@ -36,15 +36,16 @@ Function that constructs a response for a Garamond client using
 the search `results`, data from `srchers` and specifier `what`.
 """
 function construct_response(srchers, results, what::String;
-                            max_suggestions::Int=0, elapsed_time::Float64=0)
+                            max_suggestions::Int=0,
+                            elapsed_time::Float64=0)
     buf = IOBuffer()
     if what == "json-index"
         # Write to buffer indices of the documents
         write(buf, JSON.json(results))
     elseif what == "json-data"
-        # Write to buffer document metadata
-        result_data = export_results_for_web(srchers, results,
+        result_data = get_result_data(srchers, results,
                         max_suggestions, elapsed_time)
+        # Write to buffer document metadata
         write(buf, JSON.json(result_data))
     else
         @error "Unknown response type."  # should not reach this point
@@ -57,10 +58,10 @@ end
 # Export results to be a format that can be converted into JSON for
 # webpage viewing
 # #TODO(Corneliu) Display suggestions as well, improve function
-function export_results_for_web(srchers::S, results::T, max_suggestions::Int,
-                                elapsed_time::Float64
-                               ) where {S<:AbstractVector{<:Searcher},
-                                        T<:AbstractVector{<:SearchResult}}
+function get_result_data(srchers::S, results::T,
+                         max_suggestions::Int, elapsed_time::Float64
+                        ) where {S<:AbstractVector{<:Searcher},
+                                 T<:AbstractVector{<:SearchResult}}
     # Count the total number of results
     if !isempty(results)
         nt = mapreduce(x->valength(x.query_matches), +, results)
