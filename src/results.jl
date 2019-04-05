@@ -27,9 +27,9 @@ valength(md::MultiDict) = begin
 end
 
 
-function aggregate!(results::T, aggregation_ids::Vector{StringId};
+function aggregate!(results::Vector{T}, aggregation_ids::Vector{StringId};
                     method::Symbol=DEFAULT_RESULT_AGGREGATION_STRATEGY
-                   ) where T<:Vector{<:SearchResult}
+                   ) where T<:SearchResult
     uids  = unique(aggregation_ids)
     # If all aggregation ids are different (i.e. no aggregation)
     # return results unchanged
@@ -39,28 +39,30 @@ function aggregate!(results::T, aggregation_ids::Vector{StringId};
     for uid in uids
         positions = findall(x->x==uid, aggregation_ids)
         if length(positions) > 1
+            target_results = results[positions]
             # aggregate
-            agg_result = _aggregate(results[positions], method=method)
+            qm = [result.query_matches for result in target_results]
+            merged_query_matches = _aggregate(qm, method=method)
             # updated id
-            agg_result.id = uid
-            # replace first occurence with duplicate id_aggregation
+            agg_result = SearchResult(uid,
+                merged_query_matches,
+                vcat((result.needle_matches for result in target_results)...),
+                squash_suggestions(target_results), #TODO)(Corneliu) Make sure this makes sense
+                1.0)  # this does not matter
+            # replace first occurence that has the non-unique id_aggregation
             results[positions[1]] = agg_result
-            # remove merged results as well as their ids
+            # remove other occurences (these have been merged)
             deleteat!(results, positions[2:end])
             deleteat!(aggregation_ids, positions[2:end])
         end
     end
 end
 
-function _aggregate(results::T; method::Symbol=DEFAULT_RESULT_AGGREGATION_STRATEGY
-                   ) where T<:Vector{<:SearchResult}
+function _aggregate(query_matches::Vector{MultiDict{T,Int}};
+                    method::Symbol=DEFAULT_RESULT_AGGREGATION_STRATEGY
+                   ) where T<:AbstractFloat
     # TODO(Corneliu) implement this
-    return results[1]
 end
-
-
-
-
 
 
 # Squash suggestions for multiple corpora search results
