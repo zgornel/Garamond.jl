@@ -4,7 +4,8 @@ show(io::IO, id::StringId) = print(io, "id=\"$(id.id)\"")
 
 # SearchConfig
 Base.show(io::IO, sconfig::SearchConfig) = begin
-    printstyled(io, "SearchConfig for $(sconfig.id)\n")
+    printstyled(io, "SearchConfig for $(sconfig.id) "*
+                "(aggregation $(sconfig.id_aggregation))\n")
     printstyled(io, "`-enabled = ")
     printstyled(io, "$(sconfig.enabled)\n", bold=true)
     _tf = ""
@@ -32,7 +33,8 @@ end
 
 # Searcher
 show(io::IO, srcher::Searcher{T,D,E,M}) where {T,D,E,M} = begin
-    printstyled(io, "Searcher for $(id(srcher)), ")
+    printstyled(io, "Searcher for $(id(srcher)) "*
+                "(aggregation $(srcher.config.id_aggregation)), ")
     _status = ifelse(isenabled(srcher), "enabled", "disabled")
     _status_color = ifelse(isenabled(srcher), :light_green, :light_black)
     printstyled(io, "$_status", color=_status_color, bold=true)

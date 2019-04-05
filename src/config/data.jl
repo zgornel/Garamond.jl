@@ -26,6 +26,7 @@ other methods.
 mutable struct SearchConfig
     # general, data, processing
     id::StringId                    # searcher/corpus id
+    id_aggregation::StringId        # aggregation id
     description::String             # description of the searcher
     enabled::Bool                   # whether to use the searcher in search or not
     data_path::String               # file/directory path for the data (depends on what the parser accepts)
@@ -58,6 +59,7 @@ mutable struct SearchConfig
     bm25_beta::Float64              # β parameter for BM25 (employed in BM25 only)
     sif_alpha::Float64              # smooth inverse frequency α parameter (for 'sif' doc2vec method only)
     score_alpha::Float64            # score alpha (parameter for the scoring function)
+    score_weight::Float64           # weight of scores of searcher (used in result aggregation)
     # cache parameters
     cache_directory::Union{Nothing, String}  # path to the DispatcherCache cache directory
     cache_compression::String       # DispatcherCache compression option
@@ -66,6 +68,7 @@ end
 # Keyword argument constructor; all arguments sho
 SearchConfig(;
           id=random_string_id(),
+          id_aggregation=id,
           description="",
           enabled=false,
           data_path="",
@@ -103,10 +106,11 @@ SearchConfig(;
           bm25_beta=DEFAULT_BM25_BETA,
           sif_alpha=DEFAULT_SIF_ALPHA,
           score_alpha=DEFAULT_SCORE_ALPHA,
+          score_weight=1.0,
           cache_directory=DEFAULT_CACHE_DIRECTORY,
           cache_compression=DEFAULT_CACHE_COMPRESSION) =
     # Call normal constructor
-    SearchConfig(id, description, enabled,
+    SearchConfig(id, id_aggregation, description, enabled,
                  data_path, parser, parser_config,
                  language, build_summary, summary_ns, keep_data, stem_words,
                  vectors, vectors_transform, vectors_dimension, vectors_eltype,
@@ -114,7 +118,8 @@ SearchConfig(;
                  glove_vocabulary, heuristic,
                  text_strip_flags, metadata_strip_flags,
                  query_strip_flags, summarization_strip_flags,
-                 bm25_kappa, bm25_beta, sif_alpha, score_alpha,
+                 bm25_kappa, bm25_beta, sif_alpha,
+                 score_alpha, score_weight,
                  cache_directory, cache_compression)
 
 
@@ -154,6 +159,7 @@ function load_search_configs(filename::AbstractString)
             show_progress = get(dconfig, "show_progress", DEFAULT_SHOW_PROGRESS)
             delimiter = get(dconfig, "delimiter", DEFAULT_DELIMITER)
             sconfig.id = make_id(StringId, get(dconfig, "id", nothing))
+            sconfig.id_aggregation = make_id(StringId, get(dconfig, "id_aggregation", sconfig.id.id))
             sconfig.description = get(dconfig, "description", "")
             sconfig.enabled = get(dconfig, "enabled", false)
             sconfig.data_path = get(dconfig, "data_path", "")
@@ -184,6 +190,7 @@ function load_search_configs(filename::AbstractString)
             sconfig.bm25_beta = Float64(get(dconfig, "bm25_beta", DEFAULT_BM25_BETA))
             sconfig.sif_alpha = Float64(get(dconfig, "sif_alpha", DEFAULT_SIF_ALPHA))
             sconfig.score_alpha = Float64(get(dconfig, "score_alpha", DEFAULT_SCORE_ALPHA))
+            sconfig.score_weight = Float64(get(dconfig, "score_weight", 1.0))
             sconfig.cache_directory = get(dconfig, "cache_directory", DEFAULT_CACHE_DIRECTORY)
             sconfig.cache_compression = get(dconfig, "cache_compression", DEFAULT_CACHE_COMPRESSION)
             # Construct parser (built last as requires other parameters)
