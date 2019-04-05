@@ -30,15 +30,15 @@ const DEFAULT_KEEP_DATA = true  # whether to keep the actual document data, meta
 # Text stripping flags
 const DEFAULT_TEXT_STRIP_FLAGS = strip_case | strip_punctuation | strip_articles |
                                  strip_prepositions | strip_whitespace |
-                                 strip_corrupt_utf8
+                                 strip_corrupt_utf8 | strip_accents
 const DEFAULT_QUERY_STRIP_FLAGS = strip_case | strip_punctuation | strip_articles |
                                   strip_prepositions | strip_whitespace |
-                                  strip_corrupt_utf8
+                                  strip_corrupt_utf8 | strip_accents
 const DEFAULT_METADATA_STRIP_FLAGS = strip_case | strip_punctuation | strip_articles |
                                      strip_prepositions | strip_whitespace |
-                                     strip_corrupt_utf8
+                                     strip_corrupt_utf8 | strip_accents
 const DEFAULT_SUMMARIZATION_STRIP_FLAGS = strip_corrupt_utf8 | strip_case |
-                                          strip_stopwords
+                                          strip_stopwords | strip_accents
 # Caching options
 const DEFAULT_CACHE_DIRECTORY = nothing
 const DEFAULT_CACHE_COMPRESSION = "none"
