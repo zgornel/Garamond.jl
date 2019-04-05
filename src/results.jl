@@ -8,6 +8,7 @@ struct SearchResult{T<:AbstractFloat}
     query_matches::MultiDict{T, Int}  # score => document indices
     needle_matches::Vector{String}
     suggestions::MultiDict{String, Tuple{T,String}} # needle => tuples of (score,partial match)
+    score_weight::T
 end
 
 
@@ -23,6 +24,105 @@ valength(md::MultiDict) = begin
     else
         return mapreduce(x->length(x[2]), +, md)
     end
+end
+
+
+function aggregate!(results::T, aggregation_ids::Vector{StringId};
+                    method::Symbol=DEFAULT_RESULT_AGGREGATION_STRATEGY
+                   ) where T<:Vector{<:SearchResult}
+    uids  = unique(aggregation_ids)
+    # If all aggregation ids are different (i.e. no aggregation)
+    # return results unchanged
+    length(uids) == length(aggregation_ids) && return results
+
+    # Some aggregation ids are identical (i.e. aggregate)
+    for uid in uids
+        positions = findall(x->x==uid, aggregation_ids)
+        if length(positions) > 1
+            # aggregate
+            agg_result = _aggregate(results[positions], method=method)
+            # updated id
+            agg_result.id = uid
+            # replace first occurence with duplicate id_aggregation
+            results[positions[1]] = agg_result
+            # remove merged results as well as their ids
+            deleteat!(results, positions[2:end])
+            deleteat!(aggregation_ids, positions[2:end])
+        end
+    end
+end
+
+function _aggregate(results::T; method::Symbol=DEFAULT_RESULT_AGGREGATION_STRATEGY
+                   ) where T<:Vector{<:SearchResult}
+    # TODO(Corneliu) implement this
+    return results[1]
+end
+
+
+
+
+
+
+# Squash suggestions for multiple corpora search results
+function squash_suggestions(results::Vector{<:SearchResult},
+                            max_suggestions::Int=MAX_SUGGESTIONS)
+    suggestions = MultiDict{String, String}()
+    # Quickly exit if no suggestions are sought
+    max_suggestions <=0 && return suggestions
+    if length(results) > 1
+        # Results from multiple corpora, suggestions have to
+        # be processed somewhat:
+        #  - keep only needles not found across all corpora
+        #  - remove suggestions that correspond to found needles
+
+        # Get the needles not found across all corpus results
+        matched_needles = (needle for _result in results
+                           for needle in _result.needle_matches)
+        missed_needles = union((keys(_result.suggestions)
+                                for _result in results)...)
+        # Construct suggestions for the whole AggregateSearcher
+        for needle in missed_needles
+            all_needle_suggestions = Vector{Tuple{AbstractFloat,String}}()
+            for _result in results
+                if haskey(_result.suggestions, needle) &&
+                   !(any(suggestion in matched_needles
+                         for (_, suggestion) in _result.suggestions[needle]))
+                   # Current key was not found and the suggestions
+                   # for it are not found in the matched needles
+                   union!(all_needle_suggestions,
+                          _result.suggestions[needle])
+                end
+            end
+            if !isempty(all_needle_suggestions)
+                sort!(all_needle_suggestions, by=x->x[1])  # sort vector of tuples by distance
+                # Keep results with the same distance even if the number is
+                # larger than the maximum
+                n = min(max_suggestions, length(all_needle_suggestions))
+                nn = 0
+                d = -1.0
+                for (i, (dist, _)) in enumerate(all_needle_suggestions)
+                    if i <= n || d == dist
+                        d = dist
+                        nn = i
+                    end
+                end
+                push!(suggestions,
+                      needle=>map(x->x[2], all_needle_suggestions)[1:nn])
+            end
+        end
+    else
+        # Results from one corpus, easy situation, just copy the suggestions
+        for _result in results
+            for (needle, vs) in _result.suggestions
+                # vs is a Vector{Tuple{AbstractFloat, String}},
+                # sorted by distance i.e. the float
+                for v in vs
+                    push!(suggestions, needle=>v[2])
+                end
+            end
+        end
+    end
+    return suggestions
 end
 
 
@@ -97,70 +197,5 @@ end
 print_search_results(srchers::S, results::T, max_suggestions=MAX_CORPUS_SUGGESTIONS
                     ) where {S<:AbstractVector{<:Searcher},
                              T<:AbstractVector{<:SearchResult}} =
-    print_search_results(stdout,
-                         srchers,
-                         results,
+    print_search_results(stdout, srchers, results,
                          max_suggestions=max_suggestions)
-
-
-# Squash suggestions for multiple corpora search results
-function squash_suggestions(results::Vector{SearchResult},
-                            max_suggestions::Int=MAX_SUGGESTIONS)
-    suggestions = MultiDict{String, String}()
-    # Quickly exit if no suggestions are sought
-    max_suggestions <=0 && return suggestions
-    if length(results) > 1
-        # Results from multiple corpora, suggestions have to
-        # be processed somewhat:
-        #  - keep only needles not found across all corpora
-        #  - remove suggestions that correspond to found needles
-
-        # Get the needles not found across all corpus results
-        matched_needles = (needle for _result in results
-                           for needle in _result.needle_matches)
-        missed_needles = union((keys(_result.suggestions)
-                                for _result in results)...)
-        # Construct suggestions for the whole AggregateSearcher
-        for needle in missed_needles
-            all_needle_suggestions = Vector{Tuple{AbstractFloat,String}}()
-            for _result in results
-                if haskey(_result.suggestions, needle) &&
-                   !(any(suggestion in matched_needles
-                         for (_, suggestion) in _result.suggestions[needle]))
-                   # Current key was not found and the suggestions
-                   # for it are not found in the matched needles
-                   union!(all_needle_suggestions,
-                          _result.suggestions[needle])
-                end
-            end
-            if !isempty(all_needle_suggestions)
-                sort!(all_needle_suggestions, by=x->x[1])  # sort vector of tuples by distance
-                # Keep results with the same distance even if the number is
-                # larger than the maximum
-                n = min(max_suggestions, length(all_needle_suggestions))
-                nn = 0
-                d = -1.0
-                for (i, (dist, _)) in enumerate(all_needle_suggestions)
-                    if i <= n || d == dist
-                        d = dist
-                        nn = i
-                    end
-                end
-                push!(suggestions,
-                      needle=>map(x->x[2], all_needle_suggestions)[1:nn])
-            end
-        end
-    else
-        # Results from one corpus, easy situation, just copy the suggestions
-        for _result in results
-            for (needle, vs) in _result.suggestions
-                # vs is a Vector{Tuple{AbstractFloat, String}},
-                # sorted by distance i.e. the float
-                for v in vs
-                    push!(suggestions, needle=>v[2])
-                end
-            end
-        end
-    end
-    return suggestions
-end

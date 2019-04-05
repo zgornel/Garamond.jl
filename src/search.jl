@@ -137,7 +137,8 @@ function search(srcher::Searcher{T,D,E,M},
                               missing_needles,
                               max_suggestions=max_suggestions)
     end
-    return SearchResult(id(srcher), query_matches, collect(needle_matches), suggestions)
+    return SearchResult(id(srcher), query_matches, collect(needle_matches),
+                        suggestions, T(srcher.config.score_weight))
 end
 
 

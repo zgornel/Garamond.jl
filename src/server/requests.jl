@@ -87,6 +87,5 @@ function get_result_data(results::T, corpora,
             end
         end
     end
-    suggestions = squash_suggestions(results, max_suggestions)
     return r
 end
