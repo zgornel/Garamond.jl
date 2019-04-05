@@ -21,7 +21,7 @@ function search_server(data_config_paths, io_channel)
     @async updater(srchers, channels=srchers_channel)
 
     # Main loop
-    @info "Search server: entering query wait loop..."
+    @info "Search server: Entering query wait loop..."
     while true
         if isready(srchers_channel)
             srchers = take!(srchers_channel)
@@ -42,26 +42,35 @@ function search_server(data_config_paths, io_channel)
                                  max_matches=max_matches,
                                  max_corpus_suggestions=max_suggestions)
                 t_finish = time()
-                # Aggregate results as needed i.e. aggregate!(results, method=...)
-                # TODO(Corneliu)
+
+                # Aggregate results as needed
+                #aggregate!(results, method=RESULT_AGGREGATION_STRATEGY)
 
                 # Select the data (if any) that will be reuturned
-                # TODO(Corneliu): use id_aggregation when added instead of id
                 if what_to_return == "json-index"
-                    doc_data = nothing
+                    corpora = nothing
                 elseif what_to_return == "json-data"
-                    doc_data = (srcher.corpus for srcher in srchers
-                                if srcher.config.id in (r.id for r in results))
+                    idx_corpora = Int[]
+                    for result in results
+                        for (idx, srcher) in enumerate(srchers)
+                            if result.id == srcher.config.id_aggregation
+                                push!(idx_corpora, idx)
+                                break
+                            end
+                        end
+                    end
+                    corpora = (srchers[idx].corpus for idx in idx_corpora)
                 else
-                    @warn "Search-server: Unknown return option \"$what_to_return\", "*
+                    @warn "Search server: Unknown return option \"$what_to_return\", "*
                           "defaulting to \"json-index\"..."
-                    doc_data = nothing
+                    corpora = nothing
                 end
+
                 # Construct response for client
-                response = construct_response(results, doc_data,
+                response = construct_response(results, corpora,
                                               max_suggestions=max_suggestions,
                                               elapsed_time=t_finish-t_init)
-                # Write response to I/O server
+                #Write response to I/O server
                 put!(io_channel, response)
             elseif operation == "kill"
                 ### Kill the search server ###
