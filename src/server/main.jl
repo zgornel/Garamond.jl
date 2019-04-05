@@ -42,8 +42,23 @@ function search_server(data_config_paths, io_channel)
                                  max_matches=max_matches,
                                  max_corpus_suggestions=max_suggestions)
                 t_finish = time()
+                # Aggregate results as needed i.e. aggregate!(results, method=...)
+                # TODO(Corneliu)
+
+                # Select the data (if any) that will be reuturned
+                # TODO(Corneliu): use id_aggregation when added instead of id
+                if what_to_return == "json-index"
+                    doc_data = nothing
+                elseif what_to_return == "json-data"
+                    doc_data = (srcher.corpus for srcher in srchers
+                                if srcher.config.id in (r.id for r in results))
+                else
+                    @warn "Search-server: Unknown return option \"$what_to_return\", "*
+                          "defaulting to \"json-index\"..."
+                    doc_data = nothing
+                end
                 # Construct response for client
-                response = construct_response(srchers, results, what_to_return,
+                response = construct_response(results, doc_data,
                                               max_suggestions=max_suggestions,
                                               elapsed_time=t_finish-t_init)
                 # Write response to I/O server
