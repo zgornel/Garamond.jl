@@ -27,12 +27,19 @@ valength(md::MultiDict) = begin
 end
 
 
-function aggregate!(results::Vector{T}, aggregation_ids::Vector{StringId};
-                    method::Symbol=DEFAULT_RESULT_AGGREGATION_STRATEGY
+function aggregate!(results::Vector{T},
+                    aggregation_ids::Vector{StringId};
+                    method::Symbol=DEFAULT_RESULT_AGGREGATION_STRATEGY,
+                    max_suggestions::Int=MAX_SUGGESTIONS
                    ) where T<:SearchResult
-    uids  = unique(aggregation_ids)
+    if !(method in ["minimum", "maximum", "median", "product", "mean"])
+        @warn "Unknown aggregation strategy :$method. " *
+              "Defaulting to $DEFAULT_RESULT_AGGREGATION_STRATEGY."
+        method = DEFAULT_RESULT_AGGREGATION_STRATEGY
+    end
     # If all aggregation ids are different (i.e. no aggregation)
     # return results unchanged
+    uids  = unique(aggregation_ids)
     length(uids) == length(aggregation_ids) && return results
 
     # Some aggregation ids are identical (i.e. aggregate)
@@ -48,7 +55,7 @@ function aggregate!(results::Vector{T}, aggregation_ids::Vector{StringId};
             agg_result = SearchResult(uid,
                 merged_query_matches,
                 unique(vcat((result.needle_matches for result in target_results)...)),
-                squash_suggestions(target_results), #TODO)(Corneliu) Make sure this makes sense
+                squash_suggestions(target_results, max_suggestions=max_suggestions),
                 1.0)  # this does not matter
             # replace first occurence that has the non-unique id_aggregation
             results[positions[1]] = agg_result
@@ -58,6 +65,7 @@ function aggregate!(results::Vector{T}, aggregation_ids::Vector{StringId};
         end
     end
 end
+
 
 function _aggregate(query_matches::Vector{MultiDict{T,Int}},
                     weights::Vector{T};

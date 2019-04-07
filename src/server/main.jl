@@ -45,7 +45,9 @@ function search_server(data_config_paths, io_channel)
 
                 # Aggregate results as needed
                 agg_ids = [srcher.config.id_aggregation for srcher in srchers]
-                aggregate!(results, agg_ids, method=RESULT_AGGREGATION_STRATEGY)
+                aggregate!(results, agg_ids,
+                           method=RESULT_AGGREGATION_STRATEGY,
+                           max_suggestions=max_suggestions)
 
                 # Select the data (if any) that will be reuturned
                 if what_to_return == "json-index"
