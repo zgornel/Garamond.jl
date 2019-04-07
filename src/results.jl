@@ -12,6 +12,12 @@ struct SearchResult{T<:AbstractFloat}
 end
 
 
+SearchResult(id::StringId, query_matches::MultiDict{T, Int}, needle_matches::Vector{String}
+            ) where T<:AbstractFloat =
+    SearchResult(id, query_matches, needle_matches,
+                 MultiDict{String, Tuple{T,String}}(), one(T))
+
+
 isempty(result::T) where T<:SearchResult =
     all(isempty(getfield(result, field)) for field in fieldnames(T))
 
@@ -30,6 +36,7 @@ end
 function aggregate!(results::Vector{T},
                     aggregation_ids::Vector{StringId};
                     method::Symbol=DEFAULT_RESULT_AGGREGATION_STRATEGY,
+                    max_matches::Int=MAX_MATCHES,
                     max_suggestions::Int=MAX_SUGGESTIONS
                    ) where T<:SearchResult
     if !(method in [:minimum, :maximum, :median, :product, :mean])
@@ -50,13 +57,15 @@ function aggregate!(results::Vector{T},
             # aggregate
             qm = [result.query_matches for result in target_results]
             weights = [result.score_weight for result in target_results]
-            merged_query_matches = _aggregate(qm, weights, method=method)
-            # updated id
-            agg_result = SearchResult(uid,
+            merged_query_matches = _aggregate(qm, weights,
+                                              method=method,
+                                              max_matches=max_matches)
+            # TODO(Corneliu) Fix suggestion squashing
+            # ... squash_suggestions(target_results, max_suggestions),
+            agg_result = SearchResult(
+                uid,
                 merged_query_matches,
-                unique(vcat((result.needle_matches for result in target_results)...)),
-                squash_suggestions(target_results, max_suggestions),
-                1.0)  # this does not matter
+                unique(vcat((result.needle_matches for result in target_results)...)))
             # replace first occurence that has the non-unique id_aggregation
             results[positions[1]] = agg_result
             # remove other occurences (these have been merged)
@@ -69,7 +78,8 @@ end
 
 function _aggregate(query_matches::Vector{MultiDict{T,Int}},
                     weights::Vector{T};
-                    method::Symbol=DEFAULT_RESULT_AGGREGATION_STRATEGY
+                    method::Symbol=DEFAULT_RESULT_AGGREGATION_STRATEGY,
+                    max_matches::Int=DEFAULT_MAX_MATCHES,
                    ) where T<:AbstractFloat
     # Preprocess data
     row = 0
@@ -102,9 +112,10 @@ function _aggregate(query_matches::Vector{MultiDict{T,Int}},
     (method == :product) && (final_scores = prod(scores, dims=2)[:,1])
     (method == :mean) && (final_scores = mean(scores, dims=2)[:,1])
 
-    # Re-build a MultiDict{T,Int}
     row2doc = Dict(v=>k for (k,v) in doc2row)
-    return MultiDict(zip(final_scores, [row2doc[i] for i in 1:m]))
+    # Sort and trim result list
+    idxs = sortperm(final_scores, rev=true)[1:min(m, max_matches)]
+    return MultiDict(zip(final_scores[idxs], [row2doc[i] for i in idxs]))
 end
 
 
