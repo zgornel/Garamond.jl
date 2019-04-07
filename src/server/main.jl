@@ -35,20 +35,21 @@ function search_server(data_config_paths, io_channel)
             if operation == "search"
                 ### Search ###
                 @debug "Search server: Performing search operation query='$query'..."
+
                 t_init = time()
                 # Get search results
                 results = search(srchers, query,
                                  search_method=search_method,
                                  max_matches=max_matches,
                                  max_corpus_suggestions=max_suggestions)
-                t_finish = time()
-
                 # Aggregate results as needed
                 aggregate!(results,
                            [srcher.config.id_aggregation for srcher in srchers],
                            method=RESULT_AGGREGATION_STRATEGY,
                            max_matches=max_matches,
                            max_suggestions=max_suggestions)
+
+                t_finish = time()
 
                 # Select the data (if any) that will be reuturned
                 if what_to_return == "json-index"
