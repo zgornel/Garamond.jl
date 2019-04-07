@@ -42,11 +42,12 @@ function aggregate!(results::Vector{T}, aggregation_ids::Vector{StringId};
             target_results = results[positions]
             # aggregate
             qm = [result.query_matches for result in target_results]
-            merged_query_matches = _aggregate(qm, method=method)
+            weights = [result.score_weight for result in target_results]
+            merged_query_matches = _aggregate(qm, weights, method=method)
             # updated id
             agg_result = SearchResult(uid,
                 merged_query_matches,
-                vcat((result.needle_matches for result in target_results)...),
+                unique(vcat((result.needle_matches for result in target_results)...)),
                 squash_suggestions(target_results), #TODO)(Corneliu) Make sure this makes sense
                 1.0)  # this does not matter
             # replace first occurence that has the non-unique id_aggregation
@@ -58,10 +59,44 @@ function aggregate!(results::Vector{T}, aggregation_ids::Vector{StringId};
     end
 end
 
-function _aggregate(query_matches::Vector{MultiDict{T,Int}};
+function _aggregate(query_matches::Vector{MultiDict{T,Int}},
+                    weights::Vector{T};
                     method::Symbol=DEFAULT_RESULT_AGGREGATION_STRATEGY
                    ) where T<:AbstractFloat
-    # TODO(Corneliu) implement this
+    # Preprocess data
+    row = 0
+    doc2row = Dict{Int,Int}()
+    rowcol2score = Dict{Tuple{Int,Int},T}()
+    for (col, qm) in enumerate(query_matches)
+        for (score, doc_idxs) in qm
+            for doc in doc_idxs
+                if !(doc in keys(doc2row))
+                    row += 1
+                    push!(doc2row, doc=>row)
+                    push!(rowcol2score, (row, col)=>score)
+                else
+                    push!(rowcol2score, (doc2row[doc], col)=>score)
+                end
+            end
+        end
+    end
+    # build matrix with scores for all documents from all searchers
+    m, n = length(doc2row), length(query_matches)
+    scores = zeros(T, m, n)
+    @inbounds for ((row, col), score) in rowcol2score
+        scores[row, col] = weights[col] * score
+    end
+    # merge results
+    final_scores::Vector{T} = zeros(T, m)
+    (method == :mean) && (final_scores = mean(scores, dims=2)[:,1])
+    (method == :product) && (final_scores = prod(scores, dims=2)[:,1])
+    (method == :median) && (final_scores = median(scores, dims=2)[:,1])
+    (method == :maximum) && (final_scores = maximum(scores, dims=2)[:,1])
+    (method == :minimum) && (final_scores = minimum(scores, dims=2)[:,1])
+
+    # Re-build a MultiDict{T,Int}
+    row2doc = Dict(v=>k for (k,v) in doc2row)
+    return MultiDict(zip(final_scores, [row2doc[i] for i in 1:m]))
 end
 
 
