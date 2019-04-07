@@ -32,7 +32,7 @@ function aggregate!(results::Vector{T},
                     method::Symbol=DEFAULT_RESULT_AGGREGATION_STRATEGY,
                     max_suggestions::Int=MAX_SUGGESTIONS
                    ) where T<:SearchResult
-    if !(method in ["minimum", "maximum", "median", "product", "mean"])
+    if !(method in [:minimum, :maximum, :median, :product, :mean])
         @warn "Unknown aggregation strategy :$method. " *
               "Defaulting to $DEFAULT_RESULT_AGGREGATION_STRATEGY."
         method = DEFAULT_RESULT_AGGREGATION_STRATEGY
@@ -55,7 +55,7 @@ function aggregate!(results::Vector{T},
             agg_result = SearchResult(uid,
                 merged_query_matches,
                 unique(vcat((result.needle_matches for result in target_results)...)),
-                squash_suggestions(target_results, max_suggestions=max_suggestions),
+                squash_suggestions(target_results, max_suggestions),
                 1.0)  # this does not matter
             # replace first occurence that has the non-unique id_aggregation
             results[positions[1]] = agg_result
@@ -96,11 +96,11 @@ function _aggregate(query_matches::Vector{MultiDict{T,Int}},
     end
     # merge results
     final_scores::Vector{T} = zeros(T, m)
-    (method == :mean) && (final_scores = mean(scores, dims=2)[:,1])
-    (method == :product) && (final_scores = prod(scores, dims=2)[:,1])
-    (method == :median) && (final_scores = median(scores, dims=2)[:,1])
-    (method == :maximum) && (final_scores = maximum(scores, dims=2)[:,1])
     (method == :minimum) && (final_scores = minimum(scores, dims=2)[:,1])
+    (method == :maximum) && (final_scores = maximum(scores, dims=2)[:,1])
+    (method == :median) && (final_scores = median(scores, dims=2)[:,1])
+    (method == :product) && (final_scores = prod(scores, dims=2)[:,1])
+    (method == :mean) && (final_scores = mean(scores, dims=2)[:,1])
 
     # Re-build a MultiDict{T,Int}
     row2doc = Dict(v=>k for (k,v) in doc2row)
