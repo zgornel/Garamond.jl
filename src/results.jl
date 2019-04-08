@@ -210,9 +210,20 @@ function print_search_results(io::IO, srchers::AbstractVector, results::Abstract
     else
         nt = 0
     end
+    # Map searchers and results by id or id_aggregation
+    result2srcher = Dict{Int, Int}()
+    for (i, _result) in enumerate(results)
+        for (j, _srcher) in enumerate(srchers)
+            if _result.id == _srcher.config.id ||
+                    _result.id == _srcher.config.id_aggregation
+                push!(result2srcher, i=>j)
+                break
+            end
+        end
+    end
     printstyled(io, "$nt search results from $(length(results)) corpora\n")
     for (i, _result) in enumerate(results)
-        crps = srchers[i].corpus
+        crps = srchers[result2srcher[i]].corpus
         nm = valength(_result.query_matches)
         printstyled(io, "`-[$(_result.id)] ", color=:blue, bold=true)
         printstyled(io, "$(nm) search results", bold=true)
