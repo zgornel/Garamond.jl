@@ -56,7 +56,6 @@ const DEFAULT_DOCUMENT_TYPE = StringAnalysis.NGramDocument{String}  # default do
 const DEFAULT_MAX_EDIT_DISTANCE = 2  # maximum edit distance for which to return suggestions
 const DEFAULT_MAX_MATCHES = 1_000  # maximum number of matches that can be retrned
 const DEFAULT_MAX_SUGGESTIONS = 0  # maximum number of overall suggestions
-const DEFAULT_MAX_CORPUS_SUGGESTIONS = 0  # maximum number of suggestions for each corpus
 # DYNAMIC Configuration: These defaults can be through run-time options of the
 #                        Garamond CLI client/server utilities
 const DEFAULT_LOG_LEVEL = Logging.Info
