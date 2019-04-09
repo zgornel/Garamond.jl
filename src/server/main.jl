@@ -21,7 +21,7 @@ function search_server(data_config_paths, io_channel)
     @async updater(srchers, channels=srchers_channel)
 
     # Main loop
-    @info "Search server: entering query wait loop..."
+    @info "Search server: Entering query wait loop..."
     while true
         if isready(srchers_channel)
             srchers = take!(srchers_channel)
@@ -35,18 +35,40 @@ function search_server(data_config_paths, io_channel)
             if operation == "search"
                 ### Search ###
                 @debug "Search server: Performing search operation query='$query'..."
+
                 t_init = time()
                 # Get search results
                 results = search(srchers, query,
                                  search_method=search_method,
                                  max_matches=max_matches,
-                                 max_corpus_suggestions=max_suggestions)
+                                 max_suggestions=max_suggestions)
                 t_finish = time()
+
+                # Select the data (if any) that will be reuturned
+                if what_to_return == "json-index"
+                    corpora = nothing
+                elseif what_to_return == "json-data"
+                    idx_corpora = Int[]
+                    for result in results
+                        for (idx, srcher) in enumerate(srchers)
+                            if result.id == srcher.config.id_aggregation
+                                push!(idx_corpora, idx)
+                                break
+                            end
+                        end
+                    end
+                    corpora = (srchers[idx].corpus for idx in idx_corpora)
+                else
+                    @warn "Search server: Unknown return option \"$what_to_return\", "*
+                          "defaulting to \"json-index\"..."
+                    corpora = nothing
+                end
+
                 # Construct response for client
-                response = construct_response(srchers, results, what_to_return,
+                response = construct_response(results, corpora,
                                               max_suggestions=max_suggestions,
                                               elapsed_time=t_finish-t_init)
-                # Write response to I/O server
+                #Write response to I/O server
                 put!(io_channel, response)
             elseif operation == "kill"
                 ### Kill the search server ###

@@ -31,7 +31,7 @@ for parser in PARSERS
                         continue
                     else
                         search(srchers, needles,
-                               max_corpus_suggestions=max_suggestions,
+                               max_suggestions=max_suggestions,
                                search_method=search_method)
                     end
                 end

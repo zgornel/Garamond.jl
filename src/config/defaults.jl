@@ -19,6 +19,8 @@ const DEFAULT_BM25_KAPPA = 2  # default value for BM25 κ parameter
 const DEFAULT_BM25_BETA = 0.75  # default value for BM25 β parameter
 const DEFAULT_SIF_ALPHA = 0.01  # default value for α parameter of the SIF doc2vec method
 const DEFAULT_SCORE_ALPHA = 0.5  # default value of the α parameter of the score transformation
+# Results
+const DEFAULT_RESULT_AGGREGATION_STRATEGY = :mean  # can be :minimum, :maximum, :mean, :median, :product
 # Various document parsing constants
 const DEFAULT_PARSER = :no_parse
 const DEFAULT_GLOBBING_PATTERN = "*"  # Can be any regexp-like pattern
@@ -28,15 +30,15 @@ const DEFAULT_KEEP_DATA = true  # whether to keep the actual document data, meta
 # Text stripping flags
 const DEFAULT_TEXT_STRIP_FLAGS = strip_case | strip_punctuation | strip_articles |
                                  strip_prepositions | strip_whitespace |
-                                 strip_corrupt_utf8
+                                 strip_corrupt_utf8 | strip_accents
 const DEFAULT_QUERY_STRIP_FLAGS = strip_case | strip_punctuation | strip_articles |
                                   strip_prepositions | strip_whitespace |
-                                  strip_corrupt_utf8
+                                  strip_corrupt_utf8 | strip_accents
 const DEFAULT_METADATA_STRIP_FLAGS = strip_case | strip_punctuation | strip_articles |
                                      strip_prepositions | strip_whitespace |
-                                     strip_corrupt_utf8
+                                     strip_corrupt_utf8 | strip_accents
 const DEFAULT_SUMMARIZATION_STRIP_FLAGS = strip_corrupt_utf8 | strip_case |
-                                          strip_stopwords
+                                          strip_stopwords | strip_accents
 # Caching options
 const DEFAULT_CACHE_DIRECTORY = nothing
 const DEFAULT_CACHE_COMPRESSION = "none"
@@ -53,8 +55,7 @@ const DEFAULT_PDFTOTEXT_PROGRAM = "/usr/bin/pdftotext"  # program to convert PDF
 const DEFAULT_DOCUMENT_TYPE = StringAnalysis.NGramDocument{String}  # default document object type
 const DEFAULT_MAX_EDIT_DISTANCE = 2  # maximum edit distance for which to return suggestions
 const DEFAULT_MAX_MATCHES = 1_000  # maximum number of matches that can be retrned
-const DEFAULT_MAX_SUGGESTIONS = 1  # maximum number of overall suggestions
-const DEFAULT_MAX_CORPUS_SUGGESTIONS = 0  # maximum number of suggestions for each corpus
+const DEFAULT_MAX_SUGGESTIONS = 0  # maximum number of overall suggestions
 # DYNAMIC Configuration: These defaults can be through run-time options of the
 #                        Garamond CLI client/server utilities
 const DEFAULT_LOG_LEVEL = Logging.Info
@@ -132,5 +133,5 @@ const DEFAULT_TOKENIZER=:fast
 # OTHER USEFUL CONSTANTS #
 ##########################
 const DEFAULT_VERSION = "0.1.0"
-const DEFAULT_VERSION_DATE = "2019"
-const DEFAULT_VERSION_COMMIT = "unknown"
+const DEFAULT_VERSION_DATE = "2019-04-09"
+const DEFAULT_VERSION_COMMIT = "c1e66f1*"

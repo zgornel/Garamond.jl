@@ -8,4 +8,3 @@ const DOCUMENT_TYPE = StringAnalysis.NGramDocument{String}  # default document o
 const MAX_EDIT_DISTANCE = 1  # maximum edit distance for which to return suggestions
 const MAX_MATCHES = 1_000  # maximum number of matches that can be retrned
 const MAX_SUGGESTIONS = 1  # maximum number of overall suggestions
-const MAX_CORPUS_SUGGESTIONS = 0  # maximum number of suggestions for each corpus

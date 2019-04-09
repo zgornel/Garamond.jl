@@ -6,12 +6,13 @@ struct StringId
 end
 
 # Utils
-show(io::IO, id::StringId) = print(io, "id=\"$(id.id)\"")
-random_id(::Type{StringId}) = StringId(randstring())
+random_hash_string() = string(hash(rand()), base=16)
+random_string_id() = StringId(random_hash_string())
 
 # Construct IDs
 make_id(::Type{StringId}, id::T) where T<:AbstractString = StringId(String(id))
 make_id(::Type{StringId}, id::T) where T<:Number = StringId(string(id))
+make_id(::Type{StringId}, id::T) where T<:Nothing = random_string_id()
 
 
 ################
@@ -25,6 +26,7 @@ other methods.
 mutable struct SearchConfig
     # general, data, processing
     id::StringId                    # searcher/corpus id
+    id_aggregation::StringId        # aggregation id
     description::String             # description of the searcher
     enabled::Bool                   # whether to use the searcher in search or not
     data_path::String               # file/directory path for the data (depends on what the parser accepts)
@@ -57,6 +59,7 @@ mutable struct SearchConfig
     bm25_beta::Float64              # β parameter for BM25 (employed in BM25 only)
     sif_alpha::Float64              # smooth inverse frequency α parameter (for 'sif' doc2vec method only)
     score_alpha::Float64            # score alpha (parameter for the scoring function)
+    score_weight::Float64           # weight of scores of searcher (used in result aggregation)
     # cache parameters
     cache_directory::Union{Nothing, String}  # path to the DispatcherCache cache directory
     cache_compression::String       # DispatcherCache compression option
@@ -64,7 +67,8 @@ end
 
 # Keyword argument constructor; all arguments sho
 SearchConfig(;
-          id=random_id(StringId),
+          id=random_string_id(),
+          id_aggregation=id,
           description="",
           enabled=false,
           data_path="",
@@ -102,10 +106,11 @@ SearchConfig(;
           bm25_beta=DEFAULT_BM25_BETA,
           sif_alpha=DEFAULT_SIF_ALPHA,
           score_alpha=DEFAULT_SCORE_ALPHA,
+          score_weight=1.0,
           cache_directory=DEFAULT_CACHE_DIRECTORY,
           cache_compression=DEFAULT_CACHE_COMPRESSION) =
     # Call normal constructor
-    SearchConfig(id, description, enabled,
+    SearchConfig(id, id_aggregation, description, enabled,
                  data_path, parser, parser_config,
                  language, build_summary, summary_ns, keep_data, stem_words,
                  vectors, vectors_transform, vectors_dimension, vectors_eltype,
@@ -113,36 +118,9 @@ SearchConfig(;
                  glove_vocabulary, heuristic,
                  text_strip_flags, metadata_strip_flags,
                  query_strip_flags, summarization_strip_flags,
-                 bm25_kappa, bm25_beta, sif_alpha, score_alpha,
+                 bm25_kappa, bm25_beta, sif_alpha,
+                 score_alpha, score_weight,
                  cache_directory, cache_compression)
-
-
-# Show method
-Base.show(io::IO, sconfig::SearchConfig) = begin
-    printstyled(io, "SearchConfig for $(sconfig.id)\n")
-    printstyled(io, "`-enabled = ")
-    printstyled(io, "$(sconfig.enabled)\n", bold=true)
-    _tf = ""
-    if sconfig.vectors in [:count, :tf, :tfidf, :b25]
-        if sconfig.vectors_transform == :lsa
-            _tf = " + LSA"
-        elseif sconfig.vectors_transform == :rp
-            _tf = " + random projection"
-        end
-    end
-    printstyled(io, "  vectors = ")
-    printstyled(io, "$(sconfig.vectors)$_tf", bold=true)
-    printstyled(io, ", ")
-    printstyled(io, "$(sconfig.vectors_eltype)\n", bold=true)
-    printstyled(io, "  search_model = ")
-    printstyled(io, "$(sconfig.search_model)\n", bold=true)
-    printstyled(io, "  data_path = ")
-    printstyled(io, "\"$(sconfig.data_path)\"\n", bold=true)
-    if sconfig.embeddings_path != nothing
-        printstyled(io, "  embeddings_path = ")
-        printstyled(io, "\"$(sconfig.embeddings_path)\"\n", bold=true)
-    end
-end
 
 
 """
@@ -155,22 +133,26 @@ specifying multiple configuration file paths. The function returns a
 `Vector{SearchConfig}` that is used to build the `Searcher` objects.
 """
 function load_search_configs(filename::AbstractString)
+
     # Read config (this should fail if config not found)
     local dict_configs::Vector{Dict{String, Any}}
     try
         dict_configs = JSON.parse(open(fid->read(fid, String), expanduser(filename)))
-    catch
-        @error "Could not read data configuration file $filename. Exiting..."
+    catch e
+        @error "Could not parse data configuration file $filename ($e). Exiting..."
         exit(-1)
     end
-    n = length(dict_configs)
+
     # Create search configurations
+    n = length(dict_configs)
     search_configs = [SearchConfig() for _ in 1:n]
     removable = Int[]  # search configs that have problems
     must_have_keys = ["vectors", "data_path", "parser"]
+
     for (i, (sconfig, dconfig)) in enumerate(zip(search_configs, dict_configs))
         if !all(map(key->haskey(dconfig, key), must_have_keys))
-            @warn "$(sconfig.id) Missing options from [$must_have_keys]. Ignoring search configuration..."
+            @warn "Missing options from $must_have_keys in configuration $i. "*
+                  "Ignoring search configuration..."
             push!(removable, i)  # if there is are no word embeddings, cannot search
             continue
         end
@@ -180,7 +162,8 @@ function load_search_configs(filename::AbstractString)
             globbing_pattern = get(dconfig, "globbing_pattern", DEFAULT_GLOBBING_PATTERN)
             show_progress = get(dconfig, "show_progress", DEFAULT_SHOW_PROGRESS)
             delimiter = get(dconfig, "delimiter", DEFAULT_DELIMITER)
-            sconfig.id = make_id(StringId, get(dconfig, "id", randstring(10)))
+            sconfig.id = make_id(StringId, get(dconfig, "id", nothing))
+            sconfig.id_aggregation = make_id(StringId, get(dconfig, "id_aggregation", sconfig.id.id))
             sconfig.description = get(dconfig, "description", "")
             sconfig.enabled = get(dconfig, "enabled", false)
             sconfig.data_path = get(dconfig, "data_path", "")
@@ -211,6 +194,7 @@ function load_search_configs(filename::AbstractString)
             sconfig.bm25_beta = Float64(get(dconfig, "bm25_beta", DEFAULT_BM25_BETA))
             sconfig.sif_alpha = Float64(get(dconfig, "sif_alpha", DEFAULT_SIF_ALPHA))
             sconfig.score_alpha = Float64(get(dconfig, "score_alpha", DEFAULT_SCORE_ALPHA))
+            sconfig.score_weight = Float64(get(dconfig, "score_weight", 1.0))
             sconfig.cache_directory = get(dconfig, "cache_directory", DEFAULT_CACHE_DIRECTORY)
             sconfig.cache_compression = get(dconfig, "cache_compression", DEFAULT_CACHE_COMPRESSION)
             # Construct parser (built last as requires other parameters)

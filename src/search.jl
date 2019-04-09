@@ -20,31 +20,29 @@ a `Vector{SearchResult}`.
      in the corpus that includes the needle
   * `max_matches::Int` is the maximum number of search results to return from
      each corpus
-  * `max_corpus_suggestions::Int` is the maximum number of suggestions to return for
+  * `max_suggestions::Int` is the maximum number of suggestions to return for
      each missing needle from the search in a corpus
 """
-function search(srchers::V,
+function search(srchers::Vector{<:Searcher{T}},
                 query;
                 search_method::Symbol=DEFAULT_SEARCH_METHOD,
                 max_matches::Int=MAX_MATCHES,
-                max_corpus_suggestions::Int=MAX_CORPUS_SUGGESTIONS
-               ) where {V<:Vector{<:Searcher{T,D,E,M}
-                                  where T<:AbstractFloat
-                                  where D<:AbstractDocument
-                                  where E
-                                  where M<:AbstractSearchModel}}
+                max_suggestions::Int=MAX_SUGGESTIONS
+               ) where T<:AbstractFloat
     # Checks
     @assert search_method in [:exact, :regex]
     @assert max_matches >= 0
-    @assert max_corpus_suggestions >=0
+    @assert max_suggestions >=0
+
     # Initializations
     n = length(srchers)
     enabled_searchers = [i for i in 1:n if isenabled(srchers[i])]
     n_enabled = length(enabled_searchers)
     queries = [prepare_query(query, srcher.config.query_strip_flags)
                for srcher in srchers]
+
     # Search
-    results = Vector{SearchResult}(undef, n_enabled)
+    results = Vector{SearchResult{T}}(undef, n_enabled)
     ###################################################################
     # A `Threads.@threads` statement in front of the for loop here
     # idicates the use of multi-threading. If multi-threading is used,
@@ -64,10 +62,17 @@ function search(srchers::V,
                             queries[enabled_searchers[i]],
                             search_method=search_method,
                             max_matches=max_matches,
-                            max_suggestions=max_corpus_suggestions)
+                            max_suggestions=max_suggestions)
     end
+    # Aggregate results as needed
+    aggregate!(results,
+               [srcher.config.id_aggregation for srcher in srchers],
+               method=RESULT_AGGREGATION_STRATEGY,
+               max_matches=max_matches,
+               max_suggestions=max_suggestions)
+
     # Return vector of tuples, each tuple containing the id and search results
-    return results::Vector{SearchResult}  # not necessary without `@threads`
+    return results
 end
 
 
@@ -94,7 +99,7 @@ function search(srcher::Searcher{T,D,E,M},
                 query;  # can be either a string or vector of strings
                 search_method::Symbol=DEFAULT_SEARCH_METHOD,
                 max_matches::Int=MAX_MATCHES,
-                max_suggestions::Int=MAX_CORPUS_SUGGESTIONS  # not used
+                max_suggestions::Int=MAX_SUGGESTIONS  # not used
                 ) where {T<:AbstractFloat, D<:AbstractDocument, E, M<:AbstractSearchModel}
     needles = prepare_query(query, srcher.config.query_strip_flags)
     # Initializations
@@ -137,7 +142,8 @@ function search(srcher::Searcher{T,D,E,M},
                               missing_needles,
                               max_suggestions=max_suggestions)
     end
-    return SearchResult(id(srcher), query_matches, collect(needle_matches), suggestions)
+    return SearchResult(id(srcher), query_matches, collect(needle_matches),
+                        suggestions, T(srcher.config.score_weight))
 end
 
 

@@ -34,12 +34,18 @@ module Garamond
     using Memento
     using Dispatcher
     using DispatcherCache
-    using StringAnalysis, Languages
-    using StringDistances, BKTrees
+    using Languages
+    using StringAnalysis
+    using StringDistances
+    using BKTrees
     using ArgParse
     using ProgressMeter
-    using ConceptnetNumberbatch, Word2Vec, Glowe
-    using HNSW, NearestNeighbors, Distances
+    using ConceptnetNumberbatch
+    using Word2Vec
+    using Glowe
+    using HNSW
+    using NearestNeighbors
+    using Distances
     using LightGraphs: Graph, pagerank
     using JSON
     using Glob
@@ -64,8 +70,7 @@ module Garamond
         SearchConfig,
         SearchResult,
         id, description,
-        isenabled, enable!,
-        disable!,
+        isenabled, enable!, disable!,
         print_search_results,
         unix_socket_server,
         web_socket_server,
@@ -84,6 +89,7 @@ module Garamond
     include("search.jl")
     include("results.jl")
     include("version.jl")
+    include("show.jl")
     include("server/requests.jl")
     include("server/unixsocket.jl")
     include("server/websocket.jl")
