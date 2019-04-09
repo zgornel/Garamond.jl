@@ -165,7 +165,7 @@ version = "0.11.0"
 
 [[HNSW]]
 deps = ["Distances", "LinearAlgebra", "Reexport"]
-git-tree-sha1 = "21a41600cd8fec9a9ab6051c7caac5c95dc0bc1c"
+git-tree-sha1 = "57d97959748507ee5dd619d68265d3f614dbaaa8"
 repo-rev = "master"
 repo-url = "https://github.com/zgornel/HNSW.jl.git"
 uuid = "540f64fa-c57e-11e8-081c-41422cda4629"
