@@ -133,22 +133,26 @@ specifying multiple configuration file paths. The function returns a
 `Vector{SearchConfig}` that is used to build the `Searcher` objects.
 """
 function load_search_configs(filename::AbstractString)
+
     # Read config (this should fail if config not found)
     local dict_configs::Vector{Dict{String, Any}}
     try
         dict_configs = JSON.parse(open(fid->read(fid, String), expanduser(filename)))
-    catch
-        @error "Could not read data configuration file $filename. Exiting..."
+    catch e
+        @error "Could not parse data configuration file $filename ($e). Exiting..."
         exit(-1)
     end
-    n = length(dict_configs)
+
     # Create search configurations
+    n = length(dict_configs)
     search_configs = [SearchConfig() for _ in 1:n]
     removable = Int[]  # search configs that have problems
     must_have_keys = ["vectors", "data_path", "parser"]
+
     for (i, (sconfig, dconfig)) in enumerate(zip(search_configs, dict_configs))
         if !all(map(key->haskey(dconfig, key), must_have_keys))
-            @warn "$(sconfig.id) Missing options from [$must_have_keys]. Ignoring search configuration..."
+            @warn "Missing options from $must_have_keys in configuration $i. "*
+                  "Ignoring search configuration..."
             push!(removable, i)  # if there is are no word embeddings, cannot search
             continue
         end
