@@ -38,26 +38,38 @@ the search `results`, data from `srchers` and specifier `what`.
 function construct_response(results, corpora;
                             max_suggestions::Int=0,
                             elapsed_time::Float64=0) where C<:Corpus
-    buf = IOBuffer()
-    # Write to buffer indices of the documents
+    local result_data
     if corpora == nothing
-        write(buf, JSON.json(results))
-    else
-        result_data = get_result_data(results, corpora,
+        # Get basic response data
+        result_data = get_basic_result_data(results,
                         max_suggestions, elapsed_time)
-        write(buf, JSON.json(result_data))
+    else
+        # Get extended response data
+        result_data = get_extended_result_data(results, corpora,
+                        max_suggestions, elapsed_time)
     end
-    response = join(Char.(buf.data))
-    return response
+    return JSON.json(result_data)
 end
 
 
-# Export results to be a format that can be converted into JSON for
-# webpage viewing
-# #TODO(Corneliu) Display suggestions as well, improve function
-function get_result_data(results::T, corpora,
-                         max_suggestions::Int, elapsed_time::Float64
-                        ) where T<:AbstractVector{<:SearchResult}
+# Get basic results data
+function get_basic_result_data(results::T,
+                               max_suggestions::Int,
+                               elapsed_time::Float64
+                              ) where T<:AbstractVector{<:SearchResult}
+    # TODO: Decide on a final format
+    return results
+end
+
+
+# Get extended results data
+# Note: This should only be used for internal testing
+#       by using the `garc` and `garw` clients
+function get_extended_result_data(results::T,
+                                  corpora,
+                                  max_suggestions::Int,
+                                  elapsed_time::Float64
+                                 ) where T<:AbstractVector{<:SearchResult}
     # Count the total number of results
     if !isempty(results)
         nt = mapreduce(x->valength(x.query_matches), +, results)
