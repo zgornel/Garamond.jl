@@ -79,7 +79,7 @@ function iosearch(connection, request, pretty=false)
         println("Found $(jr["n_matches"]) results in $(jr["n_corpora_match"])" *
                 " corpora (out of a total of $(jr["n_corpora"])):")
         for (id, crps_matches) in jr["matches"]
-            println("$id")
+            !isempty(crps_matches) && println("$id")
             for (score, metadata) in crps_matches
                 # format: score ~ name by author, publisher (year)
                 println("\t$(score) ~ \"$(metadata["name"])\" "*
@@ -87,6 +87,14 @@ function iosearch(connection, request, pretty=false)
                         "[$(metadata["publisher"])] "*
                         "($(metadata["published_year"]))")
             end
+        end
+        # Print suggestions
+        suggestions = jr["suggestions"]["d"]
+        ns = length(suggestions)
+        ns > 0 && println("$ns suggestions:")
+        for (keyword, suggest) in suggestions
+            print("  \"$keyword\": ")
+            println("$(join(map(x->x[2], suggest), ", "))")
         end
     else
         println(stdout, data)
