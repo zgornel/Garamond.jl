@@ -44,7 +44,7 @@ function construct_response(results, corpora;
         write(buf, JSON.json(results))
     else
         result_data = get_result_data(results, corpora,
-                                      max_suggestions, elapsed_time)
+                        max_suggestions, elapsed_time)
         write(buf, JSON.json(result_data))
     end
     response = join(Char.(buf.data))
@@ -65,17 +65,14 @@ function get_result_data(results::T, corpora,
         nt = 0
     end
 
-    #no_matches(result::T) where T<:SearchResult =
-    #    isempty(result, quety_matches for field in fieldnames(T))
-
-    # This structure matches the one expencted
-    # in the web clients search page
     r = Dict("etime"=>elapsed_time,
              "matches" => Dict{String, Vector{Tuple{Float64, Dict{String,String}}}}(),
              "n_matches" => nt,
              "n_corpora" => length(results),
-             "n_corpora_match" =>
-                mapreduce(r->!isempty(r.query_matches), +, results))
+             "n_corpora_match" => mapreduce(r->!isempty(r.query_matches), +, results),
+             "suggestions" => squash_suggestions(results, max_suggestions))
+
+    # Populate the "matches" field
     for (i, (_result, crps)) in enumerate(zip(results, corpora))
         push!(r["matches"], _result.id.id => Vector{Dict{String,String}}())
         if !isempty(crps)
