@@ -137,100 +137,101 @@ function _default_webpage(ws_port::UInt16)
 		<div id=\"search_results\" style=\"position:fixed;float:left;left:100px;top:200px\">
 		</div>
 
-	<script type=\"text/javascript\">
-		//document.addEventListener(\'DOMContentLoaded\', function (){
-		//}, \'false\');
+    <script type=\"text/javascript\">
+        //document.addEventListener(\'DOMContentLoaded\', function (){
+        //}, \'false\');
 
-		// Global variables
-		var connection = new WebSocket(\'ws://localhost:$ws_port\');
-		var search_results = document.getElementById(\"search_results\");
+        // Global variables
+        var connection = new WebSocket(\'ws://localhost:$ws_port\');
+        var search_results = document.getElementById(\"search_results\");
 
-		// When socket connection opened i.e. on page load
-		connection.onopen = function(e){ console.log(\"websocket ok\")};
+        // When socket connection opened i.e. on page load
+        connection.onopen = function(e){ console.log(\"websocket ok\")};
 
-		//When receiving socket message
-		connection.onmessage = function(r){
-			window.lastmessage = r;
+        //When receiving socket message
+        connection.onmessage = function(r){
+            window.lastmessage = r;
 			console.log(\"Response received!\");
 
-			// Response example: { \"etime\": 0.2,
-			//			\"n_matches\": 3 ,
-			//			\"matches\":<list of book Dicts>}
-			jr = JSON.parse(r.data);
+            // Response example: { \"etime\": 0.2,
+            //			\"n_matches\": 3 ,
+            //			\"matches\":<list of book Dicts>}
+            jr = JSON.parse(r.data);
 
-			// Process JSON data (access with jr.etime, etc)
-			var search_time = jr.etime;
-			var n_matches = jr.n_matches;
-			var matches = jr.matches;
+            // Process JSON data (access with jr.etime, etc)
+            var search_time = jr.etime;
+            var n_matches = jr.n_matches;
+            var matches = jr.matches;
+            // NOTE: Suggestions are not supported
 
-			results_text = \"<p>Elapsed search time: <b>\" + jr.etime + \"</b>s.</br></p>\";
-			results_text += \"<p>Found \" + jr.n_matches + \" results in \" + jr.n_corpora_match +
-					\" corpora (out of a total of \" + jr.n_corpora + \"):</p>\";
-			results_text += \"<p>\";
+            results_text = \"<p>Elapsed search time: <b>\" + jr.etime + \"</b>s.</br></p>\";
+            results_text += \"<p>Found \" + jr.n_matches + \" results in \" + jr.n_corpora_match +
+                \" corpora (out of a total of \" + jr.n_corpora + \"):</p>\";
+            results_text += \"<p>\";
 
-			for (let crps_id in jr.matches){
-				let crps_matches = jr.matches[crps_id]  // individual corpus matches
-				results_text +=\"<p><b>\" + crps_id +\"</b></br></p>\"
-				for (i=0; i < crps_matches.length; i++){
-					results_text += \"&emsp;\"+
-                        crps_matches[i][0] + \" ~ \" +
-                        \"<i> \\\"\" +
-						crps_matches[i][1].name + \"\\\"</i>\" + \" by \" +
-						crps_matches[i][1].author + \", <b>\" +
-						crps_matches[i][1].publisher + \"</b> \" +
-						\"(\" + crps_matches[i][1].published_year + \")\" + \"<br>\"
-				}
-			}
-			results_text += \"</p>\"
-			search_results.innerHTML = results_text;
-		}
+            for (let crps_id in jr.matches){
+                let crps_matches = jr.matches[crps_id]  // individual corpus matches
+                // Display corpus id only if there are results
+                if (crps_matches.length > 0){
+				    results_text +=\"<p><b>\" + crps_id +\"</b></br></p>\"
+                }
+            for (i=0; i < crps_matches.length; i++){
+                results_text += \"&emsp;\"+
+                    crps_matches[i][0] + \" ~ \" +
+                    \"<i> \\\"\" +
+                    crps_matches[i][1].name + \"\\\"</i>\" + \" by \" +
+                    crps_matches[i][1].author + \", <b>\" +
+                    crps_matches[i][1].publisher + \"</b> \" +
+                    \"(\" + crps_matches[i][1].published_year + \")\" + \"<br>\"
+                }
+            }
+            results_text += \"</p>\"
+            search_results.innerHTML = results_text;
+        }
 
-
-		// Send message function
-		function sendMessage(q){
-			console.log(\"Sending message...\");
-			// Create JSON query
-			var jq = {
-				operation: \"search\",
-				query: q,
+        // Send message function
+        function sendMessage(q){
+            console.log(\"Sending message...\");
+            // Create JSON query
+            var jq = {
+                operation: \"search\",
+                query: q,
                 max_matches: 1000,
                 search_method: \"exact\",
                 max_suggestions: 0,
                 what_to_return: \"json-data\"
-				//date: Date()
-			}
-			connection.send(JSON.stringify(jq));
-		}
+                //date: Date()
+            }
+            connection.send(JSON.stringify(jq));
+        }
 
-		// Variables for the search box and button
-		var search_box = document.getElementById(\"search_box\"),
-		    search_box_button = document.getElementById(\"search_box_button\"),
-		    serch_box_txt = document.getElementById(\"search_box_txt\");
+        // Variables for the search box and button
+        var search_box = document.getElementById(\"search_box\"),
+            search_box_button = document.getElementById(\"search_box_button\"),
+            serch_box_txt = document.getElementById(\"search_box_txt\");
 
-		// When clicking the button
-		search_box_button.onclick = function(){
-			search_box_txt.value = \"\"
-			sendMessage(search_box_txt.value);
-		};
+        // When clicking the button
+        search_box_button.onclick = function(){
+            search_box_txt.value = \"\"
+            sendMessage(search_box_txt.value);
+        };
 
-		// When submitting the form
-		search_box.onsubmit = function(){
-			sendMessage(search_box_txt.value);
-			search_box_txt.value = \"\"
-			return false;
-		};
+        // When submitting the form
+        search_box.onsubmit = function(){
+            sendMessage(search_box_txt.value);
+            search_box_txt.value = \"\"
+            return false;
+        };
 
-		// Close web socket when page is reloaded
-		window.onunload = function() {
-			window.alert(\"CLOSING\");
-			console.log(\"closing web socket...\");
-			connection.close();
-		};
-	</script>
-
-	</body>
-
-	</html>"
+        // Close web socket when page is reloaded
+        window.onunload = function() {
+        window.alert(\"CLOSING\");
+            console.log(\"closing web socket...\");
+            connection.close();
+        };
+    </script>
+    </body>
+    </html>"
 end
 
 

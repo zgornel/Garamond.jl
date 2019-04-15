@@ -161,13 +161,9 @@ function squash_suggestions(results::Vector{SearchResult{T}},
                 push!(suggestions, needle=>all_needle_suggestions[1:nn])
             end
         end
-    else
+    elseif length(results) == 1
         # Results from one corpus, easy situation, just copy the suggestions
-        for _result in results
-            for (needle, vs) in _result.suggestions
-                push!(suggestions, needle=>vs)
-            end
-        end
+        suggestions = results[1].suggestions
     end
     return suggestions
 end
