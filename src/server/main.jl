@@ -51,13 +51,17 @@ function search_server(data_config_paths, io_channel)
                     idx_corpora = Int[]
                     for result in results
                         for (idx, srcher) in enumerate(srchers)
-                            if result.id == srcher.config.id_aggregation
+                            if result.id == srcher.config.id_aggregation ||
+                                    result.id == srcher.config.id
                                 push!(idx_corpora, idx)
                                 break
                             end
                         end
                     end
                     corpora = (srchers[idx].corpus for idx in idx_corpora)
+                    if length(corpora) == 0
+                        @warn "Search server: No corpora data from which to return results."
+                    end
                 else
                     @warn "Search server: Unknown return option \"$what_to_return\", "*
                           "defaulting to \"json-index\"..."
