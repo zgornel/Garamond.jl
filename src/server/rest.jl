@@ -72,9 +72,9 @@ function rest_server(port::Integer, channel::Channel{String})
             if request isa AbstractString
                 put!(channel, request)
                 response = take!(channel)
-                return HTTP.Response(200, response)
+                return HTTP.Response(200, ["Access-Control-Allow-Origin"=>"*"], body=response)
             end
         end
-        return HTTP.Response(200, "")
+        return HTTP.Response(200, ["Access-Control-Allow-Origin"=>"*"], body="")
     end
 end
