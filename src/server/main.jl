@@ -34,7 +34,6 @@ function search_server(data_config_paths, io_channel)
              max_suggestions, what_to_return) = deconstruct_request(request)
             if operation == "search"
                 ### Search ###
-                @debug "Search server: Performing search operation query='$query'..."
 
                 t_init = time()
                 # Get search results
@@ -43,6 +42,9 @@ function search_server(data_config_paths, io_channel)
                                  max_matches=max_matches,
                                  max_suggestions=max_suggestions)
                 t_finish = time()
+
+                elapsed_time = t_finish - t_init
+                @debug "Search server: Search for '$query' done in $elapsed_time(s)."
 
                 # Select the data (if any) that will be reuturned
                 if what_to_return == "json-index"
@@ -71,7 +73,7 @@ function search_server(data_config_paths, io_channel)
                 # Construct response for client
                 response = construct_response(results, corpora,
                                               max_suggestions=max_suggestions,
-                                              elapsed_time=t_finish-t_init)
+                                              elapsed_time=elapsed_time)
                 #Write response to I/O server
                 put!(io_channel, response)
             elseif operation == "kill"
