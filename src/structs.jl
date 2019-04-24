@@ -182,11 +182,12 @@ function build_searcher(sconf::SearchConfig)
     sconf.search_model == :hnsw && push!(uncacheable, srchmodel)
 
     # Execute dispatch graph
-    return extract(
-                run_dispatch_graph(
-                    endpoint, uncacheable,
+    srcher = extract(
+                run_dispatch_graph(endpoint, uncacheable,
                     sconf.cache_directory,
                     sconf.cache_compression))
+    @debug "* Loaded: $srcher."
+    return srcher
 end
 
 
