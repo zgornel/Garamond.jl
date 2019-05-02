@@ -114,8 +114,8 @@ function search(srcher::Searcher{T,D,E,I},
     idxs = Int[]
     scores = T[]
     # First, find documents with matching needles
-    needle_matches = Vector{String}()
-    missing_needles = Vector{String}()
+    needle_matches = String[]
+    missing_needles = String[]
     doc_matches = Vector(1:n)
     # For certain types of search, check out which documents can be displayed
     # and which needles have and have not been found
@@ -132,8 +132,7 @@ function search(srcher::Searcher{T,D,E,I},
         ###
         score_transform!(scores, alpha=srcher.config.score_alpha)
     end
-    mask = [i for (i,idx) in enumerate(idxs) if idx in doc_matches]
-    query_matches = MultiDict(zip(scores[mask], idxs[mask]))
+    query_matches = MultiDict(zip(scores, idxs))
     # Get suggestions
     suggestions = MultiDict{String, Tuple{T, String}}()
     if max_suggestions > 0 && !isempty(missing_needles)
@@ -142,7 +141,7 @@ function search(srcher::Searcher{T,D,E,I},
                               missing_needles,
                               max_suggestions=max_suggestions)
     end
-    return SearchResult(id(srcher), query_matches, collect(needle_matches),
+    return SearchResult(id(srcher), query_matches, needle_matches,
                         suggestions, T(srcher.config.score_weight))
 end
 

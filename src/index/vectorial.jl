@@ -112,11 +112,19 @@ end
 function search(index::HNSWIndex{I,E,A,D},
                 point::AbstractVector,
                 k::Int,
-                keep::Vector{Int}=Int[]  # not used
+                keep::Vector{Int}=collect(1:length(index))
                ) where {I<:Unsigned, E<:Real, A<:AbstractArray, D<:Metric}
     # Uses Euclidean distance by default
-    idxs, scores = knn_search(index.tree, point, k)
-    return Int.(idxs), scores
+    _idxs, scores = knn_search(index.tree, point, k)
+    idxs = Int.(_idxs)
+    if length(keep) == length(index)
+        # all data points are valid
+        return idxs, scores
+    else
+        # this bit is slow if 'keep' is large
+        mask = map(idx->in(idx, keep), idxs)
+        return idxs[mask], scores[mask]
+    end
 end
 
 
