@@ -257,7 +257,7 @@ function get_embedder(vectors, vectors_transform, bm25_kappa,
                        stats=vectors,
                        κ=bm25_kappa,
                        β=bm25_beta)
-    vectors_transform == :lsa && (SubspaceModel = LSAModel; dims = vectors_dimension)
+    vectors_transform == :lsa &&
         return LSAModel(dtm, k=vectors_dimension,
                         stats=vectors,
                         κ=bm25_kappa,
