@@ -1,3 +1,4 @@
+using Pkg
 Pkg.add("Documenter")
 using Documenter, Garamond
 
