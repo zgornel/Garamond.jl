@@ -67,7 +67,7 @@ function generate_test_confs(data_path::String, parser::Symbol)
     # Generate data configuration files
     for vectors in ["bm25", "conceptnet", "word2vec", "glove"]  # "count", "tf", "tfidf" ommitted
         for vectors_transform in ["none", "rp", "lsa"]
-            for search_model in ["naive", "brutetree", "kdtree", "hnsw"]
+            for search_index in ["naive", "brutetree", "kdtree", "hnsw"]
                 for doc2vec_method in ["bow", "sif"]
                 for heuristic in [nothing, "levenshtein"]
                 for vectors_eltype in ["Float32"]
@@ -107,7 +107,7 @@ function generate_test_confs(data_path::String, parser::Symbol)
                                    "vectors_eltype" => vectors_eltype,
                                    "embeddings_kind" => embeddings_kind,
                                    "doc2vec_method" => doc2vec_method,
-                                   "search_model" => search_model)
+                                   "search_index" => search_index)
                     # Add non-nothing values options
                     heuristic != nothing && push!(dconfig, "heuristic" => heuristic)
                     embeddings_path != nothing && push!(dconfig, "embeddings_path"=>embeddings_path)

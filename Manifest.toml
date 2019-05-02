@@ -33,10 +33,10 @@ uuid = "9e28174c-4ba2-5203-b857-d8d62c4213ee"
 version = "0.8.10"
 
 [[BinaryProvider]]
-deps = ["Libdl", "Pkg", "SHA", "Test"]
-git-tree-sha1 = "055eb2690182ebc31087859c3dd8598371d3ef9e"
+deps = ["Libdl", "SHA"]
+git-tree-sha1 = "c7361ce8a2129f20b0e05a89f7070820cfed6648"
 uuid = "b99e7846-7c00-51b0-8f62-c81ae34c0232"
-version = "0.5.3"
+version = "0.5.4"
 
 [[Blosc]]
 deps = ["BinaryProvider", "CMakeWrapper", "Compat", "Libdl"]
@@ -61,9 +61,6 @@ deps = ["BinDeps", "CMake", "Libdl", "Parameters", "Test"]
 git-tree-sha1 = "2b43d451639984e3571951cc687b8509b0a86c6d"
 uuid = "d5fb7624-851a-54ee-a528-d3f3bac0b4a0"
 version = "0.2.2"
-
-[[CRC32c]]
-uuid = "8bf52ea8-c179-5cab-976a-9e18b702a9bc"
 
 [[CSTParser]]
 deps = ["LibGit2", "Test", "Tokenize"]
@@ -129,7 +126,7 @@ version = "0.1.2"
 
 [[Distances]]
 deps = ["LinearAlgebra", "Statistics"]
-git-tree-sha1 = "776f6cf6a19d73f8d98a25571d1d7cca5e78e9b6"
+git-tree-sha1 = "19382a676449ef843bf03414876ed1efd91e36cb"
 repo-rev = "master"
 repo-url = "https://github.com/JuliaStats/Distances.jl.git"
 uuid = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
@@ -158,10 +155,10 @@ uuid = "d04f5788-f3bf-50c4-8044-9206750af6c9"
 version = "0.1.1"
 
 [[HDF5]]
-deps = ["BinDeps", "Blosc", "CRC32c", "Distributed", "Homebrew", "Libdl", "LinearAlgebra", "Mmap", "Pkg", "Test", "WinRPM"]
-git-tree-sha1 = "dd83e1e9c72e44e3a156438b552cf75dbdda722f"
+deps = ["BinDeps", "Blosc", "Homebrew", "Libdl", "Mmap", "WinRPM"]
+git-tree-sha1 = "e6f0c154d01faef0d0831d075aa8f279f95946da"
 uuid = "f67ccb44-e63f-5c2f-98bd-6dc0ccc4ba2f"
-version = "0.11.0"
+version = "0.11.1"
 
 [[HNSW]]
 deps = ["Distances", "LinearAlgebra", "Reexport"]
@@ -389,10 +386,10 @@ uuid = "b66b7d2f-f536-51df-9f97-4dfb9d27c005"
 version = "0.3.5"
 
 [[StringDistances]]
-deps = ["Distances", "IterTools", "Test"]
-git-tree-sha1 = "2d9e7e22e842da878744331de6895c504124021d"
+deps = ["Distances", "IterTools", "Random", "Test"]
+git-tree-sha1 = "125d06646183f1822849e852e45177710e700686"
 uuid = "88034a9c-02f8-509d-84a9-84ec65e18404"
-version = "0.3.1"
+version = "0.3.2"
 
 [[Syslogs]]
 deps = ["Compat", "Nullables"]

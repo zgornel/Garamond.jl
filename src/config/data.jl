@@ -42,7 +42,7 @@ mutable struct SearchConfig
     vectors_transform::Symbol       # what transform to apply to the vectors i.e. :lsa, :rp, :none
     vectors_dimension::Int          # desired dimensionality after transform (ignored for word2vec approaches)
     vectors_eltype::Symbol          # type of the document vector elements
-    search_model::Symbol            # type of the search model i.e. :naive, :kdtree, :hnsw
+    search_index::Symbol            # type of the search index i.e. :naive, :kdtree, :hnsw
     embeddings_path::Union{Nothing, String}  # path to the embeddings file
     embeddings_kind::Symbol         # Type of the embedding file for Word2Vec, GloVe i.e. :text, :binary
     doc2vec_method::Symbol          # How to arrive at a single embedding from multiple i.e. :bow, :sif
@@ -92,7 +92,7 @@ SearchConfig(;
           vectors_transform=DEFAULT_VECTORS_TRANSFORM,
           vectors_dimension=DEFAULT_VECTORS_DIMENSION,
           vectors_eltype=DEFAULT_VECTORS_ELTYPE,
-          search_model=DEFAULT_SEARCH_MODEL,
+          search_index=DEFAULT_SEARCH_INDEX,
           embeddings_path=nothing,
           embeddings_kind=DEFAULT_EMBEDDINGS_KIND,
           doc2vec_method=DEFAULT_DOC2VEC_METHOD,
@@ -114,7 +114,7 @@ SearchConfig(;
                  data_path, parser, parser_config,
                  language, build_summary, summary_ns, keep_data, stem_words,
                  vectors, vectors_transform, vectors_dimension, vectors_eltype,
-                 search_model, embeddings_path, embeddings_kind, doc2vec_method,
+                 search_index, embeddings_path, embeddings_kind, doc2vec_method,
                  glove_vocabulary, heuristic,
                  text_strip_flags, metadata_strip_flags,
                  query_strip_flags, summarization_strip_flags,
@@ -176,7 +176,7 @@ function load_search_configs(filename::AbstractString)
             sconfig.vectors_transform = Symbol(get(dconfig, "vectors_transform", DEFAULT_VECTORS_TRANSFORM))
             sconfig.vectors_dimension = Int(get(dconfig, "vectors_dimension", DEFAULT_VECTORS_DIMENSION))
             sconfig.vectors_eltype = Symbol(get(dconfig, "vectors_eltype", DEFAULT_VECTORS_ELTYPE))
-            sconfig.search_model = Symbol(get(dconfig, "search_model", DEFAULT_SEARCH_MODEL))
+            sconfig.search_index = Symbol(get(dconfig, "search_index", DEFAULT_SEARCH_INDEX))
             sconfig.embeddings_path = get(dconfig, "embeddings_path", nothing)
             sconfig.embeddings_kind = Symbol(get(dconfig, "embeddings_kind", DEFAULT_EMBEDDINGS_KIND))
             sconfig.doc2vec_method = Symbol(get(dconfig, "doc2vec_method", DEFAULT_DOC2VEC_METHOD))
@@ -242,10 +242,10 @@ function load_search_configs(filename::AbstractString)
                 @warn "$(sconfig.id) Defaulting vectors_eltype=$DEFAULT_VECTORS_ELTYPE."
                 sconfig.vectors_eltype= DEFAULT_VECTORS_ELTYPE
             end
-            # search_model
-            if !(sconfig.search_model in [:naive, :brutetree, :kdtree, :hnsw])
-                @warn "$(sconfig.id) Defaulting search_model=$DEFAULT_SEARCH_MODEL."
-                sconfig.search_model = DEFAULT_SEARCH_MODEL
+            # search_index
+            if !(sconfig.search_index in [:naive, :brutetree, :kdtree, :hnsw])
+                @warn "$(sconfig.id) Defaulting search_index=$DEFAULT_SEARCH_INDEX."
+                sconfig.search_index = DEFAULT_SEARCH_INDEX
             end
             # Classic search specific options
             if classic_search_approach
