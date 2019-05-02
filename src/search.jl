@@ -95,12 +95,12 @@ The function returns an object of type SearchResult and the id of the searcher.
   * `max_suggestions::Int` is the maximum number of suggestions to return for
      each missing needle
 """
-function search(srcher::Searcher{T,D,E,M},
+function search(srcher::Searcher{T,D,E,I},
                 query;  # can be either a string or vector of strings
                 search_method::Symbol=DEFAULT_SEARCH_METHOD,
                 max_matches::Int=MAX_MATCHES,
                 max_suggestions::Int=MAX_SUGGESTIONS  # not used
-                ) where {T<:AbstractFloat, D<:AbstractDocument, E, M<:AbstractSearchModel}
+                ) where {T<:AbstractFloat, D<:AbstractDocument, E, I<:AbstractIndex}
     needles = prepare_query(query, srcher.config.query_strip_flags)
     # Initializations
     isregex = (search_method == :regex)

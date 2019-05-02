@@ -3,21 +3,21 @@
 ##############################
 
 # Searcher structures
-mutable struct Searcher{T<:AbstractFloat, D<:AbstractDocument, E, M<:AbstractSearchModel}
+mutable struct Searcher{T<:AbstractFloat, D<:AbstractDocument, E, I<:AbstractIndex}
     config::SearchConfig                        # most of what is not actual data
     corpus::Corpus{String,D}                    # corpus
     embedder::E                                 # needed to embed query
-    search_data::M                              # actual indexed search data
+    search_data::I                              # actual indexed search data
     search_trees::BKTree{String}                # for suggestions
 end
 
 Searcher(config::SearchConfig,
          corpus::Corpus{String, D},
          embedder::E,
-         search_data::M,
+         search_data::I,
          search_trees::BKTree{String}
-        ) where {D<:AbstractDocument, E, M<:AbstractSearchModel} =
-    Searcher{get_embedding_eltype(embedder), D, E, M}(
+        ) where {D<:AbstractDocument, E, I<:AbstractIndex} =
+    Searcher{get_embedding_eltype(embedder), D, E, I}(
         config, corpus, embedder, search_data, search_trees)
 
 
@@ -71,9 +71,9 @@ end
 
 # Indexing for vectors of searchers
 function getindex(srchers::V, an_id::StringId
-        ) where {V<:Vector{<:Searcher{T,D,E,M}
+        ) where {V<:Vector{<:Searcher{T,D,E,I}
           where T<:AbstractFloat where D<:AbstractDocument
-          where E where M<:AbstractSearchModel}}
+          where E where I<:AbstractIndex}}
     idxs = Int[]
     for (i, srcher) in enumerate(srchers)
         id(srcher) == an_id && push!(idxs, i)
@@ -82,9 +82,9 @@ function getindex(srchers::V, an_id::StringId
 end
 
 function getindex(srchers::V, an_id::String
-        ) where {V<:Vector{<:Searcher{T,D,E,M}
+        ) where {V<:Vector{<:Searcher{T,D,E,I}
           where T<:AbstractFloat where D<:AbstractDocument
-          where E where M<:AbstractSearchModel}}
+          where E where I<:AbstractIndex}}
     srchers[StringId(an_id)]
 end
 
@@ -95,8 +95,8 @@ end
 """
     load_searchers(configs)
 
-Loads or builds searchers from the configuration vector `configs`. The
-latter can be either a vector of paths to searcher configuration files
+Loads/builds searchers using the information provided by `configs`. The
+latter can be either a path, a vector of paths to searcher configuration file(s)
 or a vector of `SearchConfig` objects.
 
 Loading process flow:
@@ -162,16 +162,16 @@ function build_searcher(sconf::SearchConfig)
     # Calculate embeddings for each document
     embedded_documents = @op embed_all_documents(embedder, lex, merged_sentences,
                                 sconf.doc2vec_method, sconf.sif_alpha)
-    # Get search model type
-    SearchModelType = get_search_model_type(sconf)
-    # Build search model
-    srchmodel = @op SearchModelType(embedded_documents)
+    # Get search index type
+    IndexType = get_search_index_type(sconf)
+    # Build search index
+    srchindex = @op IndexType(embedded_documents)
 
     # Build search tree (for suggestions)
     srchtree = @op get_bktree(sconf.heuristic, lex)
 
     # Build searcher
-    srcher = @op Searcher(sconf, crps, embedder, srchmodel, srchtree)
+    srcher = @op Searcher(sconf, crps, embedder, srchindex, srchtree)
 
     # Set Dispatcher logging level to warning
     setlevel!(getlogger("Dispatcher"), "warn")
@@ -179,7 +179,7 @@ function build_searcher(sconf::SearchConfig)
     # Prepare for dispatch graph execution
     endpoint = srcher
     uncacheable = [srcher]
-    sconf.search_model == :hnsw && push!(uncacheable, srchmodel)
+    sconf.search_index == :hnsw && push!(uncacheable, srchindex)
 
     # Execute dispatch graph
     srcher = extract(
@@ -235,13 +235,13 @@ function embed_all_documents(embedder, lexicon, documents, method, alpha)
           for doc in documents)...)
 end
 
-function get_search_model_type(sconf::SearchConfig)
-    # Get search model types
-    search_model = sconf.search_model
-    search_model == :naive && return NaiveEmbeddingModel
-    search_model == :brutetree && return SearchModel = BruteTreeEmbeddingModel
-    search_model == :kdtree && return KDTreeEmbeddingModel
-    search_model == :hnsw && return HNSWEmbeddingModel
+function get_search_index_type(sconf::SearchConfig)
+    # Get search index types
+    search_index = sconf.search_index
+    search_index == :naive && return NaiveIndex
+    search_index == :brutetree && return BruteTreeIndex
+    search_index == :kdtree && return KDTreeIndex
+    search_index == :hnsw && return HNSWIndex
 end
 
 function get_embedder(vectors, vectors_transform, bm25_kappa,

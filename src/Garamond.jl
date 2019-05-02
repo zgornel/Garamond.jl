@@ -59,13 +59,11 @@ module Garamond
     import StringAnalysis: id, embed_document
     import Word2Vec: WordVectors
 
-    # Abstract types
-    abstract type AbstractSearchModel end
-
     # Exports
     export
         search,
         load_searchers,
+        AbstractIndex,
         Searcher,
         SearchConfig,
         SearchResult,
@@ -83,8 +81,10 @@ module Garamond
     include("logging.jl")
     include("textutils.jl")
     include("embeddings.jl")
+    include("index/abstractindex.jl")
+    include("index/vectorial.jl")
+    include("index/classical.jl")
     include("structs.jl")
-    include("srchmodels.jl")
     include("update.jl")
     include("search.jl")
     include("results.jl")
