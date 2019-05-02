@@ -33,11 +33,11 @@ end
 
 # Searcher
 show(io::IO, srcher::Searcher{T,D,E,I}) where {T,D,E,I} = begin
-    printstyled(io, "Searcher for $(id(srcher)) "*
-                "(aggregation $(srcher.config.id_aggregation)), ")
     _status = ifelse(isenabled(srcher), "enabled", "disabled")
     _status_color = ifelse(isenabled(srcher), :light_green, :light_black)
-    printstyled(io, "$_status", color=_status_color, bold=true)
+    printstyled(io, "[$_status] ", color=_status_color, bold=true)
+    printstyled(io, "Searcher $(id(srcher))/")
+    printstyled(io, "$(srcher.config.id_aggregation)", bold=true)
     printstyled(io, ", ")
     # Get embeddings type string
     if E <: Word2Vec.WordVectors
