@@ -83,7 +83,6 @@ module Garamond
     include("embeddings.jl")
     include("index/abstractindex.jl")
     include("index/vectorial.jl")
-    include("index/classical.jl")
     include("structs.jl")
     include("update.jl")
     include("search.jl")
