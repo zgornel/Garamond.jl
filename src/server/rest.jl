@@ -61,7 +61,7 @@ function rest_server(port::Integer, channel::Channel{String})
     GARAMOND_REST_ROUTER = HTTP.Router()
     HTTP.@register(GARAMOND_REST_ROUTER, "GET", "/api/v1/*", construct_request)
 
-    @info "I/O: Waiting for data @http(rest):$port..."
+    @info "Waiting for data @http(rest):$port..."
     @async HTTP.serve(Sockets.localhost, port, readtimeout=0) do req::HTTP.Request
         # Check for request body (there should not be any)
         body = IOBuffer(HTTP.payload(req))

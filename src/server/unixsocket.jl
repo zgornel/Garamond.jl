@@ -25,7 +25,7 @@ function unix_socket_server(socket::AbstractString, channel::Channel{String})
     server = listen(socket)
 
     # Start serving
-    @info "I/O: Waiting for data @unix-socket:$socket..."
+    @info "Waiting for data @unix-socket:$socket..."
     while true
         connection = accept(server)
         @async while isopen(connection)

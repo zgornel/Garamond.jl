@@ -21,15 +21,15 @@ function search_server(data_config_paths, io_channel)
     @async updater(srchers, channels=srchers_channel)
 
     # Main loop
-    @info "Search server: Entering query wait loop..."
+    @info "Search server waiting for queries..."
     while true
         if isready(srchers_channel)
             srchers = take!(srchers_channel)
-            @debug "Search server: Searchers updated."
+            @info "* Updated: $(length(srchers)) searchers."
         else
             # Read and deconstruct request
             request = take!(io_channel)
-            @debug "Search server: Received request=$request"
+            @debug "* Search: Received request=$request"
             (operation, query, max_matches, search_method,
              max_suggestions, what_to_return) = deconstruct_request(request)
             if operation == "search"
@@ -44,7 +44,7 @@ function search_server(data_config_paths, io_channel)
                 t_finish = time()
 
                 elapsed_time = t_finish - t_init
-                @debug "Search server: Search for '$query' done in $elapsed_time(s)."
+                @info "* Search: query='$query' completed in $elapsed_time(s)."
 
                 # Select the data (if any) that will be reuturned
                 if what_to_return == "json-index"
@@ -62,10 +62,10 @@ function search_server(data_config_paths, io_channel)
                     end
                     corpora = (srchers[idx].corpus for idx in idx_corpora)
                     if length(corpora) == 0
-                        @warn "Search server: No corpora data from which to return results."
+                        @warn "No corpora data from which to return results."
                     end
                 else
-                    @warn "Search server: Unknown return option \"$what_to_return\", "*
+                    @warn "Unknown return option \"$what_to_return\", "*
                           "defaulting to \"json-index\"..."
                     corpora = nothing
                 end
@@ -78,10 +78,10 @@ function search_server(data_config_paths, io_channel)
                 put!(io_channel, response)
             elseif operation == "kill"
                 ### Kill the search server ###
-                @debug "Search server: Exiting..."
+                @info "* Kill: Exiting..."
                 exit()
             elseif operation == "request_error"
-                @debug "Search server: Malformed request. Ignoring..."
+                @info "* Errored request: Ignoring..."
                 put!(io_channel, "")
             end
         end

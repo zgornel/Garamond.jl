@@ -10,7 +10,7 @@ function web_socket_server(port::UInt16, channel::Channel{String})
     if port <= 0
         @error "Please specify a WEB-socket port of positive integer value."
     end
-    @info "I/O: Waiting for data @web-socket:$port..."
+    @info "Waiting for data @web-socket:$port..."
     @async HTTP.WebSockets.listen("127.0.0.1", port, verbose=false) do ws
         while !eof(ws)
             # Read data

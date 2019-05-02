@@ -93,7 +93,7 @@ module Garamond
     include("server/unixsocket.jl")
     include("server/websocket.jl")
     include("server/rest.jl")
-    include("server/main.jl")
+    include("server/search_server.jl")
     include("parsers/delimited_formats.jl")
     include("parsers/directory_formats.jl")
     include("parsers/no_parse.jl")
