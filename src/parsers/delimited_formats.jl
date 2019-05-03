@@ -2,16 +2,6 @@
 #       PARSERS       #
 #######################
 
-# Function that gets the number of lines in a file
-function linecount(filename::AbstractString)::Int
-    @assert !Sys.iswindows() "wc does not work on Windows."
-    @assert isfile(filename) "$filename does not exist."
-    n = parse(Int, split(read(`wc -l $filename`, String))[1])
-    return n
-end
-
-
-
 # Parser for "delimited_format_1"
 # Logical to physical mapping:
 #   - field -> sentence
@@ -47,7 +37,7 @@ function __parser_delimited_format_1(filename::AbstractString,
                                     ) where T<:AbstractDocument
     # Initializations
     filename = expanduser(filename)
-    nlines = linecount(filename) - ifelse(header,1,0)
+    nlines = open(countlines, filename) - ifelse(header,1,0)
     nlines==0 && error("$filename contains no data lines.")
     # Read the file
     if header
