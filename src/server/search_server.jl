@@ -29,9 +29,11 @@ function search_server(data_config_paths, io_channel)
         else
             # Read and deconstruct request
             request = take!(io_channel)
-            @debug "* Search: Received request=$request"
             (operation, query, max_matches, search_method,
              max_suggestions, what_to_return) = deconstruct_request(request)
+            req_str = "'$operation'/'$search_method'/'$query'/$max_matches/"*
+                      "$max_suggestions/'$what_to_return'"
+            @debug "* Search: Received request=$req_str."
             if operation == "search"
                 ### Search ###
 
