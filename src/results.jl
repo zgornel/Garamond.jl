@@ -31,7 +31,8 @@ function aggregate!(results::Vector{S},
                     aggregation_ids::Vector{StringId};
                     method::Symbol=DEFAULT_RESULT_AGGREGATION_STRATEGY,
                     max_matches::Int=MAX_MATCHES,
-                    max_suggestions::Int=MAX_SUGGESTIONS
+                    max_suggestions::Int=MAX_SUGGESTIONS,
+                    custom_weights::Dict{String, Float64}=DEFAULT_CUSTOM_WEIGHTS
                    ) where S<:SearchResult{T} where T
     if !(method in [:minimum, :maximum, :median, :product, :mean])
         @warn "Unknown aggregation strategy :$method. " *
@@ -50,7 +51,8 @@ function aggregate!(results::Vector{S},
             target_results = results[positions]
             # aggregate
             qm = [result.query_matches for result in target_results]
-            weights = [result.score_weight for result in target_results]
+            weights = [T(result.score_weight * get(custom_weights, result.id.id, 1.0))
+                       for result in target_results]
             merged_query_matches = _aggregate(qm, weights,
                                               method=method,
                                               max_matches=max_matches)

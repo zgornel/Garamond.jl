@@ -40,7 +40,8 @@ function search_server(data_config_paths, io_channel, search_server_ready)
                 results = search(srchers, request.query,
                                  search_method=request.search_method,
                                  max_matches=request.max_matches,
-                                 max_suggestions=request.max_suggestions)
+                                 max_suggestions=request.max_suggestions,
+                                 custom_weights=request.custom_weights)
 
                 query_time = time() - t_init
                 @info "* Search: query='$(request.query)' completed in $(query_time)(s)."

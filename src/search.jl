@@ -22,12 +22,15 @@ a `Vector{SearchResult}`.
      each corpus
   * `max_suggestions::Int` is the maximum number of suggestions to return for
      each missing needle from the search in a corpus
+  * `custom_weights::Dict{String, Float64}` are custom weights for each
+     searcher's results used in result aggregation
 """
 function search(srchers::Vector{<:Searcher{T}},
                 query;
                 search_method::Symbol=DEFAULT_SEARCH_METHOD,
                 max_matches::Int=MAX_MATCHES,
-                max_suggestions::Int=MAX_SUGGESTIONS
+                max_suggestions::Int=MAX_SUGGESTIONS,
+                custom_weights::Dict{String, Float64}=DEFAULT_CUSTOM_WEIGHTS
                ) where T<:AbstractFloat
     # Checks
     @assert search_method in [:exact, :regex]
@@ -64,14 +67,15 @@ function search(srchers::Vector{<:Searcher{T}},
                             max_matches=max_matches,
                             max_suggestions=max_suggestions)
     end
-    # Aggregate results as needed
+    # Aggregate results
     aggregate!(results,
                [srcher.config.id_aggregation for srcher in srchers],
                method=RESULT_AGGREGATION_STRATEGY,
                max_matches=max_matches,
-               max_suggestions=max_suggestions)
+               max_suggestions=max_suggestions,
+               custom_weights=custom_weights)
 
-    # Return vector of tuples, each tuple containing the id and search results
+    # Return results
     return results
 end
 
