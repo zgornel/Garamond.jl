@@ -87,9 +87,9 @@ function search_server(data_config_paths, io_channel, search_server_ready)
                 @info "* Kill: Exiting..."
                 exit()
 
-            elseif request.op == "read_searcher_configurations"
+            elseif request.op == "read_configs"
                 ### Read and return data configurations ***
-                @info "* Getting data configuration(s)..."
+                @info "* Getting searcher data configuration(s)..."
                 put!(io_channel, read_searcher_configurations_json(srchers))
 
             elseif request.op == "request_error"
