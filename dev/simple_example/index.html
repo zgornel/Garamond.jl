@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Simple example ·  </title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link href="../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><a href="../index.html"><img class="logo" src="../assets/logo.png" alt="  logo"/></a><h1> </h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../search/"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../">Introduction</a></li><li class="current"><a class="toctext" href>Simple example</a><ul class="internal"><li><a class="toctext" href="#Classic-search-1">Classic search</a></li><li><a class="toctext" href="#Semantic-search-1">Semantic search</a></li></ul></li><li><a class="toctext" href="../configuration/">Configuration</a></li><li><a class="toctext" href="../clientserver/">Client/Server</a></li><li><a class="toctext" href="../build/">Building</a></li><li><a class="toctext" href="../notes/">Notes</a></li><li><a class="toctext" href="../features/">Feature list</a></li><li><a class="toctext" href="../api/">API Reference</a></li></ul></nav><article id="docs"><header><nav><ul><li><a href>Simple example</a></li></ul><a class="edit-page" href="https://github.com/zgornel/Garamond.jl/blob/master/docs/src/simple_example.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Simple example</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Simple-usage-example-1" href="#Simple-usage-example-1">Simple usage example</a></h1><h2><a class="nav-anchor" id="Classic-search-1" href="#Classic-search-1">Classic search</a></h2><p>The following code snippet runs a quick and dirty search:</p><pre><code class="language-julia"># Use packages
+using Pkg;
+Pkg.activate(&quot;.&quot;);
+using Garamond
+
+# Load searchers
+filepath = [&quot;/home/zgornel/projects/extras_for_Garamond/data/Cornel/delimited/config_cornel_data_classic.json&quot;]
+srchers = load_searchers(filepath);
+
+# Search
+QUERY = &quot;arthur clarke pattern&quot;
+results = search(srchers, QUERY)</code></pre><p>The search results promptly appear:</p><pre><code class="language-julia"># 2-element Array{SearchResult,1}:
+#  Search results for id=&quot;biglib-classic&quot;:  7 hits, 2 query terms, 0 suggestions.
+#  Search results for id=&quot;techlib-classic&quot;:  2 hits, 1 query terms, 0 suggestions.</code></pre><p>To view them in a more detailed fashion i.e. including metadata, one can run:</p><pre><code class="language-julia">print_search_results(srchers, results)</code></pre><p>which prints:</p><pre><code class="language-julia"># 9 search results from 2 corpora
+# `-[id=&quot;biglib-classic&quot;] 7 search results:
+#   2.9344456 ~ 1-[&quot;The last theorem&quot; by Arthur C. Clarke, 2008 (2010)]
+#   2.5842855 ~ 2-[&quot;2010: odyssey two&quot; by Arthur C. Clarke, 1982 (2010)]
+#   2.059056 ~ 4-[&quot;Childhood&#39;s end&quot; by Arthur C. Clarke, 1954 (2013)]
+#   2.059056 ~ 6-[&quot;3001: the final odyssey&quot; by Arthur C. Clarke, 1968 (1997)]
+#   2.059056 ~ 7-[&quot;2061: odyssey three&quot; by Arthur C. Clarke, 1987 (1988)]
+#   1.8586512 ~ 3-[&quot;The city and the stars&quot; by Arthur C. Clarke, 1956 (2003)]
+#   1.8586512 ~ 5-[&quot;2001: a space odyssey&quot; by Arthur C. Clarke, 1968 (2001)]
+# `-[id=&quot;techlib-classic&quot;] 2 search results:
+#   0.6101619 ~ 3-[&quot;Pattern recognition 4&#39;th edition&quot; by Sergios Theodoridis, Konstantinos Koutroumbas, 2008 (2008)]
+#   0.37574464 ~ 2-[&quot;Pattern classification, 2&#39;nd edition&quot; by Richard O. Douda, Peter E. Hart, David G. Stork, 2000 (2000)]</code></pre><h2><a class="nav-anchor" id="Semantic-search-1" href="#Semantic-search-1">Semantic search</a></h2><p>Performing a semantic search is very similar to performing a classic one, the difference being that another data configuration file must be provided:</p><pre><code class="language-julia"># Load searchers
+filepath = [&quot;/home/zgornel/projects/extras_for_Garamond/data/Cornel/delimited/config_cornel_data_semantic.json&quot;]
+srchers = load_searchers(filepath);
+
+# Search
+QUERY = &quot;space fiction and planets galore&quot;
+results = search(srchers, QUERY, max_matches=10)</code></pre><p>which yields:</p><pre><code class="language-julia"># 2-element Array{SearchResult,1}:
+#  Search results for id=&quot;biglib-semantic&quot;:  10 hits, 0 query terms, 0 suggestions.
+#  Search results for id=&quot;techlib-semantic&quot;:  5 hits, 0 query terms, 0 suggestions.</code></pre><p>In this case,</p><pre><code class="language-julia">print_search_results(srchers, results)</code></pre><p>prints:</p><pre><code class="language-julia"># 15 search results from 2 corpora
+# `-[id=&quot;biglib-semantic&quot;] 10 search results:
+#   1.4016596138408786 ~ 5-[&quot;2001: a space odyssey&quot; by Arthur C. Clarke, 1968 (2001)]
+#   1.3030687835002375 ~ 3-[&quot;The city and the stars&quot; by Arthur C. Clarke, 1956 (2003)]
+#   1.1831628403122616 ~ 2-[&quot;2010: odyssey two&quot; by Arthur C. Clarke, 1982 (2010)]
+#   1.1558528687320448 ~ 65-[&quot;Of love and other demons&quot; by Gabriel Garcia Marquez, 1994 (2012)]
+#   1.1384422864227708 ~ 10-[&quot;A legend of the future&quot; by Augustin De Rojas, 1985 (2014)]
+#   1.0947549384771254 ~ 62-[&quot;Love in the time of cholera&quot; by Gabriel Garcia Marquez, 1985 (2012)]
+#   1.0729641968647925 ~ 31-[&quot;The devil and the good lord&quot; by Jean-Paul Sartre, 1951 (2007)]
+#   1.0320209929919373 ~ 1-[&quot;The last theorem&quot; by Arthur C. Clarke, 2008 (2010)]
+#   1.0250176565568312 ~ 21-[&quot;In the miso soup&quot; by Ryu Murakami, 1997 (2006)]
+#   1.0 ~ 47-[&quot;Jailbird&quot; by Kurt Vonnegut, 1979 (2009)]
+# `-[id=&quot;techlib-semantic&quot;] 5 search results:
+#   1.1470548192935575 ~ 1-[&quot;Data classification: algorithms and applications&quot; by Charu C. Aggarwal, 2014 (2014)]
+#   0.9473624595100231 ~ 5-[&quot;Numerical methods for engineers&quot; by Steven C. Chapra, Raymond P. Canale, 2014 (2014)]
+#   0.8689249981976931 ~ 3-[&quot;Pattern recognition 4&#39;th edition&quot; by Sergios Theodoridis, Konstantinos Koutroumbas, 2008 (2008)]
+#   0.8644211963883863 ~ 4-[&quot;Artificial intelligence, a modern approach 3&#39;rd edition&quot; by Stuart Russel, Peter Norvig, 2009 (2016)]
+#   0.7924568154973227 ~ 2-[&quot;Pattern classification, 2&#39;nd edition&quot; by Richard O. Douda, Peter E. Hart, David G. Stork, 2000 (2000)]</code></pre><footer><hr/><a class="previous" href="../"><span class="direction">Previous</span><span class="title">Introduction</span></a><a class="next" href="../configuration/"><span class="direction">Next</span><span class="title">Configuration</span></a></footer></article></body></html>

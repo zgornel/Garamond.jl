@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Building ·  </title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link href="../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><a href="../index.html"><img class="logo" src="../assets/logo.png" alt="  logo"/></a><h1> </h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../search/"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../">Introduction</a></li><li><a class="toctext" href="../simple_example/">Simple example</a></li><li><a class="toctext" href="../configuration/">Configuration</a></li><li><a class="toctext" href="../clientserver/">Client/Server</a></li><li class="current"><a class="toctext" href>Building</a><ul class="internal"></ul></li><li><a class="toctext" href="../notes/">Notes</a></li><li><a class="toctext" href="../features/">Feature list</a></li><li><a class="toctext" href="../api/">API Reference</a></li></ul></nav><article id="docs"><header><nav><ul><li><a href>Building</a></li></ul><a class="edit-page" href="https://github.com/zgornel/Garamond.jl/blob/master/docs/src/build.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Building</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Building-1" href="#Building-1">Building</a></h1><p>Garamond executables and libraries can be built by running the <code>build/make.jl</code> script. The script has to be run from inside the <code>build</code> directory. It will perform the following operations:</p><ul><li>check to ensure that it is being ran from the build directory of the Garamond project</li><li>check that the source code of the targets is present</li><li>create or empty the build output directory</li><li>download and install the <code>PackageCompiler</code> and <code>SnoopCompile</code> packages</li><li>download and install all project dependencies into the default Julia environment</li><li>build the executables and libraries for <code>gars</code>, <code>garc</code> and <code>garw</code>.</li><li>place the output in the <code>build/bin</code> directory.</li></ul><p><strong>Note</strong> The script will remove the contents of the <code>build/bin</code> directory, removing any previous compilation output.</p><p>At the end of the compilation process, the <code>build/bin</code> directory will contain:</p><pre><code class="language-none">$ tree -L 1 ./build/bin
+./build/bin
+├── cache_ji_v1.0.3
+├── garc
+├── garc.a
+├── garc.so
+├── gars
+├── gars.a
+├── gars.so
+├── garw
+├── garw.a
+└── garw.so
+
+1 directory, 9 files</code></pre><p>A sample output of running the script (this output may change in time):</p><pre><code class="language-none">$ ./make.jl
+[ Info: Checks complete.
+[ Info: Cleaned up /home/zgornel/projects/Garamond.jl/build/bin.
+[ Info: Dependencies are: [&quot;SnoopCompile&quot;, &quot;PackageCompiler&quot;, &quot;Statistics&quot;, &quot;Glowe&quot;, &quot;LightGraphs&quot;, &quot;Test&quot;, &quot;Random&quot;, &quot;StringAnalysis&quot;, &quot;ConceptnetNumberbatch&quot;, &quot;NearestNeighbors&quot;, &quot;HTTP&quot;, &quot;DelimitedFiles&quot;, &quot;LinearAlgebra&quot;, &quot;JSON&quot;, &quot;DataStructures&quot;, &quot;Word2Vec&quot;, &quot;Distances&quot;, &quot;SparseArrays&quot;, &quot;Unicode&quot;, &quot;ProgressMeter&quot;, &quot;HNSW&quot;, &quot;BKTrees&quot;, &quot;Glob&quot;, &quot;Languages&quot;, &quot;StringDistances&quot;, &quot;Dates&quot;, &quot;Sockets&quot;, &quot;Logging&quot;, &quot;ArgParse&quot;]
+  Updating registry at `~/.julia/registries/General`
+  Updating git-repo `https://github.com/JuliaRegistries/General.git`
+  Updating git-repo `https://github.com/zgornel/Word2Vec.jl`
+  Updating git-repo `https://github.com/zgornel/Distances.jl`
+  Updating git-repo `https://github.com/zgornel/HNSW.jl`
+ Resolving package versions...
+  Updating `~/.julia/environments/v1.0/Project.toml`
+ [no changes]
+  Updating `~/.julia/environments/v1.0/Manifest.toml`
+ [no changes]
+[ Info: Installed dependencies.
+[ Info: *** Building GARS ***
+Julia program file:
+  &quot;/home/zgornel/projects/Garamond.jl/gars&quot;
+C program file:
+  &quot;/home/zgornel/.julia/packages/PackageCompiler/jBqfm/examples/program.c&quot;
+Build directory:
+  &quot;/home/zgornel/projects/Garamond.jl/build/bin&quot;
+WARNING: could not import Base.endof into StringDistances
+┌ [2019-01-19 21:14:16][WARN][gars:66] At least one data configuration file has to be provided
+└ through the -d option. Exiting...
+All done
+[ Info: *** Building GARC ***
+Julia program file:
+  &quot;/home/zgornel/projects/Garamond.jl/garc&quot;
+C program file:
+  &quot;/home/zgornel/.julia/packages/PackageCompiler/jBqfm/examples/program.c&quot;
+Build directory:
+  &quot;/home/zgornel/projects/Garamond.jl/build/bin&quot;
+┌ Warning:  is not a proper UNIX socket. Exiting...
+└ @ Main.GaramondCLIClient ~/projects/Garamond.jl/garc:165
+All done
+[ Info: *** Building GARW ***
+Julia program file:
+  &quot;/home/zgornel/projects/Garamond.jl/garw&quot;
+C program file:
+  &quot;/home/zgornel/.julia/packages/PackageCompiler/jBqfm/examples/program.c&quot;
+Build directory:
+  &quot;/home/zgornel/projects/Garamond.jl/build/bin&quot;
+┌ Warning: Wrong web-socket port value 0 (default is 0). Exiting...
+└ @ Main.GaramondWebClient ~/projects/Garamond.jl/garw:74
+All done
+[ Info: Build complete.</code></pre><footer><hr/><a class="previous" href="../clientserver/"><span class="direction">Previous</span><span class="title">Client/Server</span></a><a class="next" href="../notes/"><span class="direction">Next</span><span class="title">Notes</span></a></footer></article></body></html>
