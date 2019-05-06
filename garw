@@ -71,6 +71,7 @@ Base.@ccallable function julia_main(ARGS::Vector{String})::Cint
                 return HTTP.Response(404, "Error: $e")
             end
         end
+        @debug "Serving page on 127.0.0.1:$http_port"
         HTTP.serve(_handler, ip"127.0.0.1", http_port, readtimeout=0)
     else
         @warn "Wrong web-socket port value $ws_port (default is 0). Exiting..."

@@ -1,18 +1,18 @@
 """
-    search_server(data_config_paths, io_channel)
+    search_server(data_config_paths, io_channel, search_server_ready)
 
 Search server for Garamond. It is a finite-state-machine that
 when called, creates the searchers i.e. search objects using the
 `data_config_paths` and the proceeds to looping continuously
 in order to:
-    • update the searchers regularly;
-    • receive requests from clients on the I/O channel
-    • call search and route responses back to the clients
-      through the I/O channel
+    • update the searchers regularly (asynchronously);
+    • receive requests from clients on the I/O channel `io_channel`
+    • call search and route responses back to the clients through `io_channel`
 
-Both searcher update and I/O communication are performed asynchronously.
+After the searchers are loaded, the search server sends a notification
+using `search_server_ready` to any listening I/O servers.
 """
-function search_server(data_config_paths, io_channel)
+function search_server(data_config_paths, io_channel, search_server_ready)
     # Load data
     srchers = load_searchers(data_config_paths)
 
@@ -20,8 +20,11 @@ function search_server(data_config_paths, io_channel)
     srchers_channel = Channel{typeof(srchers)}(0)
     @async updater(srchers, channels=srchers_channel)
 
+    # Notify waiting I/O servers
+    @info "Searchers loaded. Notifying I/O servers..."
+    notify(search_server_ready, true)
+
     # Main loop
-    @info "Search server waiting for queries..."
     while true
         if isready(srchers_channel)
             srchers = take!(srchers_channel)

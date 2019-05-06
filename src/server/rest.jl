@@ -33,10 +33,12 @@ end
 
 
 """
-    rest_server(port::Integer, channel::Channel{String})
+    rest_server(port::Integer, channel::Channel{String}, search_server_ready::Condition)
 
 Starts a bi-directional REST server that uses the HTTP port `port`
 and communicates with the search server through a channel `channel`.
+The server is started once the condition `search_server_ready`
+is triggered.
 
 Service GET link format:
     `/api/v1/<op>/<max_matches>/<search_method>/<max_suggestions>/<what_to_return>/<query>`
@@ -51,17 +53,21 @@ where:
 Example:
     `http://localhost:port/api/v1/search/100/exact/0/json-index/something%20to%20search`
 """
-function rest_server(port::Integer, channel::Channel{String})
+function rest_server(port::Integer, channel::Channel{String}, search_server_ready::Condition)
     #Checks
     if port <= 0
         @error "Please specify a HTTP REST port of positive integer value."
     end
 
-    # define REST endpoints to dispatch to "service" functions
+    # Define REST endpoints to dispatch to "service" functions
     GARAMOND_REST_ROUTER = HTTP.Router()
     HTTP.@register(GARAMOND_REST_ROUTER, "GET", "/api/v1/*", construct_request)
 
+    # Wait for search server to be ready
+    wait(search_server_ready)
     @info "Waiting for data @http(rest):$port..."
+
+    # Start serving requests
     @async HTTP.serve(Sockets.localhost, port, readtimeout=0) do req::HTTP.Request
         # Check for request body (there should not be any)
         body = IOBuffer(HTTP.payload(req))
