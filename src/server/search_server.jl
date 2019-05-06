@@ -35,17 +35,15 @@ function search_server(data_config_paths, io_channel, search_server_ready)
             @debug "* Received: $request."
             if request.op == "search"
                 ### Search ###
-
                 t_init = time()
-                # Get search results
+
                 results = search(srchers, request.query,
                                  search_method=request.search_method,
                                  max_matches=request.max_matches,
                                  max_suggestions=request.max_suggestions)
-                t_finish = time()
 
-                elapsed_time = t_finish - t_init
-                @info "* Search: query='$(request.query)' completed in $elapsed_time(s)."
+                query_time = time() - t_init
+                @info "* Search: query='$(request.query)' completed in $(query_time)(s)."
 
                 # Select the data (if any) that will be reuturned
                 if request.what_to_return == "json-index"
@@ -74,10 +72,10 @@ function search_server(data_config_paths, io_channel, search_server_ready)
                 # Construct response for client
                 response = construct_response(results, corpora,
                                 max_suggestions=request.max_suggestions,
-                                elapsed_time=elapsed_time)
+                                elapsed_time=query_time)
                 # Write response to I/O server
                 put!(io_channel, response)
-
+                @debug "Response sent after $(time()-t_init)(s)."
             elseif request.op == "kill"
                 ### Kill the search server ###
                 @info "* Kill: Exiting in 1(s)..."
