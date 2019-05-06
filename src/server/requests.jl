@@ -28,19 +28,20 @@ Function that deconstructs a Garamond request received from a client into
 individual search engine operations and search parameters.
 """
 function deconstruct_request(request::String)
-    req = UNINITIALIZED_REQUEST
     try
         # Parse JSON request
         data = JSON.parse(request)
         # Read fields
-        req.op = get(data, "operation", req.op)
-        req.query = get(data, "query", req.query)
-        req.max_matches = get(data, "max_matches", req.max_matches)
-        req.search_method = Symbol(get(data, "search_method", req.search_method))
-        req.max_suggestions = get(data, "max_suggestions", req.max_suggestions)
-        req.what_to_return = get(data, "what_to_return", req.what_to_return)
-        return req
-    catch
+        return (op = get(data, "operation", UNINITIALIZED_REQUEST.op),
+                query = get(data, "query", UNINITIALIZED_REQUEST.query),
+                max_matches = get(data, "max_matches", UNINITIALIZED_REQUEST.max_matches),
+                search_method = Symbol(get(data, "search_method", UNINITIALIZED_REQUEST.search_method)),
+                max_suggestions = get(data, "max_suggestions", UNINITIALIZED_REQUEST.max_suggestions),
+                what_to_return = get(data, "what_to_return", UNINITIALIZED_REQUEST.what_to_return),
+                custom_weights = get(data, "custom_weights", UNINITIALIZED_REQUEST.custom_weights)
+               )
+    catch e
+        @debug "Could not deconstruct request: $e. Passing ERRORED_REQUEST to search server..."
         return ERRORED_REQUEST
     end
 end
