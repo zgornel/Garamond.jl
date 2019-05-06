@@ -1,7 +1,24 @@
 """
+Default deconstructed request (its fields need to be initialized).
+"""
+const UNINITIALIZED_REQUEST = (op="uninitialized_request",
+                               query="",
+                               max_matches=0,
+                               search_method=:nothing,
+                               max_suggestions=0,
+                               what_to_return="",
+                               custom_weights=Dict{String, Float64}())
+
+"""
 Standard deconstructed request corresponding to an error request.
 """
-const ERRORED_REQUEST = ("request_error", "", 0, :nothing, :nothing, 0, "")
+const ERRORED_REQUEST = (op="request_error",
+                         query="",
+                         max_matches=0,
+                         search_method=:nothing,
+                         max_suggestions=0,
+                         what_to_return="",
+                         custom_weights=Dict())
 
 
 """
@@ -11,18 +28,18 @@ Function that deconstructs a Garamond request received from a client into
 individual search engine operations and search parameters.
 """
 function deconstruct_request(request::String)
+    req = UNINITIALIZED_REQUEST
     try
         # Parse JSON request
-        req = JSON.parse(request)
+        data = JSON.parse(request)
         # Read fields
-        op = req["operation"]
-        query = req["query"]
-        max_matches = req["max_matches"]
-        search_method = Symbol(req["search_method"])
-        max_suggestions = req["max_suggestions"]
-        what_to_return = req["what_to_return"]
-        return op, query, max_matches, search_method,
-               max_suggestions, what_to_return
+        req.op = get(data, "operation", req.op)
+        req.query = get(data, "query", req.query)
+        req.max_matches = get(data, "max_matches", req.max_matches)
+        req.search_method = Symbol(get(data, "search_method", req.search_method))
+        req.max_suggestions = get(data, "max_suggestions", req.max_suggestions)
+        req.what_to_return = get(data, "what_to_return", req.what_to_return)
+        return req
     catch
         return ERRORED_REQUEST
     end

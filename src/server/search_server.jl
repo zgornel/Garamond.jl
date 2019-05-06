@@ -31,30 +31,30 @@ function search_server(data_config_paths, io_channel, search_server_ready)
             @info "* Updated: $(length(srchers)) searchers."
         else
             # Read and deconstruct request
-            request = take!(io_channel)
-            (operation, query, max_matches, search_method,
-             max_suggestions, what_to_return) = deconstruct_request(request)
-            req_str = "'$operation'/'$search_method'/'$query'/$max_matches/"*
-                      "$max_suggestions/'$what_to_return'"
-            @debug "* Search: Received request=$req_str."
-            if operation == "search"
+            request_json = take!(io_channel)
+            request = deconstruct_request(request_json)
+            _reqstr = "'$(request.op)'/'$(request.search_method)'/'$(request.query)'"*
+                      "/$(request.max_matches)/$(request.max_suggestions)/"*
+                      "'$(request.what_to_return)'/$(request.custom_weights)"
+            @debug "* Search: Received request=$_reqstr."
+            if request.op == "search"
                 ### Search ###
 
                 t_init = time()
                 # Get search results
-                results = search(srchers, query,
-                                 search_method=search_method,
-                                 max_matches=max_matches,
-                                 max_suggestions=max_suggestions)
+                results = search(srchers, request.query,
+                                 search_method=request.search_method,
+                                 max_matches=request.max_matches,
+                                 max_suggestions=request.max_suggestions)
                 t_finish = time()
 
                 elapsed_time = t_finish - t_init
-                @info "* Search: query='$query' completed in $elapsed_time(s)."
+                @info "* Search: query='$(request.query)' completed in $elapsed_time(s)."
 
                 # Select the data (if any) that will be reuturned
-                if what_to_return == "json-index"
+                if request.what_to_return == "json-index"
                     corpora = nothing
-                elseif what_to_return == "json-data"
+                elseif request.what_to_return == "json-data"
                     idx_corpora = Int[]
                     for result in results
                         for (idx, srcher) in enumerate(srchers)
@@ -70,23 +70,34 @@ function search_server(data_config_paths, io_channel, search_server_ready)
                         @warn "No corpora data from which to return results."
                     end
                 else
-                    @warn "Unknown return option \"$what_to_return\", "*
+                    @warn "Unknown return option \"$(request.what_to_return)\", "*
                           "defaulting to \"json-index\"..."
                     corpora = nothing
                 end
 
                 # Construct response for client
                 response = construct_response(results, corpora,
-                                              max_suggestions=max_suggestions,
-                                              elapsed_time=elapsed_time)
-                #Write response to I/O server
+                                max_suggestions=request.max_suggestions,
+                                elapsed_time=elapsed_time)
+                # Write response to I/O server
                 put!(io_channel, response)
-            elseif operation == "kill"
+
+            elseif request.op == "kill"
                 ### Kill the search server ###
                 @info "* Kill: Exiting..."
                 exit()
-            elseif operation == "request_error"
+
+            elseif request.op == "read_searcher_configurations"
+                ### Read and return data configurations ***
+                @info "* Getting data configuration(s)..."
+                put!(io_channel, read_searcher_configurations_json(srchers))
+
+            elseif request.op == "request_error"
                 @info "* Errored request: Ignoring..."
+                put!(io_channel, "")
+
+            else
+                @info "* Unknown request: Ignoring..."
                 put!(io_channel, "")
             end
         end
