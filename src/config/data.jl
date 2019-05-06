@@ -29,6 +29,7 @@ mutable struct SearchConfig
     id_aggregation::StringId        # aggregation id
     description::String             # description of the searcher
     enabled::Bool                   # whether to use the searcher in search or not
+    config_path::String             # file path for the configuration file
     data_path::String               # file/directory path for the data (depends on what the parser accepts)
     parser::Function                # parser function used to obtain corpus
     parser_config::Union{Nothing,Dict}  # parser configuration
@@ -71,6 +72,7 @@ SearchConfig(;
           id_aggregation=id,
           description="",
           enabled=false,
+          config_path="",
           data_path="",
           parser=get_parsing_function(DEFAULT_PARSER,
                                       DEFAULT_PARSER_CONFIG,
@@ -111,7 +113,7 @@ SearchConfig(;
           cache_compression=DEFAULT_CACHE_COMPRESSION) =
     # Call normal constructor
     SearchConfig(id, id_aggregation, description, enabled,
-                 data_path, parser, parser_config,
+                 config_path, data_path, parser, parser_config,
                  language, build_summary, summary_ns, keep_data, stem_words,
                  vectors, vectors_transform, vectors_dimension, vectors_eltype,
                  search_index, embeddings_path, embeddings_kind, doc2vec_method,
@@ -136,10 +138,11 @@ function load_search_configs(filename::AbstractString)
 
     # Read config (this should fail if config not found)
     local dict_configs::Vector{Dict{String, Any}}
+    fullfilename = abspath(expanduser(filename))
     try
-        dict_configs = JSON.parse(open(fid->read(fid, String), expanduser(filename)))
+        dict_configs = JSON.parse(open(fid->read(fid, String), fullfilename))
     catch e
-        @error "Could not parse data configuration file $filename ($e). Exiting..."
+        @error "Could not parse data configuration file $fullfilename ($e). Exiting..."
         exit(-1)
     end
 
@@ -166,6 +169,7 @@ function load_search_configs(filename::AbstractString)
             sconfig.id_aggregation = make_id(StringId, get(dconfig, "id_aggregation", sconfig.id.id))
             sconfig.description = get(dconfig, "description", "")
             sconfig.enabled = get(dconfig, "enabled", false)
+            sconfig.config_path = fullfilename
             sconfig.data_path = get(dconfig, "data_path", "")
             sconfig.language = lowercase(get(dconfig, "language", DEFAULT_LANGUAGE_STR))
             sconfig.build_summary = Bool(get(dconfig, "build_summary", DEFAULT_BUILD_SUMMARY))
@@ -306,7 +310,7 @@ function load_search_configs(filename::AbstractString)
                 sconfig.cache_compression = DEFAULT_CACHE_COMPRESSION
             end
         catch e
-            @warn """$(sconfig.id) Could not correctly parse configuration in $(filename).
+            @warn """$(sconfig.id) Could not correctly parse configuration in $(fullfilename).
                      Exception: $(e)
                      Ignoring search configuration..."""
             push!(removable, i)
@@ -317,7 +321,7 @@ function load_search_configs(filename::AbstractString)
     # Last checks
     if isempty(search_configs)
         @error """The search configuration does not contain searchable entities.
-                  Please review $filename, add entries or fix the
+                  Please review $fullfilename, add entries or fix the
                   configuration errors. Exiting..."""
         exit(-1)
     else
@@ -325,7 +329,7 @@ function load_search_configs(filename::AbstractString)
         for config in search_configs
             if config.id in all_ids          # check id uniqueness
                 @error """Multiple occurences of $(config.id) detected. Data id's
-                          have to be unique. Please correct the error in $filename.
+                          have to be unique. Please correct the error in $fullfilename.
                           Exiting..."""
                 exit(-1)
             else
@@ -354,6 +358,24 @@ function load_search_configs(filenames::Vector{S}) where S<:AbstractString
         end
     end
     return all_configs
+end
+
+
+"""
+    read_searcher_configurations_json(srchers)
+
+Returns a string containing a JSON dictionary where the keys are the paths
+to the data configuration files for the loaded searchers and the values are
+the searcher configurations contained in the respective files.
+"""
+function read_searcher_configurations_json(srchers)
+    try
+        files = unique(map(srcher->srcher.config.config_path, srchers))
+        return JSON.json(Dict(file=>JSON.parse(read(file, String)) for file in files))
+    catch e
+        @warn "Could not return searcher configurations: $e. Returning empty string..."
+        return ""
+    end
 end
 
 
