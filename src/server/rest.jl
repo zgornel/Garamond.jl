@@ -63,6 +63,14 @@ end
 # Small helper function for parsing custom weights
 function parse_custom_weights(weights_str::AbstractString)
     weights = Dict{String, Float64}()
+    parts = split(weights_str, "_")
+    for i in 1:2:length(parts)
+        try
+            push!(weights, parts[i]=>parse(Float64, parts[i+1]))
+        catch
+            # Cannot push current pair, ignore
+        end
+    end
     return weights
 end
 
