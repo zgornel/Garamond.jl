@@ -88,7 +88,6 @@ module Garamond
     include("search.jl")
     include("results.jl")
     include("version.jl")
-    include("show.jl")
     include("server/requests.jl")
     include("server/unixsocket.jl")
     include("server/websocket.jl")
@@ -98,5 +97,6 @@ module Garamond
     include("parsers/directory_formats.jl")
     include("parsers/no_parse.jl")
     include("parsers/json.jl")
+    include("show.jl")
 
 end # module

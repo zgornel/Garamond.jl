@@ -84,3 +84,15 @@ show(io::IO, result::SearchResult) = begin
     printstyled(io, "Search results for $(result.id): ")
     printstyled(io, " $n hits, $nm query terms, $ns suggestions.", bold=true)
 end
+
+
+# SearchServerRequest
+show(io::IO, request::SearchServerRequest) = begin
+    reqstr = "'$(uppercase(request.op)) REQUEST'"
+    if request.op == "search"
+        reqstr *= "/'$(request.search_method)'/'$(request.query)'"*
+                  "/$(request.max_matches)/$(request.max_suggestions)/"*
+                  "'$(request.what_to_return)'/$(request.custom_weights)"
+    end
+    print(io, "$reqstr")
+end

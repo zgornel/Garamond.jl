@@ -1,45 +1,79 @@
+# Structure for the internal (search server) representation
+# of requests.
+struct SearchServerRequest
+    op::String
+    query::String
+    max_matches::Int
+    search_method::Symbol
+    max_suggestions::Int
+    what_to_return::String
+    custom_weights::Dict{String,Float64}
+end
+
+# Keyword argument constructor
+SearchServerRequest(;op::String="uninitialized_request",
+                     query::String="",
+                     max_matches::Int=0,
+                     search_method::Symbol=:nothing,
+                     max_suggestions::Int=0,
+                     what_to_return::String="",
+                     custom_weights::Dict{String,Float64}=Dict{String,Float64}())=
+    SearchServerRequest(op, query, max_matches, search_method,
+                        max_suggestions, what_to_return, custom_weights)
+
+
+# Convert from SearchServerRequest to Dict
+convert(::Type{Dict}, request::SearchServerRequest) =
+    Dict{String, Any}("operation" => request.op,
+                      "query" => request.query,
+                      "max_matches" => request.max_matches,
+                      "search_method" => request.search_method,
+                      "max_suggestions" => request.max_suggestions,
+                      "what_to_return" => request.what_to_return,
+                      "custom_weights" => request.custom_weights)
+
+
 """
 Default deconstructed request (its fields need to be initialized).
 """
-const UNINITIALIZED_REQUEST = (op="uninitialized_request",
-                               query="",
-                               max_matches=0,
-                               search_method=:nothing,
-                               max_suggestions=0,
-                               what_to_return="",
-                               custom_weights=Dict{String, Float64}())
+const UNINITIALIZED_REQUEST = SearchServerRequest(op="uninitialized_request")
 
 """
 Standard deconstructed request corresponding to an error request.
 """
-const ERRORED_REQUEST = (op="request_error",
-                         query="",
-                         max_matches=0,
-                         search_method=:nothing,
-                         max_suggestions=0,
-                         what_to_return="",
-                         custom_weights=Dict())
+const ERRORED_REQUEST = SearchServerRequest(op="request_error")
+
+"""
+Standard deconstructed request corresponding to a kill request.
+"""
+const KILL_REQUEST = SearchServerRequest(op="kill")
+
+"""
+Standard deconstructed request corresponding to a kill request.
+"""
+const READCONFIGS_REQUEST = SearchServerRequest(op="read_configs")
 
 
 """
-    deconstruct_request(request)
+    deconstruct_request(request::AbstractString)
 
-Function that deconstructs a Garamond request received from a client into
-individual search engine operations and search parameters.
+Function that deconstructs a Garamond JSON request received from a client
+into a `SearchServerRequest` usable by the search server
 """
-function deconstruct_request(request::String)
+function deconstruct_request(request::AbstractString)
     try
         # Parse JSON request
         data = JSON.parse(request)
         # Read fields
-        return (op = get(data, "operation", UNINITIALIZED_REQUEST.op),
-                query = get(data, "query", UNINITIALIZED_REQUEST.query),
-                max_matches = get(data, "max_matches", UNINITIALIZED_REQUEST.max_matches),
-                search_method = Symbol(get(data, "search_method", UNINITIALIZED_REQUEST.search_method)),
-                max_suggestions = get(data, "max_suggestions", UNINITIALIZED_REQUEST.max_suggestions),
-                what_to_return = get(data, "what_to_return", UNINITIALIZED_REQUEST.what_to_return),
-                custom_weights = get(data, "custom_weights", UNINITIALIZED_REQUEST.custom_weights)
-               )
+        return SearchServerRequest(
+            op = get(data, "operation", "uninitialized_request"),
+            query = get(data, "query", ""),
+            max_matches = get(data, "max_matches", 0),
+            search_method = Symbol(get(data, "search_method", :nothing)),
+            max_suggestions = get(data, "max_suggestions", 0),
+            what_to_return = get(data, "what_to_return", ""),
+            custom_weights = Dict{String, Float64}(get(data, "custom_weights", Dict()))
+           )
     catch e
         @debug "Could not deconstruct request: $e. Passing ERRORED_REQUEST to search server..."
         return ERRORED_REQUEST
@@ -50,7 +84,7 @@ end
 """
     construct_response(srchers, results, what [; kwargs...])
 
-Function that constructs a response for a Garamond client using
+Function that constructs a JSON response for a Garamond client using
 the search `results`, data from `srchers` and specifier `what`.
 """
 function construct_response(results, corpora;

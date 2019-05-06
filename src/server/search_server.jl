@@ -31,12 +31,8 @@ function search_server(data_config_paths, io_channel, search_server_ready)
             @info "* Updated: $(length(srchers)) searchers."
         else
             # Read and deconstruct request
-            request_json = take!(io_channel)
-            request = deconstruct_request(request_json)
-            _reqstr = "'$(request.op)'/'$(request.search_method)'/'$(request.query)'"*
-                      "/$(request.max_matches)/$(request.max_suggestions)/"*
-                      "'$(request.what_to_return)'/$(request.custom_weights)"
-            @debug "* Search: Received request=$_reqstr."
+            request = deconstruct_request(take!(io_channel))
+            @debug "* Received: $request."
             if request.op == "search"
                 ### Search ###
 
@@ -84,7 +80,9 @@ function search_server(data_config_paths, io_channel, search_server_ready)
 
             elseif request.op == "kill"
                 ### Kill the search server ###
-                @info "* Kill: Exiting..."
+                @info "* Kill: Exiting in 1(s)..."
+                put!(io_channel, "")
+                sleep(1)
                 exit()
 
             elseif request.op == "read_configs"
