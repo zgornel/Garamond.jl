@@ -39,10 +39,11 @@ end
 Function to get from multiple sentences to a document embedding.
 The `embedding_method` option controls how multiple sentence embeddings
 are combined into a single document embedding.
-Avalilable options for `embedding_method`:
-    :bow - calculates document embedding as the mean of the sentence embeddings
-    :sif - smooth-inverse-frequency subtracts paragraph/phrase vector
-           from each sentence embedding
+
+Avalilable options for `embedding_method` are `:bow` calculates document
+embedding as the mean of the sentence embeddings and `:sif` i.e.
+smooth-inverse-frequency subtracts paragraph/phrase vector from each
+sentence embedding.
 """
 function embed_document(embedder::Union{
                             ConceptNet{<:Languages.Language, <:AbstractString, T},
@@ -114,8 +115,9 @@ end
 Implementation of sentence embedding principled on subtracting the paragraph vector i.e.
 principal vector of a sentence from the sentence's word embeddings.
 
-[1] "A simple but tough-to-beat baseline for sentence embeddings", Arora et al. ICLR 2017
-    (https://openreview.net/pdf?id=SyK00v5xx)
+# References
+* [Arora et a. ICLR 2017, "A simple but tough-to-beat baseline for sentence embeddings"]
+(https://openreview.net/pdf?id=SyK00v5xx)
 """
 #TODO(Corneliu): Make the calculation of `a` automatic using some heuristic
 function smooth_inverse_frequency(document_embedding::Vector{Matrix{T}},

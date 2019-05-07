@@ -1,16 +1,16 @@
 """
     build_logger(logging_stream, log_level)
 
-Builds a logger using the stream and log_level provided. These should
-be coming from parsing the input arguments.
-The logging_stream can take the values:
- • "null": logs to `/dev/null`
- • "stdout": logs to standard output
- • "/path/to/existing/file": logs to an existing file
- • "/path/to/non-existing/file": creates the log file
-If no valid option is provided, the default stream is the standard output.
-The log level can take the values: "debug", "info", "error" and defaults
-to "info" if no valid option is provided.
+Builds a logger using the stream `logging_stream`and `log_level` provided.
+
+# Arguments
+  * `logging_stream::String` is the output stream and can take the values:
+  `"null"` logs to `/dev/null`, `"stdout"` (default) logs to standard output,
+  `"/path/to/existing/file"` logs to an existing file and
+  `"/path/to/non-existing/file"` creates the log file. If no valid option
+  is provided, the default stream is the standard output.
+  * `log_level::String` is the log level can take the values `"debug"`,
+  `"info"`, `"error"` and defaults to `"info"` if no valid option is provided.
 """
 function build_logger(logging_stream="stdout", log_level="info")
     # Quickly return null logger if the case

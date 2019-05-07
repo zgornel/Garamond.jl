@@ -1,8 +1,9 @@
 #################################################
 # Search results objects and associated methods #
 #################################################
-
-# Search results from a single corpus
+"""
+    Object that stores the search results from a single searcher.
+"""
 struct SearchResult{T<:AbstractFloat}
     id::StringId
     query_matches::MultiDict{T, Int}  # score => document indices
@@ -27,6 +28,12 @@ valength(md::MultiDict) = begin
 end
 
 
+"""
+    Aggregates search results from several searchers based on
+their `aggregation_id` i.e. results from searchers with identical
+aggregation id's are merged together into a new search result that
+replaces the individual searcher ones.
+"""
 function aggregate!(results::Vector{S},
                     aggregation_ids::Vector{StringId};
                     method::Symbol=DEFAULT_RESULT_AGGREGATION_STRATEGY,

@@ -82,18 +82,23 @@ and communicates with the search server through a channel `channel`.
 The server is started once the condition `search_server_ready`
 is triggered.
 
-Service GET link format:
-    `/api/v1/<op>/<max_matches>/<search_method>/<max_suggestions>/<what_to_return>/<query>`
+# Service GET link formats:
+  - search: `/api/v1/search/<max_matches>/<search_method>/<max_suggestions>
+             /<what_to_return>/<query>/<custom_weights>`
+  - kill server: `/api/v1/kill`
+  - read configs: `/api/v1/read-configs`
 where:
-    <op> is fixed to `search`
     <max_matches> is a number larger than 0
-    <search_method> is fixed to `exact`
-    <max_suggestions> is fixed to `0`
-    <what_to_return> is fixed to `json-index`
-    <query> can be any string
+    <search_method> can be `exact` or `regex`
+    <max_suggestions> is a number larger of equal to 0
+    <what_to_return> can be `json-index` or `json-data`
+    <query> can be any string (`%20` acts as space)
+    <custom_weights> custom weights for the searchers
 
-Example:
-    `http://localhost:port/api/v1/search/100/exact/0/json-index/something%20to%20search`
+# Examples:
+    `http://localhost:9001/api/v1/search/100/exact/0/json-index/something%20to%20search`
+    `http://localhost:9001/api/v1/search/100/regex/3/json-index/something%20to%20search/searcher1_0.1`
+    `http://localhost:9001/api/v1/read-configs`
 """
 function rest_server(port::Integer, channel::Channel{String}, search_server_ready::Condition)
     #Checks

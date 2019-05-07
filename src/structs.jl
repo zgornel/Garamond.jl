@@ -4,7 +4,7 @@
 
 # Searcher structures
 """
-    Search object. It contains all the index data and related
+    Search object. It contains all the indexed data and related
 configuration that allows for searches to be performed.
 """
 mutable struct Searcher{T<:AbstractFloat, D<:AbstractDocument, E, I<:AbstractIndex}

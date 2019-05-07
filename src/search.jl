@@ -3,15 +3,15 @@
 ##################
 
 """
-	search(srcher, query [;kwargs])
+	search(srchers, query [;kwargs])
 
-Searches for query (i.e. key terms) in multiple corpora and returns
+Searches for query (i.e. key terms) in multiple searches and returns
 information regarding the documents that match best the query.
 The function returns the search results in the form of
 a `Vector{SearchResult}`.
 
 # Arguments
-  * `srcher::Vector{Searcher}` is the corpora searcher
+  * `srchers::Vector{Searcher}` is the searchers vector
   * `query` the query, can be either a `String` or `Vector{String}`
 
 # Keyword arguments
@@ -83,9 +83,9 @@ end
 """
 	search(srcher, query [;kwargs])
 
-Searches for query (i.e. key terms) in a corpus' metadata, text or both and
-returns information regarding the the documents that match best the query.
-The function returns an object of type SearchResult and the id of the searcher.
+Searches for query (i.e. key terms) in `srcher`, and returns information
+regarding the the documents that match best the query. The function
+returns an object of type `SearchResult`.
 
 # Arguments
   * `srcher::Searcher` is the corpus searcher
@@ -153,7 +153,7 @@ end
 """
     search_heuristically!(suggestions, search_tree, needles [;max_suggestions=1])
 
-Searches in the search tree for partial matches of the `needles`.
+Searches in the search tree for partial matches for each of  the `needles`.
 """
 function search_heuristically!(suggestions::MultiDict{String, Tuple{T, String}},
                                search_tree::BKTree{String},

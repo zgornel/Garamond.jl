@@ -5,9 +5,9 @@ Search server for Garamond. It is a finite-state-machine that
 when called, creates the searchers i.e. search objects using the
 `data_config_paths` and the proceeds to looping continuously
 in order to:
-    • update the searchers regularly (asynchronously);
-    • receive requests from clients on the I/O channel `io_channel`
-    • call search and route responses back to the clients through `io_channel`
+ - update the searchers regularly (asynchronously);
+ - receive requests from clients on the I/O channel `io_channel`
+ - call search and route responses back to the clients through `io_channel`
 
 After the searchers are loaded, the search server sends a notification
 using `search_server_ready` to any listening I/O servers.
