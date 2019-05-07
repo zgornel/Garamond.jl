@@ -55,7 +55,7 @@ module Garamond
     # Import section (extendable methods)
     import Base: size, length, show, keys, values, push!,
                  delete!, getindex, names, convert, lowercase,
-                 occursin, isempty
+                 occursin, isempty, parse
     import StringAnalysis: id, embed_document
     import Word2Vec: WordVectors
 

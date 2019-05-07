@@ -1,11 +1,11 @@
 """
-    construct_request(httpreq::HTTP.Request)
+    construct_json_request(httpreq::HTTP.Request)
 
 Constructs a Garamond JSON search request from a HTTP request `httpreq`:
 extracts the link, parses it, builds the request (in the intermediary
 representation supported by the search server) and transforms it to JSON.
 """
-function construct_request(httpreq::HTTP.Request)
+function construct_json_request(httpreq::HTTP.Request)
     local request
     # Parse the http link to the internal request format
     # of the search server (useful to guarantee interoperability)
@@ -32,7 +32,7 @@ function link2request(link::AbstractString)
     if offset < length(parts)
         if parts[offset+1] == "kill"
             return KILL_REQUEST
-        elseif parts[offset+1] == "read_configs"
+        elseif parts[offset+1] == "read-configs"
             return READCONFIGS_REQUEST
         elseif parts[offset+1] == "search"
             custom_weights = Dict{String, Float64}()
@@ -103,7 +103,7 @@ function rest_server(port::Integer, channel::Channel{String}, search_server_read
 
     # Define REST endpoints to dispatch to "service" functions
     GARAMOND_REST_ROUTER = HTTP.Router()
-    HTTP.@register(GARAMOND_REST_ROUTER, "GET", "/api/v1/*", construct_request)
+    HTTP.@register(GARAMOND_REST_ROUTER, "GET", "/api/v1/*", construct_json_request)
 
     # Wait for search server to be ready
     wait(search_server_ready)

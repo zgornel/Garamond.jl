@@ -34,33 +34,33 @@ convert(::Type{Dict}, request::SearchServerRequest) =
 
 
 """
-Default deconstructed request (its fields need to be initialized).
+Default request.
 """
 const UNINITIALIZED_REQUEST = SearchServerRequest(op="uninitialized_request")
 
 """
-Standard deconstructed request corresponding to an error request.
+Request corresponding to an error i.e. in parsing.
 """
-const ERRORED_REQUEST = SearchServerRequest(op="request_error")
+const ERRORED_REQUEST = SearchServerRequest(op="request-error")
 
 """
-Standard deconstructed request corresponding to a kill request.
+Request corresponding to a kill server command.
 """
 const KILL_REQUEST = SearchServerRequest(op="kill")
 
 """
-Standard deconstructed request corresponding to a kill request.
+Request corresponding to a searcher read configuration command.
 """
-const READCONFIGS_REQUEST = SearchServerRequest(op="read_configs")
+const READCONFIGS_REQUEST = SearchServerRequest(op="read-configs")
 
 
 """
-    deconstruct_request(request::AbstractString)
+    parse(::Type{SearchServerRequest}, request::AbstractString)
 
-Function that deconstructs a Garamond JSON request received from a client
+Parses a Garamond JSON request received from a client
 into a `SearchServerRequest` usable by the search server
 """
-function deconstruct_request(request::AbstractString)
+function parse(::Type{SearchServerRequest}, request::AbstractString)
     try
         # Parse JSON request
         data = JSON.parse(request)
@@ -82,14 +82,14 @@ end
 
 
 """
-    construct_response(srchers, results, what [; kwargs...])
+    construct_json_response(srchers, results, what [; kwargs...])
 
 Function that constructs a JSON response for a Garamond client using
 the search `results`, data from `srchers` and specifier `what`.
 """
-function construct_response(results, corpora;
-                            max_suggestions::Int=0,
-                            elapsed_time::Float64=0) where C<:Corpus
+function construct_json_response(results, corpora;
+                                 max_suggestions::Int=0,
+                                 elapsed_time::Float64=0) where C<:Corpus
     local result_data
     if corpora == nothing
         # Get basic response data

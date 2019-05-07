@@ -70,7 +70,7 @@ function iosearch(connection, request, pretty=false)
         @error "Connection is closed."
     end
     # Deconstruct response
-    data = deconstruct_response(response)
+    data = deconstruct_json_response(response)
     if pretty
         jr = JSON.parse(data)  # builds a Dict
         # Print search results in a way similar to that
@@ -103,11 +103,11 @@ function iosearch(connection, request, pretty=false)
 end
 
 
-# Function that constructs a search server request (can be a
-# search request or a command) from a set of arguments
+# Function that constructs a search server JSON request
+# (can be a search request or a command) from a set of arguments
 # that come usually from parsed client input arguments
-function construct_request(query, max_matches, search_method,
-                           max_suggestions, pretty, kill)
+function construct_json_request(query, max_matches, search_method,
+                                max_suggestions, pretty, kill)
     # Check wether the query is actually a query or another command
     if kill
         op = "kill"
@@ -122,13 +122,14 @@ function construct_request(query, max_matches, search_method,
                  "search_method" => search_method,
                  "max_suggestions" => max_suggestions,
                  "what_to_return" => what_to_return
+                 # no custom_weights
                 )
            )
 end
 
 
 # Deconstruct response is a pass through right now
-deconstruct_response(response) = response
+deconstruct_json_response(response) = response
 
 
 ########################
@@ -157,7 +158,7 @@ Base.@ccallable function julia_main(ARGS::Vector{String})::Cint
         if isempty(args["query"]) && !args["kill"]
             @warn "Empty query, nothing to search. Exiting..."
         else
-            request = construct_request(
+            request = construct_json_request(
                 args["query"],
                 args["max-matches"], args["search-method"],
                 args["max-suggestions"],

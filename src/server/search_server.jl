@@ -30,8 +30,8 @@ function search_server(data_config_paths, io_channel, search_server_ready)
             srchers = take!(srchers_channel)
             @info "* Updated: $(length(srchers)) searchers."
         else
-            # Read and deconstruct request
-            request = deconstruct_request(take!(io_channel))
+            # Read and parse JSON request
+            request = parse(SearchServerRequest, take!(io_channel))
             @debug "* Received: $request."
             if request.op == "search"
                 ### Search ###
@@ -71,7 +71,7 @@ function search_server(data_config_paths, io_channel, search_server_ready)
                 end
 
                 # Construct response for client
-                response = construct_response(results, corpora,
+                response = construct_json_response(results, corpora,
                                 max_suggestions=request.max_suggestions,
                                 elapsed_time=query_time)
                 # Write response to I/O server
@@ -84,12 +84,12 @@ function search_server(data_config_paths, io_channel, search_server_ready)
                 sleep(1)
                 exit()
 
-            elseif request.op == "read_configs"
+            elseif request.op == "read-configs"
                 ### Read and return data configurations ***
                 @info "* Getting searcher data configuration(s)..."
                 put!(io_channel, read_searcher_configurations_json(srchers))
 
-            elseif request.op == "request_error"
+            elseif request.op == "request-error"
                 @info "* Errored request: Ignoring..."
                 put!(io_channel, "")
 

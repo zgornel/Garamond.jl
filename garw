@@ -202,6 +202,7 @@ function _default_webpage(ws_port::UInt16)
                 max_suggestions: 0,
                 what_to_return: \"json-data\"
                 //date: Date()
+                // no custom_weights
             }
             connection.send(JSON.stringify(jq));
         }
