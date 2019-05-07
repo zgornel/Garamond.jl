@@ -25,6 +25,7 @@ function search_server(data_config_paths, io_channel, search_server_ready)
     notify(search_server_ready, true)
 
     # Main loop
+    cntq = 0  # query counter
     while true
         if isready(srchers_channel)
             srchers = take!(srchers_channel)
@@ -42,9 +43,9 @@ function search_server(data_config_paths, io_channel, search_server_ready)
                                  max_matches=request.max_matches,
                                  max_suggestions=request.max_suggestions,
                                  custom_weights=request.custom_weights)
-
+                cntq+= 1
                 query_time = time() - t_init
-                @info "* Search: query='$(request.query)' completed in $(query_time)(s)."
+                @info "* Search: query(#$cntq)='$(request.query)' completed in $(query_time)(s)."
 
                 # Select the data (if any) that will be reuturned
                 if request.what_to_return == "json-index"
