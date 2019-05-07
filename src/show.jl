@@ -72,7 +72,7 @@ show(io::IO, srcher::Searcher{T,D,E,I}) where {T,D,E,I} = begin
     end
     printstyled(io, "$_index_type", bold=true)
     #printstyled(io, "$(description(srcher))", color=:normal)
-    printstyled(io, ", $(length(srcher.search_data)) $T embedded documents")
+    printstyled(io, ", $(length(srcher.index)) $T embedded documents")
 end
 
 

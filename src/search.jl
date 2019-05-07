@@ -108,7 +108,7 @@ function search(srcher::Searcher{T,D,E,I},
     needles = prepare_query(query, srcher.config.query_strip_flags)
     # Initializations
     isregex = (search_method == :regex)
-    n = length(srcher.search_data)  # number of embedded documents
+    n = length(srcher.index)  # number of embedded documents
     query_embedding = embed_document(srcher.embedder, srcher.corpus.lexicon, needles,
                                      embedding_method=srcher.config.doc2vec_method,
                                      sif_alpha=srcher.config.sif_alpha,
@@ -132,7 +132,7 @@ function search(srcher::Searcher{T,D,E,I},
     # Search (if document vector is not zero)
     if !iszero(query_embedding)
         ### Search
-        idxs, scores = search(srcher.search_data, query_embedding, k, doc_matches)
+        idxs, scores = search(srcher.index, query_embedding, k, doc_matches)
         ###
         score_transform!(scores, alpha=srcher.config.score_alpha)
     end
