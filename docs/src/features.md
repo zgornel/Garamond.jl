@@ -62,12 +62,12 @@ This is a list of the features supported by Garamond.
 - I/O Iterface
     - [x] Server: communication through UNIX/Web sockets
     - [x] CLI Client: input and output are STDIN and STDOUT (communication through Unix sockets)
-    - [x] HTTP Client: input and output are in a webpage (communication through Web sockets)
+    - [x] HTML Client: input and output are in a webpage (communication through Web sockets)
+    - [x] REST Client: input and output are HTTP requests (communication through the HTTP protocol)
 - Parallelism forms supported
     - [x] Multi-threading (each corpus is searched withing a hardware thread; support is EXPERIMENTAL and it is _disabled_ by default)
-    - [ ] Multi-core + task scheduling [Dispatcher.jl](https://github.com/invenia/Dispatcher.jl) for distributed corpora
-    - [ ] Cluster support
 - Other
+    - [x] Caching support for fast operational resumption
     - [x] Logging mechanism
     - [x] Client/server functionality
     - [x] Compilable
