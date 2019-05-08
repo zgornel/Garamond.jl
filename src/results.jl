@@ -36,15 +36,15 @@ replaces the individual searcher ones.
 """
 function aggregate!(results::Vector{S},
                     aggregation_ids::Vector{StringId};
-                    method::Symbol=DEFAULT_RESULT_AGGREGATION_STRATEGY,
+                    method::Symbol=RESULT_AGGREGATION_STRATEGY,
                     max_matches::Int=MAX_MATCHES,
                     max_suggestions::Int=MAX_SUGGESTIONS,
                     custom_weights::Dict{String, Float64}=DEFAULT_CUSTOM_WEIGHTS
                    ) where S<:SearchResult{T} where T
     if !(method in [:minimum, :maximum, :median, :product, :mean])
         @warn "Unknown aggregation strategy :$method. " *
-              "Defaulting to $DEFAULT_RESULT_AGGREGATION_STRATEGY."
-        method = DEFAULT_RESULT_AGGREGATION_STRATEGY
+              "Defaulting to $RESULT_AGGREGATION_STRATEGY."
+        method = RESULT_AGGREGATION_STRATEGY
     end
     # If all aggregation ids are different (i.e. no aggregation)
     # return results unchanged
@@ -82,7 +82,7 @@ end
 
 function _aggregate(query_matches::Vector{MultiDict{T,Int}},
                     weights::Vector{T};
-                    method::Symbol=DEFAULT_RESULT_AGGREGATION_STRATEGY,
+                    method::Symbol=RESULT_AGGREGATION_STRATEGY,
                     max_matches::Int=DEFAULT_MAX_MATCHES,
                    ) where T<:AbstractFloat
     # Preprocess data
