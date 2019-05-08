@@ -13,7 +13,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Introduction",
     "title": "Introduction",
     "category": "section",
-    "text": "Garamond is a semantic search engine. Both classical and semantic search are supported. It is designed to be used both as a Julia package, with search functionality available through API method calls, as well as a standalone search server with search functionality accessible through clients that send queries and receive search results to and from the server."
+    "text": "Garamond is a small, flexible search engine. It can be used both as a Julia package, with search functionality available through API method calls, as well as a standalone search server with search functionality accessible through clients that send queries and receive search results to and from the server.Internally, the engine\'s architecture is that of an ensemble of searchers, each with its own characteristics i.e. indexed data fields, preprocessing options etc. whose individual search results can be combined in a variety of ways. The searchers can perform either classical search i.e. based on word-statistics or semantic search i.e. based on word embeddings."
 },
 
 {
@@ -37,7 +37,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Introduction",
     "title": "Julia REPL",
     "category": "section",
-    "text": "The repository can also be downloaded from inside Julia. Entering the Pkg mode with ] and writing:add https://github.com/zgornel/Garamond.jl#masterThis downloads the master branch of the repository and adds Garamond to the current active environment."
+    "text": "The repository can also be downloaded from inside Julia. Entering the Pkg mode with ] and writing:add https://github.com/zgornel/Garamond.jl#masterdownloads the master branch of the repository and adds Garamond to the current active environment."
 },
 
 {
@@ -85,7 +85,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Configuration",
     "title": "Configuration",
     "category": "section",
-    "text": "The configuration options of the Garamond search engine can be logically split into three main categories, based on what they tend to operate on and where they actually reside:data - the data configuration pertains to the way the data is indexed and the implicitly, the type of search operation i.e. classic or semantic it supports. In this category one can count options such as the type of search being performed, the path to the actual files to be indexed, the specific parser to use, the path and type of embeddings libraries to be used for semantic search and so on. The data configuration format is a simple JSON file in which multiple configurations for the same or distinct datasets can reside. The engine supports loading multiple such configuration files, providing additional flexibility to the user in choosing how to construct the search structures that guide the search given the particularities of their data. One could for example perform several searches using in the same data or a single search on several distinct datasets.\nengine - the engine configuration file is a simple run-control file named .garamondrc that has to reside in the user home directory on UNIX-like systems i.e. ~/.garamondrc. The configuration file is parsed entirely as Julia code at the startup of the search server - if the file exists - and pre-compiled into the engine itself. The file defines options that pertain to external programs such as the pdf to text converter and replacement values for several default internal variables of the engine such as what type of StringAnalysis document objects the documents are internally represented as, how many search results to return by default, the maximum edit distance to be used when searching for suggestions for possibly misspelled query terms and so on.\ninternal - the engine default configuration variable values for as well as necessary constants such as text preprocessing flags (a flag describes a full set of operations to be performed on input text) reside in the src/config/defaults.jl file and can be modified prior to running the search server. Please note that such operation will also result in new compilation of the package."
+    "text": "The configuration options of the Garamond search engine can be logically split into three main categories, based on what is configured nd where the options actually reside:indexing and search - this configuration pertains to the way the data is indexed and the type of search it supports. In this category one can count options such as the type of search being performed, the path to the actual files to be indexed, the specific parser to use, the path and type of embeddings libraries to be used for semantic search and so on. The data configuration format is a simple JSON file in which multiple configurations for the same or distinct datasets can reside. The engine supports loading multiple such configuration files, providing additional flexibility to the user in choosing how to construct the search structures that guide the search given the particularities of their data. One could for example perform several searches using in the same data or a single search on several distinct datasets.\nsearch engine - the engine configuration file is a simple run-control file named .garamondrc that has to reside in the user home directory on UNIX-like systems i.e. ~/.garamondrc. The configuration file is parsed entirely as Julia code at the startup of the search server - if the file exists - and pre-compiled into the engine itself. The file defines options that pertain to external programs such as the pdf to text converter and replacement values for several default internal variables of the engine such as what type of StringAnalysis document objects the documents are internally represented as, how many search results to return by default, the maximum edit distance to be used when searching for suggestions for possibly misspelled query terms and so on.\ninternal - the engine default configuration variable values for as well as necessary constants such as text preprocessing flags (a flag describes a full set of operations to be performed on input text) reside in the src/config/defaults.jl file and can be modified prior to running the search server. Please note that such operation will also result in new compilation of the package."
 },
 
 {
@@ -101,7 +101,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Configuration",
     "title": "Engine configuration",
     "category": "section",
-    "text": "A sample ~/.garamondrc file with all available configuration options filled would look like:# Text to pdf program\nconst PDFTOTEXT_PROGRAM = \"/bin/pdftotext\"\n\n# Type of StrinAnalysis document\nconst DOCUMENT_TYPE = StringAnalysis.NGramDocument{String}\n\n# Maximum edit distance for suggestion search\nconst MAX_EDIT_DISTANCE = 2\n\n# Default maximum matches to return\nconst MAX_MATCHES = 1_000\n\n# Default maximum number of suggestions to return\n# for each non-matched query term when squashing\n# results from several corpora\nconst MAX_SUGGESTIONS = 10\n\n# Default maximum number of suggestions to return\n# for each non-matched query term when searching\n# in a single corpus\nconst MAX_CORPUS_SUGGESTIONS = 5"
+    "text": "A sample ~/.garamondrc file with all available configuration options filled would look like:# Text to pdf program\nconst PDFTOTEXT_PROGRAM = \"/bin/pdftotext\"\n\n# Type of StrinAnalysis document\nconst DOCUMENT_TYPE = StringAnalysis.NGramDocument{String}\n\n# Maximum edit distance for suggestion search\nconst MAX_EDIT_DISTANCE = 2\n\n# Default maximum matches to return\nconst MAX_MATCHES = 1_000\n\n# Default maximum number of suggestions to return\n# for each non-matched query term when squashing\n# results from several corpora\nconst MAX_SUGGESTIONS = 10\n\n# Default approach to combine the retrieved document\n# scores from multiple searchers\nconst RESULT_AGGREGATION_STRATEGY = :mean"
 },
 
 {
@@ -213,7 +213,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Feature list",
     "title": "Features",
     "category": "section",
-    "text": "This is a list of the features supported by Garamond.Document indexing\n[x] Summarization support (index TextRank-based summary)\n[x] Basic update or \'re-indexing\' support\n[x] Single file support (parts of the file are treated as documents)\n[x] Multiple files / directory support (a file is a document)\n[x] File format support\n[x] Text formats\n[x] .csv, .tsv etc.\n[x] .json (custom parser must be built)\n[x] .html (custom parser must be built)\n[x] .xml (custom parser must be built)\n[x] Binary formats\n[x] .pdf (through external program pdftotext from libpoppler)\n[ ] Compressed files (.tar, .zip, .gz, etc.)\n[ ] Microsoft new .xml formats(.docx, .xlsx, etc.)\nConfiguration\n[x] Single file for multiple data configurations\n[x] Multiple files for data configurations\n[x] General engine configuration (~/.garamondrc.jl, gets re-compiled into Garamond at startup)\nSearch\nLanguage support\n[x] Uniform language: query language same as doc language\n[ ] Different languages for query / docs (neural vectors only)\nWhere to search\n[x] Document data\n[x] Document metadata\n[x] Document data + metadata\nHow to search for patterns\n[x] exact match\n[x] regular expression (classic vectors only)\nDocument vectors\nClassic vectors\n[x] term counts\n[x] term frequency\n[x] tf-idf\n[x] bm25\nNeural vectors\n[x] Word2Vec\n[x] ConceptnetNumberbatch\n[x] GloVe\nSuggestion support\n[x] BK Trees (through BKTrees.jl)\n[ ] Levenshtein automata\n[ ] SymSpell-like approaches\nLanguage support\n[x] Uniform language: query language same as doc language\n[ ] Different languages for query / docs\nDocument embedding\n[x] Bag of words (neural vectors only)\n[x] SIF (Smooth inverse frequency) (neural vectors only)\n[x] LSA (Latent semantic analysis) (classic vectors only)\n[x] Random projections (classic vectors only)\nVector search models\n[x] Naive i.e. matrix + cosine similarity\n[x] Brute-force \"tree\", uses Euclidean metrics\n[x] KD-tree, uses Euclidean metrics\n[x] HNSW, uses Euclidean metrics\nI/O Iterface\n[x] Server: communication through UNIX/Web sockets\n[x] CLI Client: input and output are STDIN and STDOUT (communication through Unix sockets)\n[x] HTTP Client: input and output are in a webpage (communication through Web sockets)\nParallelism forms supported\n[x] Multi-threading (each corpus is searched withing a hardware thread; support is EXPERIMENTAL and it is disabled by default)\n[ ] Multi-core + task scheduling Dispatcher.jl for distributed corpora\n[ ] Cluster support\nOther\n[x] Logging mechanism\n[x] Client/server functionality\n[x] Compilable\n[x] Pretty version support :)The status of the features is as follows:[x] supported\n[ ] planned"
+    "text": "This is a list of the features supported by Garamond.Document indexing\n[x] Summarization support (index TextRank-based summary)\n[x] Basic update or \'re-indexing\' support\n[x] Single file support (parts of the file are treated as documents)\n[x] Multiple files / directory support (a file is a document)\n[x] File format support\n[x] Text formats\n[x] .csv, .tsv etc.\n[x] .json (custom parser must be built)\n[x] .html (custom parser must be built)\n[x] .xml (custom parser must be built)\n[x] Binary formats\n[x] .pdf (through external program pdftotext from libpoppler)\n[ ] Compressed files (.tar, .zip, .gz, etc.)\n[ ] Microsoft new .xml formats(.docx, .xlsx, etc.)\nConfiguration\n[x] Single file for multiple data configurations\n[x] Multiple files for data configurations\n[x] General engine configuration (~/.garamondrc.jl, gets re-compiled into Garamond at startup)\nSearch\nLanguage support\n[x] Uniform language: query language same as doc language\n[ ] Different languages for query / docs (neural vectors only)\nWhere to search\n[x] Document data\n[x] Document metadata\n[x] Document data + metadata\nHow to search for patterns\n[x] exact match\n[x] regular expression (classic vectors only)\nDocument vectors\nClassic vectors\n[x] term counts\n[x] term frequency\n[x] tf-idf\n[x] bm25\nNeural vectors\n[x] Word2Vec\n[x] ConceptnetNumberbatch\n[x] GloVe\nSuggestion support\n[x] BK Trees (through BKTrees.jl)\n[ ] Levenshtein automata\n[ ] SymSpell-like approaches\nLanguage support\n[x] Uniform language: query language same as doc language\n[ ] Different languages for query / docs\nDocument embedding\n[x] Bag of words (neural vectors only)\n[x] SIF (Smooth inverse frequency) (neural vectors only)\n[x] LSA (Latent semantic analysis) (classic vectors only)\n[x] Random projections (classic vectors only)\nVector search models\n[x] Naive i.e. matrix + cosine similarity\n[x] Brute-force \"tree\", uses Euclidean metrics\n[x] KD-tree, uses Euclidean metrics\n[x] HNSW, uses Euclidean metrics\nI/O Iterface\n[x] Server: communication through UNIX/Web sockets\n[x] CLI Client: input and output are STDIN and STDOUT (communication through Unix sockets)\n[x] HTML Client: input and output are in a webpage (communication through Web sockets)\n[x] REST Client: input and output are HTTP requests (communication through the HTTP protocol)\nParallelism forms supported\n[x] Multi-threading (each corpus is searched withing a hardware thread; support is EXPERIMENTAL and it is disabled by default)\nOther\n[x] Caching support for fast operational resumption\n[x] Logging mechanism\n[x] Client/server functionality\n[x] Compilable\n[x] Pretty version support :)The status of the features is as follows:[x] supported\n[ ] planned"
 },
 
 {
@@ -225,6 +225,22 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "api/#Garamond.SearchResult",
+    "page": "API Reference",
+    "title": "Garamond.SearchResult",
+    "category": "type",
+    "text": "Object that stores the search results from a single searcher.\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#Garamond.Searcher",
+    "page": "API Reference",
+    "title": "Garamond.Searcher",
+    "category": "type",
+    "text": "Search object. It contains all the indexed data and related\n\nconfiguration that allows for searches to be performed.\n\n\n\n\n\n"
+},
+
+{
     "location": "api/#Garamond.load_searchers-Tuple{Any}",
     "page": "API Reference",
     "title": "Garamond.load_searchers",
@@ -233,11 +249,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api/#Garamond.rest_server-Tuple{Integer,Channel{String}}",
+    "location": "api/#Garamond.rest_server-Tuple{Integer,Channel{String},Condition}",
     "page": "API Reference",
     "title": "Garamond.rest_server",
     "category": "method",
-    "text": "rest_server(port::Integer, channel::Channel{String})\n\nStarts a bi-directional REST server that uses the HTTP port port and communicates with the search server through a channel channel.\n\nService GET link format:     /api/v1/<op>/<max_matches>/<search_method>/<max_suggestions>/<what_to_return>/<query> where:     <op> is fixed to search     <maxmatches> is a number larger than 0     <searchmethod> is fixed to exact     <maxsuggestions> is fixed to 0     <whatto_return> is fixed to json-index     <query> can be any string\n\nExample:     http://localhost:port/api/v1/search/100/exact/0/json-index/something%20to%20search\n\n\n\n\n\n"
+    "text": "rest_server(port::Integer, channel::Channel{String}, search_server_ready::Condition)\n\nStarts a bi-directional REST server that uses the HTTP port port and communicates with the search server through a channel channel. The server is started once the condition search_server_ready is triggered.\n\nService GET link formats:\n\nsearch: /api/v1/search/<max_matches>/<search_method>/<max_suggestions>          /<what_to_return>/<query>/<custom_weights>\nkill server: /api/v1/kill\nread configs: /api/v1/read-configs\n\nwhere:     <maxmatches> is a number larger than 0     <searchmethod> can be exact or regex     <maxsuggestions> is a number larger of equal to 0     <whattoreturn> can be json-index or json-data     <query> can be any string (%20 acts as space)     <customweights> custom weights for the searchers\n\nExamples:\n\n`http://localhost:9001/api/v1/search/100/exact/0/json-index/something%20to%20search`\n`http://localhost:9001/api/v1/search/100/regex/3/json-index/something%20to%20search/searcher1_0.1`\n`http://localhost:9001/api/v1/read-configs`\n\n\n\n\n\n"
 },
 
 {
@@ -253,31 +269,31 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "Garamond.search",
     "category": "method",
-    "text": "search(srcher, query [;kwargs])\n\nSearches for query (i.e. key terms) in a corpus\' metadata, text or both and returns information regarding the the documents that match best the query. The function returns an object of type SearchResult and the id of the searcher.\n\nArguments\n\nsrcher::Searcher is the corpus searcher\nquery the query, can be either a String or Vector{String}\n\nKeyword arguments\n\nsearch_method::Symbol controls the type of matching: :exact  searches for the very same string while :regex searches for a string  in the corpus that includes the needle\nmax_matches::Int is the maximum number of search results to return\nmax_suggestions::Int is the maximum number of suggestions to return for  each missing needle\n\n\n\n\n\n"
+    "text": "search(srcher, query [;kwargs])\n\nSearches for query (i.e. key terms) in srcher, and returns information regarding the the documents that match best the query. The function returns an object of type SearchResult.\n\nArguments\n\nsrcher::Searcher is the corpus searcher\nquery the query, can be either a String or Vector{String}\n\nKeyword arguments\n\nsearch_method::Symbol controls the type of matching: :exact  searches for the very same string while :regex searches for a string  in the corpus that includes the needle\nmax_matches::Int is the maximum number of search results to return\nmax_suggestions::Int is the maximum number of suggestions to return for  each missing needle\n\n\n\n\n\n"
 },
 
 {
-    "location": "api/#Garamond.search-Union{Tuple{T}, Tuple{Array{#s346,1} where #s346<:(Searcher{T,D,E,I} where I<:AbstractIndex where E where D<:AbstractDocument),Any}} where T<:AbstractFloat",
+    "location": "api/#Garamond.search-Union{Tuple{T}, Tuple{Array{#s347,1} where #s347<:(Searcher{T,D,E,I} where I<:AbstractIndex where E where D<:AbstractDocument),Any}} where T<:AbstractFloat",
     "page": "API Reference",
     "title": "Garamond.search",
     "category": "method",
-    "text": "search(srcher, query [;kwargs])\n\nSearches for query (i.e. key terms) in multiple corpora and returns information regarding the documents that match best the query. The function returns the search results in the form of a Vector{SearchResult}.\n\nArguments\n\nsrcher::Vector{Searcher} is the corpora searcher\nquery the query, can be either a String or Vector{String}\n\nKeyword arguments\n\nsearch_method::Symbol controls the type of matching: :exact  searches for the very same string while :regex searches for a string  in the corpus that includes the needle\nmax_matches::Int is the maximum number of search results to return from  each corpus\nmax_suggestions::Int is the maximum number of suggestions to return for  each missing needle from the search in a corpus\n\n\n\n\n\n"
+    "text": "search(srchers, query [;kwargs])\n\nSearches for query (i.e. key terms) in multiple searches and returns information regarding the documents that match best the query. The function returns the search results in the form of a Vector{SearchResult}.\n\nArguments\n\nsrchers::Vector{Searcher} is the searchers vector\nquery the query, can be either a String or Vector{String}\n\nKeyword arguments\n\nsearch_method::Symbol controls the type of matching: :exact  searches for the very same string while :regex searches for a string  in the corpus that includes the needle\nmax_matches::Int is the maximum number of search results to return from  each corpus\nmax_suggestions::Int is the maximum number of suggestions to return for  each missing needle from the search in a corpus\ncustom_weights::Dict{String, Float64} are custom weights for each  searcher\'s results used in result aggregation\n\n\n\n\n\n"
 },
 
 {
-    "location": "api/#Garamond.unix_socket_server-Tuple{AbstractString,Channel{String}}",
+    "location": "api/#Garamond.unix_socket_server-Tuple{AbstractString,Channel{String},Condition}",
     "page": "API Reference",
     "title": "Garamond.unix_socket_server",
     "category": "method",
-    "text": "unix_socket_server(socket::AbstractString, channel::Channel{String})\n\nStarts a bi-directional unix socket server that uses a UNIX-socket socket and communicates with the search server through a channel channel.\n\n\n\n\n\n"
+    "text": "unix_socket_server(socket::AbstractString, channel::Channel{String})\n\nStarts a bi-directional unix socket server that uses a UNIX-socket socket and communicates with the search server through a channel channel. The server is started once the condition search_server_ready is triggered.\n\n\n\n\n\n"
 },
 
 {
-    "location": "api/#Garamond.web_socket_server-Tuple{UInt16,Channel{String}}",
+    "location": "api/#Garamond.web_socket_server-Tuple{UInt16,Channel{String},Condition}",
     "page": "API Reference",
     "title": "Garamond.web_socket_server",
     "category": "method",
-    "text": "web_socket_server(port::UInt16, channel::Channel{String})\n\nStarts a bi-directional web socket server that uses a WEB-socket at port port and communicates with the search server through a channel channel.\n\n\n\n\n\n"
+    "text": "web_socket_server(port::UInt16, channel::Channel{String})\n\nStarts a bi-directional web socket server that uses a WEB-socket at port port and communicates with the search server through a channel channel. The server is started once the condition search_server_ready is triggered.\n\n\n\n\n\n"
 },
 
 {
@@ -285,7 +301,31 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "Garamond.ERRORED_REQUEST",
     "category": "constant",
-    "text": "Standard deconstructed request corresponding to an error request.\n\n\n\n\n\n"
+    "text": "Request corresponding to an error i.e. in parsing.\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#Garamond.KILL_REQUEST",
+    "page": "API Reference",
+    "title": "Garamond.KILL_REQUEST",
+    "category": "constant",
+    "text": "Request corresponding to a kill server command.\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#Garamond.READCONFIGS_REQUEST",
+    "page": "API Reference",
+    "title": "Garamond.READCONFIGS_REQUEST",
+    "category": "constant",
+    "text": "Request corresponding to a searcher read configuration command.\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#Garamond.UNINITIALIZED_REQUEST",
+    "page": "API Reference",
+    "title": "Garamond.UNINITIALIZED_REQUEST",
+    "category": "constant",
+    "text": "Default request.\n\n\n\n\n\n"
 },
 
 {
@@ -301,7 +341,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "Garamond.HNSWIndex",
     "category": "type",
-    "text": "HNSW index type for storing text embeddings. It is a wrapper around a HierarchicalNSW (Hierarchical Navigable Small Worlds [1]) NN graph structure and performs a very efficient search using a distance-based similarity between vectors. [1] Yu. A. Malkov, D.A. Yashunin \"Efficient and robust approximate nearest     neighbor search using Hierarchical Navigable Small World graphs\"     (https://arxiv.org/abs/1603.09320)\n\n\n\n\n\n"
+    "text": "HNSW index type for storing text embeddings. It is a wrapper around a HierarchicalNSW (Hierarchical Navigable Small Worlds) NN graph structure and performs a very efficient search using a distance-based similarity between vectors.\n\nReferences\n\n[Y. A. Malkov, D.A. Yashunin \"Efficient and robust approximate nearest\n\nneighbor search using Hierarchical Navigable Small World graphs\"] (https://arxiv.org/abs/1603.09320)\n\n\n\n\n\n"
 },
 
 {
@@ -321,6 +361,22 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "api/#Base.parse-Tuple{Type{Garamond.SearchServerRequest},AbstractString}",
+    "page": "API Reference",
+    "title": "Base.parse",
+    "category": "method",
+    "text": "parse(::Type{SearchServerRequest}, request::AbstractString)\n\nParses a Garamond JSON request received from a client into a SearchServerRequest usable by the search server\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#Garamond.aggregate!-Union{Tuple{S}, Tuple{T}, Tuple{Array{S,1},Array{StringId,1}}} where S<:SearchResult{T} where T",
+    "page": "API Reference",
+    "title": "Garamond.aggregate!",
+    "category": "method",
+    "text": "Aggregates search results from several searchers based on\n\ntheir aggregation_id i.e. results from searchers with identical aggregation id\'s are merged together into a new search result that replaces the individual searcher ones.\n\n\n\n\n\n"
+},
+
+{
     "location": "api/#Garamond.build_corpus-Union{Tuple{T}, Tuple{S}, Tuple{Array{Array{S,1},1},Array{DocumentMetadata,1},Type{T}}} where T<:StringAnalysis.AbstractDocument where S<:AbstractString",
     "page": "API Reference",
     "title": "Garamond.build_corpus",
@@ -333,7 +389,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "Garamond.build_logger",
     "category": "function",
-    "text": "build_logger(logging_stream, log_level)\n\nBuilds a logger using the stream and loglevel provided. These should be coming from parsing the input arguments. The loggingstream can take the values:  • \"null\": logs to /dev/null  • \"stdout\": logs to standard output  • \"/path/to/existing/file\": logs to an existing file  • \"/path/to/non-existing/file\": creates the log file If no valid option is provided, the default stream is the standard output. The log level can take the values: \"debug\", \"info\", \"error\" and defaults to \"info\" if no valid option is provided.\n\n\n\n\n\n"
+    "text": "build_logger(logging_stream, log_level)\n\nBuilds a logger using the stream logging_streamand log_level provided.\n\nArguments\n\nlogging_stream::String is the output stream and can take the values:\n\n\"null\" logs to /dev/null, \"stdout\" (default) logs to standard output,   \"/path/to/existing/file\" logs to an existing file and   \"/path/to/non-existing/file\" creates the log file. If no valid option   is provided, the default stream is the standard output.\n\nlog_level::String is the log level can take the values \"debug\",\n\n\"info\", \"error\" and defaults to \"info\" if no valid option is provided.\n\n\n\n\n\n"
 },
 
 {
@@ -345,27 +401,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api/#Garamond.construct_request-Tuple{HTTP.Messages.Request}",
+    "location": "api/#Garamond.construct_json_request-Tuple{HTTP.Messages.Request}",
     "page": "API Reference",
-    "title": "Garamond.construct_request",
+    "title": "Garamond.construct_json_request",
     "category": "method",
-    "text": "construct_request(req::HTTP.Request)\n\nConstructs a Garamond JSON search request from a HTTP request req: extracts the link, parses it, builds a dictionary and transforms it to JSON.\n\n\n\n\n\n"
+    "text": "construct_json_request(httpreq::HTTP.Request)\n\nConstructs a Garamond JSON search request from a HTTP request httpreq: extracts the link, parses it, builds the request (in the intermediary representation supported by the search server) and transforms it to JSON.\n\n\n\n\n\n"
 },
 
 {
-    "location": "api/#Garamond.construct_response-Union{Tuple{C}, Tuple{Any,Any}} where C<:StringAnalysis.Corpus",
+    "location": "api/#Garamond.construct_json_response-Union{Tuple{C}, Tuple{Any,Any}} where C<:StringAnalysis.Corpus",
     "page": "API Reference",
-    "title": "Garamond.construct_response",
+    "title": "Garamond.construct_json_response",
     "category": "method",
-    "text": "construct_response(srchers, results, what [; kwargs...])\n\nFunction that constructs a response for a Garamond client using the search results, data from srchers and specifier what.\n\n\n\n\n\n"
-},
-
-{
-    "location": "api/#Garamond.deconstruct_request-Tuple{String}",
-    "page": "API Reference",
-    "title": "Garamond.deconstruct_request",
-    "category": "method",
-    "text": "deconstruct_request(request)\n\nFunction that deconstructs a Garamond request received from a client into individual search engine operations and search parameters.\n\n\n\n\n\n"
+    "text": "construct_json_response(srchers, results, what [; kwargs...])\n\nFunction that constructs a JSON response for a Garamond client using the search results, data from srchers and specifier what.\n\n\n\n\n\n"
 },
 
 {
@@ -390,6 +438,14 @@ var documenterSearchIndex = {"docs": [
     "title": "Garamond.get_parsing_function",
     "category": "method",
     "text": "get_parsing_function(args...)\n\nFunction that generates a parsing function from its input arguments and returns it.\n\nArguments\n\nparser::Symbol is the name of the parser\nparser_config::Union{Nothing, Dict} can contain optional configuration data for the parser (for delimited parsers)\nheader::Bool whether the file has a header or not (for delimited files only)\ndelimiter::String the delimiting character (for delimited files only)\nglobbing_pattern::String globbing pattern for gathering file lists from directories (for directory parsers only)\nlanguage::String the plain English name of the language; use \"auto\" for\n\ndocument-level language autodetection\n\nbuild_summary::Bool whether to use a summary instead of the full document (for directory parsers only)\nsummary_ns::Int how many sentences to use in the summary (for directory parsers only)\nsummarization_strip_flags::UInt32 flags used to strip text before summarization (for directory parsers only)\nshow_progress::Bool whether to show the progress when loading files\n\nNote: parser must be in the keys of the PARSER_CONFIGS constant. The name       of the data parsing function is created as: :__parser_<parser> so,       the function name :__parser_delimited_format_1 corresponds to the       parser :delimited_format_1. The function must be defined apriori.\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#Garamond.link2request-Tuple{AbstractString}",
+    "page": "API Reference",
+    "title": "Garamond.link2request",
+    "category": "method",
+    "text": "link2request(link::AbstractString)\n\nTransforms the input HTTP link to a search server request format i.e. a named tuple with specific field names.\n\n\n\n\n\n"
 },
 
 {
@@ -425,6 +481,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "api/#Garamond.read_searcher_configurations_json-Tuple{Any}",
+    "page": "API Reference",
+    "title": "Garamond.read_searcher_configurations_json",
+    "category": "method",
+    "text": "read_searcher_configurations_json(srchers)\n\nReturns a string containing a JSON dictionary where the keys are the paths to the data configuration files for the loaded searchers and the values are the searcher configurations contained in the respective files.\n\n\n\n\n\n"
+},
+
+{
     "location": "api/#Garamond.recursive_glob",
     "page": "API Reference",
     "title": "Garamond.recursive_glob",
@@ -437,15 +501,15 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "Garamond.search_heuristically!",
     "category": "method",
-    "text": "search_heuristically!(suggestions, search_tree, needles [;max_suggestions=1])\n\nSearches in the search tree for partial matches of the needles.\n\n\n\n\n\n"
+    "text": "search_heuristically!(suggestions, search_tree, needles [;max_suggestions=1])\n\nSearches in the search tree for partial matches for each of  the needles.\n\n\n\n\n\n"
 },
 
 {
-    "location": "api/#Garamond.search_server-Tuple{Any,Any}",
+    "location": "api/#Garamond.search_server-Tuple{Any,Any,Any}",
     "page": "API Reference",
     "title": "Garamond.search_server",
     "category": "method",
-    "text": "search_server(data_config_paths, io_channel)\n\nSearch server for Garamond. It is a finite-state-machine that when called, creates the searchers i.e. search objects using the data_config_paths and the proceeds to looping continuously in order to:     • update the searchers regularly;     • receive requests from clients on the I/O channel     • call search and route responses back to the clients       through the I/O channel\n\nBoth searcher update and I/O communication are performed asynchronously.\n\n\n\n\n\n"
+    "text": "search_server(data_config_paths, io_channel, search_server_ready)\n\nSearch server for Garamond. It is a finite-state-machine that when called, creates the searchers i.e. search objects using the data_config_paths and the proceeds to looping continuously in order to:\n\nupdate the searchers regularly (asynchronously);\nreceive requests from clients on the I/O channel io_channel\ncall search and route responses back to the clients through io_channel\n\nAfter the searchers are loaded, the search server sends a notification using search_server_ready to any listening I/O servers.\n\n\n\n\n\n"
 },
 
 {
@@ -497,11 +561,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api/#StringAnalysis.embed_document-Union{Tuple{T}, Tuple{Union{ConceptNet{#s330,#s329,T} where #s329<:AbstractString where #s330<:Language, WordVectors{#s66,T,#s65} where #s65<:Integer where #s66<:AbstractString, WordVectors{#s328,T,#s67} where #s67<:Integer where #s328<:AbstractString},OrderedDict{String,Int64},Array{String,1}}} where T<:AbstractFloat",
+    "location": "api/#StringAnalysis.embed_document-Union{Tuple{T}, Tuple{Union{ConceptNet{#s331,#s330,T} where #s330<:AbstractString where #s331<:Language, WordVectors{#s67,T,#s66} where #s66<:Integer where #s67<:AbstractString, WordVectors{#s329,T,#s68} where #s68<:Integer where #s329<:AbstractString},OrderedDict{String,Int64},Array{String,1}}} where T<:AbstractFloat",
     "page": "API Reference",
     "title": "StringAnalysis.embed_document",
     "category": "method",
-    "text": "embed_document(embedder, lexicon, document [;\n               embedding_method=DEFAULT_DOC2VEC_METHOD,\n               isregex=false,\n               sif_alpha=DEFAULT_SIF_ALPHA])\n\nFunction to get from multiple sentences to a document embedding. The embedding_method option controls how multiple sentence embeddings are combined into a single document embedding. Avalilable options for embedding_method:     :bow - calculates document embedding as the mean of the sentence embeddings     :sif - smooth-inverse-frequency subtracts paragraph/phrase vector            from each sentence embedding\n\n\n\n\n\n"
+    "text": "embed_document(embedder, lexicon, document [;\n               embedding_method=DEFAULT_DOC2VEC_METHOD,\n               isregex=false,\n               sif_alpha=DEFAULT_SIF_ALPHA])\n\nFunction to get from multiple sentences to a document embedding. The embedding_method option controls how multiple sentence embeddings are combined into a single document embedding.\n\nAvalilable options for embedding_method are :bow calculates document embedding as the mean of the sentence embeddings and :sif i.e. smooth-inverse-frequency subtracts paragraph/phrase vector from each sentence embedding.\n\n\n\n\n\n"
 },
 
 {
