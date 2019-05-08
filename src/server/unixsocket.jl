@@ -3,8 +3,12 @@
 
 Starts a bi-directional unix socket server that uses a UNIX-socket `socket`
 and communicates with the search server through a channel `channel`.
+The server is started once the condition `search_server_ready`
+is triggered.
 """
-function unix_socket_server(socket::AbstractString, channel::Channel{String})
+function unix_socket_server(socket::AbstractString,
+                            channel::Channel{String},
+                            search_server_ready::Condition)
     # Checks
     if issocket(socket)
         rm(socket)
@@ -21,11 +25,12 @@ function unix_socket_server(socket::AbstractString, channel::Channel{String})
         !isdir(directory) && mkpath(directory)
     end
 
-    # Start Server
+    # Wait for search server to be ready
+    wait(search_server_ready)
     server = listen(socket)
-
-    # Start serving
     @info "Waiting for data @unix-socket:$socket..."
+
+    # Start serving requests
     while true
         connection = accept(server)
         @async while isopen(connection)

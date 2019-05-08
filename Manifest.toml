@@ -126,7 +126,7 @@ version = "0.1.2"
 
 [[Distances]]
 deps = ["LinearAlgebra", "Statistics"]
-git-tree-sha1 = "19382a676449ef843bf03414876ed1efd91e36cb"
+git-tree-sha1 = "d3fcfe7cb9dc52583cf7d7453825a2883bdee342"
 repo-rev = "master"
 repo-url = "https://github.com/JuliaStats/Distances.jl.git"
 uuid = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"

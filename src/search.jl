@@ -3,15 +3,15 @@
 ##################
 
 """
-	search(srcher, query [;kwargs])
+	search(srchers, query [;kwargs])
 
-Searches for query (i.e. key terms) in multiple corpora and returns
+Searches for query (i.e. key terms) in multiple searches and returns
 information regarding the documents that match best the query.
 The function returns the search results in the form of
 a `Vector{SearchResult}`.
 
 # Arguments
-  * `srcher::Vector{Searcher}` is the corpora searcher
+  * `srchers::Vector{Searcher}` is the searchers vector
   * `query` the query, can be either a `String` or `Vector{String}`
 
 # Keyword arguments
@@ -22,12 +22,15 @@ a `Vector{SearchResult}`.
      each corpus
   * `max_suggestions::Int` is the maximum number of suggestions to return for
      each missing needle from the search in a corpus
+  * `custom_weights::Dict{String, Float64}` are custom weights for each
+     searcher's results used in result aggregation
 """
 function search(srchers::Vector{<:Searcher{T}},
                 query;
                 search_method::Symbol=DEFAULT_SEARCH_METHOD,
                 max_matches::Int=MAX_MATCHES,
-                max_suggestions::Int=MAX_SUGGESTIONS
+                max_suggestions::Int=MAX_SUGGESTIONS,
+                custom_weights::Dict{String, Float64}=DEFAULT_CUSTOM_WEIGHTS
                ) where T<:AbstractFloat
     # Checks
     @assert search_method in [:exact, :regex]
@@ -64,14 +67,15 @@ function search(srchers::Vector{<:Searcher{T}},
                             max_matches=max_matches,
                             max_suggestions=max_suggestions)
     end
-    # Aggregate results as needed
+    # Aggregate results
     aggregate!(results,
                [srcher.config.id_aggregation for srcher in srchers],
                method=RESULT_AGGREGATION_STRATEGY,
                max_matches=max_matches,
-               max_suggestions=max_suggestions)
+               max_suggestions=max_suggestions,
+               custom_weights=custom_weights)
 
-    # Return vector of tuples, each tuple containing the id and search results
+    # Return results
     return results
 end
 
@@ -79,9 +83,9 @@ end
 """
 	search(srcher, query [;kwargs])
 
-Searches for query (i.e. key terms) in a corpus' metadata, text or both and
-returns information regarding the the documents that match best the query.
-The function returns an object of type SearchResult and the id of the searcher.
+Searches for query (i.e. key terms) in `srcher`, and returns information
+regarding the the documents that match best the query. The function
+returns an object of type `SearchResult`.
 
 # Arguments
   * `srcher::Searcher` is the corpus searcher
@@ -104,7 +108,7 @@ function search(srcher::Searcher{T,D,E,I},
     needles = prepare_query(query, srcher.config.query_strip_flags)
     # Initializations
     isregex = (search_method == :regex)
-    n = length(srcher.search_data)  # number of embedded documents
+    n = length(srcher.index)  # number of embedded documents
     query_embedding = embed_document(srcher.embedder, srcher.corpus.lexicon, needles,
                                      embedding_method=srcher.config.doc2vec_method,
                                      sif_alpha=srcher.config.sif_alpha,
@@ -128,7 +132,7 @@ function search(srcher::Searcher{T,D,E,I},
     # Search (if document vector is not zero)
     if !iszero(query_embedding)
         ### Search
-        idxs, scores = search(srcher.search_data, query_embedding, k, doc_matches)
+        idxs, scores = search(srcher.index, query_embedding, k, doc_matches)
         ###
         score_transform!(scores, alpha=srcher.config.score_alpha)
     end
@@ -149,7 +153,7 @@ end
 """
     search_heuristically!(suggestions, search_tree, needles [;max_suggestions=1])
 
-Searches in the search tree for partial matches of the `needles`.
+Searches in the search tree for partial matches for each of  the `needles`.
 """
 function search_heuristically!(suggestions::MultiDict{String, Tuple{T, String}},
                                search_tree::BKTree{String},

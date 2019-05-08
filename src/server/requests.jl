@@ -1,43 +1,95 @@
-"""
-Standard deconstructed request corresponding to an error request.
-"""
-const ERRORED_REQUEST = ("request_error", "", 0, :nothing, :nothing, 0, "")
+# Structure for the internal (search server) representation
+# of requests.
+struct SearchServerRequest
+    op::String
+    query::String
+    max_matches::Int
+    search_method::Symbol
+    max_suggestions::Int
+    what_to_return::String
+    custom_weights::Dict{String,Float64}
+end
+
+# Keyword argument constructor
+SearchServerRequest(;op::String="uninitialized_request",
+                     query::String="",
+                     max_matches::Int=0,
+                     search_method::Symbol=:nothing,
+                     max_suggestions::Int=0,
+                     what_to_return::String="",
+                     custom_weights::Dict{String,Float64}=Dict{String,Float64}())=
+    SearchServerRequest(op, query, max_matches, search_method,
+                        max_suggestions, what_to_return, custom_weights)
+
+
+# Convert from SearchServerRequest to Dict
+convert(::Type{Dict}, request::SearchServerRequest) =
+    Dict{String, Any}("operation" => request.op,
+                      "query" => request.query,
+                      "max_matches" => request.max_matches,
+                      "search_method" => request.search_method,
+                      "max_suggestions" => request.max_suggestions,
+                      "what_to_return" => request.what_to_return,
+                      "custom_weights" => request.custom_weights)
 
 
 """
-    deconstruct_request(request)
-
-Function that deconstructs a Garamond request received from a client into
-individual search engine operations and search parameters.
+Default request.
 """
-function deconstruct_request(request::String)
+const UNINITIALIZED_REQUEST = SearchServerRequest(op="uninitialized_request")
+
+"""
+Request corresponding to an error i.e. in parsing.
+"""
+const ERRORED_REQUEST = SearchServerRequest(op="request-error")
+
+"""
+Request corresponding to a kill server command.
+"""
+const KILL_REQUEST = SearchServerRequest(op="kill")
+
+"""
+Request corresponding to a searcher read configuration command.
+"""
+const READCONFIGS_REQUEST = SearchServerRequest(op="read-configs")
+
+
+"""
+    parse(::Type{SearchServerRequest}, request::AbstractString)
+
+Parses a Garamond JSON request received from a client
+into a `SearchServerRequest` usable by the search server
+"""
+function parse(::Type{SearchServerRequest}, request::AbstractString)
     try
         # Parse JSON request
-        req = JSON.parse(request)
+        data = JSON.parse(request)
         # Read fields
-        op = req["operation"]
-        query = req["query"]
-        max_matches = req["max_matches"]
-        search_method = Symbol(req["search_method"])
-        max_suggestions = req["max_suggestions"]
-        what_to_return = req["what_to_return"]
-        return op, query, max_matches, search_method,
-               max_suggestions, what_to_return
-    catch
+        return SearchServerRequest(
+            op = get(data, "operation", "uninitialized_request"),
+            query = get(data, "query", ""),
+            max_matches = get(data, "max_matches", 0),
+            search_method = Symbol(get(data, "search_method", :nothing)),
+            max_suggestions = get(data, "max_suggestions", 0),
+            what_to_return = get(data, "what_to_return", ""),
+            custom_weights = Dict{String, Float64}(get(data, "custom_weights", Dict()))
+           )
+    catch e
+        @debug "Could not deconstruct request: $e. Passing ERRORED_REQUEST to search server..."
         return ERRORED_REQUEST
     end
 end
 
 
 """
-    construct_response(srchers, results, what [; kwargs...])
+    construct_json_response(srchers, results, what [; kwargs...])
 
-Function that constructs a response for a Garamond client using
+Function that constructs a JSON response for a Garamond client using
 the search `results`, data from `srchers` and specifier `what`.
 """
-function construct_response(results, corpora;
-                            max_suggestions::Int=0,
-                            elapsed_time::Float64=0) where C<:Corpus
+function construct_json_response(results, corpora;
+                                 max_suggestions::Int=0,
+                                 elapsed_time::Float64=0) where C<:Corpus
     local result_data
     if corpora == nothing
         # Get basic response data

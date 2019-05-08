@@ -43,12 +43,14 @@ KDTreeIndex(data::SparseMatrixCSC{T,I}) where {T<:AbstractFloat, I<:Integer} =
 
 """
 HNSW index type for storing text embeddings. It is a wrapper around a
-`HierarchicalNSW` (Hierarchical Navigable Small Worlds [1]) NN graph
+`HierarchicalNSW` (Hierarchical Navigable Small Worlds) NN graph
 structure and performs a very efficient search using a distance-based
 similarity between vectors.
-[1] Yu. A. Malkov, D.A. Yashunin "Efficient and robust approximate nearest
-    neighbor search using Hierarchical Navigable Small World graphs"
-    (https://arxiv.org/abs/1603.09320)
+
+# References
+ * [Y. A. Malkov, D.A. Yashunin "Efficient and robust approximate nearest
+neighbor search using Hierarchical Navigable Small World graphs"]
+(https://arxiv.org/abs/1603.09320)
 """
 struct HNSWIndex{I,E,A,D} <: AbstractIndex
     tree::HierarchicalNSW{I,E,A,D}

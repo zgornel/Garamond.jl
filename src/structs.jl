@@ -3,22 +3,26 @@
 ##############################
 
 # Searcher structures
+"""
+    Search object. It contains all the indexed data and related
+configuration that allows for searches to be performed.
+"""
 mutable struct Searcher{T<:AbstractFloat, D<:AbstractDocument, E, I<:AbstractIndex}
     config::SearchConfig                        # most of what is not actual data
     corpus::Corpus{String,D}                    # corpus
     embedder::E                                 # needed to embed query
-    search_data::I                              # actual indexed search data
-    search_trees::BKTree{String}                # for suggestions
+    index::I                                    # indexed search data
+    search_trees::BKTree{String}                # suggestion structure
 end
 
 Searcher(config::SearchConfig,
          corpus::Corpus{String, D},
          embedder::E,
-         search_data::I,
+         index::I,
          search_trees::BKTree{String}
         ) where {D<:AbstractDocument, E, I<:AbstractIndex} =
     Searcher{get_embedding_eltype(embedder), D, E, I}(
-        config, corpus, embedder, search_data, search_trees)
+        config, corpus, embedder, index, search_trees)
 
 
 """

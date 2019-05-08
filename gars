@@ -77,13 +77,14 @@ Base.@ccallable function julia_main(ARGS::Vector{String})::Cint
     end
 
     # Start I/O server(s)
-    io_channel = Channel{String}(0)
-    unixsocket != nothing && @async unix_socket_server(unixsocket, io_channel)
-    ws_port != nothing && @async web_socket_server(ws_port, io_channel)
-    http_port != nothing && @async rest_server(http_port, io_channel)
+    io_channel = Channel{String}(0)  # intra-server data communication channel
+    sserver_ready = Condition()  # search server ready
+    unixsocket != nothing && @async unix_socket_server(unixsocket, io_channel, sserver_ready)
+    ws_port != nothing && @async web_socket_server(ws_port, io_channel, sserver_ready)
+    http_port != nothing && @async rest_server(http_port, io_channel, sserver_ready)
 
     # Start Search server
-    Garamond.search_server(data_config_paths, io_channel)
+    Garamond.search_server(data_config_paths, io_channel, sserver_ready)
     return 0
 end
 

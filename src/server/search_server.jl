@@ -1,18 +1,18 @@
 """
-    search_server(data_config_paths, io_channel)
+    search_server(data_config_paths, io_channel, search_server_ready)
 
 Search server for Garamond. It is a finite-state-machine that
 when called, creates the searchers i.e. search objects using the
 `data_config_paths` and the proceeds to looping continuously
 in order to:
-    • update the searchers regularly;
-    • receive requests from clients on the I/O channel
-    • call search and route responses back to the clients
-      through the I/O channel
+ - update the searchers regularly (asynchronously);
+ - receive requests from clients on the I/O channel `io_channel`
+ - call search and route responses back to the clients through `io_channel`
 
-Both searcher update and I/O communication are performed asynchronously.
+After the searchers are loaded, the search server sends a notification
+using `search_server_ready` to any listening I/O servers.
 """
-function search_server(data_config_paths, io_channel)
+function search_server(data_config_paths, io_channel, search_server_ready)
     # Load data
     srchers = load_searchers(data_config_paths)
 
@@ -20,36 +20,37 @@ function search_server(data_config_paths, io_channel)
     srchers_channel = Channel{typeof(srchers)}(0)
     @async updater(srchers, channels=srchers_channel)
 
+    # Notify waiting I/O servers
+    @info "Searchers loaded. Notifying I/O servers..."
+    notify(search_server_ready, true)
+
     # Main loop
-    @info "Search server waiting for queries..."
+    cntq = 0  # query counter
     while true
         if isready(srchers_channel)
             srchers = take!(srchers_channel)
             @info "* Updated: $(length(srchers)) searchers."
         else
-            # Read and deconstruct request
-            request = take!(io_channel)
-            @debug "* Search: Received request=$request"
-            (operation, query, max_matches, search_method,
-             max_suggestions, what_to_return) = deconstruct_request(request)
-            if operation == "search"
+            # Read and parse JSON request
+            request = parse(SearchServerRequest, take!(io_channel))
+            @debug "* Received: $request."
+            if request.op == "search"
                 ### Search ###
-
                 t_init = time()
-                # Get search results
-                results = search(srchers, query,
-                                 search_method=search_method,
-                                 max_matches=max_matches,
-                                 max_suggestions=max_suggestions)
-                t_finish = time()
 
-                elapsed_time = t_finish - t_init
-                @info "* Search: query='$query' completed in $elapsed_time(s)."
+                results = search(srchers, request.query,
+                                 search_method=request.search_method,
+                                 max_matches=request.max_matches,
+                                 max_suggestions=request.max_suggestions,
+                                 custom_weights=request.custom_weights)
+                cntq+= 1
+                query_time = time() - t_init
+                @info "* Search: query(#$cntq)='$(request.query)' completed in $(query_time)(s)."
 
                 # Select the data (if any) that will be reuturned
-                if what_to_return == "json-index"
+                if request.what_to_return == "json-index"
                     corpora = nothing
-                elseif what_to_return == "json-data"
+                elseif request.what_to_return == "json-data"
                     idx_corpora = Int[]
                     for result in results
                         for (idx, srcher) in enumerate(srchers)
@@ -65,23 +66,36 @@ function search_server(data_config_paths, io_channel)
                         @warn "No corpora data from which to return results."
                     end
                 else
-                    @warn "Unknown return option \"$what_to_return\", "*
+                    @warn "Unknown return option \"$(request.what_to_return)\", "*
                           "defaulting to \"json-index\"..."
                     corpora = nothing
                 end
 
                 # Construct response for client
-                response = construct_response(results, corpora,
-                                              max_suggestions=max_suggestions,
-                                              elapsed_time=elapsed_time)
-                #Write response to I/O server
+                response = construct_json_response(results, corpora,
+                                max_suggestions=request.max_suggestions,
+                                elapsed_time=query_time)
+                # Write response to I/O server
                 put!(io_channel, response)
-            elseif operation == "kill"
+                @debug "Response sent after $(time()-t_init)(s)."
+            elseif request.op == "kill"
                 ### Kill the search server ###
-                @info "* Kill: Exiting..."
+                @info "* Kill: Exiting in 1(s)..."
+                put!(io_channel, "")
+                sleep(1)
                 exit()
-            elseif operation == "request_error"
+
+            elseif request.op == "read-configs"
+                ### Read and return data configurations ***
+                @info "* Getting searcher data configuration(s)..."
+                put!(io_channel, read_searcher_configurations_json(srchers))
+
+            elseif request.op == "request-error"
                 @info "* Errored request: Ignoring..."
+                put!(io_channel, "")
+
+            else
+                @info "* Unknown request: Ignoring..."
                 put!(io_channel, "")
             end
         end
