@@ -30,6 +30,7 @@ function search_server(data_config_paths, io_port, search_server_ready)
     @info "Search server waiting for queries @inet-socket:$io_port..."
 
     # Main loop
+    counter = [0]  # vector so the value is mutable
     while true
         # Check and update searchers
         if isready(update_channel)
@@ -40,21 +41,23 @@ function search_server(data_config_paths, io_port, search_server_ready)
         # Start accepting requests and asynchronously
         # respond to them using the opened socket
         sock = accept(server)
-        @async respond(srchers, sock)
+        @async respond(srchers, sock, counter)
     end
 end
 
 
 """
-    respond(srchers, socket)
+    respond(srchers, socket, counter)
 
 Responds to search server requests received on `socket` using
-the search data from `searchers`.
+the search data from `searchers`. The requests are counted
+through the variable `counter`.
 """
-function respond(srchers, socket)
+function respond(srchers, socket, counter)
     # Read and parse JSON request
     request = parse(SearchServerRequest, readline(socket))
-    @debug "* Received: $request."
+    counter.+= 1
+    @debug "* Received [#$(counter[1])]: $request."
 
     t_init = time()
     if request.op == "search"
@@ -66,7 +69,7 @@ function respond(srchers, socket)
                          custom_weights=request.custom_weights)
 
         query_time = time() - t_init
-        @info "* Search: query='$(request.query)' completed in $query_time(s)."
+        @info "* Search [#$(counter[1])]: query='$(request.query)' completed in $query_time(s)."
 
         # Construct response for client
         corpora = select_corpora(srchers, results, request)
@@ -79,27 +82,27 @@ function respond(srchers, socket)
 
     elseif request.op == "kill"
         ### Kill the search server ###
-        @info "* Kill: Exiting in 1(s)..."
+        @info "* Kill [#$(counter[1])]: Exiting in 1(s)..."
         write(socket, RESPONSE_TERMINATOR)
         sleep(1)
         exit()
 
     elseif request.op == "read-configs"
         ### Read and return data configurations ***
-        @info "* Getting searcher data configuration(s)..."
+        @info "* Get configuration(s) [#$(counter[1])]."
         write(socket,
               read_searcher_configurations_json(srchers) * RESPONSE_TERMINATOR)
 
     elseif request.op == "request-error"
-        @info "* Errored request: Ignoring..."
+        @info "* Errored request [#$(counter[1])]: Ignoring..."
         write(socket, RESPONSE_TERMINATOR)
 
     else
-        @info "* Unknown request: Ignoring..."
+        @info "* Unknown request [#$(counter[1])]: Ignoring..."
         write(socket, RESPONSE_TERMINATOR)
     end
 
-    @debug "Response sent after $(time()-t_init)(s)."
+    @debug "Response [#$(counter[1])]: done after $(time()-t_init)(s)."
 end
 
 
