@@ -74,11 +74,12 @@ function parse_custom_weights(weights_str::AbstractString)
     return weights
 end
 
+
 """
-    rest_server(port::Integer, channel::Channel{String}, search_server_ready::Condition)
+    rest_server(port::Integer, io_port::Integer, search_server_ready::Condition)
 
 Starts a bi-directional REST server that uses the HTTP port `port`
-and communicates with the search server through a channel `channel`.
+and communicates with the search server through the TCP port `io_port`.
 The server is started once the condition `search_server_ready`
 is triggered.
 
@@ -100,7 +101,7 @@ where:
     `http://localhost:9001/api/v1/search/100/regex/3/json-index/something%20to%20search/searcher1_0.1`
     `http://localhost:9001/api/v1/read-configs`
 """
-function rest_server(port::Integer, channel::Channel{String}, search_server_ready::Condition)
+function rest_server(port::Integer, io_port::Integer, search_server_ready::Condition)
     #Checks
     if port <= 0
         @error "Please specify a HTTP REST port of positive integer value."
@@ -121,10 +122,12 @@ function rest_server(port::Integer, channel::Channel{String}, search_server_read
         if eof(body)
             # no request body
             request = HTTP.Handlers.handle(GARAMOND_REST_ROUTER, req)
-            # Send request to FSM and get response
+            # Send request to search server and get response
             if request isa AbstractString
-                put!(channel, request)
-                response = take!(channel)
+                ssconn = connect(Sockets.localhost, io_port)
+                println(ssconn, request)                                 # writes a "\n" as well
+                response = ifelse(isopen(ssconn), readline(ssconn), "")  # expects a "\n" terminator
+                close(ssconn)
                 return HTTP.Response(200, ["Access-Control-Allow-Origin"=>"*"], body=response)
             end
         end
