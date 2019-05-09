@@ -1,14 +1,13 @@
 """
-    unix_socket_server(socket::AbstractString, channel::Channel{String})
+    unix_socket_server(socket::AbstractString, io_port::Integer, start::Condition)
 
 Starts a bi-directional unix socket server that uses a UNIX-socket `socket`
-and communicates with the search server through a channel `channel`.
-The server is started once the condition `search_server_ready`
-is triggered.
+and communicates with the search server through the TCP port `io_port`.
+The server is started once the condition `start` is triggered.
 """
 function unix_socket_server(socket::AbstractString,
-                            channel::Channel{String},
-                            search_server_ready::Condition)
+                            io_port::Integer,
+                            start::Condition)
     # Checks
     if issocket(socket)
         rm(socket)
@@ -26,7 +25,7 @@ function unix_socket_server(socket::AbstractString,
     end
 
     # Wait for search server to be ready
-    wait(search_server_ready)
+    wait(start)
     server = listen(socket)
     @info "Waiting for data @unix-socket:$socket..."
 
@@ -36,9 +35,11 @@ function unix_socket_server(socket::AbstractString,
         @async while isopen(connection)
             request = readline(connection, keep=true)
             if !isempty(request)
-                # Send request to FSM and get response
-                put!(channel, request)
-                response = take!(channel)
+                # Send request to search server and get response
+                ssconn = connect(Sockets.localhost, io_port)
+                print(ssconn, request)
+                response = ifelse(isopen(ssconn), readline(ssconn), "")  # expects a "\n" terminator
+                close(ssconn)
                 # Return response
                 println(connection, response)
             end
