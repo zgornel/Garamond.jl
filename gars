@@ -35,6 +35,10 @@ function get_server_commandline_arguments(args::Vector{String})
         "--http-port", "-p"
             help = "HTTP port for REST services"
             arg_type = Int
+        "--search-server-port", "-i"
+            help = "Internal TCP port for the search server"
+            arg_type = Int
+            default = 9_000
 	end
 	return parse_args(args,s)
 end
@@ -61,11 +65,18 @@ Base.@ccallable function julia_main(ARGS::Vector{String})::Cint
     unixsocket = args["unix-socket"]
     ws_port = args["web-socket-port"]
     http_port = args["http-port"]
+    io_port = args["search-server-port"]
+
     if unixsocket == nothing && ws_port == nothing && http_port == nothing
         @warn """At least a UNIX-socket, WEB-socket port or HTTP port
                  have to be specified through the -u, -w or -p switches.
                  Exiting..."""
         return 0
+    end
+
+    if io_port < 0
+        @warn "Search server I/O port value error. Defaulting to 9000."
+        io_port = 9000
     end
 
     # Check data path
@@ -77,14 +88,13 @@ Base.@ccallable function julia_main(ARGS::Vector{String})::Cint
     end
 
     # Start I/O server(s)
-    io_channel = Channel{String}(0)  # intra-server data communication channel
     sserver_ready = Condition()  # search server ready
-    unixsocket != nothing && @async unix_socket_server(unixsocket, io_channel, sserver_ready)
-    ws_port != nothing && @async web_socket_server(ws_port, io_channel, sserver_ready)
-    http_port != nothing && @async rest_server(http_port, io_channel, sserver_ready)
+    unixsocket != nothing && @async unix_socket_server(unixsocket, io_port, sserver_ready)
+    ws_port != nothing && @async web_socket_server(ws_port, io_port, sserver_ready)
+    http_port != nothing && @async rest_server(http_port, io_port, sserver_ready)
 
     # Start Search server
-    Garamond.search_server(data_config_paths, io_channel, sserver_ready)
+    Garamond.search_server(data_config_paths, io_port, sserver_ready)
     return 0
 end
 

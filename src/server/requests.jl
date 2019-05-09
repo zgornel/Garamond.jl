@@ -81,6 +81,11 @@ function parse(::Type{SearchServerRequest}, request::AbstractString)
 end
 
 
+# Standard response terminator. It is used in the client-server
+# communication mark the end of sent and received messages
+const RESPONSE_TERMINATOR="\n"
+
+
 """
     construct_json_response(srchers, results, what [; kwargs...])
 
