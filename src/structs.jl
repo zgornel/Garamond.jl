@@ -138,8 +138,11 @@ function build_searcher(sconf::SearchConfig)
     # Pre-process documents
     flags = sconf.text_strip_flags | (sconf.stem_words ? stem_words : 0x0)
     flags_meta = sconf.metadata_strip_flags | (sconf.stem_words ? stem_words : 0x0)
-    document_sentences_prepared = @op document_preparation(documents_sentences, flags)
-    metadata_sentences_prepared = @op document_preparation(metadata_sentences, flags_meta)
+    language = get(STR_TO_LANG, sconf.language, DEFAULT_LANGUAGE)()
+    document_sentences_prepared = @op document_preparation(documents_sentences,
+                                        flags, language)
+    metadata_sentences_prepared = @op document_preparation(metadata_sentences,
+                                        flags_meta, language)
 
     # Build corpus
     merged_sentences = @op merge_documents(document_sentences_prepared,
@@ -228,8 +231,8 @@ function get_corpus_documents(crps, keep_data)
     return crps, docs
 end
 
-function document_preparation(documents, flags)
-    map(sentences->prepare.(sentences, flags), documents)
+function document_preparation(documents, flags, language)
+    map(sentences->prepare.(sentences, flags, language=language), documents)
 end
 
 function embed_all_documents(embedder, lexicon, documents, method, alpha)
