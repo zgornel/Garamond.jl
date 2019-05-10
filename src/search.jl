@@ -41,8 +41,7 @@ function search(srchers::Vector{<:Searcher{T}},
     n = length(srchers)
     enabled_searchers = [i for i in 1:n if isenabled(srchers[i])]
     n_enabled = length(enabled_searchers)
-    queries = [prepare_query(query, srcher.config.query_strip_flags)
-               for srcher in srchers]
+    queries = fill(query, n)
 
     # Search
     results = Vector{SearchResult{T}}(undef, n_enabled)
@@ -104,8 +103,12 @@ function search(srcher::Searcher{T,D,E,I},
                 search_method::Symbol=DEFAULT_SEARCH_METHOD,
                 max_matches::Int=MAX_MATCHES,
                 max_suggestions::Int=MAX_SUGGESTIONS  # not used
-                ) where {T<:AbstractFloat, D<:AbstractDocument, E, I<:AbstractIndex}
-    needles = prepare_query(query, srcher.config.query_strip_flags)
+               ) where {T<:AbstractFloat, D<:AbstractDocument, E, I<:AbstractIndex}
+    # Prepare query
+    language = get(STR_TO_LANG, srcher.config.language, DEFAULT_LANGUAGE)()
+    flags = srcher.config.query_strip_flags
+    needles = query_preparation(query, flags, language)
+
     # Initializations
     isregex = (search_method == :regex)
     n = length(srcher.index)  # number of embedded documents
@@ -113,22 +116,23 @@ function search(srcher::Searcher{T,D,E,I},
                                      embedding_method=srcher.config.doc2vec_method,
                                      sif_alpha=srcher.config.sif_alpha,
                                      isregex=isregex)
-    # Search for neighbors in embedding space
+
+    # First, find documents with matching needles
     k = min(n, max_matches)
     idxs = Int[]
     scores = T[]
-    # First, find documents with matching needles
     needle_matches = String[]
     missing_needles = String[]
     doc_matches = Vector(1:n)
-    # For certain types of search, check out which documents can be displayed
-    # and which needles have and have not been found
     if srcher.config.vectors in [:count, :tf, :tfidf, :bm25] &&
             srcher.config.vectors_transform in [:none, :rp]
+        # For certain types of search, check out which documents can be displayed
+        # and which needles have and have not been found
         needle_matches, doc_matches = find_matching(srcher.corpus.inverse_index,
                                         needles, search_method, n)
         missing_needles = setdiff(needles, needle_matches)
     end
+
     # Search (if document vector is not zero)
     if !iszero(query_embedding)
         ### Search
@@ -137,6 +141,7 @@ function search(srcher::Searcher{T,D,E,I},
         score_transform!(scores, alpha=srcher.config.score_alpha)
     end
     query_matches = MultiDict(zip(scores, idxs))
+
     # Get suggestions
     suggestions = MultiDict{String, Tuple{T, String}}()
     if max_suggestions > 0 && !isempty(missing_needles)

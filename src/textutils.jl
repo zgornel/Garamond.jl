@@ -150,20 +150,20 @@ end
 
 
 """
-    prepare_query(query, flags)
+    query_preparation(query, flags, language)
 
 Prepares the query for search (tokenization if the case), pre-processing.
 """
-prepare_query(query::AbstractString, flags::UInt32) = begin
-    String.(tokenize(prepare(query, flags), method=DEFAULT_TOKENIZER))
+query_preparation(query::AbstractString, flags::UInt32, language::Languages.Language) = begin
+    String.(tokenize(prepare(query, flags, language=language), method=DEFAULT_TOKENIZER))
 end
 
-prepare_query(needles::Vector{String}, flags::UInt32) = begin
+query_preparation(needles::Vector{String}, flags::UInt32, language::Languages.Language) = begin
     # To minimize time, no pre-processing is done here.
     # The input is returned as is.
     return needles
 end
 
-prepare_query(query, flags::UInt32) = begin
+query_preparation(query, flags::UInt32, language::Languages.Language) = begin
     throw(ArgumentError("Query pre-processing requires `String` or Vector{String} inputs."))
 end
