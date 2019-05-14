@@ -10,10 +10,47 @@ using ArgParse
 using Logging
 using JSON
 
-import ArgParse: parse_item
+
+########################
+# Main client function #
+########################
+Base.@ccallable function julia_main(ARGS::Vector{String})::Cint
+    # Parse command line arguments
+    args = get_unix_socket_client_arguments(ARGS)
+
+    # Logging
+    log_levels = Dict("debug" => Logging.Debug,
+                      "info" => Logging.Info,
+                      "warning" => Logging.Warn,
+                      "error" => Logging.Error)
+    logger = ConsoleLogger(stdout,
+                get(log_levels, args["log-level"], Logging.Info))
+    global_logger(logger)
+
+    # Start client
+    @debug "~ GARAMOND~ (unix-socket client)"
+    unixsocket = args["unix-socket"]
+    if issocket(unixsocket)
+        conn = connect(unixsocket)
+        if isempty(args["query"]) && !args["kill"]
+            @warn "Empty query, nothing to search. Exiting..."
+        else
+            # Construct Garamond request
+            request = construct_json_request(args)
+            # Search
+            iosearch(conn, request, args["pretty"])
+        end
+        # Close connection and exit
+        close(conn)
+    else
+        @warn "$unixsocket is not a proper UNIX socket. Exiting..."
+    end
+    return 0
+end
 
 
 # Support for parsing to Symbol for the ArgParse package
+import ArgParse: parse_item
 function ArgParse.parse_item(::Type{Symbol}, x::AbstractString)
     return Symbol(x)
 end
@@ -52,9 +89,52 @@ function get_unix_socket_client_arguments(args::Vector{String})
         "--kill", "-k"
             help = "Kill the search engine server"
             action = :store_true
+        "--update-searcher"
+            help = "Update a searcher"
+            arg_type = String
+            default = ""
+        "--update-all"
+            help = "Update all searchers"
+            action = :store_true
 	end
 	return parse_args(args,s)
 end
+
+
+# Function that constructs a search server JSON request
+# (can be a search request or a command) from a set of arguments
+# that come usually from parsed client input arguments
+function construct_json_request(args)
+    # Construct the basic dictionary corresponding to the JSON request
+    dictreq = Dict("operation" => "",
+                   "query" => "",
+                   "max_matches" => args["max-matches"],
+                   "max_suggestions" => args["max-suggestions"],
+                   "search_method" => args["search-method"],
+                   "what_to_return" => ifelse(args["pretty"],
+                                        "json-data", "json-index")
+                   # no custom_weights
+                  )
+    # Kill request
+    if args["kill"]
+        dictreq["operation"] = "kill"
+
+    # Update request of some form
+    elseif !isempty(args["update-searcher"]) || args["update-all"]
+        dictreq["operation"] = "update"
+        if !args["update-all"]
+            dictreq["query"] = args["update-searcher"]  # which searchers to update
+        end
+    else
+        dictreq["operation"] = "search"
+        dictreq["query"] = args["query"]
+    end
+    return JSON.json(dictreq)
+end
+
+
+# Deconstruct response is a pass through right now
+deconstruct_json_response(response) = response
 
 
 # Function that performs a simple search i.e. sends data to
@@ -72,108 +152,39 @@ function iosearch(connection, request, pretty=false)
     # Deconstruct response
     data = deconstruct_json_response(response)
     if pretty
-        jr = JSON.parse(data)  # builds a Dict
-        # Print search results in a way similar to that
-        # of the web client (`garw` web page)
-        println("Elapsed search time: $(jr["etime"])s.")
-        println("Found $(jr["n_matches"]) results in $(jr["n_corpora_match"])" *
-                " corpora (out of a total of $(jr["n_corpora"])):")
-        for (id, crps_matches) in jr["matches"]
-            !isempty(crps_matches) && println("$id")
-            for (score, metadata) in crps_matches
-                # format: score ~ name by author, publisher (year)
-                println("\t$(score) ~ \"$(metadata["name"])\" "*
-                        "by $(metadata["author"]), "*
-                        "[$(metadata["publisher"])] "*
-                        "($(metadata["published_year"]))")
+        try
+            jr = JSON.parse(data)  # builds a Dict
+            # Print search results in a way similar to that
+            # of the web client (`garw` web page)
+            println("Elapsed search time: $(jr["etime"])s.")
+            println("Found $(jr["n_matches"]) results in $(jr["n_corpora_match"])" *
+                    " corpora (out of a total of $(jr["n_corpora"])):")
+            for (id, crps_matches) in jr["matches"]
+                !isempty(crps_matches) && println("$id")
+                for (score, metadata) in crps_matches
+                    # format: score ~ name by author, publisher (year)
+                    println("\t$(score) ~ \"$(metadata["name"])\" "*
+                            "by $(metadata["author"]), "*
+                            "[$(metadata["publisher"])] "*
+                            "($(metadata["published_year"]))")
+                end
             end
-        end
-        # Print suggestions
-        suggestions = jr["suggestions"]["d"]
-        ns = length(suggestions)
-        ns > 0 && println("$ns suggestions:")
-        for (keyword, suggest) in suggestions
-            print("  \"$keyword\": ")
-            println("$(join(map(x->x[2], suggest), ", "))")
+            # Print suggestions
+            suggestions = jr["suggestions"]["d"]
+            ns = length(suggestions)
+            ns > 0 && println("$ns suggestions:")
+            for (keyword, suggest) in suggestions
+                print("  \"$keyword\": ")
+                println("$(join(map(x->x[2], suggest), ", "))")
+            end
+        catch
+            @warn "Pretty printing failed, dumping data as is..."
+            println(stdout, data)
         end
     else
         println(stdout, data)
     end
     return nothing
-end
-
-
-# Function that constructs a search server JSON request
-# (can be a search request or a command) from a set of arguments
-# that come usually from parsed client input arguments
-function construct_json_request(query, max_matches, search_method,
-                                max_suggestions, pretty, kill)
-    # Check wether the query is actually a query or another command
-    if kill
-        op = "kill"
-    else
-        op = "search"
-    end
-    what_to_return = ifelse(pretty, "json-data", "json-index")
-    return JSON.json(
-            Dict("operation" => op,
-                 "query" => query,
-                 "max_matches" => max_matches,
-                 "search_method" => search_method,
-                 "max_suggestions" => max_suggestions,
-                 "what_to_return" => what_to_return
-                 # no custom_weights
-                )
-           )
-end
-
-
-# Deconstruct response is a pass through right now
-deconstruct_json_response(response) = response
-
-
-########################
-# Main client function #
-########################
-Base.@ccallable function julia_main(ARGS::Vector{String})::Cint
-    # Parse command line arguments
-    args = get_unix_socket_client_arguments(ARGS)
-
-    # Logging
-    log_levels = Dict("debug" => Logging.Debug,
-                      "info" => Logging.Info,
-                      "warning" => Logging.Warn,
-                      "error" => Logging.Error)
-    logger = ConsoleLogger(stdout,
-                get(log_levels, args["log-level"], Logging.Info))
-    global_logger(logger)
-
-    # Start client
-    @debug "~ GARAMOND~ (unix-socket client)"
-    unixsocket = args["unix-socket"]
-    if issocket(unixsocket)
-        conn = connect(unixsocket)
-
-        # Construct Garamond request
-        if isempty(args["query"]) && !args["kill"]
-            @warn "Empty query, nothing to search. Exiting..."
-        else
-            request = construct_json_request(
-                args["query"],
-                args["max-matches"], args["search-method"],
-                args["max-suggestions"],
-                args["pretty"], args["kill"])
-
-            # Search
-            iosearch(conn, request, args["pretty"])
-        end
-
-        # Close connection and exit
-        close(conn)
-    else
-        @warn "$unixsocket is not a proper UNIX socket. Exiting..."
-    end
-    return 0
 end
 
 
