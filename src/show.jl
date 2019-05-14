@@ -93,6 +93,8 @@ show(io::IO, request::SearchServerRequest) = begin
         reqstr *= "/'$(request.search_method)'/'$(request.query)'"*
                   "/$(request.max_matches)/$(request.max_suggestions)/"*
                   "'$(request.what_to_return)'/$(request.custom_weights)"
+    elseif request.op == "update"
+        reqstr *= "/'$(request.query)'"
     end
     print(io, "$reqstr")
 end

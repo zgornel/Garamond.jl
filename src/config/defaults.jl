@@ -64,7 +64,7 @@ const DEFAULT_LOGGER = ConsoleLogger
 
 # STATIC Configuration: These constants cannot be overwritten
 const DEFAULT_GARAMONDRC_FILE = expanduser("~/.garamondrc.jl")
-const DEFAULT_SEARCHER_UPDATE_INTERVAL = Inf  # Inf means never update
+const DEFAULT_SEARCHER_UPDATE_POOL_INTERVAL = 10  # 10 seconds to wait between search update commands
 const HEURISTIC_TO_DISTANCE = Dict(  # heuristic to distance object mapping
     :levenshtein => StringDistances.Levenshtein(),
     :dameraulevenshtein => StringDistances.DamerauLevenshtein(),

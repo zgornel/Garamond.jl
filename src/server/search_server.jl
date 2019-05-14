@@ -18,8 +18,10 @@ function search_server(data_config_paths, io_port, search_server_ready)
     srchers = load_searchers(data_config_paths)
 
     # Start updater
-    update_channel = Channel{typeof(srchers)}(0)
-    @async updater(srchers, channels=update_channel)
+    up_in_channel = Channel{String}(0) # input (searcher id)
+    up_out_channel = Channel{typeof(srchers)}(0)       # output (updated searchers)
+    channels = (up_in_channel, up_out_channel)
+    @async updater(srchers, channels...)
 
     # Notify waiting I/O servers
     @info "Searchers loaded. Notifying I/O servers..."
@@ -33,27 +35,29 @@ function search_server(data_config_paths, io_port, search_server_ready)
     counter = [0]  # vector so the value is mutable
     while true
         # Check and update searchers
-        if isready(update_channel)
-            srchers = take!(update_channel)
-            @info "* Updated: $(length(srchers)) searchers."
+        if isready(up_out_channel)
+            srchers = take!(up_out_channel)
         end
 
         # Start accepting requests and asynchronously
         # respond to them using the opened socket
         sock = accept(server)
-        @async respond(srchers, sock, counter)
+        @async respond(srchers, sock, counter, channels)
     end
 end
 
 
 """
-    respond(srchers, socket, counter)
+    respond(srchers, socket, counter, channels)
 
 Responds to search server requests received on `socket` using
 the search data from `searchers`. The requests are counted
 through the variable `counter`.
 """
-function respond(srchers, socket, counter)
+function respond(srchers, socket, counter, channels)
+    # Channels for updating
+    up_in_channel, up_out_channel = channels
+
     # Read and parse JSON request
     request = parse(SearchServerRequest, readline(socket))
     counter.+= 1
@@ -88,10 +92,22 @@ function respond(srchers, socket, counter)
         exit()
 
     elseif request.op == "read-configs"
-        ### Read and return data configurations ***
+        ### Read and return data configurations ###
         @info "* Get configuration(s) [#$(counter[1])]."
         write(socket,
               read_searcher_configurations_json(srchers) * RESPONSE_TERMINATOR)
+
+    elseif request.op == "update"
+        ### Read and return data configurations ###
+        @info "* Update searcher(s) [#$(counter[1])]."
+        # The request query contains the string id
+        # of the updated searcher
+        if !isready(up_in_channel)
+            put!(up_in_channel, request.query)  # the take! is in the search server
+        else
+            @warn "Update request ignored: update in progress..."
+        end
+        write(socket, RESPONSE_TERMINATOR)  # send response asynchronously
 
     elseif request.op == "request-error"
         @info "* Errored request [#$(counter[1])]: Ignoring..."
