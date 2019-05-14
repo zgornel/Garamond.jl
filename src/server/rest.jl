@@ -27,16 +27,32 @@ Transforms the input HTTP `link` to a search server request format
 i.e. a named tuple with specific field names.
 """
 function link2request(link::AbstractString)
+    # Parse link and find the offset from where the
+    # actual request content starts
     parts = HTTP.URIs.splitpath(link)
-    offset = findfirst(x->x=="api", parts) + 1  # jump to 'v1' position
-    if offset < length(parts)
+    offset = findfirst(x->x=="api", parts) + 1  # jump to 'v1' position in /api/v1/...
+    np = length(parts)
+    if offset < np
+        # Kill request
         if parts[offset+1] == "kill"
             return KILL_REQUEST
+
+        # Read configs request
         elseif parts[offset+1] == "read-configs"
             return READCONFIGS_REQUEST
+
+        # Update request
+        elseif parts[offset+1] == "update"
+            if offset+2 <= np
+                return SearchServerRequest(op="update", query=parts[offset+2])
+            else
+                return UPDATE_REQUEST  # no searcher specified
+            end
+
+        # Search request
         elseif parts[offset+1] == "search"
             custom_weights = Dict{String, Float64}()
-            if length(parts) - offset >= 7  # custom weights present
+            if np - offset >= 7  # custom weights present
                 custom_weights = parse_custom_weights(parts[offset+7])
             end
             try
