@@ -53,6 +53,11 @@ Request corresponding to a searcher read configuration command.
 """
 const READCONFIGS_REQUEST = SearchServerRequest(op="read-configs")
 
+"""
+Request corresponding to a searcher update command.
+"""
+const UPDATE_REQUEST = SearchServerRequest(op="update", query="")
+
 
 """
     parse(::Type{SearchServerRequest}, request::AbstractString)
