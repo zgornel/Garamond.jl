@@ -80,7 +80,7 @@ function getindex(srchers::V, an_id::StringId
           where E where I<:AbstractIndex}}
     idxs = Int[]
     for (i, srcher) in enumerate(srchers)
-        id(srcher) == an_id && push!(idxs, i)
+        isequal(id(srcher), an_id) && push!(idxs, i)
     end
     return srchers[idxs]
 end
@@ -89,7 +89,7 @@ function getindex(srchers::V, an_id::String
         ) where {V<:Vector{<:Searcher{T,D,E,I}
           where T<:AbstractFloat where D<:AbstractDocument
           where E where I<:AbstractIndex}}
-    srchers[StringId(an_id)]
+    getindex(srchers, StringId(an_id))
 end
 
 
