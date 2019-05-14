@@ -8,24 +8,19 @@ an empty string.
 function version()
     commit = DEFAULT_VERSION_COMMIT
     date = DEFAULT_VERSION_DATE
+    ver = DEFAULT_VERSION
     try
-    readmethod = x->read(x,String)
-        commit = open(`git show --oneline -s`) do x
-            readmethod(x)[1:7]
-        end
-        date = open(`git show -s --format="%ci"`) do x
-            readmethod(x)[1:10]
-        end
+        commit = read(`git show --oneline -s`, String)[1:7]
+        date = read(`git show -s --format="%ci"`, String)[1:10]
     catch
         # do nothing
     end
-    v = DEFAULT_VERSION
     try
         project_file = abspath(joinpath(@__DIR__, "..", "Project.toml"))
         open(project_file) do fid
             for line in eachline(fid)
                 if occursin("=", line)
-                    id, v = strip.(split(line, "="))
+                    id, ver = strip.(split(line, "="))
                     id == "version" && break
                 end
             end
@@ -33,7 +28,7 @@ function version()
     catch
         # do nothing
     end
-	return v, commit, date
+	return ver, commit, date
 end
 
 
