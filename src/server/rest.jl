@@ -104,6 +104,8 @@ is triggered.
              /<what_to_return>/<query>/<custom_weights>`
   - kill server: `/api/v1/kill`
   - read configs: `/api/v1/read-configs`
+  - update all searchers: `/api/v1/update`
+  - update only one searcher: `/api/v1/update/<searcher_id>`
 where:
     <max_matches> is a number larger than 0
     <search_method> can be `exact` or `regex`
@@ -111,11 +113,13 @@ where:
     <what_to_return> can be `json-index` or `json-data`
     <query> can be any string (`%20` acts as space)
     <custom_weights> custom weights for the searchers
+    <searcher_id> is the `id` of a searcher
 
 # Examples:
     `http://localhost:9001/api/v1/search/100/exact/0/json-index/something%20to%20search`
-    `http://localhost:9001/api/v1/search/100/regex/3/json-index/something%20to%20search/searcher1_0.1`
+    `http://localhost:9001/api/v1/search/100/regex/3/json-index/something%20to%20search/my_searcher_0.1`
     `http://localhost:9001/api/v1/read-configs`
+    `http://localhost:9001/api/v1/update/my_searcher`
 """
 function rest_server(port::Integer, io_port::Integer, search_server_ready::Condition)
     #Checks
