@@ -57,7 +57,7 @@ struct HNSWIndex{I,E,A,D} <: AbstractIndex
 end
 
 HNSWIndex(data::AbstractMatrix{T}) where T<:AbstractFloat = begin
-    _data = [data[:,i] for i in 1:size(data,2)]
+    _data = _build_hnsw_data(data)
     hnsw = HierarchicalNSW(_data;
                            efConstruction=100,
                            M=16,
@@ -65,6 +65,9 @@ HNSWIndex(data::AbstractMatrix{T}) where T<:AbstractFloat = begin
     add_to_graph!(hnsw)
     return HNSWIndex(hnsw)
 end
+
+_build_hnsw_data(data::AbstractMatrix) = [Vector(data[:,i]) for i in 1:size(data,2)]
+_build_hnsw_data(data::Matrix) = [data[:,i] for i in 1:size(data,2)]
 
 
 # Nearest neighbor search methods
@@ -117,7 +120,7 @@ function search(index::HNSWIndex{I,E,A,D},
                 keep::Vector{Int}=collect(1:length(index))
                ) where {I<:Unsigned, E<:Real, A<:AbstractArray, D<:Metric}
     # Uses Euclidean distance by default
-    _idxs, scores = knn_search(index.tree, point, k)
+    _idxs, scores = knn_search(index.tree, Vector(point), k)
     idxs = Int.(_idxs)
     if length(keep) == length(index)
         # all data points are valid
