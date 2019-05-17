@@ -294,12 +294,6 @@ git-tree-sha1 = "f47c5d97cf9a8caefa47e9fa9d99d8fda1a65154"
 uuid = "b8a86587-4115-5ab1-83bc-aa920d37bbce"
 version = "0.4.3"
 
-[[Nullables]]
-deps = ["Compat"]
-git-tree-sha1 = "ae1a63457e14554df2159b0b028f48536125092d"
-uuid = "4d1e1d77-625e-5b40-9113-a560ec7a8ecd"
-version = "0.0.8"
-
 [[OrderedCollections]]
 deps = ["Random", "Serialization", "Test"]
 git-tree-sha1 = "c4c13474d23c60d20a67b217f1d7f22a40edf8f1"
@@ -381,9 +375,9 @@ uuid = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [[StringAnalysis]]
 deps = ["AutoHashEquals", "BinaryProvider", "DataStructures", "Dates", "DelimitedFiles", "Languages", "Libdl", "LinearAlgebra", "SparseArrays", "Statistics", "TSVD", "Test", "Unicode", "WordTokenizers"]
-git-tree-sha1 = "6b1c4af3a6f20f509d32d9cbb32f56004a319fc7"
+git-tree-sha1 = "4a95b4edf0dfd84e33a0c7dc18b14b46cc482091"
 uuid = "b66b7d2f-f536-51df-9f97-4dfb9d27c005"
-version = "0.3.6"
+version = "0.3.7"
 
 [[StringDistances]]
 deps = ["Distances", "IterTools", "Random", "Test"]
@@ -392,10 +386,10 @@ uuid = "88034a9c-02f8-509d-84a9-84ec65e18404"
 version = "0.3.2"
 
 [[Syslogs]]
-deps = ["Compat", "Nullables"]
-git-tree-sha1 = "d3e512a044cc8873c741d88758f8e1888c7c47d3"
+deps = ["Printf", "Sockets"]
+git-tree-sha1 = "46badfcc7c6e74535cc7d833a91f4ac4f805f86d"
 uuid = "cea106d9-e007-5e6c-ad93-58fe2094e9c4"
-version = "0.2.0"
+version = "0.3.0"
 
 [[TSVD]]
 deps = ["LinearAlgebra", "SparseArrays", "Test"]
