@@ -226,7 +226,7 @@ end
 #TODO(Corneliu) Analylically/empirically adapt alpha do vector dimensionality
 function score_transform!(x::AbstractVector{T};
                           alpha::Float64=DEFAULT_SCORE_ALPHA,
-                          normalize::Bool=true) where T<:AbstractFloat
+                          normalize::Bool=false) where T<:AbstractFloat
     n = length(x)
     α = T(alpha)
     @inbounds @simd for i in 1:n
