@@ -118,14 +118,14 @@ function _aggregate(query_matches::Vector{MultiDict{T,Int}},
     (method == :product) && (final_scores = prod(scores, dims=2)[:,1])
     (method == :mean) && (final_scores = mean(scores, dims=2)[:,1])
 
-    # Filter out scores smaller of equal than 0
-    filter!(x->x>zero(T), final_scores)
-
-    # Sort and trim result list
-    m = length(final_scores)
+    # Sort and trim result list: intersect sorted score indices by the
+    # indices with scores larger than 0 and then trim (the result of the
+    # intersection is still reverse ordered)
     row2doc = Dict(v=>k for (k,v) in doc2row)
-    idxs = sortperm(final_scores, rev=true)[1:min(m, max_matches)]
-    return MultiDict(zip(final_scores[idxs], [row2doc[i] for i in idxs]))
+    idxs = intersect(sortperm(final_scores, rev=true),
+                     findall(x->x>zero(T), final_scores))
+    tidxs = idxs[1:min(length(idxs), max_matches)]
+    return MultiDict(zip(final_scores[tidxs], [row2doc[i] for i in tidxs]))
 end
 
 
