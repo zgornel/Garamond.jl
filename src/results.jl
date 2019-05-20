@@ -102,13 +102,15 @@ function _aggregate(query_matches::Vector{MultiDict{T,Int}},
             end
         end
     end
-    # build matrix with scores for all documents from all searchers
+
+    # Build matrix with scores for all documents from all searchers
     m, n = length(doc2row), length(query_matches)
     scores = zeros(T, m, n)
     @inbounds for ((row, col), score) in rowcol2score
         scores[row, col] = weights[col] * score
     end
-    # merge results
+
+    # Merge results
     final_scores::Vector{T} = zeros(T, m)
     (method == :minimum) && (final_scores = minimum(scores, dims=2)[:,1])
     (method == :maximum) && (final_scores = maximum(scores, dims=2)[:,1])
@@ -116,8 +118,12 @@ function _aggregate(query_matches::Vector{MultiDict{T,Int}},
     (method == :product) && (final_scores = prod(scores, dims=2)[:,1])
     (method == :mean) && (final_scores = mean(scores, dims=2)[:,1])
 
-    row2doc = Dict(v=>k for (k,v) in doc2row)
+    # Filter out scores smaller of equal than 0
+    filter!(x->x>zero(T), final_scores)
+
     # Sort and trim result list
+    m = length(final_scores)
+    row2doc = Dict(v=>k for (k,v) in doc2row)
     idxs = sortperm(final_scores, rev=true)[1:min(m, max_matches)]
     return MultiDict(zip(final_scores[idxs], [row2doc[i] for i in idxs]))
 end
