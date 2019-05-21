@@ -10,8 +10,9 @@ function version()
     date = DEFAULT_VERSION_DATE
     ver = DEFAULT_VERSION
     try
-        commit = read(`git show --oneline -s`, String)[1:7]
-        date = read(`git show -s --format="%ci"`, String)[1:10]
+        gitstr = read(pipeline(`git show --oneline -s --format="%h%ci"`, stderr=devnull), String)
+        commit = gitstr[1:7]
+        date = gitstr[8:17]
     catch
         # do nothing
     end

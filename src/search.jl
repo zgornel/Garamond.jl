@@ -222,13 +222,23 @@ end
 
 
 # Post-processing score function:
-#   - map distances [0, Inf) --> [-1, 1]
+#   - map distances [0, Inf) --> [1, 0)
 #TODO(Corneliu) Analylically/empirically adapt alpha do vector dimensionality
-function score_transform!(x::AbstractVector{T}; alpha::Float64=DEFAULT_SCORE_ALPHA) where T<:AbstractFloat
+function score_transform!(x::AbstractVector{T};
+                          alpha::Float64=DEFAULT_SCORE_ALPHA,
+                          normalize::Bool=false) where T<:AbstractFloat
     n = length(x)
     α = T(alpha)
     @inbounds @simd for i in 1:n
-        x[i] = 1 - 2.0*tanh(α * x[i])
+        x[i] = 1 - tanh(α * x[i])
     end
-    return x
+    if normalize
+        # Forces the scores to spread in the whole
+        # interval between 0 and 1
+        xmax = maximum(x)
+        xmin = minimum(x)
+        return (x.-xmin)./(xmax-xmin)
+    else
+        return x
+    end
 end
