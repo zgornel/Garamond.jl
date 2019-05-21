@@ -408,10 +408,10 @@ uuid = "b718987f-49a8-5099-9789-dcd902bef87d"
 version = "0.3.0"
 
 [[TimeZones]]
-deps = ["Dates", "EzXML", "Mocking", "Printf", "Serialization", "Test", "Unicode"]
-git-tree-sha1 = "fdf5d2136d16498cb67d648cedd33b83c599e0c5"
+deps = ["Dates", "EzXML", "Mocking", "Printf", "Serialization", "Unicode"]
+git-tree-sha1 = "859bfc1832ea52e413c96fa5c92130516db62bdb"
 uuid = "f269a46b-ccf7-5d73-abea-4c690281aa53"
-version = "0.9.0"
+version = "0.9.1"
 
 [[Tokenize]]
 deps = ["Printf", "Test"]
