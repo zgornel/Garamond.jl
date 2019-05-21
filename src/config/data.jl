@@ -170,7 +170,7 @@ function load_search_configs(filename::AbstractString)
             sconfig.description = get(dconfig, "description", "")
             sconfig.enabled = get(dconfig, "enabled", false)
             sconfig.config_path = fullfilename
-            sconfig.data_path = get(dconfig, "data_path", "")
+            sconfig.data_path = postprocess_path(get(dconfig, "data_path", ""))
             sconfig.language = lowercase(get(dconfig, "language", DEFAULT_LANGUAGE_STR))
             sconfig.build_summary = Bool(get(dconfig, "build_summary", DEFAULT_BUILD_SUMMARY))
             sconfig.summary_ns = Int(get(dconfig, "summary_ns", DEFAULT_SUMMARY_NS))
@@ -181,7 +181,7 @@ function load_search_configs(filename::AbstractString)
             sconfig.vectors_dimension = Int(get(dconfig, "vectors_dimension", DEFAULT_VECTORS_DIMENSION))
             sconfig.vectors_eltype = Symbol(get(dconfig, "vectors_eltype", DEFAULT_VECTORS_ELTYPE))
             sconfig.search_index = Symbol(get(dconfig, "search_index", DEFAULT_SEARCH_INDEX))
-            sconfig.embeddings_path = get(dconfig, "embeddings_path", nothing)
+            sconfig.embeddings_path = postprocess_path(get(dconfig, "embeddings_path", nothing))
             sconfig.embeddings_kind = Symbol(get(dconfig, "embeddings_kind", DEFAULT_EMBEDDINGS_KIND))
             sconfig.doc2vec_method = Symbol(get(dconfig, "doc2vec_method", DEFAULT_DOC2VEC_METHOD))
             sconfig.glove_vocabulary= get(dconfig, "glove_vocabulary", nothing)
@@ -359,6 +359,19 @@ function load_search_configs(filenames::Vector{S}) where S<:AbstractString
     end
     return all_configs
 end
+
+
+
+# Small helper function that post-processes file paths
+# (useful for handling backslash separators on Windows)
+function postprocess_path(path)
+    ppath = path
+    if Sys.iswindows() && occursin("\\", path)
+        ppath = replace(path, "\\"=>"/")
+    end
+    return ppath  # do nothing if not on Windows
+end
+
 
 
 """
