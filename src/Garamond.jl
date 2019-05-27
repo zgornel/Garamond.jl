@@ -63,6 +63,7 @@ module Garamond
     export
         search,
         load_searchers,
+        AbstractEmbedder,
         AbstractIndex,
         Searcher,
         SearchConfig,
@@ -70,6 +71,7 @@ module Garamond
         id, description,
         isenabled, enable!, disable!,
         print_search_results,
+        search_server,
         unix_socket_server,
         web_socket_server,
         rest_server
