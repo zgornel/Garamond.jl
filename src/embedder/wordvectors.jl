@@ -1,6 +1,9 @@
 abstract type WordVectorsEmbedder{S,T} <: AbstractEmbedder{S,T} end
 
 
+"""
+Constant that represents embeddings libraries used in text embedding.
+"""
 const EmbeddingsLibrary{S,T} = Union{
     ConceptNet{<:Languages.Language, S, T},
     Word2Vec.WordVectors{S, T, <:Integer},
@@ -8,16 +11,37 @@ const EmbeddingsLibrary{S,T} = Union{
 }
 
 
+"""
+Bag-of-embeddings (BOE) structure for document embedding using word vectors.
+"""
 struct BOEEmbedder{S,T} <: WordVectorsEmbedder{S,T}
     embeddings::EmbeddingsLibrary{S,T}
 end
 
+
+"""
+Smooth inverse frequency (SIF) structure for document embedding
+using word vectors.
+"""
 struct SIFEmbedder{S,T} <: WordVectorsEmbedder{S,T}
     embeddings::EmbeddingsLibrary{S,T}
     lexicon::OrderedDict{S, Int}
     alpha::Float64
 end
 
+
+"""
+    document2vec(embedder, document)
+
+Word-embeddings approach to document embedding. It embeds documents
+using word embeddings libraries and some algorithm for combining
+these (depending on the type of `embedder`).
+
+# Arguments
+  * `embedder::WordVectorsEmbedder` is the embedder
+  * `document::Vector{String}` the document to be embedded,
+     where each vector element corresponds to a sentence
+"""
 function document2vec(embedder::WordVectorsEmbedder{S,T},
                       document::Vector{String};
                       kwargs...  # for the unused arguments
@@ -46,23 +70,35 @@ function document2vec(embedder::WordVectorsEmbedder{S,T},
     filter!(!isempty, embedded_words)
 
     # Create sentence embeddings
-    if isempty(doc_word_embeddings)
-        # If nothing is embedded, return zeros
-        return zeros(T, m)
-    else
-        sentence_embeddings = sentences2vec(embedder,
-                                            doc_word_embeddings,
-                                            embedded_words,
-                                            dim=m)
-        return squash(sentence_embeddings)
-    end
+    isempty(doc_word_embeddings) && return zeros(T, m)  # If nothing is embedded, return zeros
+    sentence_embeddings = sentences2vec(embedder, doc_word_embeddings,
+                                embedded_words, dim=m)
+    return squash(sentence_embeddings)
 end
 
 
+"""
+    sentences2vec(embedder, document_embedding, embedded_words [;dim=0])
+
+Returns a matrix of sentence embeddings from a vector of matrices containing
+individual sentence word embeddings.
+
+# Arguments
+  * `embedder::WordVectorsEmbedder` is the embedder
+  * `document_embedding::Vector{Matrix{AbstractFloat}}` are the document's
+     word embeddings, where each element of the vector represents the
+     embedding of a sentence (whith the matrix columns individual word
+     embeddings)
+  * `embedded_words::Vector{Vector{AbstractString}}` are the words in
+     each sentence the were embedded (their order corresponds to the
+     order of the matrix columns in `document_embedding`
+  * `dim::Int` is the dimension of the word embeddings i.e. number of
+     components in the word vector (default `0`)
+"""
 function sentences2vec(embedder::BOEEmbedder,
-              document_embedding::Vector{Matrix{T}},
-              embedded_words::Vector{Vector{S}};
-              dim::Int=0) where {S,T}
+                       document_embedding::Vector{Matrix{T}},
+                       embedded_words::Vector{Vector{S}};
+                       dim::Int=0) where {S,T}
     n = length(document_embedding)
     X = zeros(T, dim, n)
     @inbounds @simd for i in 1:n
@@ -72,9 +108,9 @@ function sentences2vec(embedder::BOEEmbedder,
 end
 
 function sentences2vec(embedder::SIFEmbedder,
-              document_embedding::Vector{Matrix{T}},
-              embedded_words::Vector{Vector{S}};
-              dim::Int=0) where {S,T}
+                       document_embedding::Vector{Matrix{T}},
+                       embedded_words::Vector{Vector{S}};
+                       dim::Int=0) where {S,T}
     smooth_inverse_frequency(document_embedding,
                              embedder.lexicon,
                              embedded_words,
@@ -83,22 +119,39 @@ end
 
 
 """
-Function that embeds a document i.e. returns an embedding matrix, columns
-are word embeddings, using the `Word2Vec` or `Glowe` WordVectors object.
+    word_embeddings(word_vectors, document_tokens [;kwargs])
+
+Returns a matrix corresponding to the word embeddings of `document_tokens`
+as well as the indices of missing i.e. not-embedded tokens.
+
+# Arguments
+  * `word_vectors::EmbeddingsLibrary` wordvectors object; can be
+     a `Word2Vec.WordVectors`, `Glowe.WordVectors` or `ConceptnetNumberbatch.ConceptNet`
+  * `document_tokens::Vector{String}` the words to be embedded,
+     where each vector element corresponds to a word
+
+# Keyword arguments
+  * `keep_size::Bool` a `false` value discards vectors for words not found
+     while a `true` value (default) places a zero vector in the embeddings
+     matrix
+  * `print_matched_words::Bool` if `true`, the words that were and that were
+     not embedded are printed (default `false`)
+  * `kwargs...` the rest of the keyword arguments are `ConceptNet` specific
+     and can be found by inspecting the help of `ConceptnetNumberbatch.embed_document`
 """
 function word_embeddings(word_vectors::Union{Word2Vec.WordVectors{S1,T,H},
                                              Glowe.WordVectors{S1,T,H}},
-                        document_tokens::Vector{S2};
-                        keep_size::Bool=true,
-                        print_matched_words::Bool=false,
-                        kwargs...
-                       ) where {S1<:AbstractString, T<:Real, H<:Integer,
-                                S2<:AbstractString}
+                         document_tokens::Vector{S2};
+                         keep_size::Bool=true,
+                         print_matched_words::Bool=false,
+                         kwargs...) where {S1<:AbstractString, T<:Real,
+                                           H<:Integer, S2<:AbstractString}
     # Initializations
     n = size(word_vectors)[1]
     p = length(document_tokens)
     found_positions = Int[] # column positions in word embedding matrix of found tokens
     found_tokens = Int[]    # positions in the token vector on found tokens
+
     # Search for matching words (exact match)
     for (i, token) in enumerate(document_tokens)
         if haskey(word_vectors.vocab_hash, token)
@@ -107,12 +160,14 @@ function word_embeddings(word_vectors::Union{Word2Vec.WordVectors{S1,T,H},
         end
     end
     missing_tokens = setdiff(1:p, found_tokens)  # positions of tokens that were not found
+
     # Construct document structure
     m = ifelse(keep_size, p, length(found_tokens))
     embedding = zeros(T, n, m)
     for (pos, tok, j) in zip(found_positions, found_tokens, 1:m)
         embedding[:, ifelse(keep_size, tok, j)] = word_vectors.vectors[:, pos]
     end
+
     # Return document embedding and missing tokens
     if print_matched_words
         println("Embedded words: $(tokens[found_tokens])")
@@ -120,7 +175,6 @@ function word_embeddings(word_vectors::Union{Word2Vec.WordVectors{S1,T,H},
     end
     return embedding, missing_tokens
 end
-
 
 # Replicate ConceptnetNumberbatch embed_document function
 function word_embeddings(conceptnet::ConceptNet{L,K,E},
@@ -151,7 +205,7 @@ principal vector of a sentence from the sentence's word embeddings.
 * [Arora et a. ICLR 2017, "A simple but tough-to-beat baseline for sentence embeddings"]
 (https://openreview.net/pdf?id=SyK00v5xx)
 """
-#TODO(Corneliu): Make the calculation of `a` automatic using some heuristic
+#TODO(Corneliu): Make the calculation of `alpha` automatic using some heuristic
 function smooth_inverse_frequency(document_embedding::Vector{Matrix{T}},
                                   lexicon::OrderedDict{String, Int},
                                   embedded_words::Vector{Vector{S}};
