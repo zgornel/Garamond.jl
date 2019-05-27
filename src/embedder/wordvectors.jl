@@ -10,22 +10,25 @@ const EmbeddingsLibrary{S,T} = Union{
 
 struct BOEEmbedder{S,T} <: WordVectorsEmbedder{S,T}
     embeddings::EmbeddingsLibrary{S,T}
-    lexicon::OrderedDict{S, Int}
 end
 
+struct SIFEmbedder{S,T} <: WordVectorsEmbedder{S,T}
+    embeddings::EmbeddingsLibrary{S,T}
+    lexicon::OrderedDict{S, Int}
+    alpha::Float64
+end
 
 function document2vec(embedder::WordVectorsEmbedder{S,T},
                       document::Vector{String};
-                      embedding_method::Symbol=DEFAULT_DOC2VEC_METHOD,
-                      sif_alpha::Float64=DEFAULT_SIF_ALPHA,
                       kwargs...  # for the unused arguments
                      ) where {S,T}
     # Initializations
     n = length(document)
     m = size(embedder.embeddings)[1]  # number of vector components
     embedded_words = Vector{Vector{String}}(undef, n)
-    sentence_embeddings = Vector{Matrix{T}}(undef, n)
-    # Embed sentences individually
+    doc_word_embeddings = Vector{Matrix{T}}(undef, n)
+
+    # Get word embeddings for each sentence
     @inbounds for i in 1:n
         words = tokenize(document[i], method=:fast)
         _embs, _mtoks = word_embeddings(embedder.embeddings,
@@ -34,23 +37,49 @@ function document2vec(embedder::WordVectorsEmbedder{S,T},
                                         max_compound_word_length=1,
                                         wildcard_matching=true,
                                         print_matched_words=false)
-        sentence_embeddings[i] = _embs
+        doc_word_embeddings[i] = _embs
         embedded_words[i] = words[setdiff(1:length(words), _mtoks)]
     end
+
     # Remove empty embeddings
-    filter!(!isempty, sentence_embeddings)
+    filter!(!isempty, doc_word_embeddings)
     filter!(!isempty, embedded_words)
-    # If nothing is embedded, return zeros
-    isempty(sentence_embeddings) && return zeros(T, m)
-    if embedding_method == :sif
-        return squash(smooth_inverse_frequency(
-                        sentence_embeddings, embedder.lexicon,
-                        embedded_words, alpha=sif_alpha))
+
+    # Create sentence embeddings
+    if isempty(doc_word_embeddings)
+        # If nothing is embedded, return zeros
+        return zeros(T, m)
     else
-        return squash(squash.(sentence_embeddings), m)
+        sentence_embeddings = sentences2vec(embedder,
+                                            doc_word_embeddings,
+                                            embedded_words,
+                                            dim=m)
+        return squash(sentence_embeddings)
     end
 end
 
+
+function sentences2vec(embedder::BOEEmbedder,
+              document_embedding::Vector{Matrix{T}},
+              embedded_words::Vector{Vector{S}};
+              dim::Int=0) where {S,T}
+    n = length(document_embedding)
+    X = zeros(T, dim, n)
+    @inbounds @simd for i in 1:n
+        X[:,i] = squash(document_embedding[i])
+    end
+    return X
+end
+
+function sentences2vec(embedder::SIFEmbedder,
+              document_embedding::Vector{Matrix{T}},
+              embedded_words::Vector{Vector{S}};
+              dim::Int=0) where {S,T}
+    smooth_inverse_frequency(document_embedding,
+                             embedder.lexicon,
+                             embedded_words,
+                             alpha=embedder.alpha)
+end
 
 
 """
@@ -95,14 +124,14 @@ end
 
 # Replicate ConceptnetNumberbatch embed_document function
 function word_embeddings(conceptnet::ConceptNet{L,K,E},
-                        document_tokens::Vector{S};
-                        language=Languages.English(),
-                        keep_size::Bool=true,
-                        compound_word_separator::String="_",
-                        max_compound_word_length::Int=1,
-                        wildcard_matching::Bool=false,
-                        print_matched_words::Bool=false
-                       ) where {L<:Language, K, E<:Real, S<:AbstractString}
+                         document_tokens::Vector{S};
+                         language=Languages.English(),
+                         keep_size::Bool=true,
+                         compound_word_separator::String="_",
+                         max_compound_word_length::Int=1,
+                         wildcard_matching::Bool=false,
+                         print_matched_words::Bool=false
+                        ) where {L<:Language, K, E<:Real, S<:AbstractString}
     return ConceptnetNumberbatch.embed_document(conceptnet, document_tokens,
                 language=language, keep_size=keep_size,
                 compound_word_separator=compound_word_separator,
@@ -165,7 +194,7 @@ and performs some normalization operations as well.
 squash(m::Matrix{T}) where T<:AbstractFloat = begin
     # Calculate document embedding
     ##############################
-    v = vec(mean(m, dims=2))
+    v = vec(sum(m, dims=2))
     return v./(norm(v,2)+eps(T))
 end
 

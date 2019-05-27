@@ -42,8 +42,10 @@ show(io::IO, srcher::Searcher{T,D,E,I}) where {T,D,E,I} = begin
 
     # Get embeddings type string
     if E <: WordVectorsEmbedder
-        if E<: BOEEmbedder
+        if E<:BOEEmbedder
             _suff = " (BOE)"
+        elseif E<:SIFEmbedder
+            _suff = " (SIF)"
         else
             _suff = " (<Unknown embedding method>)"
         end

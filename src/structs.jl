@@ -130,8 +130,8 @@ function build_searcher(sconf::SearchConfig)
     #               parameters do not influence the cache consistency)
     if sconf.vectors in [:word2vec, :glove, :conceptnet]
          embedder = @op get_embedder(sconf.vectors, sconf.embeddings_path,
-                            sconf.embeddings_kind, sconf.glove_vocabulary, lex, T)
-
+                            sconf.embeddings_kind, sconf.doc2vec_method,
+                            sconf.glove_vocabulary, sconf.sif_alpha, lex, T)
     elseif sconf.vectors in [:count, :tf, :tfidf, :bm25]
         embedder = @op get_embedder(sconf.vectors, sconf.vectors_transform,
                             sconf.bm25_kappa, sconf.bm25_beta,
@@ -139,10 +139,11 @@ function build_searcher(sconf::SearchConfig)
     end
 
     # Calculate embeddings for each document
-    embedded_documents = @op embed_all_documents(embedder, merged_sentences,
-                                sconf.doc2vec_method, sconf.sif_alpha)
+    embedded_documents = @op embed_all_documents(embedder, merged_sentences)
+
     # Get search index type
     IndexType = get_search_index_type(sconf)
+
     # Build search index
     srchindex = @op IndexType(embedded_documents)
 
@@ -207,9 +208,8 @@ function document_preparation(documents, flags, language)
     map(sentences->prepare.(sentences, flags, language=language), documents)
 end
 
-function embed_all_documents(embedder, documents, method, alpha)
-    hcat((document2vec(embedder, doc, embedding_method=method, sif_alpha=alpha)
-          for doc in documents)...)
+function embed_all_documents(embedder, documents)
+    hcat((document2vec(embedder, doc) for doc in documents)...)
 end
 
 function get_search_index_type(sconf::SearchConfig)
@@ -221,8 +221,8 @@ function get_search_index_type(sconf::SearchConfig)
     search_index == :hnsw && return HNSWIndex
 end
 
-function get_embedder(vectors, vectors_transform, bm25_kappa,
-                      bm25_beta, vectors_dimension, documents,
+function get_embedder(vectors::Symbol, vectors_transform::Symbol, bm25_kappa::Int,
+                      bm25_beta::Float64, vectors_dimension::Int, documents,
                       lex, ::Type{T}) where T<:AbstractFloat
     # Initialize dtm
     dtm = DocumentTermMatrix{T}(Corpus(documents), lex)
@@ -235,11 +235,14 @@ function get_embedder(vectors, vectors_transform, bm25_kappa,
     elseif vectors_transform == :lsa
         model = LSAModel(dtm, k=vectors_dimension, stats=vectors, κ=bm25_kappa, β=bm25_beta)
     end
+
+    # Construct embedder
     return DTVEmbedder(model)
 end
 
-function get_embedder(vectors, embeddings_path, embeddings_kind,
-                      glove_vocabulary, lex, ::Type{T}) where T<:AbstractFloat
+function get_embedder(vectors::Symbol, embeddings_path::String, embeddings_kind::Symbol,
+                      doc2vec_method::Symbol, glove_vocabulary, sif_alpha::Float64,
+                      lex, ::Type{T}) where T<:AbstractFloat
     # Read word embeddings
     local embeddings
     if vectors == :conceptnet
@@ -258,7 +261,10 @@ function get_embedder(vectors, embeddings_path, embeddings_kind,
                         load_bias=false)
     end
 
-    #TODO(Corneliu) Return the correct type of embedder
-    # depending on the `doc2vec_method` value
-    return BOEEmbedder(embeddings, lex)
+    # Construct embedder based on document2vec method
+    if doc2vec_method == :bow
+        return BOEEmbedder(embeddings)
+    elseif doc2vec_method == :sif
+        return SIFEmbedder(embeddings, lex, sif_alpha)
+    end
 end
