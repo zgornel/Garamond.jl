@@ -112,10 +112,10 @@ function search(srcher::Searcher{T,D,E,I},
     # Initializations
     isregex = (search_method == :regex)
     n = length(srcher.index)  # number of embedded documents
-    query_embedding = embed_document(srcher.embedder, srcher.corpus.lexicon, needles,
-                                     embedding_method=srcher.config.doc2vec_method,
-                                     sif_alpha=srcher.config.sif_alpha,
-                                     isregex=isregex)
+    query_embedding = document2vec(srcher.embedder, needles,
+                                   embedding_method=srcher.config.doc2vec_method,
+                                   sif_alpha=srcher.config.sif_alpha,
+                                   isregex=isregex)
 
     # First, find documents with matching needles
     k = min(n, max_matches)

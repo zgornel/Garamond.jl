@@ -39,25 +39,42 @@ show(io::IO, srcher::Searcher{T,D,E,I}) where {T,D,E,I} = begin
     printstyled(io, "Searcher $(id(srcher))/")
     printstyled(io, "$(srcher.config.id_aggregation)", bold=true)
     printstyled(io, ", ")
+
     # Get embeddings type string
-    if E <: Word2Vec.WordVectors
-        _embedder = "Word2Vec"
-    elseif E <: Glowe.WordVectors
-        _embedder = "GloVe"
-    elseif E <: ConceptnetNumberbatch.ConceptNet
-        _embedder = "Conceptnet"
-    elseif E <: StringAnalysis.LSAModel
-        _embedder = "DTV+LSA"
-    elseif E <: StringAnalysis.RPModel
-        _embedder = "DTV"
-        if srcher.config.vectors_transform==:rp
-            _embedder *= "+RP"
+    if E <: WordVectorsEmbedder
+        if E<: BOEEmbedder
+            _suff = " (BOE)"
+        else
+            _suff = " (<Unknown embedding method>)"
         end
-    else
-        _embedder = "<Unknown>"
+        L = typeof(srcher.embedder.embeddings)
+        if L <: Word2Vec.WordVectors
+            _emblib = "Word2Vec"
+        elseif E <: Glowe.WordVectors
+            _emblib = "GloVe"
+        elseif E <: ConceptnetNumberbatch.ConceptNet
+            _emblib = "Conceptnet"
+        else
+            _emblib = "<Unknown embeddings>"
+        end
+        printstyled(io, "$(_emblib*_suff)", bold=true)
+        printstyled(io, ", ")
+    elseif E<: DTVEmbedder
+        L = typeof(srcher.embedder.model)
+        if L <: StringAnalysis.LSAModel
+            _model = "DTV+LSA"
+        elseif L <: StringAnalysis.RPModel
+            _model = "DTV"
+            if srcher.config.vectors_transform==:rp
+                _model *= "+RP"
+            end
+        else
+            _model = "<Unknown DTV embedder>"
+        end
+        printstyled(io, "$_model", bold=true)
+        printstyled(io, ", ")
     end
-    printstyled(io, "$_embedder", bold=true)
-    printstyled(io, ", ")
+
     # Get search index type string
     if I <: NaiveIndex
         _index_type = "Naive/Matrix"
