@@ -41,41 +41,44 @@ show(io::IO, srcher::Searcher{T,D,E,I}) where {T,D,E,I} = begin
     printstyled(io, ", ")
 
     # Get embeddings type string
+    local _vecs, _suff, _dim
     if E <: WordVectorsEmbedder
         if E<:BOEEmbedder
-            _suff = " (BOE)"
+            _suff = "BOE"
         elseif E<:SIFEmbedder
-            _suff = " (SIF)"
+            _suff = "SIF"
+        elseif E<:BOREPEmbedder
+            _suff = "BOREP"
         else
-            _suff = " (<Unknown embedding method>)"
+            _suff = "?"
         end
         L = typeof(srcher.embedder.embeddings)
+        _dim = size(srcher.embedder.embeddings)[1]
         if L <: Word2Vec.WordVectors
-            _emblib = "Word2Vec"
-        elseif E <: Glowe.WordVectors
-            _emblib = "GloVe"
-        elseif E <: ConceptnetNumberbatch.ConceptNet
-            _emblib = "Conceptnet"
+            _vecs = "Word2Vec"
+        elseif L <: Glowe.WordVectors
+            _vecs = "GloVe"
+        elseif L <: ConceptnetNumberbatch.ConceptNet
+            _vecs = "Conceptnet"
         else
-            _emblib = "<Unknown embeddings>"
+            _vecs = "?"
         end
-        printstyled(io, "$(_emblib*_suff)", bold=true)
-        printstyled(io, ", ")
     elseif E<: DTVEmbedder
+        _vecs = "DTV($(srcher.config.vectors))"
+        _dim = length(srcher.corpus.lexicon)
         L = typeof(srcher.embedder.model)
         if L <: StringAnalysis.LSAModel
-            _model = "DTV+LSA"
-        elseif L <: StringAnalysis.RPModel
-            _model = "DTV"
-            if srcher.config.vectors_transform==:rp
-                _model *= "+RP"
-            end
+            _suff = "LSA"
+            _dim = srcher.config.vectors_dimension
+        elseif L <: StringAnalysis.RPModel && srcher.config.vectors_transform==:rp
+            _dim = srcher.config.vectors_dimension
+            _suff = "RP"
         else
-            _model = "<Unknown DTV embedder>"
+            _suff = "."
         end
-        printstyled(io, "$_model", bold=true)
-        printstyled(io, ", ")
     end
+    printstyled(io, "$_vecs/$_dim/$_suff", bold=true)
+    printstyled(io, ", ")
 
     # Get search index type string
     if I <: NaiveIndex

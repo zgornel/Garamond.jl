@@ -262,9 +262,11 @@ function get_embedder(vectors::Symbol, embeddings_path::String, embeddings_kind:
     end
 
     # Construct embedder based on document2vec method
-    if doc2vec_method == :bow
+    if doc2vec_method == :boe
         return BOEEmbedder(embeddings)
     elseif doc2vec_method == :sif
         return SIFEmbedder(embeddings, lex, sif_alpha)
+    elseif doc2vec_method == :borep
+        return BOREPEmbedder(embeddings)
     end
 end

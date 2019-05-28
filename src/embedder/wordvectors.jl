@@ -51,8 +51,12 @@ function document2vec(embedder::WordVectorsEmbedder{S,T},
     filter!(!isempty, embedded_words)
 
     # Create sentence embeddings
-    isempty(doc_word_embeddings) && return zeros(T, m)  # If nothing is embedded, return zeros
-    sntembs = sentences2vec(embedder, doc_word_embeddings, embedded_words, dim=m)
+    sntembs = sentences2vec(embedder,
+                            doc_word_embeddings,
+                            embedded_words=embedded_words,
+                            dim=m)
+    # If no words were embedded, sntembs is a `dim`×0 Matrix
+    # which, when squashed, becomes a `dim`-element zero Vector
     return squash(sntembs)
 end
 

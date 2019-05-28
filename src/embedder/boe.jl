@@ -8,9 +8,9 @@ end
 
 # Sentence embedding function
 function sentences2vec(embedder::BOEEmbedder,
-                       document_embedding::Vector{Matrix{T}},
-                       embedded_words::Vector{Vector{S}};
-                       dim::Int=0) where {S,T}
+                       document_embedding::Vector{Matrix{T}};
+                       dim::Int=0,
+                       kwargs...) where {S,T}
     n = length(document_embedding)
     X = zeros(T, dim, n)
     @inbounds @simd for i in 1:n

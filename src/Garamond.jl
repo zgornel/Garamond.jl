@@ -86,6 +86,7 @@ module Garamond
     include("embedder/wordvectors.jl")
     include("embedder/boe.jl")
     include("embedder/sif.jl")
+    include("embedder/borep.jl")
     include("embedder/dtv.jl")
     include("index/abstractindex.jl")
     include("index/vectorial.jl")

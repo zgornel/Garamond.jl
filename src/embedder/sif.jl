@@ -1,6 +1,10 @@
 """
 Smooth inverse frequency (SIF) structure for document embedding
 using word vectors.
+
+# References
+  * [Arora et al. ICLR 2017, "A simple but tough-to-beat baseline for sentence embeddings"]
+    (https://openreview.net/pdf?id=SyK00v5xx)
 """
 struct SIFEmbedder{S,T} <: WordVectorsEmbedder{S,T}
     embeddings::EmbeddingsLibrary{S,T}
@@ -11,13 +15,15 @@ end
 
 # Sentence embedding function
 function sentences2vec(embedder::SIFEmbedder,
-                       document_embedding::Vector{Matrix{T}},
-                       embedded_words::Vector{Vector{S}};
+                       document_embedding::Vector{Matrix{T}};
+                       embedded_words::Vector{Vector{S}}=[String[]],
                        dim::Int=0) where {S,T}
-    smooth_inverse_frequency(document_embedding,
-                             embedder.lexicon,
-                             embedded_words,
-                             alpha=embedder.alpha)
+    if isempty(document_embedding)
+        return zeros(T, dim, 0)
+    else
+        return smooth_inverse_frequency(document_embedding, embedder.lexicon,
+                    embedded_words, alpha=embedder.alpha)
+    end
 end
 
 
@@ -26,10 +32,6 @@ end
 
 Implementation of sentence embedding principled on subtracting the paragraph vector i.e.
 principal vector of a sentence from the sentence's word embeddings.
-
-# References
-* [Arora et a. ICLR 2017, "A simple but tough-to-beat baseline for sentence embeddings"]
-(https://openreview.net/pdf?id=SyK00v5xx)
 """
 #TODO(Corneliu): Make the calculation of `alpha` automatic using some heuristic
 function smooth_inverse_frequency(document_embedding::Vector{Matrix{T}},

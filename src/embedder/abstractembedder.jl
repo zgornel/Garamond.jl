@@ -40,16 +40,18 @@ embedders.
      word embeddings, where each element of the vector represents the
      embedding of a sentence (whith the matrix columns individual word
      embeddings)
+
+# Keyword arguments
+  * `dim::Int` is the dimension of the word embeddings i.e. number of
+     components in the word vector (default `0`)
   * `embedded_words::Vector{Vector{AbstractString}}` are the words in
      each sentence the were embedded (their order corresponds to the
      order of the matrix columns in `document_embedding`
-  * `dim::Int` is the dimension of the word embeddings i.e. number of
-     components in the word vector (default `0`)
+
 """
 function sentences2vec(embedder::AbstractEmbedder,
-                       document_embedding::Vector{Matrix{AbstractFloat}},
-                       embedded_words::Vector{Vector{AbstractString}};
-                       dim::Int=0)
+                       document_embedding::Vector{Matrix{AbstractFloat}};
+                       kwargs...)
     # Prototype of the function only
     throw(ErrorException("`sentences2vec` is not implemented for the current arguments."))
 end
