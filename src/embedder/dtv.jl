@@ -3,7 +3,8 @@ Constant that represents document term vector (DTV) models used in text embeddin
 """
 const DTVModel{S,T} = Union{
     StringAnalysis.RPModel{S, T, <:AbstractMatrix{T}, <:Integer},
-    StringAnalysis.LSAModel{S, T, <:AbstractMatrix{T}, <:Integer}}
+    StringAnalysis.LSAModel{S, T, <:AbstractMatrix{T}, <:Integer}
+}
 
 
 """
@@ -14,23 +15,7 @@ struct DTVEmbedder{S,T} <: AbstractEmbedder{S,T}
 end
 
 
-"""
-    document2vec(embedder, document [;isregex=false])
-
-DTV-based approach to document embedding. It embeds documents
-using simple document term vectors, random projections or latent semantic
-(LSA) space projections.
-
-# Arguments
-  * `embedder::DTVEmbedder` is the embedder
-  * `document::Vector{String}` the document to be embedded,
-     where each vector element corresponds to a sentence
-
-# Keyword arguments
-  * `isregex::Bool` a `false` value (default) specifies that the
-     document tokens are to be matched exactly while a `true` value
-     specifies that the tokens are to be matched partially
-"""
+# Document to vector embedding function
 function document2vec(embedder::DTVEmbedder{S,T},
                       document::Vector{String};  # a vector of sentences
                       isregex::Bool=false,
@@ -48,6 +33,6 @@ function document2vec(embedder::DTVEmbedder{S,T},
     v = dtv_function(words, vocab_hash, T,
                      tokenizer=DEFAULT_TOKENIZER,
                      lex_is_row_indices=true)
-    embedded_document = embed_document(model, v)
+    embedded_document = StringAnalysis.embed_document(model, v)
     return embedded_document
 end

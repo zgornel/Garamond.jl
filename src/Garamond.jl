@@ -56,7 +56,7 @@ module Garamond
     import Base: size, length, show, keys, values, push!,
                  delete!, getindex, names, convert, lowercase,
                  occursin, isempty, parse
-    import StringAnalysis: id, embed_document
+    import StringAnalysis: id
     import Word2Vec: WordVectors
 
     # Exports
@@ -83,8 +83,10 @@ module Garamond
     include("logging.jl")
     include("textutils.jl")
     include("embedder/abstractembedder.jl")
-    include("embedder/dtv.jl")
     include("embedder/wordvectors.jl")
+    include("embedder/boe.jl")
+    include("embedder/sif.jl")
+    include("embedder/dtv.jl")
     include("index/abstractindex.jl")
     include("index/vectorial.jl")
     include("structs.jl")
