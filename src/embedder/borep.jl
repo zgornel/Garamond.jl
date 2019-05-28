@@ -14,9 +14,9 @@ struct BOREPEmbedder{S,T} <: WordVectorsEmbedder{S,T}
 end
 
 function BOREPEmbedder(embeddings::EmbeddingsLibrary{S,T};
-                       dim::Int=2048,
+                       dim::Int=DEFAULT_BOREP_DIMENSION,
+                       pooling_function::Symbol=DEFAULT_BOREP_POOLING_FUNCTION,
                        initialization::Symbol=:heuristic,
-                       pooling_function::Symbol=:sum
                       ) where {T<:AbstractFloat, S<:AbstractString}
     # Check initialization option and generate random matrix
     d = size(embeddings)[1]  # number of vector components
