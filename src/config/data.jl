@@ -49,7 +49,7 @@ mutable struct SearchConfig
     doc2vec_method::Symbol          # How to arrive at a single embedding from multiple i.e. :boe, :sif, :borep
     glove_vocabulary::Union{Nothing, String}  # Path to a GloVe-generated vocabulary file (only for binary embeddings)
     # other
-    heuristic::Union{Nothing, Symbol} #search heuristic for suggesting mispelled words (nothing means no recommendations)
+    heuristic::Union{Nothing, Symbol} # search heuristic for suggesting mispelled words (nothing means no recommendations)
     # text stripping flags
     text_strip_flags::UInt32        # How to strip text data before indexing
     metadata_strip_flags::UInt32    # How to strip text metadata before indexing
@@ -59,6 +59,8 @@ mutable struct SearchConfig
     bm25_kappa::Int                 # κ parameter for BM25 (employed in BM25 only)
     bm25_beta::Float64              # β parameter for BM25 (employed in BM25 only)
     sif_alpha::Float64              # smooth inverse frequency α parameter (for 'sif' doc2vec method only)
+    borep_dimension::Int            # output dimension for BOREP embedder
+    borep_pooling_function::Symbol  # pooling function for the BOREP embedder
     score_alpha::Float64            # score alpha (parameter for the scoring function)
     score_weight::Float64           # weight of scores of searcher (used in result aggregation)
     # cache parameters
@@ -107,6 +109,8 @@ SearchConfig(;
           bm25_kappa=DEFAULT_BM25_KAPPA,
           bm25_beta=DEFAULT_BM25_BETA,
           sif_alpha=DEFAULT_SIF_ALPHA,
+          borep_dimension=DEFAULT_BOREP_DIMENSION,
+          borep_pooling_function=DEFAULT_BOREP_POOLING_FUNCTION,
           score_alpha=DEFAULT_SCORE_ALPHA,
           score_weight=1.0,
           cache_directory=DEFAULT_CACHE_DIRECTORY,
@@ -121,6 +125,7 @@ SearchConfig(;
                  text_strip_flags, metadata_strip_flags,
                  query_strip_flags, summarization_strip_flags,
                  bm25_kappa, bm25_beta, sif_alpha,
+                 borep_dimension, borep_pooling_function,
                  score_alpha, score_weight,
                  cache_directory, cache_compression)
 
@@ -197,6 +202,8 @@ function load_search_configs(filename::AbstractString)
             sconfig.bm25_kappa = Int(get(dconfig, "bm25_kappa", DEFAULT_BM25_KAPPA))
             sconfig.bm25_beta = Float64(get(dconfig, "bm25_beta", DEFAULT_BM25_BETA))
             sconfig.sif_alpha = Float64(get(dconfig, "sif_alpha", DEFAULT_SIF_ALPHA))
+            sconfig.borep_dimension = Int(get(dconfig, "borep_dimension", DEFAULT_BOREP_DIMENSION))
+            sconfig.borep_pooling_function = Symbol(get(dconfig, "borep_pooling_function", DEFAULT_BOREP_POOLING_FUNCTION))
             sconfig.score_alpha = Float64(get(dconfig, "score_alpha", DEFAULT_SCORE_ALPHA))
             sconfig.score_weight = Float64(get(dconfig, "score_weight", 1.0))
             sconfig.cache_directory = get(dconfig, "cache_directory", DEFAULT_CACHE_DIRECTORY)
@@ -295,6 +302,16 @@ function load_search_configs(filename::AbstractString)
                         @warn "$(sconfig.id) Missing GloVe vocabulary file, ignoring search configuration..."
                         push!(removable, i)
                         continue
+                    end
+                end
+                if sconfig.doc2vec_method == :borep
+                    if sconfig.borep_dimension <= 0
+                        @warn "$(sconfig.id) Defaulting borep_dimension=$DEFAULT_BOREP_DIMENSION."
+                        sconfig.borep_dimension = DEFAULT_BOREP_DIMENSION
+                    end
+                    if !(sconfig.borep_pooling_function in [:sum, :max])
+                        @warn "$(sconfig.id) Defaulting borep_pooling_function=$DEFAULT_BOREP_POOLING_FUNCTION."
+                        sconfig.borep_pooling_function = DEFAULT_BOREP_POOLING_FUNCTION
                     end
                 end
             end

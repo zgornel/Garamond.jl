@@ -129,13 +129,15 @@ function build_searcher(sconf::SearchConfig)
     # Get embedder (split into two separate call ways so that unused changed
     #               parameters do not influence the cache consistency)
     if sconf.vectors in [:word2vec, :glove, :conceptnet]
-         embedder = @op get_embedder(sconf.vectors, sconf.embeddings_path,
+        embedder = @op get_embedder(sconf.vectors, sconf.embeddings_path,
                             sconf.embeddings_kind, sconf.doc2vec_method,
-                            sconf.glove_vocabulary, sconf.sif_alpha, lex, T)
+                            sconf.glove_vocabulary, sconf.sif_alpha,
+                            sconf.borep_dimension, sconf.borep_pooling_function,
+                            lex, T)
     elseif sconf.vectors in [:count, :tf, :tfidf, :bm25]
         embedder = @op get_embedder(sconf.vectors, sconf.vectors_transform,
-                            sconf.bm25_kappa, sconf.bm25_beta,
-                            sconf.vectors_dimension, documents, lex, T)
+                            sconf.vectors_dimension, sconf.bm25_kappa,
+                            sconf.bm25_beta, documents, lex, T)
     end
 
     # Calculate embeddings for each document
@@ -221,9 +223,9 @@ function get_search_index_type(sconf::SearchConfig)
     search_index == :hnsw && return HNSWIndex
 end
 
-function get_embedder(vectors::Symbol, vectors_transform::Symbol, bm25_kappa::Int,
-                      bm25_beta::Float64, vectors_dimension::Int, documents,
-                      lex, ::Type{T}) where T<:AbstractFloat
+function get_embedder(vectors::Symbol, vectors_transform::Symbol,
+                      vectors_dimension::Int, bm25_kappa::Int, bm25_beta::Float64,
+                      documents, lex, ::Type{T}) where T<:AbstractFloat
     # Initialize dtm
     dtm = DocumentTermMatrix{T}(Corpus(documents), lex)
 
@@ -242,6 +244,7 @@ end
 
 function get_embedder(vectors::Symbol, embeddings_path::String, embeddings_kind::Symbol,
                       doc2vec_method::Symbol, glove_vocabulary, sif_alpha::Float64,
+                      borep_dimension::Int, borep_pooling_function::Symbol,
                       lex, ::Type{T}) where T<:AbstractFloat
     # Read word embeddings
     local embeddings
@@ -267,6 +270,8 @@ function get_embedder(vectors::Symbol, embeddings_path::String, embeddings_kind:
     elseif doc2vec_method == :sif
         return SIFEmbedder(embeddings, lex, sif_alpha)
     elseif doc2vec_method == :borep
-        return BOREPEmbedder(embeddings)
+        return BOREPEmbedder(embeddings,
+                    dim=borep_dimension,
+                    pooling_function=borep_pooling_function)
     end
 end

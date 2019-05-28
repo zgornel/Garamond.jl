@@ -18,6 +18,8 @@ const DEFAULT_HEURISTIC  = nothing #  i.e. :hamming, :levenshtein (nothing for n
 const DEFAULT_BM25_KAPPA = 2  # default value for BM25 κ parameter
 const DEFAULT_BM25_BETA = 0.75  # default value for BM25 β parameter
 const DEFAULT_SIF_ALPHA = 0.01  # default value for α parameter of the SIF doc2vec method
+const DEFAULT_BOREP_DIMENSION = 1024  # default BOREP embedder output dimensionality
+const DEFAULT_BOREP_POOLING_FUNCTION = :sum  # pooling function for BOREP embeddera i.e. :sum, :max
 const DEFAULT_SCORE_ALPHA = 0.5  # default value of the α parameter of the score transformation
 # Results
 const DEFAULT_RESULT_AGGREGATION_STRATEGY = :mean  # can be :minimum, :maximum, :mean, :median, :product

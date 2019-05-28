@@ -10,20 +10,32 @@ struct BOREPEmbedder{S,T} <: WordVectorsEmbedder{S,T}
     embeddings::EmbeddingsLibrary{S,T}
     R::Matrix{T}
     fpool::Function
+    dim::Int
 end
 
 function BOREPEmbedder(embeddings::EmbeddingsLibrary{S,T};
-              initialization::Symbol=:heuristic,
-              pooling_function::Symbol=:sum
-             ) where {T<:AbstractFloat, S<:AbstractString}
+                       dim::Int=2048,
+                       initialization::Symbol=:heuristic,
+                       pooling_function::Symbol=:sum
+                      ) where {T<:AbstractFloat, S<:AbstractString}
     # Check initialization option and generate random matrix
     d = size(embeddings)[1]  # number of vector components
-    R = rand(T[1/sqrt(d), -1/sqrt(d)], 2048, d)
+    if initialization == :heuristic
+        R = rand(T[-1/sqrt(d), 1/sqrt(d)], dim, d)
+    elseif initialization == :uniform
+        R = rand(T[-0.1, 0.1], dim, d)
+    elseif initialization == :normal
+        R = randn(T, dim, d)
+    end
 
     # Check pooling function option anf generate pooling function
-    fpool = x->vec(sum(x,dims=2))
+    if pooling_function == :sum
+        fpool = x->vec(sum(x, dims=2))
+    elseif pooling_function == :max
+        fpool = x->vec(maximum(x, dims=2))
+    end
 
-    return BOREPEmbedder(embeddings, R, fpool)
+    return BOREPEmbedder(embeddings, R, fpool, dim)
 end
 
 
@@ -32,8 +44,7 @@ function sentences2vec(embedder::BOREPEmbedder,
                        document_embedding::Vector{Matrix{T}};
                        kwargs...) where {S,T}
     n = length(document_embedding)
-    dim = size(embedder.R, 1)
-    X = zeros(T, dim, n)
+    X = zeros(T, embedder.dim, n)
     @inbounds @simd for i in 1:n
         X[:,i] = embedder.fpool(embedder.R * document_embedding[i])
     end
