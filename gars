@@ -1,4 +1,4 @@
-#!/bin/julia
+#!/usr/bin/env julia
 
 #########################################
 # Garamond script for server operations #
