@@ -13,17 +13,23 @@ struct SIFEmbedder{S,T} <: WordVectorsEmbedder{S,T}
 end
 
 
+# Dimensionality function
+function dimensionality(embedder::SIFEmbedder)
+    return size(embedder.embeddings)[1]
+end
+
+
 # Sentence embedding function
 function sentences2vec(embedder::SIFEmbedder,
                        document_embedding::Vector{Matrix{T}};
                        embedded_words::Vector{Vector{S}}=[String[]],
                        kwargs...) where {S,T}
-    m = size(embedder.embeddings)[1]
     if isempty(document_embedding)
-        return zeros(T, m, 0)
+        return zeros(T, dimensionality(embedder), 0)
     else
-        return smooth_inverse_frequency(document_embedding, embedder.lexicon,
-                    embedded_words, alpha=embedder.alpha, dim=m)
+        return smooth_inverse_frequency(document_embedding,
+                    embedder.lexicon, embedded_words, embedder.alpha,
+                    dimensionality(embedder))
     end
 end
 
@@ -37,14 +43,13 @@ principal vector of a sentence from the sentence's word embeddings.
 #TODO(Corneliu): Make the calculation of `alpha` automatic using some heuristic
 function smooth_inverse_frequency(document_embedding::Vector{Matrix{T}},
                                   lexicon::OrderedDict{String, Int},
-                                  embedded_words::Vector{Vector{S}};
-                                  alpha::Float64=DEFAULT_SIF_ALPHA,
-                                  dim::Int=0
+                                  embedded_words::Vector{Vector{S}},
+                                  alpha::Float64,
+                                  dim::Int
                                  ) where {T<:AbstractFloat, S<:AbstractString}
     L = sum(values(lexicon))
-    m = dim  # number of vector elements
     n = length(document_embedding)  # number of sentences in document
-    X = zeros(T, m, n)  # new document embedding
+    X = zeros(T, dim, n)  # new document embedding
     α = T(alpha)
     # Loop over sentences
     for (i, s) in enumerate(document_embedding)

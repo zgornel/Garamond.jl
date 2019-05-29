@@ -10,15 +10,21 @@ struct CPMEANEmbedder{S,T} <: WordVectorsEmbedder{S,T}
     embeddings::EmbeddingsLibrary{S,T}
     powers::Vector{T}
     znorm::Bool
-    dim::Int
 end
 
 function CPMEANEmbedder(embeddings::EmbeddingsLibrary{S,T};
                         powers::Vector{T}=T[-Inf, 0.0, 1.0, Inf],
                         znorm::Bool=true
                       ) where {T<:AbstractFloat, S<:AbstractString}
-    dim = length(powers) * size(embeddings)[1]
-    return CPMEANEmbedder(embeddings, powers, znorm, dim)
+    return CPMEANEmbedder(embeddings, powers, znorm)
+end
+
+
+# Dimensionality function
+function dimensionality(embedder::CPMEANEmbedder)
+    # Embedding corresponding to all powers are
+    # concatenated vertically
+    return length(embedder.powers) * size(embedder.embeddings)[1]
 end
 
 
@@ -27,17 +33,19 @@ function sentences2vec(embedder::CPMEANEmbedder,
                        document_embedding::Vector{Matrix{T}};
                        kwargs...) where {S,T}
     if isempty(document_embedding)
-        return zeros(T, embedder.dim, 0)
+        return zeros(T, dimensionality(embedder), 0)
     else
         return concatenated_power_mean(document_embedding,
-                    embedder.powers, embedder.znorm, embedder.dim)
+                    embedder.powers, embedder.znorm,
+                    dimensionality(embedder))
     end
 end
 
 function concatenated_power_mean(document_embedding::Vector{Matrix{T}},
                                  powers::Vector{T},
-                                 znorm::Bool=true,
-                                 dim::Int=0) where {T<:AbstractFloat}
+                                 znorm::Bool,
+                                 dim::Int
+                                ) where {T<:AbstractFloat}
     #TODO(Corneliu): Review performance of the approach
     embs = hcat(document_embedding...)
     n = size(embs, 2)  # total number of embedded words in all sentences
