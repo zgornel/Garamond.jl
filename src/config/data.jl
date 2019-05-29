@@ -291,7 +291,7 @@ function load_search_configs(filename::AbstractString)
                     sconfig.embeddings_kind = DEFAULT_EMBEDDINGS_KIND
                 end
                 # doc2vec_method
-                if !(sconfig.doc2vec_method in [:boe, :sif, :borep])
+                if !(sconfig.doc2vec_method in [:boe, :sif, :borep, :cpmean])
                     @warn "$(sconfig.id) Defaulting doc2vec_method=$DEFAULT_DOC2VEC_METHOD."
                     sconfig.doc2vec_method = DEFAULT_DOC2VEC_METHOD
                 end

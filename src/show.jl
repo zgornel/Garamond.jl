@@ -49,6 +49,8 @@ show(io::IO, srcher::Searcher{T,D,E,I}) where {T,D,E,I} = begin
             _suff = "SIF"
         elseif E<:BOREPEmbedder
             _suff = "BOREP"
+        elseif E<:CPMEANEmbedder
+            _suff = "CPMEAN"
         else
             _suff = "?"
         end

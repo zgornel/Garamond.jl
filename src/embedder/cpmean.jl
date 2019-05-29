@@ -14,7 +14,7 @@ struct CPMEANEmbedder{S,T} <: WordVectorsEmbedder{S,T}
 end
 
 function CPMEANEmbedder(embeddings::EmbeddingsLibrary{S,T};
-                        powers::Vector{T}=T[-Inf, 1.0, Inf],
+                        powers::Vector{T}=T[-Inf, 0.0, 1.0, Inf],
                         znorm::Bool=true
                       ) where {T<:AbstractFloat, S<:AbstractString}
     dim = length(powers) * size(embeddings)[1]
@@ -26,22 +26,43 @@ end
 function sentences2vec(embedder::CPMEANEmbedder,
                        document_embedding::Vector{Matrix{T}};
                        kwargs...) where {S,T}
+    if isempty(document_embedding)
+        return zeros(T, embedder.dim, 0)
+    else
+        return concatenated_power_mean(document_embedding,
+                    embedder.powers, embedder.znorm, embedder.dim)
+    end
+end
+
+function concatenated_power_mean(document_embedding::Vector{Matrix{T}},
+                                 powers::Vector{T},
+                                 znorm::Bool=true,
+                                 dim::Int=0) where {T<:AbstractFloat}
     #TODO(Corneliu): Review performance of the approach
-    emb = hcat(document_embedding...)
-    n = size(emb, 2)  # total number of embedded words in all sentences
-    m = size(emb, 1)  # embedding dimensionality
-    X = zeros(T, embedder.dim, 1)
+    embs = hcat(document_embedding...)
+    n = size(embs, 2)  # total number of embedded words in all sentences
+    m = size(embs, 1)  # embedding dimensionality
+    X = zeros(T, dim, 1)
+
+    # Construct various power mean functions
+    # (they all work on matrices where the columns
+    # are embeddings)
+    dict_f = Dict{T, Function}(-Inf => (A,p)->minimum(A, dims=2),
+                               Inf => (A,p)->maximum(A, dims=2),
+                               0.0 => (A,p)->begin
+                                            p = prod(A, dims=2);
+                                            sign.(p).*abs.(p).^(1/n);
+                                        end
+                              )
+    default_f = (A,p)->(1/n .* sum(A.^p, dims=2)).^(1/p)
+
+    # Build document embedding
     i = 1
-    @inbounds for p in embedder.powers
-        if p == -Inf
-            f = x->minimum(x, dims=2)
-        elseif p == Inf
-            f = x->maximum(x, dims=2)
-        else
-            f = x->(1/n .* sum(x.^p, dims=2)).^(1/p)
-        end
-        X[(i-1)*m+1:i*m, 1] = f(emb)
-        embedder.znorm && znormalize!(X[(i-1)*m+1:i*m, 1])
+    @inbounds @simd for p in powers
+        f = get(dict_f, p, default_f)
+        Xp = view(X, (i-1)*m+1 : i*m, 1:1)
+        Xp .= f(embs, p)
+        znorm && znormalize!(Xp)
         i+=1
     end
     return X

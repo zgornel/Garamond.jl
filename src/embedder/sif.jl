@@ -17,12 +17,13 @@ end
 function sentences2vec(embedder::SIFEmbedder,
                        document_embedding::Vector{Matrix{T}};
                        embedded_words::Vector{Vector{S}}=[String[]],
-                       dim::Int=0) where {S,T}
+                       kwargs...) where {S,T}
+    m = size(embedder.embeddings)[1]
     if isempty(document_embedding)
-        return zeros(T, dim, 0)
+        return zeros(T, m, 0)
     else
         return smooth_inverse_frequency(document_embedding, embedder.lexicon,
-                    embedded_words, alpha=embedder.alpha)
+                    embedded_words, alpha=embedder.alpha, dim=m)
     end
 end
 
@@ -37,10 +38,11 @@ principal vector of a sentence from the sentence's word embeddings.
 function smooth_inverse_frequency(document_embedding::Vector{Matrix{T}},
                                   lexicon::OrderedDict{String, Int},
                                   embedded_words::Vector{Vector{S}};
-                                  alpha::Float64=DEFAULT_SIF_ALPHA
+                                  alpha::Float64=DEFAULT_SIF_ALPHA,
+                                  dim::Int=0
                                  ) where {T<:AbstractFloat, S<:AbstractString}
     L = sum(values(lexicon))
-    m = size(document_embedding[1],1)  # number of vector elements
+    m = dim  # number of vector elements
     n = length(document_embedding)  # number of sentences in document
     X = zeros(T, m, n)  # new document embedding
     α = T(alpha)

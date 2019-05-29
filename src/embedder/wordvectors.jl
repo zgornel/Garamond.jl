@@ -53,10 +53,10 @@ function document2vec(embedder::WordVectorsEmbedder{S,T},
     # Create sentence embeddings
     sntembs = sentences2vec(embedder,
                             doc_word_embeddings,
-                            embedded_words=embedded_words,
-                            dim=m)
-    # If no words were embedded, sntembs is a `dim`×0 Matrix
-    # which, when squashed, becomes a `dim`-element zero Vector
+                            embedded_words=embedded_words)
+    # If no words were embedded, sntembs is a `D`×0 Matrix
+    # which, when squashed, becomes a `D`-element zero Vector
+    # (`D` is the dimensionality of the document embedding)
     return squash(sntembs)
 end
 
