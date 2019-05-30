@@ -30,9 +30,17 @@ for parser in PARSERS
                             srchers[1].config.vectors in [:word2vec, :conceptnet, :glove]
                         continue
                     else
-                        search(srchers, needles,
+                        try
+                            search(srchers, needles,
                                max_suggestions=max_suggestions,
                                search_method=search_method)
+                        catch e
+                            # Forced cleanup
+                            rm(data_path, recursive=true, force=true)
+                            rm(config_path, recursive=true, force=true)
+                            println("Forced cleanup complete.")
+                            throw(ErrorException("Test $i for config $path failed."))
+                        end
                     end
                 end
             end
