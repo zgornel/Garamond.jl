@@ -136,7 +136,7 @@ function rest_server(port::Integer, io_port::Integer, search_server_ready::Condi
     @info "Waiting for data @http(rest):$port..."
 
     # Start serving requests
-    @async HTTP.serve(Sockets.localhost, port, readtimeout=0) do req::HTTP.Request
+    @async HTTP.serve(Sockets.IPv4(0), port, readtimeout=0) do req::HTTP.Request
         # Check for request body (there should not be any)
         body = IOBuffer(HTTP.payload(req))
         if eof(body)
