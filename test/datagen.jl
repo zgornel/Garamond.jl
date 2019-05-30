@@ -68,7 +68,7 @@ function generate_test_confs(data_path::String, parser::Symbol)
     for vectors in ["bm25", "conceptnet", "word2vec", "glove"]  # "count", "tf", "tfidf" ommitted
         for vectors_transform in ["none", "rp", "lsa"]
             for search_index in ["naive", "brutetree", "kdtree", "hnsw"]
-                for doc2vec_method in ["boe", "sif" , "borep", "cpmean"]
+                for doc2vec_method in ["boe", "sif" , "borep", "cpmean", "disc"]
                 for heuristic in [nothing, "levenshtein"]
                 for vectors_eltype in ["Float32"]
                 for build_summary in [false, true]

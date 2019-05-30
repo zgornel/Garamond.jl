@@ -51,6 +51,8 @@ show(io::IO, srcher::Searcher{T,D,E,I}) where {T,D,E,I} = begin
             _suff = "BOREP"
         elseif E<:CPMeanEmbedder
             _suff = "CPMean"
+        elseif E<:DisCEmbedder
+            _suff = "DisC"
         else
             _suff = "?"
         end

@@ -46,7 +46,7 @@ mutable struct SearchConfig
     search_index::Symbol            # type of the search index i.e. :naive, :kdtree, :hnsw
     embeddings_path::Union{Nothing, String}  # path to the embeddings file
     embeddings_kind::Symbol         # Type of the embedding file for Word2Vec, GloVe i.e. :text, :binary
-    doc2vec_method::Symbol          # How to arrive at a single embedding from multiple i.e. :boe, :sif, :borep
+    doc2vec_method::Symbol          # How to arrive at a single embedding from multiple i.e. :boe, :sif etc.
     glove_vocabulary::Union{Nothing, String}  # Path to a GloVe-generated vocabulary file (only for binary embeddings)
     # other
     heuristic::Union{Nothing, Symbol} # search heuristic for suggesting mispelled words (nothing means no recommendations)
@@ -291,7 +291,7 @@ function load_search_configs(filename::AbstractString)
                     sconfig.embeddings_kind = DEFAULT_EMBEDDINGS_KIND
                 end
                 # doc2vec_method
-                if !(sconfig.doc2vec_method in [:boe, :sif, :borep, :cpmean])
+                if !(sconfig.doc2vec_method in [:boe, :sif, :borep, :cpmean, :disc])
                     @warn "$(sconfig.id) Defaulting doc2vec_method=$DEFAULT_DOC2VEC_METHOD."
                     sconfig.doc2vec_method = DEFAULT_DOC2VEC_METHOD
                 end

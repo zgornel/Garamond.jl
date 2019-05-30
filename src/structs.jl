@@ -275,5 +275,7 @@ function get_embedder(vectors::Symbol, embeddings_path::String, embeddings_kind:
                     pooling_function=borep_pooling_function)
     elseif doc2vec_method == :cpmean
         return CPMeanEmbedder(embeddings)
+    elseif doc2vec_method == :disc
+        return DisCEmbedder(embeddings)
     end
 end
