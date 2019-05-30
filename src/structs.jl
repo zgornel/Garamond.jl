@@ -274,6 +274,6 @@ function get_embedder(vectors::Symbol, embeddings_path::String, embeddings_kind:
                     dim=borep_dimension,
                     pooling_function=borep_pooling_function)
     elseif doc2vec_method == :cpmean
-        return CPMEANEmbedder(embeddings)
+        return CPMeanEmbedder(embeddings)
     end
 end

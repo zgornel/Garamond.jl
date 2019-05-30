@@ -1,27 +1,27 @@
 """
-Concatenated-power-mean-embeddings (CPMEAN) structure for
+Concatenated-power-mean-embeddings (CPMean) structure for
 document embedding using word vectors.
 
 # References
   * [Rücklé et al. 2018 "Concatenated power mean word embeddings
      as universal cross-lingual sentence representations"](https://arxiv.org/abs/1803.01400a)
 """
-struct CPMEANEmbedder{S,T} <: WordVectorsEmbedder{S,T}
+struct CPMeanEmbedder{S,T} <: WordVectorsEmbedder{S,T}
     embeddings::EmbeddingsLibrary{S,T}
     powers::Vector{T}
     znorm::Bool
 end
 
-function CPMEANEmbedder(embeddings::EmbeddingsLibrary{S,T};
+function CPMeanEmbedder(embeddings::EmbeddingsLibrary{S,T};
                         powers::Vector{T}=T[-Inf, 0.0, 1.0, Inf],
                         znorm::Bool=true
                       ) where {T<:AbstractFloat, S<:AbstractString}
-    return CPMEANEmbedder(embeddings, powers, znorm)
+    return CPMeanEmbedder(embeddings, powers, znorm)
 end
 
 
 # Dimensionality function
-function dimensionality(embedder::CPMEANEmbedder)
+function dimensionality(embedder::CPMeanEmbedder)
     # Embedding corresponding to all powers are
     # concatenated vertically
     return length(embedder.powers) * size(embedder.embeddings)[1]
@@ -29,7 +29,7 @@ end
 
 
 # Sentence embedding function - returns a `embedder.dim`×1 matrix
-function sentences2vec(embedder::CPMEANEmbedder,
+function sentences2vec(embedder::CPMeanEmbedder,
                        document_embedding::Vector{Matrix{T}};
                        kwargs...) where {S,T}
     if isempty(document_embedding)
