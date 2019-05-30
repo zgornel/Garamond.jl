@@ -46,7 +46,6 @@ function concatenated_power_mean(document_embedding::Vector{Matrix{T}},
                                  znorm::Bool,
                                  dim::Int
                                 ) where {T<:AbstractFloat}
-    #TODO(Corneliu): Review performance of the approach
     embs = hcat(document_embedding...)
     n = size(embs, 2)  # total number of embedded words in all sentences
     m = size(embs, 1)  # embedding dimensionality
@@ -76,7 +75,7 @@ function concatenated_power_mean(document_embedding::Vector{Matrix{T}},
     return X
 end
 
-function znormalize!(v)
-    μ, σ = mean(v), std(v)
-    v .= (v.-μ)./σ
+function znormalize!(X::AbstractMatrix{T}) where {T}
+    μ, σ = mean(X), std(X)
+    X .= (X.-μ)./(σ+eps(T))
 end
