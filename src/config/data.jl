@@ -61,6 +61,7 @@ mutable struct SearchConfig
     sif_alpha::Float64              # smooth inverse frequency α parameter (for 'sif' doc2vec method only)
     borep_dimension::Int            # output dimension for BOREP embedder
     borep_pooling_function::Symbol  # pooling function for the BOREP embedder
+    disc_ngram::Int                 # DisC embedder ngram parameter
     score_alpha::Float64            # score alpha (parameter for the scoring function)
     score_weight::Float64           # weight of scores of searcher (used in result aggregation)
     # cache parameters
@@ -111,6 +112,7 @@ SearchConfig(;
           sif_alpha=DEFAULT_SIF_ALPHA,
           borep_dimension=DEFAULT_BOREP_DIMENSION,
           borep_pooling_function=DEFAULT_BOREP_POOLING_FUNCTION,
+          disc_ngram=DEFAULT_DISC_NGRAM,
           score_alpha=DEFAULT_SCORE_ALPHA,
           score_weight=1.0,
           cache_directory=DEFAULT_CACHE_DIRECTORY,
@@ -126,7 +128,7 @@ SearchConfig(;
                  query_strip_flags, summarization_strip_flags,
                  bm25_kappa, bm25_beta, sif_alpha,
                  borep_dimension, borep_pooling_function,
-                 score_alpha, score_weight,
+                 disc_ngram, score_alpha, score_weight,
                  cache_directory, cache_compression)
 
 
@@ -204,6 +206,7 @@ function load_search_configs(filename::AbstractString)
             sconfig.sif_alpha = Float64(get(dconfig, "sif_alpha", DEFAULT_SIF_ALPHA))
             sconfig.borep_dimension = Int(get(dconfig, "borep_dimension", DEFAULT_BOREP_DIMENSION))
             sconfig.borep_pooling_function = Symbol(get(dconfig, "borep_pooling_function", DEFAULT_BOREP_POOLING_FUNCTION))
+            sconfig.disc_ngram = Int(get(dconfig, "disc_ngram", DEFAULT_DISC_NGRAM))
             sconfig.score_alpha = Float64(get(dconfig, "score_alpha", DEFAULT_SCORE_ALPHA))
             sconfig.score_weight = Float64(get(dconfig, "score_weight", 1.0))
             sconfig.cache_directory = get(dconfig, "cache_directory", DEFAULT_CACHE_DIRECTORY)
@@ -312,6 +315,11 @@ function load_search_configs(filename::AbstractString)
                     if !(sconfig.borep_pooling_function in [:sum, :max])
                         @warn "$(sconfig.id) Defaulting borep_pooling_function=$DEFAULT_BOREP_POOLING_FUNCTION."
                         sconfig.borep_pooling_function = DEFAULT_BOREP_POOLING_FUNCTION
+                    end
+                elseif sconfig.doc2vec_method == :disc
+                    if sconfig.disc_ngram <= 0
+                        @warn "$(sconfig.id) Defaulting disc_ngram=$DEFAULT_DISC_NGRAM."
+                        sconfig.disc_ngram = DEFAULT_DISC_NGRAM
                     end
                 end
             end

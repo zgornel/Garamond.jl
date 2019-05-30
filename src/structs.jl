@@ -133,7 +133,7 @@ function build_searcher(sconf::SearchConfig)
                             sconf.embeddings_kind, sconf.doc2vec_method,
                             sconf.glove_vocabulary, sconf.sif_alpha,
                             sconf.borep_dimension, sconf.borep_pooling_function,
-                            lex, T)
+                            sconf.disc_ngram, lex, T)
     elseif sconf.vectors in [:count, :tf, :tfidf, :bm25]
         embedder = @op get_embedder(sconf.vectors, sconf.vectors_transform,
                             sconf.vectors_dimension, sconf.bm25_kappa,
@@ -244,7 +244,7 @@ end
 
 function get_embedder(vectors::Symbol, embeddings_path::String, embeddings_kind::Symbol,
                       doc2vec_method::Symbol, glove_vocabulary, sif_alpha::Float64,
-                      borep_dimension::Int, borep_pooling_function::Symbol,
+                      borep_dimension::Int, borep_pooling_function::Symbol, disc_ngram::Int,
                       lex, ::Type{T}) where T<:AbstractFloat
     # Read word embeddings
     local embeddings
@@ -276,6 +276,6 @@ function get_embedder(vectors::Symbol, embeddings_path::String, embeddings_kind:
     elseif doc2vec_method == :cpmean
         return CPMeanEmbedder(embeddings)
     elseif doc2vec_method == :disc
-        return DisCEmbedder(embeddings)
+        return DisCEmbedder(embeddings, n=disc_ngram)
     end
 end
