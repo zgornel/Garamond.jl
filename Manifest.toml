@@ -126,7 +126,7 @@ version = "0.1.2"
 
 [[Distances]]
 deps = ["LinearAlgebra", "Statistics"]
-git-tree-sha1 = "d3fcfe7cb9dc52583cf7d7453825a2883bdee342"
+git-tree-sha1 = "cd97a5b6837f00d2fad7cb340c47a411f63ed6a8"
 repo-rev = "master"
 repo-url = "https://github.com/JuliaStats/Distances.jl.git"
 uuid = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
@@ -169,10 +169,10 @@ uuid = "540f64fa-c57e-11e8-081c-41422cda4629"
 version = "0.1.0"
 
 [[HTTP]]
-deps = ["Base64", "Dates", "Distributed", "IniFile", "MbedTLS", "Random", "Sockets", "Test"]
-git-tree-sha1 = "25db0e3f27bd5715814ca7e4ad22025fdcf5cc6e"
+deps = ["Base64", "Dates", "IniFile", "MbedTLS", "Sockets"]
+git-tree-sha1 = "854fad2a2b9cc6678f70ed15a65fc7e572056d39"
 uuid = "cd3eb016-35fb-5094-929b-558a96fad6f3"
-version = "0.8.0"
+version = "0.8.2"
 
 [[HTTPClient]]
 deps = ["Compat", "LibCURL"]
