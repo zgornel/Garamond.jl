@@ -21,12 +21,12 @@ convert(::Type{Dict}, md::DocumentMetadata) =
                          for field in fieldnames(DocumentMetadata))
 
 """
-    meta2sv(metadata, fields=DEFAULT_METADATA_FIELDS)
+    meta2sv(metadata, fields=DEFAULT_METADATA_FIELDS_TO_INDEX)
 
 Turns the `metadata::DocumentMetadata` object's `fields` into a vector of strings,
 where the value of each field becomes an element in the resulting vector.
 """
-function meta2sv(md::T, fields=DEFAULT_METADATA_FIELDS) where T<:DocumentMetadata
+function meta2sv(md::T, fields=DEFAULT_METADATA_FIELDS_TO_INDEX) where T<:DocumentMetadata
     msv = ["" for _ in 1:length(fields)]
     for (i, field) in enumerate(fields)
         if field in fieldnames(T)
@@ -41,7 +41,7 @@ function meta2sv(md::T, fields=DEFAULT_METADATA_FIELDS) where T<:DocumentMetadat
     return msv
 end
 
-function meta2sv(md::Vector{T}, fields=DEFAULT_METADATA_FIELDS) where T<:DocumentMetadata
+function meta2sv(md::Vector{T}, fields=DEFAULT_METADATA_FIELDS_TO_INDEX) where T<:DocumentMetadata
     map((meta)->meta2sv(meta, fields), md)
 end
 

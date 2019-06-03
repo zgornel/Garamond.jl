@@ -105,7 +105,7 @@ function build_searcher(sconf::SearchConfig)
     documents_sentences, metadata_vector = sconf.parser(sconf.data_path)
 
     # Create metadata sentences
-    metadata_sentences = @op meta2sv(metadata_vector)
+    metadata_sentences = @op meta2sv(metadata_vector, sconf.metadata_to_index)
 
     # Pre-process documents
     flags = sconf.text_strip_flags | (sconf.stem_words ? stem_words : 0x0)

@@ -33,6 +33,7 @@ mutable struct SearchConfig
     data_path::String               # file/directory path for the data (depends on what the parser accepts)
     parser::Function                # parser function used to obtain corpus
     parser_config::Union{Nothing,Dict}  # parser configuration
+    metadata_to_index::Vector{Symbol}   # fields from the document's metadata to index
     language::String                # the corpus-level language (use "auto" for document-level autodetection)
     build_summary::Bool             # whether to summarize or not the documents
     summary_ns::Int                 # the number of sentences in the summary
@@ -88,6 +89,7 @@ SearchConfig(;
                                       DEFAULT_SUMMARIZATION_STRIP_FLAGS,
                                       DEFAULT_SHOW_PROGRESS),
           parser_config=DEFAULT_PARSER_CONFIG,
+          metadata_to_index=DEFAULT_METADATA_FIELDS_TO_INDEX,
           language=DEFAULT_LANGUAGE_STR,
           build_summary=DEFAULT_BUILD_SUMMARY,
           summary_ns=DEFAULT_SUMMARY_NS,
@@ -119,7 +121,7 @@ SearchConfig(;
           cache_compression=DEFAULT_CACHE_COMPRESSION) =
     # Call normal constructor
     SearchConfig(id, id_aggregation, description, enabled,
-                 config_path, data_path, parser, parser_config,
+                 config_path, data_path, parser, parser_config, metadata_to_index,
                  language, build_summary, summary_ns, keep_data, stem_words,
                  vectors, vectors_transform, vectors_dimension, vectors_eltype,
                  search_index, embeddings_path, embeddings_kind, doc2vec_method,
@@ -178,6 +180,7 @@ function load_search_configs(filename::AbstractString)
             sconfig.enabled = get(dconfig, "enabled", false)
             sconfig.config_path = fullfilename
             sconfig.data_path = postprocess_path(get(dconfig, "data_path", ""))
+            sconfig.metadata_to_index = Symbol.(get(dconfig, "metadata_to_index", DEFAULT_METADATA_FIELDS_TO_INDEX))
             sconfig.language = lowercase(get(dconfig, "language", DEFAULT_LANGUAGE_STR))
             sconfig.build_summary = Bool(get(dconfig, "build_summary", DEFAULT_BUILD_SUMMARY))
             sconfig.summary_ns = Int(get(dconfig, "summary_ns", DEFAULT_SUMMARY_NS))
