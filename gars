@@ -32,9 +32,15 @@ function get_server_commandline_arguments(args::Vector{String})
         "--web-socket-port", "-w"
             help = "WEB socket data communication port"
             arg_type = UInt16
+        "--web-socket-ip"
+            help = "WEB socket data communication IP"
+            default = "127.0.0.1"
         "--http-port", "-p"
             help = "HTTP port for REST services"
             arg_type = Int
+        "--http-ip"
+            help = "HTTP IP for REST services"
+            default = "0.0.0.0"
         "--search-server-port", "-i"
             help = "Internal TCP port for the search server"
             arg_type = Int
@@ -60,6 +66,11 @@ Base.@ccallable function julia_main(ARGS::Vector{String})::Cint
     # Logging
     logger = Garamond.build_logger(logging_stream, log_level)
     global_logger(logger)
+
+    # Get IP's
+    # TODO(Corneliu) Check IP validity
+    ws_ip = args["web-socket-ip"]
+    http_ip = args["http-ip"]
 
     # Get sockets/ports and check
     unixsocket = args["unix-socket"]
@@ -90,8 +101,8 @@ Base.@ccallable function julia_main(ARGS::Vector{String})::Cint
     # Start I/O server(s)
     sserver_ready = Condition()  # search server ready
     unixsocket != nothing && @async unix_socket_server(unixsocket, io_port, sserver_ready)
-    ws_port != nothing && @async web_socket_server(ws_port, io_port, sserver_ready)
-    http_port != nothing && @async rest_server(http_port, io_port, sserver_ready)
+    ws_port != nothing && @async web_socket_server(ws_port, io_port, sserver_ready, ipaddr=ws_ip)
+    http_port != nothing && @async rest_server(http_port, io_port, sserver_ready, ipaddr=http_ip)
 
     # Start Search server
     Garamond.search_server(data_config_paths, io_port, sserver_ready)
