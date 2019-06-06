@@ -315,10 +315,10 @@ deps = ["Unicode"]
 uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 
 [[ProgressMeter]]
-deps = ["Distributed", "Printf", "Random", "Test"]
-git-tree-sha1 = "48058bc11607676e5bbc0b974af79106c6200787"
+deps = ["Distributed", "Printf"]
+git-tree-sha1 = "0f08e0e74e5b160ca20d3962a2620038b75881c7"
 uuid = "92933f4c-e287-5a05-a399-4b506db050ca"
-version = "0.9.0"
+version = "1.0.0"
 
 [[REPL]]
 deps = ["InteractiveUtils", "Markdown", "Sockets"]
@@ -364,10 +364,10 @@ deps = ["LinearAlgebra", "Random"]
 uuid = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [[StaticArrays]]
-deps = ["InteractiveUtils", "LinearAlgebra", "Random", "Statistics", "Test"]
-git-tree-sha1 = "3841b39ed5f047db1162627bf5f80a9cd3e39ae2"
+deps = ["LinearAlgebra", "Random", "Statistics"]
+git-tree-sha1 = "db23bbf50064c582b6f2b9b043c8e7e98ea8c0c6"
 uuid = "90137ffa-7385-5640-81b9-e52037218182"
-version = "0.10.3"
+version = "0.11.0"
 
 [[Statistics]]
 deps = ["LinearAlgebra", "SparseArrays"]
@@ -451,7 +451,6 @@ uuid = "c64b6f0f-98cd-51d1-af78-58ae84944834"
 version = "0.5.0"
 
 [[WordTokenizers]]
-deps = ["Test"]
-git-tree-sha1 = "38d923138dad462f068560af6a12c209912bf7b4"
+git-tree-sha1 = "3b61229bbc8784eaf4ed831d712c2738615aace5"
 uuid = "796a5d58-b03d-544a-977e-18100b691f6e"
-version = "0.4.0"
+version = "0.5.0"
