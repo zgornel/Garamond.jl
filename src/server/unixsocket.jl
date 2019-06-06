@@ -27,7 +27,7 @@ function unix_socket_server(socket::AbstractString,
     # Wait for search server to be ready
     wait(start)
     server = listen(socket)
-    @info "Waiting for data @unix-socket:$socket..."
+    @info "UNIX-Socket server online @$socket..."
 
     # Start serving requests
     while true

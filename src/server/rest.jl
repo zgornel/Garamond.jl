@@ -92,9 +92,10 @@ end
 
 
 """
-    rest_server(port::Integer, io_port::Integer, search_server_ready::Condition)
+    rest_server(port::Integer, io_port::Integer, search_server_ready::Condition [;ipaddr::String])
 
-Starts a bi-directional REST server that uses the HTTP port `port`
+Starts a bi-directional HTTP REST server at address `ipaddr::String`
+(defaults to `"0.0.0.0"` i.e. all ip's) that uses the TCP port `port`
 and communicates with the search server through the TCP port `io_port`.
 The server is started once the condition `search_server_ready`
 is triggered.
@@ -121,7 +122,10 @@ where:
     `http://localhost:9001/api/v1/read-configs`
     `http://localhost:9001/api/v1/update/my_searcher`
 """
-function rest_server(port::Integer, io_port::Integer, search_server_ready::Condition)
+function rest_server(port::Integer,
+                     io_port::Integer,
+                     search_server_ready::Condition;
+                     ipaddr::String="0.0.0.0")
     #Checks
     if port <= 0
         @error "Please specify a HTTP REST port of positive integer value."
@@ -133,10 +137,10 @@ function rest_server(port::Integer, io_port::Integer, search_server_ready::Condi
 
     # Wait for search server to be ready
     wait(search_server_ready)
-    @info "Waiting for data @http(rest):$port..."
+    @info "REST server online @$ipaddr:$port..."
 
     # Start serving requests
-    @async HTTP.serve(Sockets.IPv4(0), port, readtimeout=0) do req::HTTP.Request
+    @async HTTP.serve(Sockets.IPv4(ipaddr), port, readtimeout=0) do req::HTTP.Request
         # Check for request body (there should not be any)
         body = IOBuffer(HTTP.payload(req))
         if eof(body)
