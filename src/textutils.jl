@@ -97,6 +97,7 @@ function summarize(sentences::Vector{S};
     s = StringDocument{String}.(sentences)
     c = Corpus(s)
     StringAnalysis.prepare!(c, flags)
+    filter!(doc->occursin(r"[a-zA-Z0-9]",text(doc)), documents(c))
     update_lexicon!(c)
     t = dtm(DocumentTermMatrix{Float32}(c))
     tf_idf!(t)
