@@ -22,6 +22,9 @@ function get_web_socket_client_arguments(args::Vector{String})
             help = "WEB socket data communication port"
             arg_type = UInt16
             default = UInt16(0)
+        "--web-socket-ip"
+            help = "WEB socket data communication IP"
+            default = "127.0.0.1"
         "--http-port", "-p"
             help = "HTTP port for the http server"
             arg_type = Int
@@ -51,7 +54,8 @@ Base.@ccallable function julia_main(ARGS::Vector{String})::Cint
     global_logger(logger)
 
     # Start client
-    @debug "~ GARAMOND~ (web-socket client)"
+    @info "~ GARAMOND ~ (web-socket client)"
+    ws_ip = args["web-socket-ip"]
     ws_port = args["web-socket-port"]
     if ws_port > 0
         # Get web page
@@ -59,7 +63,7 @@ Base.@ccallable function julia_main(ARGS::Vector{String})::Cint
         if webpage_file != nothing && isfile(webpage_file)
             webpage = read(webpage_file, String)
         else
-            webpage = _default_webpage(ws_port)
+            webpage = _default_webpage(ws_ip, ws_port)
         end
 
         # Start HTTP server
@@ -71,8 +75,9 @@ Base.@ccallable function julia_main(ARGS::Vector{String})::Cint
                 return HTTP.Response(404, "Error: $e")
             end
         end
-        @debug "Serving page on 127.0.0.1:$http_port"
-        HTTP.serve(_handler, ip"127.0.0.1", http_port, readtimeout=0)
+        http_ip = Sockets.localhost
+        @info "Serving page on $http_ip:$http_port"
+        HTTP.serve(_handler, http_ip, http_port, readtimeout=0)
     else
         @warn "Wrong web-socket port value $ws_port (default is 0). Exiting..."
     end
@@ -81,7 +86,7 @@ end
 
 
 # Function that returns the default webpage
-function _default_webpage(ws_port::UInt16)
+function _default_webpage(ws_ip::String, ws_port::UInt16)
     return "
 	<!doctype html>
 	<html>
@@ -143,7 +148,7 @@ function _default_webpage(ws_port::UInt16)
         //}, \'false\');
 
         // Global variables
-        var connection = new WebSocket(\'ws://localhost:$ws_port\');
+        var connection = new WebSocket(\'ws://$ws_ip:$ws_port\');
         var search_results = document.getElementById(\"search_results\");
 
         // When socket connection opened i.e. on page load
