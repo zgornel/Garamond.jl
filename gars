@@ -50,6 +50,17 @@ function get_server_commandline_arguments(args::Vector{String})
 end
 
 
+# Tests whether an ip is valid
+function isvalidip(ip::AbstractString)
+    try
+        IPv4(ip), IPv6(ip)
+        return true
+    catch
+        return false
+    end
+end
+
+
 ########################
 # Main module function #
 ########################
@@ -68,9 +79,15 @@ Base.@ccallable function julia_main(ARGS::Vector{String})::Cint
     global_logger(logger)
 
     # Get IP's
-    # TODO(Corneliu) Check IP validity
     ws_ip = args["web-socket-ip"]
     http_ip = args["http-ip"]
+    if !isvalidip(ws_ip)
+        @warn "Web-socket IP $ws_ip is not valid. Exiting..."
+        return 0
+    elseif !isvalidip(http_ip)
+        @warn "HTTP IP $http_ip is not valid. Exiting..."
+        return 0
+    end
 
     # Get sockets/ports and check
     unixsocket = args["unix-socket"]
