@@ -56,13 +56,14 @@ module Garamond
     import Base: size, length, show, keys, values, push!,
                  delete!, getindex, names, convert, lowercase,
                  occursin, isempty, parse
-    import StringAnalysis: id, embed_document
+    import StringAnalysis: id
     import Word2Vec: WordVectors
 
     # Exports
     export
         search,
         load_searchers,
+        AbstractEmbedder,
         AbstractIndex,
         Searcher,
         SearchConfig,
@@ -70,6 +71,7 @@ module Garamond
         id, description,
         isenabled, enable!, disable!,
         print_search_results,
+        search_server,
         unix_socket_server,
         web_socket_server,
         rest_server
@@ -80,7 +82,14 @@ module Garamond
     include("config/data.jl")
     include("logging.jl")
     include("textutils.jl")
-    include("embeddings.jl")
+    include("embedder/abstractembedder.jl")
+    include("embedder/wordvectors.jl")
+    include("embedder/boe.jl")
+    include("embedder/sif.jl")
+    include("embedder/borep.jl")
+    include("embedder/cpmean.jl")
+    include("embedder/disc.jl")
+    include("embedder/dtv.jl")
     include("index/abstractindex.jl")
     include("index/vectorial.jl")
     include("structs.jl")

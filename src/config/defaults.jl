@@ -12,12 +12,15 @@ const DEFAULT_VECTORS_DIMENSION = 1  # can be any positive Int
 const DEFAULT_VECTORS_ELTYPE = :Float32
 const DEFAULT_SEARCH_INDEX = :hnsw  # can be :naive, :brutetree, :kdtree or :hnsw
 const DEFAULT_EMBEDDINGS_KIND = :binary  # can be :binary or :text
-const DEFAULT_DOC2VEC_METHOD = :bow  # can be :bow or :sif
+const DEFAULT_DOC2VEC_METHOD = :boe  # can be :boe, :sif, :borep or :cpmean
 const DEFAULT_SEARCH_METHOD = :exact  #can be :exact or :regex
 const DEFAULT_HEURISTIC  = nothing #  i.e. :hamming, :levenshtein (nothing for no suggestions)
 const DEFAULT_BM25_KAPPA = 2  # default value for BM25 κ parameter
 const DEFAULT_BM25_BETA = 0.75  # default value for BM25 β parameter
 const DEFAULT_SIF_ALPHA = 0.01  # default value for α parameter of the SIF doc2vec method
+const DEFAULT_BOREP_DIMENSION = 1024  # default BOREP embedder output dimensionality
+const DEFAULT_BOREP_POOLING_FUNCTION = :sum  # pooling function for BOREP embeddera i.e. :sum, :max
+const DEFAULT_DISC_NGRAM = 2  # DisC embedder n-gram parameter
 const DEFAULT_SCORE_ALPHA = 0.5  # default value of the α parameter of the score transformation
 # Results
 const DEFAULT_RESULT_AGGREGATION_STRATEGY = :mean  # can be :minimum, :maximum, :mean, :median, :product
@@ -72,7 +75,7 @@ const HEURISTIC_TO_DISTANCE = Dict(  # heuristic to distance object mapping
     :jaro => StringDistances.Jaro())
 const DEFAULT_DISTANCE = HEURISTIC_TO_DISTANCE[:jaro]  # default distance
 const DEFAULT_PARSER_CONFIG = nothing
-const DEFAULT_METADATA_FIELDS = [:author, :name]  # Default metadata fields for search
+const DEFAULT_METADATA_FIELDS_TO_INDEX = [:author, :name]  # Default metadata fields to index
 # Dictionaries for String <=>Languages.Language / Languages.Languages <=> String
 # conversion
 const STR_TO_LANG = Dict("english"=>Languages.English,
@@ -127,12 +130,12 @@ const SUPPORTED_LANGUAGES=[Languages.English,
                            Languages.Italian]
 const DEFAULT_LANGUAGE=Languages.English
 const DEFAULT_LANGUAGE_STR=LANG_TO_STR[DEFAULT_LANGUAGE]
-const DEFAULT_TOKENIZER=:fast
+const DEFAULT_TOKENIZER=:stringanalysis
 
 
 ##########################
 # OTHER USEFUL CONSTANTS #
 ##########################
 const DEFAULT_VERSION = "0.1.0"
-const DEFAULT_VERSION_DATE = "2019-05-09"
-const DEFAULT_VERSION_COMMIT = "fb52924*"
+const DEFAULT_VERSION_DATE = "2019-06-06"
+const DEFAULT_VERSION_COMMIT = "f7e849a*"

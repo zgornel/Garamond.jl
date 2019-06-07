@@ -33,6 +33,7 @@ mutable struct SearchConfig
     data_path::String               # file/directory path for the data (depends on what the parser accepts)
     parser::Function                # parser function used to obtain corpus
     parser_config::Union{Nothing,Dict}  # parser configuration
+    metadata_to_index::Vector{Symbol}   # fields from the document's metadata to index
     language::String                # the corpus-level language (use "auto" for document-level autodetection)
     build_summary::Bool             # whether to summarize or not the documents
     summary_ns::Int                 # the number of sentences in the summary
@@ -46,10 +47,10 @@ mutable struct SearchConfig
     search_index::Symbol            # type of the search index i.e. :naive, :kdtree, :hnsw
     embeddings_path::Union{Nothing, String}  # path to the embeddings file
     embeddings_kind::Symbol         # Type of the embedding file for Word2Vec, GloVe i.e. :text, :binary
-    doc2vec_method::Symbol          # How to arrive at a single embedding from multiple i.e. :bow, :sif
+    doc2vec_method::Symbol          # How to arrive at a single embedding from multiple i.e. :boe, :sif etc.
     glove_vocabulary::Union{Nothing, String}  # Path to a GloVe-generated vocabulary file (only for binary embeddings)
     # other
-    heuristic::Union{Nothing, Symbol} #search heuristic for suggesting mispelled words (nothing means no recommendations)
+    heuristic::Union{Nothing, Symbol} # search heuristic for suggesting mispelled words (nothing means no recommendations)
     # text stripping flags
     text_strip_flags::UInt32        # How to strip text data before indexing
     metadata_strip_flags::UInt32    # How to strip text metadata before indexing
@@ -59,6 +60,9 @@ mutable struct SearchConfig
     bm25_kappa::Int                 # κ parameter for BM25 (employed in BM25 only)
     bm25_beta::Float64              # β parameter for BM25 (employed in BM25 only)
     sif_alpha::Float64              # smooth inverse frequency α parameter (for 'sif' doc2vec method only)
+    borep_dimension::Int            # output dimension for BOREP embedder
+    borep_pooling_function::Symbol  # pooling function for the BOREP embedder
+    disc_ngram::Int                 # DisC embedder ngram parameter
     score_alpha::Float64            # score alpha (parameter for the scoring function)
     score_weight::Float64           # weight of scores of searcher (used in result aggregation)
     # cache parameters
@@ -85,6 +89,7 @@ SearchConfig(;
                                       DEFAULT_SUMMARIZATION_STRIP_FLAGS,
                                       DEFAULT_SHOW_PROGRESS),
           parser_config=DEFAULT_PARSER_CONFIG,
+          metadata_to_index=DEFAULT_METADATA_FIELDS_TO_INDEX,
           language=DEFAULT_LANGUAGE_STR,
           build_summary=DEFAULT_BUILD_SUMMARY,
           summary_ns=DEFAULT_SUMMARY_NS,
@@ -107,13 +112,16 @@ SearchConfig(;
           bm25_kappa=DEFAULT_BM25_KAPPA,
           bm25_beta=DEFAULT_BM25_BETA,
           sif_alpha=DEFAULT_SIF_ALPHA,
+          borep_dimension=DEFAULT_BOREP_DIMENSION,
+          borep_pooling_function=DEFAULT_BOREP_POOLING_FUNCTION,
+          disc_ngram=DEFAULT_DISC_NGRAM,
           score_alpha=DEFAULT_SCORE_ALPHA,
           score_weight=1.0,
           cache_directory=DEFAULT_CACHE_DIRECTORY,
           cache_compression=DEFAULT_CACHE_COMPRESSION) =
     # Call normal constructor
     SearchConfig(id, id_aggregation, description, enabled,
-                 config_path, data_path, parser, parser_config,
+                 config_path, data_path, parser, parser_config, metadata_to_index,
                  language, build_summary, summary_ns, keep_data, stem_words,
                  vectors, vectors_transform, vectors_dimension, vectors_eltype,
                  search_index, embeddings_path, embeddings_kind, doc2vec_method,
@@ -121,7 +129,8 @@ SearchConfig(;
                  text_strip_flags, metadata_strip_flags,
                  query_strip_flags, summarization_strip_flags,
                  bm25_kappa, bm25_beta, sif_alpha,
-                 score_alpha, score_weight,
+                 borep_dimension, borep_pooling_function,
+                 disc_ngram, score_alpha, score_weight,
                  cache_directory, cache_compression)
 
 
@@ -171,6 +180,7 @@ function load_search_configs(filename::AbstractString)
             sconfig.enabled = get(dconfig, "enabled", false)
             sconfig.config_path = fullfilename
             sconfig.data_path = postprocess_path(get(dconfig, "data_path", ""))
+            sconfig.metadata_to_index = Symbol.(get(dconfig, "metadata_to_index", DEFAULT_METADATA_FIELDS_TO_INDEX))
             sconfig.language = lowercase(get(dconfig, "language", DEFAULT_LANGUAGE_STR))
             sconfig.build_summary = Bool(get(dconfig, "build_summary", DEFAULT_BUILD_SUMMARY))
             sconfig.summary_ns = Int(get(dconfig, "summary_ns", DEFAULT_SUMMARY_NS))
@@ -197,6 +207,9 @@ function load_search_configs(filename::AbstractString)
             sconfig.bm25_kappa = Int(get(dconfig, "bm25_kappa", DEFAULT_BM25_KAPPA))
             sconfig.bm25_beta = Float64(get(dconfig, "bm25_beta", DEFAULT_BM25_BETA))
             sconfig.sif_alpha = Float64(get(dconfig, "sif_alpha", DEFAULT_SIF_ALPHA))
+            sconfig.borep_dimension = Int(get(dconfig, "borep_dimension", DEFAULT_BOREP_DIMENSION))
+            sconfig.borep_pooling_function = Symbol(get(dconfig, "borep_pooling_function", DEFAULT_BOREP_POOLING_FUNCTION))
+            sconfig.disc_ngram = Int(get(dconfig, "disc_ngram", DEFAULT_DISC_NGRAM))
             sconfig.score_alpha = Float64(get(dconfig, "score_alpha", DEFAULT_SCORE_ALPHA))
             sconfig.score_weight = Float64(get(dconfig, "score_weight", 1.0))
             sconfig.cache_directory = get(dconfig, "cache_directory", DEFAULT_CACHE_DIRECTORY)
@@ -284,7 +297,7 @@ function load_search_configs(filename::AbstractString)
                     sconfig.embeddings_kind = DEFAULT_EMBEDDINGS_KIND
                 end
                 # doc2vec_method
-                if !(sconfig.doc2vec_method in [:bow, :sif])
+                if !(sconfig.doc2vec_method in [:boe, :sif, :borep, :cpmean, :disc])
                     @warn "$(sconfig.id) Defaulting doc2vec_method=$DEFAULT_DOC2VEC_METHOD."
                     sconfig.doc2vec_method = DEFAULT_DOC2VEC_METHOD
                 end
@@ -295,6 +308,21 @@ function load_search_configs(filename::AbstractString)
                         @warn "$(sconfig.id) Missing GloVe vocabulary file, ignoring search configuration..."
                         push!(removable, i)
                         continue
+                    end
+                end
+                if sconfig.doc2vec_method == :borep
+                    if sconfig.borep_dimension <= 0
+                        @warn "$(sconfig.id) Defaulting borep_dimension=$DEFAULT_BOREP_DIMENSION."
+                        sconfig.borep_dimension = DEFAULT_BOREP_DIMENSION
+                    end
+                    if !(sconfig.borep_pooling_function in [:sum, :max])
+                        @warn "$(sconfig.id) Defaulting borep_pooling_function=$DEFAULT_BOREP_POOLING_FUNCTION."
+                        sconfig.borep_pooling_function = DEFAULT_BOREP_POOLING_FUNCTION
+                    end
+                elseif sconfig.doc2vec_method == :disc
+                    if sconfig.disc_ngram <= 0
+                        @warn "$(sconfig.id) Defaulting disc_ngram=$DEFAULT_DISC_NGRAM."
+                        sconfig.disc_ngram = DEFAULT_DISC_NGRAM
                     end
                 end
             end

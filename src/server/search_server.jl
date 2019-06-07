@@ -28,8 +28,9 @@ function search_server(data_config_paths, io_port, search_server_ready)
     notify(search_server_ready, true)
 
     # Start search server
-    server = listen(Sockets.localhost, io_port)
-    @info "Search server waiting for queries @inet-socket:$io_port..."
+    ipaddr = Sockets.localhost
+    server = listen(ipaddr, io_port)
+    @info "SEARCH server online @$ipaddr:$io_port..."
 
     # Main loop
     counter = [0]  # vector so the value is mutable
