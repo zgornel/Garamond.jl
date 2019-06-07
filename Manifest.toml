@@ -51,10 +51,10 @@ uuid = "e1450e63-4bb3-523b-b2a4-4ffa8c0fd77d"
 version = "1.0.0"
 
 [[CMake]]
-deps = ["BinDeps", "Libdl", "Test"]
-git-tree-sha1 = "6e39bef3cbb8321e8a464b18a5c20d7cef813938"
+deps = ["BinDeps"]
+git-tree-sha1 = "c67a8689dc5444adc5eb2be7d837100340ecba11"
 uuid = "631607c0-34d2-5d66-819e-eb0f9aa2061a"
-version = "1.1.1"
+version = "1.1.2"
 
 [[CMakeWrapper]]
 deps = ["BinDeps", "CMake", "Libdl", "Parameters", "Test"]
@@ -167,6 +167,12 @@ repo-rev = "master"
 repo-url = "https://github.com/zgornel/HNSW.jl.git"
 uuid = "540f64fa-c57e-11e8-081c-41422cda4629"
 version = "0.1.0"
+
+[[HTML_Entities]]
+deps = ["StrTables"]
+git-tree-sha1 = "aa19515d6ebe7f91a39cfc1dc6341f38fcac1282"
+uuid = "7693890a-d069-55fe-a829-b4a6d304f0ee"
+version = "1.0.0"
 
 [[HTTP]]
 deps = ["Base64", "Dates", "IniFile", "MbedTLS", "Sockets"]
@@ -373,11 +379,17 @@ version = "0.11.0"
 deps = ["LinearAlgebra", "SparseArrays"]
 uuid = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
+[[StrTables]]
+deps = ["Dates"]
+git-tree-sha1 = "5998faae8c6308acc25c25896562a1e66a3bb038"
+uuid = "9700d1a9-a7c8-5760-9816-a99fda30bb8f"
+version = "1.0.1"
+
 [[StringAnalysis]]
 deps = ["AutoHashEquals", "BinaryProvider", "DataStructures", "Dates", "DelimitedFiles", "Languages", "Libdl", "LinearAlgebra", "SparseArrays", "Statistics", "TSVD", "Test", "Unicode", "WordTokenizers"]
-git-tree-sha1 = "4a95b4edf0dfd84e33a0c7dc18b14b46cc482091"
+git-tree-sha1 = "d9ada191089edd6e88583e86a6a8af10e6849087"
 uuid = "b66b7d2f-f536-51df-9f97-4dfb9d27c005"
-version = "0.3.7"
+version = "0.3.8"
 
 [[StringDistances]]
 deps = ["Distances", "IterTools", "Random", "Test"]
@@ -451,6 +463,7 @@ uuid = "c64b6f0f-98cd-51d1-af78-58ae84944834"
 version = "0.5.0"
 
 [[WordTokenizers]]
-git-tree-sha1 = "3b61229bbc8784eaf4ed831d712c2738615aace5"
+deps = ["HTML_Entities", "StrTables", "Unicode"]
+git-tree-sha1 = "b4d92ea3c1093d96b2463f5572ef7f32026cf7ed"
 uuid = "796a5d58-b03d-544a-977e-18100b691f6e"
-version = "0.5.0"
+version = "0.5.1"

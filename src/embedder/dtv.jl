@@ -24,7 +24,7 @@ function document2vec(embedder::DTVEmbedder{S,T},
     dtv_function = ifelse(isregex, dtv_regex, dtv)
     words = Vector{String}()
     for sentence in document
-        for word in tokenize(sentence, method=:fast)
+        for word in tokenize(sentence, method=:stringanalysis)
             push!(words, word)
         end
     end

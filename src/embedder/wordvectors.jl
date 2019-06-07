@@ -35,7 +35,7 @@ function document2vec(embedder::WordVectorsEmbedder{S,T},
 
     # Get word embeddings for each sentence
     @inbounds for i in 1:n
-        words = tokenize(document[i], method=:fast)
+        words = tokenize(document[i], method=:stringanalysis)
         _embs, _mtoks = word_embeddings(embedder.embeddings,
                                         words,
                                         keep_size=false,
