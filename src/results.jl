@@ -9,7 +9,7 @@ struct SearchResult{T<:AbstractFloat}
     query_matches::MultiDict{T, Int}  # score => document indices
     needle_matches::Vector{String}
     suggestions::MultiDict{String, Tuple{T,String}} # needle => tuples of (score,partial match)
-    score_weight::T
+    score_weight::T  # a default weight for scores
 end
 
 

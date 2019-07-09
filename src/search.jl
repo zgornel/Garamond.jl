@@ -104,18 +104,14 @@ function search(srcher::Searcher{T,D,E,I},
                 max_matches::Int=MAX_MATCHES,
                 max_suggestions::Int=MAX_SUGGESTIONS  # not used
                ) where {T<:AbstractFloat, D<:AbstractDocument, E, I<:AbstractIndex}
-    # Prepare query
-    language = get(STR_TO_LANG, srcher.config.language, DEFAULT_LANGUAGE)()
-    flags = srcher.config.query_strip_flags
-    needles = query_preparation(query, flags, language)
-
-    # Initializations
+    # Prepare and embed query
     isregex = (search_method == :regex)
     n = length(srcher.index)  # number of embedded documents
-    query_embedding = document2vec(srcher.embedder, needles,
-                                   embedding_method=srcher.config.doc2vec_method,
-                                   sif_alpha=srcher.config.sif_alpha,
-                                   isregex=isregex)
+    language = get(STR_TO_LANG, srcher.config.language, DEFAULT_LANGUAGE)()
+    flags = srcher.config.query_strip_flags
+
+    needles = query_preparation(query, flags, language)
+    query_embedding = document2vec(srcher.embedder, needles, isregex=isregex)
 
     # First, find documents with matching needles
     k = min(n, max_matches)
@@ -123,12 +119,12 @@ function search(srcher::Searcher{T,D,E,I},
     scores = T[]
     needle_matches = String[]
     missing_needles = String[]
-    doc_matches = Vector(1:n)
+    searchable = Vector(1:n)
     if srcher.config.vectors in [:count, :tf, :tfidf, :bm25] &&
             srcher.config.vectors_transform in [:none, :rp]
         # For certain types of search, check out which documents can be displayed
         # and which needles have and have not been found
-        needle_matches, doc_matches = find_matching(srcher.corpus.inverse_index,
+        needle_matches, searchable = find_matching(srcher.corpus.inverse_index,
                                         needles, search_method, n)
         missing_needles = setdiff(needles, needle_matches)
     end
@@ -136,7 +132,7 @@ function search(srcher::Searcher{T,D,E,I},
     # Search (if document vector is not zero)
     if !iszero(query_embedding)
         ### Search
-        idxs, scores = search(srcher.index, query_embedding, k, doc_matches)
+        idxs, scores = search(srcher.index, query_embedding, k, searchable)
         ###
         score_transform!(scores, alpha=srcher.config.score_alpha)
     end
