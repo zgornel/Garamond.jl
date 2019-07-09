@@ -40,7 +40,7 @@ mutable struct SearchConfig
     keep_data::Bool                 # whether to keep document data, metadata
     stem_words::Bool                # whether to stem data or not
     # vector representation (defines type of search i.e. classic, semantic, implicitly)
-    vectors::Symbol                 # how document vectors are calculated i.e. :count, :tf, :tfidf, :bm25, :word2vec, :glove, :conceptnet
+    vectors::Symbol                 # how document vectors are calculated i.e. :count, :tf, :tfidf, :bm25, :word2vec, :glove, :conceptnet, :compressed
     vectors_transform::Symbol       # what transform to apply to the vectors i.e. :lsa, :rp, :none
     vectors_dimension::Int          # desired dimensionality after transform (ignored for word2vec approaches)
     vectors_eltype::Symbol          # type of the document vector elements
@@ -247,7 +247,7 @@ function load_search_configs(filename::AbstractString)
             # vectors
             if sconfig.vectors in [:count, :tf, :tfidf, :bm25]
                 classic_search_approach = true  # classic search (including lsa, random projections)
-            elseif sconfig.vectors in [:word2vec, :glove, :conceptnet]
+            elseif sconfig.vectors in [:word2vec, :glove, :conceptnet, :compressed]
                 classic_search_approach = false  # semantic search
             else
                 @warn "$(sconfig.id) Defaulting vectors=$DEFAULT_VECTORS."

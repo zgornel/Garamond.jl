@@ -65,7 +65,7 @@ function generate_test_confs(data_path::String, parser::Symbol)
     config_path = abspath(joinpath(tmp_path, "garamond", "test", "configs"))
     mkpath(config_path)
     # Generate data configuration files
-    for vectors in ["bm25", "conceptnet", "word2vec", "glove"]  # "count", "tf", "tfidf" ommitted
+    for vectors in ["bm25", "conceptnet", "word2vec", "glove", "compressed"]  # "count", "tf", "tfidf" ommitted
         for vectors_transform in ["none", "rp", "lsa"]
             for search_index in ["naive", "brutetree", "kdtree", "hnsw"]
                 for doc2vec_method in ["boe", "sif" , "borep", "cpmean", "disc"]
@@ -83,6 +83,9 @@ function generate_test_confs(data_path::String, parser::Symbol)
                     elseif vectors == "glove"
                         embeddings_path = "$(@__DIR__)/embeddings/glove/sample_model.txt"
                         embeddings_kind = "text"
+                    elseif vectors == "compressed"
+                        embeddings_path = "$(@__DIR__)/embeddings/compressed/sample_model.bin"
+                        embeddings_kind = "binary"
                     else
                         embeddings_path = nothing
                         embeddings_kind = "not_important"
