@@ -110,8 +110,11 @@ function search(srcher::Searcher{T,D,E,I},
     language = get(STR_TO_LANG, srcher.config.language, DEFAULT_LANGUAGE)()
     flags = srcher.config.query_strip_flags
 
+    # When embedding the query, no OOV policy is used i.e. zero vector for
+    # a non-embeddable query -> makes possible the `!iszero` check below
     needles = query_preparation(query, flags, language)
-    query_embedding = document2vec(srcher.embedder, needles, isregex=isregex)
+    query_embedding, query_is_embedded = document2vec(srcher.embedder, needles,
+                                            srcher.config.oov_policy, isregex=isregex)
 
     # First, find documents with matching needles
     k = min(n, max_matches)
@@ -130,7 +133,7 @@ function search(srcher::Searcher{T,D,E,I},
     end
 
     # Search (if document vector is not zero)
-    if !iszero(query_embedding)
+    if query_is_embedded
         ### Search
         idxs, scores = search(srcher.index, query_embedding, k, searchable)
         ###

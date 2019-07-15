@@ -22,6 +22,8 @@ const DEFAULT_BOREP_DIMENSION = 1024  # default BOREP embedder output dimensiona
 const DEFAULT_BOREP_POOLING_FUNCTION = :sum  # pooling function for BOREP embeddera i.e. :sum, :max
 const DEFAULT_DISC_NGRAM = 2  # DisC embedder n-gram parameter
 const DEFAULT_SCORE_ALPHA = 0.5  # default value of the α parameter of the score transformation
+const DEFAULT_OOV_POLICY = :none  # values are :none, :large_vector
+const DEFAULT_OOV_VAL = 1000  # default value for OOV vectors
 # Results
 const DEFAULT_RESULT_AGGREGATION_STRATEGY = :mean  # can be :minimum, :maximum, :mean, :median, :product
 # Various document parsing constants

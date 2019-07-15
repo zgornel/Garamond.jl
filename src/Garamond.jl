@@ -81,7 +81,7 @@ module Garamond
     # Include section
     include("config/defaults.jl")
     include("config/engine.jl")
-    include("config/data.jl")
+    include("config/search.jl")
     include("logging.jl")
     include("textutils.jl")
     include("embedder/abstractembedder.jl")
