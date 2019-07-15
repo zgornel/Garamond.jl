@@ -49,6 +49,7 @@ mutable struct SearchConfig
     embeddings_kind::Symbol         # Type of the embedding file for Word2Vec, GloVe i.e. :text, :binary
     doc2vec_method::Symbol          # How to arrive at a single embedding from multiple i.e. :boe, :sif etc.
     glove_vocabulary::Union{Nothing, String}  # Path to a GloVe-generated vocabulary file (only for binary embeddings)
+    oov_policy::Symbol              # what to do with non-embeddable documents i.e. :none, :large_vector
     # other
     heuristic::Union{Nothing, Symbol} # search heuristic for suggesting mispelled words (nothing means no recommendations)
     # text stripping flags
@@ -104,6 +105,7 @@ SearchConfig(;
           embeddings_kind=DEFAULT_EMBEDDINGS_KIND,
           doc2vec_method=DEFAULT_DOC2VEC_METHOD,
           glove_vocabulary=nothing,
+          oov_policy=DEFAULT_OOV_POLICY,
           heuristic=DEFAULT_HEURISTIC,
           text_strip_flags=DEFAULT_TEXT_STRIP_FLAGS,
           metadata_strip_flags=DEFAULT_METADATA_STRIP_FLAGS,
@@ -125,7 +127,7 @@ SearchConfig(;
                  language, build_summary, summary_ns, keep_data, stem_words,
                  vectors, vectors_transform, vectors_dimension, vectors_eltype,
                  search_index, embeddings_path, embeddings_kind, doc2vec_method,
-                 glove_vocabulary, heuristic,
+                 glove_vocabulary, oov_policy, heuristic,
                  text_strip_flags, metadata_strip_flags,
                  query_strip_flags, summarization_strip_flags,
                  bm25_kappa, bm25_beta, sif_alpha,
@@ -194,7 +196,8 @@ function load_search_configs(filename::AbstractString)
             sconfig.embeddings_path = postprocess_path(get(dconfig, "embeddings_path", nothing))
             sconfig.embeddings_kind = Symbol(get(dconfig, "embeddings_kind", DEFAULT_EMBEDDINGS_KIND))
             sconfig.doc2vec_method = Symbol(get(dconfig, "doc2vec_method", DEFAULT_DOC2VEC_METHOD))
-            sconfig.glove_vocabulary= get(dconfig, "glove_vocabulary", nothing)
+            sconfig.glove_vocabulary = get(dconfig, "glove_vocabulary", nothing)
+            sconfig.oov_policy = Symbol(get(dconfig, "oov_policy", DEFAULT_OOV_POLICY))
             if haskey(dconfig, "heuristic")
                 sconfig.heuristic = Symbol(dconfig["heuristic"])
             else
@@ -325,6 +328,11 @@ function load_search_configs(filename::AbstractString)
                         sconfig.disc_ngram = DEFAULT_DISC_NGRAM
                     end
                 end
+            end
+            # oov_policy
+            if !(sconfig.oov_policy in [:none, :large_vector])
+                @warn "$(sconfig.id) Defaulting oov_policy=$DEFAULT_OOV_POLICY."
+                sconfig.oov_policy = DEFAULT_OOV_POLICY
             end
             # heuristic
             if !(typeof(sconfig.heuristic) <: Nothing) && !(sconfig.heuristic in keys(HEURISTIC_TO_DISTANCE))

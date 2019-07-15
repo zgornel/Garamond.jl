@@ -62,6 +62,21 @@ function document2vec(embedder::WordVectorsEmbedder{S,T},
     return squash(sntembs)
 end
 
+function document2vec(embedder::WordVectorsEmbedder{S,T},
+                      document::Vector{String},
+                      oov_policy::Symbol;
+                      kwargs...  # for the unused arguments
+                     ) where {S,T}
+    # An embedded document is a zero vector only if it was not properly embedded
+    embedded_document = document2vec(embedder, document; kwargs...)
+    is_embedded = !iszero(embedded_document)
+    # Check for OOV (out-of-vocabulary) policy
+    if oov_policy == :large_vector && !is_embedded
+        embedded_document .= T(DEFAULT_OOV_VAL)
+    end
+    return embedded_document, is_embedded
+end
+
 
 """
     word_embeddings(word_vectors, document_tokens [;kwargs])

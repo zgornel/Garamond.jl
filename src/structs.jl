@@ -141,7 +141,8 @@ function build_searcher(sconf::SearchConfig)
     end
 
     # Calculate embeddings for each document
-    embedded_documents = @op embed_all_documents(embedder, merged_sentences)
+    embedded_documents = @op embed_all_documents(embedder,
+                                merged_sentences, sconf.oov_policy)
 
     # Get search index type
     IndexType = get_search_index_type(sconf)
@@ -210,8 +211,8 @@ function document_preparation(documents, flags, language)
     map(sentences->prepare.(sentences, flags, language=language), documents)
 end
 
-function embed_all_documents(embedder, documents)
-    hcat((document2vec(embedder, doc) for doc in documents)...)
+function embed_all_documents(embedder, documents, oov_policy)
+    hcat((document2vec(embedder, doc, oov_policy)[1] for doc in documents)...)
 end
 
 function get_search_index_type(sconf::SearchConfig)

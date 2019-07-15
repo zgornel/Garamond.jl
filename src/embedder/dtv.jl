@@ -36,3 +36,18 @@ function document2vec(embedder::DTVEmbedder{S,T},
     embedded_document = StringAnalysis.embed_document(model, v)
     return embedded_document
 end
+
+function document2vec(embedder::DTVEmbedder{S,T},
+                      document::Vector{String},  # a vector of sentences
+                      oov_policy::Symbol;  # this is ignored yet has to be present
+                      isregex::Bool=false,
+                      kwargs...  # for the unused arguments
+                     )::Tuple{SparseVector{T, Int}, Bool} where {S,T}
+    embedded_document = document2vec(embedder, document, isregex=isregex; kwargs...)
+    is_embedded = !iszero(embedded_document)
+    # Check for OOV (out-of-vocabulary) policy
+    if oov_policy == :large_vector && !is_embedded
+        embedded_document .= T(DEFAULT_OOV_VAL)
+    end
+    return embedded_document, is_embedded
+end
