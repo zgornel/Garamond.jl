@@ -128,7 +128,7 @@ function build_searcher(sconf::SearchConfig)
 
     # Get embedder (split into two separate call ways so that unused changed
     #               parameters do not influence the cache consistency)
-    if sconf.vectors in [:word2vec, :glove, :conceptnet]
+    if sconf.vectors in [:word2vec, :glove, :conceptnet, :compressed]
         embedder = @op get_embedder(sconf.vectors, sconf.embeddings_path,
                             sconf.embeddings_kind, sconf.doc2vec_method,
                             sconf.glove_vocabulary, sconf.sif_alpha,
@@ -262,6 +262,9 @@ function get_embedder(vectors::Symbol, embeddings_path::String, embeddings_kind:
                         vocabulary=glove_vocabulary,
                         normalize=false,
                         load_bias=false)
+    elseif vectors == :compressed
+        embeddings = EmbeddingsAnalysis.compressedwordvectors(
+                        embeddings_path, T, kind=embeddings_kind)
     end
 
     # Construct embedder based on document2vec method

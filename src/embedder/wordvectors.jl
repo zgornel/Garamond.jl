@@ -5,9 +5,11 @@ abstract type WordVectorsEmbedder{S,T} <: AbstractEmbedder{S,T} end
 Constant that represents embeddings libraries used in text embedding.
 """
 const EmbeddingsLibrary{S,T} = Union{
-    ConceptNet{<:Languages.Language, S, T},
-    Word2Vec.WordVectors{S, T, <:Integer},
-    Glowe.WordVectors{S, T, <:Integer}
+    ConceptNet{<:Languages.Language,S,T},
+    Word2Vec.WordVectors{S,T,<:Integer},
+    Glowe.WordVectors{S,T,<:Integer},
+    EmbeddingsAnalysis.CompressedWordVectors{<:QuantizedArrays.AbstractQuantization,
+                                             <:Unsigned,<:Distances.PreMetric,T,S,<:Integer}
 }
 
 
@@ -83,12 +85,14 @@ as well as the indices of missing i.e. not-embedded tokens.
      and can be found by inspecting the help of `ConceptnetNumberbatch.embed_document`
 """
 function word_embeddings(word_vectors::Union{Word2Vec.WordVectors{S1,T,H},
-                                             Glowe.WordVectors{S1,T,H}},
+                                             Glowe.WordVectors{S1,T,H},
+                                             EmbeddingsAnalysis.CompressedWordVectors{Q,U,D,T,S1,H}},
                          document_tokens::Vector{S2};
                          keep_size::Bool=true,
                          print_matched_words::Bool=false,
-                         kwargs...) where {S1<:AbstractString, T<:Real,
-                                           H<:Integer, S2<:AbstractString}
+                         kwargs...) where {S1<:AbstractString, T<:Real, H<:Integer, S2<:AbstractString,
+                                           Q<:QuantizedArrays.AbstractQuantization,
+                                           U<:Unsigned, D<:Distances.PreMetric}
     # Initializations
     n = size(word_vectors)[1]
     p = length(document_tokens)

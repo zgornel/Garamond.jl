@@ -28,8 +28,9 @@ module Garamond
     using DelimitedFiles
     using Sockets
     using LinearAlgebra
-    using SparseArrays
     using Statistics
+    using SparseArrays
+    using QuantizedArrays
     using DataStructures
     using Memento
     using Dispatcher
@@ -43,6 +44,7 @@ module Garamond
     using ConceptnetNumberbatch
     using Word2Vec
     using Glowe
+    using EmbeddingsAnalysis
     using HNSW
     using NearestNeighbors
     using Distances

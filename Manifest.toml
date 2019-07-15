@@ -12,6 +12,12 @@ git-tree-sha1 = "2b6845cea546604fb4dca4e31414a6a59d39ddcd"
 uuid = "ec485272-7323-5ecc-a04f-4719b315124d"
 version = "0.0.4"
 
+[[Arpack]]
+deps = ["BinaryProvider", "Libdl", "LinearAlgebra"]
+git-tree-sha1 = "07a2c077bdd4b6d23a40342a8a108e2ee5e58ab6"
+uuid = "7d9fca2a-8960-54d3-9f78-7d1dccf2cb97"
+version = "0.3.1"
+
 [[AutoHashEquals]]
 git-tree-sha1 = "45bb6705d93be619b81451bb2006b7ee5d4e4453"
 uuid = "15f4f7f2-30c1-5605-9d31-71845cf9641f"
@@ -33,10 +39,10 @@ uuid = "9e28174c-4ba2-5203-b857-d8d62c4213ee"
 version = "0.8.10"
 
 [[BinaryProvider]]
-deps = ["Libdl", "SHA"]
+deps = ["Libdl", "Logging", "SHA"]
 git-tree-sha1 = "c7361ce8a2129f20b0e05a89f7070820cfed6648"
 uuid = "b99e7846-7c00-51b0-8f62-c81ae34c0232"
-version = "0.5.4"
+version = "0.5.6"
 
 [[Blosc]]
 deps = ["BinaryProvider", "CMakeWrapper", "Compat", "Libdl"]
@@ -63,10 +69,16 @@ uuid = "d5fb7624-851a-54ee-a528-d3f3bac0b4a0"
 version = "0.2.3"
 
 [[CSTParser]]
-deps = ["LibGit2", "Test", "Tokenize"]
-git-tree-sha1 = "437c93bc191cd55957b3f8dee7794b6131997c56"
+deps = ["Tokenize"]
+git-tree-sha1 = "376a39f1862000442011390f1edf5e7f4dcc7142"
 uuid = "00ebfdb7-1f24-5e51-bd34-a7502290713f"
-version = "0.5.2"
+version = "0.6.0"
+
+[[Clustering]]
+deps = ["Distances", "LinearAlgebra", "NearestNeighbors", "Printf", "SparseArrays", "Statistics", "StatsBase"]
+git-tree-sha1 = "4b4fff471d7bc091894d18a9e98c1c95bca5ee64"
+uuid = "aaaa29a8-35af-508c-8bc3-b662a17a0fe5"
+version = "0.13.2"
 
 [[CodecBzip2]]
 deps = ["BinDeps", "Libdl", "Test", "TranscodingStreams", "WinRPM"]
@@ -93,10 +105,10 @@ uuid = "6bdbf80b-0969-53f9-8443-f41591bd656e"
 version = "0.1.5"
 
 [[DataStructures]]
-deps = ["InteractiveUtils", "OrderedCollections", "Random", "Serialization", "Test"]
-git-tree-sha1 = "ca971f03e146cf144a9e2f2ce59674f5bf0e8038"
+deps = ["InteractiveUtils", "OrderedCollections"]
+git-tree-sha1 = "0809951a1774dc724da22d26e4289bbaab77809a"
 uuid = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
-version = "0.15.0"
+version = "0.17.0"
 
 [[Dates]]
 deps = ["Printf"]
@@ -136,11 +148,17 @@ version = "0.8.0+"
 deps = ["Random", "Serialization", "Sockets"]
 uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 
+[[EmbeddingsAnalysis]]
+deps = ["ConceptnetNumberbatch", "Distances", "Languages", "LinearAlgebra", "MultivariateStats", "QuantizedArrays", "Random", "Statistics", "StatsBase", "Word2Vec"]
+git-tree-sha1 = "e845abd72f96feff8741818a048d952f66103e33"
+uuid = "827a7f00-4ef9-11e9-22c6-8dc9c6ee7bf4"
+version = "0.1.1"
+
 [[EzXML]]
-deps = ["BinaryProvider", "Libdl", "Pkg", "Printf", "Test"]
-git-tree-sha1 = "ad00b79cca4bb3eabb4209217859c553af4401f5"
+deps = ["BinaryProvider", "Libdl", "Printf"]
+git-tree-sha1 = "c678c020f521589ee4090815495305b0305fbcb0"
 uuid = "8f5d6c58-4d21-5cfd-889c-e3ad7ee6a615"
-version = "0.9.1"
+version = "0.9.2"
 
 [[Glob]]
 deps = ["Compat", "Test"]
@@ -155,10 +173,10 @@ uuid = "d04f5788-f3bf-50c4-8044-9206750af6c9"
 version = "0.1.1"
 
 [[HDF5]]
-deps = ["BinDeps", "Blosc", "Homebrew", "Libdl", "Mmap", "WinRPM"]
-git-tree-sha1 = "e6f0c154d01faef0d0831d075aa8f279f95946da"
+deps = ["BinaryProvider", "Blosc", "Libdl", "Mmap"]
+git-tree-sha1 = "635ae44613c8c8dcf5d5b0084bfa00abea498e1f"
 uuid = "f67ccb44-e63f-5c2f-98bd-6dc0ccc4ba2f"
-version = "0.11.1"
+version = "0.12.0"
 
 [[HNSW]]
 deps = ["Distances", "LinearAlgebra", "Reexport"]
@@ -176,21 +194,15 @@ version = "1.0.0"
 
 [[HTTP]]
 deps = ["Base64", "Dates", "IniFile", "MbedTLS", "Sockets"]
-git-tree-sha1 = "854fad2a2b9cc6678f70ed15a65fc7e572056d39"
+git-tree-sha1 = "03ddc88af7f2d963fac5aa9f3ac8e11914d68a78"
 uuid = "cd3eb016-35fb-5094-929b-558a96fad6f3"
-version = "0.8.2"
+version = "0.8.4"
 
 [[HTTPClient]]
 deps = ["Compat", "LibCURL"]
 git-tree-sha1 = "161d5776ae8e585ac0b8c20fb81f17ab755b3671"
 uuid = "0862f596-cf2d-50af-8ef4-f2be67dfa83f"
 version = "0.2.1"
-
-[[Homebrew]]
-deps = ["BinDeps", "InteractiveUtils", "JSON", "Libdl", "Test", "Unicode"]
-git-tree-sha1 = "f01fb2f34675f9839d55ba7238bab63ebd2e531e"
-uuid = "d9be37ee-ecc9-5288-90f1-b9ca67657a75"
-version = "0.7.1"
 
 [[Inflate]]
 deps = ["Pkg", "Printf", "Random", "Test"]
@@ -209,10 +221,9 @@ deps = ["Markdown"]
 uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 
 [[IterTools]]
-deps = ["SparseArrays", "Test"]
-git-tree-sha1 = "79246285c43602384e6f1943b3554042a3712056"
+git-tree-sha1 = "2ebe60d7343962966d1779a74a760f13217a6901"
 uuid = "c8e1da08-722c-5040-9ed9-7db0dc04731e"
-version = "1.1.1"
+version = "1.2.0"
 
 [[JSON]]
 deps = ["Dates", "Distributed", "Mmap", "Sockets", "Test", "Unicode"]
@@ -228,9 +239,9 @@ version = "0.4.2"
 
 [[LibCURL]]
 deps = ["BinaryProvider", "Libdl"]
-git-tree-sha1 = "5ee138c679fa202ebe211b2683d1eee2a87b3dbe"
+git-tree-sha1 = "fd5fc15f2a04608fe1435a769dbbfc7959ff1daa"
 uuid = "b27032c2-a3e7-50c8-80cd-2d36dbcbfd21"
-version = "0.5.1"
+version = "0.5.2"
 
 [[LibExpat]]
 deps = ["Compat"]
@@ -264,26 +275,32 @@ uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
 
 [[MacroTools]]
-deps = ["CSTParser", "Compat", "DataStructures", "Test"]
-git-tree-sha1 = "daecd9e452f38297c686eba90dba2a6d5da52162"
+deps = ["CSTParser", "Compat", "DataStructures", "Test", "Tokenize"]
+git-tree-sha1 = "d6e9dedb8c92c3465575442da456aec15a89ff76"
 uuid = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
-version = "0.5.0"
+version = "0.5.1"
 
 [[Markdown]]
 deps = ["Base64"]
 uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
 
 [[MbedTLS]]
-deps = ["BinaryProvider", "Dates", "Distributed", "Libdl", "Random", "Sockets", "Test"]
-git-tree-sha1 = "2d94286a9c2f52c63a16146bb86fd6cdfbf677c6"
+deps = ["BinaryProvider", "Dates", "Libdl", "Random", "Sockets"]
+git-tree-sha1 = "85f5947b53c8cfd53ccfa3f4abae31faa22c2181"
 uuid = "739be429-bea8-5141-9913-cc70e7f3736d"
-version = "0.6.8"
+version = "0.7.0"
 
 [[Memento]]
 deps = ["Dates", "Distributed", "JSON", "Serialization", "Sockets", "Syslogs", "Test", "TimeZones", "UUIDs"]
 git-tree-sha1 = "090463b13da88689e5eae6468a6f531a21392175"
 uuid = "f28f55f0-a522-5efc-85c2-fe41dfb9b2d9"
 version = "0.12.1"
+
+[[Missings]]
+deps = ["SparseArrays", "Test"]
+git-tree-sha1 = "f0719736664b4358aa9ec173077d4285775f8007"
+uuid = "e1d29d7a-bbdc-5cf2-9ac0-f12de2c33e28"
+version = "0.4.1"
 
 [[Mmap]]
 uuid = "a63ad114-7e13-5084-954f-fe012c677804"
@@ -293,6 +310,12 @@ deps = ["Compat", "Dates"]
 git-tree-sha1 = "4bf69aaf823b119b034e091e16b18311aa191663"
 uuid = "78c3b35d-d492-501b-9361-3d52fe80e533"
 version = "0.5.7"
+
+[[MultivariateStats]]
+deps = ["Arpack", "LinearAlgebra", "Printf", "Random", "SparseArrays", "Statistics", "StatsBase", "Test"]
+git-tree-sha1 = "cf1c990020bc4a52ff34ba2ee058b7cb677141f2"
+uuid = "6f286f6a-111f-5878-ab1e-185364afe411"
+version = "0.6.0"
 
 [[NearestNeighbors]]
 deps = ["Distances", "LinearAlgebra", "Mmap", "StaticArrays", "Test"]
@@ -325,6 +348,12 @@ deps = ["Distributed", "Printf"]
 git-tree-sha1 = "0f08e0e74e5b160ca20d3962a2620038b75881c7"
 uuid = "92933f4c-e287-5a05-a399-4b506db050ca"
 version = "1.0.0"
+
+[[QuantizedArrays]]
+deps = ["Clustering", "Distances", "InteractiveUtils", "LinearAlgebra", "StatsBase"]
+git-tree-sha1 = "b95c21c878396f5d574a0374daebe2a91d267f3e"
+uuid = "a7db621c-8ce0-11e9-16a1-0f86dc86bd10"
+version = "0.1.2"
 
 [[REPL]]
 deps = ["InteractiveUtils", "Markdown", "Sockets"]
@@ -365,6 +394,12 @@ version = "0.8.0"
 [[Sockets]]
 uuid = "6462fe0b-24de-5631-8697-dd941f90decc"
 
+[[SortingAlgorithms]]
+deps = ["DataStructures", "Random", "Test"]
+git-tree-sha1 = "03f5898c9959f8115e30bc7226ada7d0df554ddd"
+uuid = "a2af1166-a08f-5f64-846c-94a0d3cef48c"
+version = "0.3.1"
+
 [[SparseArrays]]
 deps = ["LinearAlgebra", "Random"]
 uuid = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
@@ -378,6 +413,12 @@ version = "0.11.0"
 [[Statistics]]
 deps = ["LinearAlgebra", "SparseArrays"]
 uuid = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+
+[[StatsBase]]
+deps = ["DataStructures", "LinearAlgebra", "Missings", "Printf", "Random", "SortingAlgorithms", "SparseArrays", "Statistics"]
+git-tree-sha1 = "2b6ca97be7ddfad5d9f16a13fe277d29f3d11c23"
+uuid = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
+version = "0.31.0"
 
 [[StrTables]]
 deps = ["Dates"]
@@ -426,10 +467,9 @@ uuid = "f269a46b-ccf7-5d73-abea-4c690281aa53"
 version = "0.9.1"
 
 [[Tokenize]]
-deps = ["Printf", "Test"]
-git-tree-sha1 = "3e83f60b74911d3042d3550884ca2776386a02b8"
+git-tree-sha1 = "0de343efc07da00cd449d5b04e959ebaeeb3305d"
 uuid = "0796e94c-ce3b-5d07-9a54-7f471281c624"
-version = "0.5.3"
+version = "0.5.4"
 
 [[TranscodingStreams]]
 deps = ["Random", "Test"]
@@ -464,6 +504,6 @@ version = "0.5.0"
 
 [[WordTokenizers]]
 deps = ["HTML_Entities", "StrTables", "Unicode"]
-git-tree-sha1 = "b4d92ea3c1093d96b2463f5572ef7f32026cf7ed"
+git-tree-sha1 = "983ca717c4ec786d0458ebcbe395a1a50b3a1897"
 uuid = "796a5d58-b03d-544a-977e-18100b691f6e"
-version = "0.5.1"
+version = "0.5.3"

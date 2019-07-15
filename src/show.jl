@@ -64,6 +64,8 @@ show(io::IO, srcher::Searcher{T,D,E,I}) where {T,D,E,I} = begin
             _vecs = "GloVe"
         elseif L <: ConceptnetNumberbatch.ConceptNet
             _vecs = "Conceptnet"
+        elseif L <: EmbeddingsAnalysis.CompressedWordVectors
+            _vecs = "Compressed"
         else
             _vecs = "?"
         end
