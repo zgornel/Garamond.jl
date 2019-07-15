@@ -40,9 +40,9 @@ version = "0.8.10"
 
 [[BinaryProvider]]
 deps = ["Libdl", "Logging", "SHA"]
-git-tree-sha1 = "8153fd64131cd00a79544bb23788877741f627bb"
+git-tree-sha1 = "c7361ce8a2129f20b0e05a89f7070820cfed6648"
 uuid = "b99e7846-7c00-51b0-8f62-c81ae34c0232"
-version = "0.5.5"
+version = "0.5.6"
 
 [[Blosc]]
 deps = ["BinaryProvider", "CMakeWrapper", "Compat", "Libdl"]
@@ -75,10 +75,10 @@ uuid = "00ebfdb7-1f24-5e51-bd34-a7502290713f"
 version = "0.6.0"
 
 [[Clustering]]
-deps = ["Dates", "Distances", "LinearAlgebra", "NearestNeighbors", "Printf", "Random", "SparseArrays", "Statistics", "StatsBase", "Test"]
-git-tree-sha1 = "5c4c26ffc9075f5a425efdc6e40c6f8f11fa52ec"
+deps = ["Distances", "LinearAlgebra", "NearestNeighbors", "Printf", "SparseArrays", "Statistics", "StatsBase"]
+git-tree-sha1 = "4b4fff471d7bc091894d18a9e98c1c95bca5ee64"
 uuid = "aaaa29a8-35af-508c-8bc3-b662a17a0fe5"
-version = "0.13.1"
+version = "0.13.2"
 
 [[CodecBzip2]]
 deps = ["BinDeps", "Libdl", "Test", "TranscodingStreams", "WinRPM"]
@@ -150,17 +150,15 @@ uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 
 [[EmbeddingsAnalysis]]
 deps = ["ConceptnetNumberbatch", "Distances", "Languages", "LinearAlgebra", "MultivariateStats", "QuantizedArrays", "Random", "Statistics", "StatsBase", "Word2Vec"]
-git-tree-sha1 = "577b4a20d1f3f45e957b69936127562b40457a88"
-repo-rev = "master"
-repo-url = "https://github.com/zgornel/EmbeddingsAnalysis.jl"
+git-tree-sha1 = "e845abd72f96feff8741818a048d952f66103e33"
 uuid = "827a7f00-4ef9-11e9-22c6-8dc9c6ee7bf4"
-version = "0.1.0"
+version = "0.1.1"
 
 [[EzXML]]
-deps = ["BinaryProvider", "Libdl", "Pkg", "Printf", "Test"]
-git-tree-sha1 = "ad00b79cca4bb3eabb4209217859c553af4401f5"
+deps = ["BinaryProvider", "Libdl", "Printf"]
+git-tree-sha1 = "c678c020f521589ee4090815495305b0305fbcb0"
 uuid = "8f5d6c58-4d21-5cfd-889c-e3ad7ee6a615"
-version = "0.9.1"
+version = "0.9.2"
 
 [[Glob]]
 deps = ["Compat", "Test"]
@@ -277,10 +275,10 @@ uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
 
 [[MacroTools]]
-deps = ["CSTParser", "Compat", "DataStructures", "Test"]
-git-tree-sha1 = "daecd9e452f38297c686eba90dba2a6d5da52162"
+deps = ["CSTParser", "Compat", "DataStructures", "Test", "Tokenize"]
+git-tree-sha1 = "d6e9dedb8c92c3465575442da456aec15a89ff76"
 uuid = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
-version = "0.5.0"
+version = "0.5.1"
 
 [[Markdown]]
 deps = ["Base64"]
