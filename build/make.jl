@@ -64,6 +64,7 @@ using Pkg
 try
     # Add project depedencies to the required ones
     Pkg.activate("..")
+    Pkg.update()
     for pkg in keys(Pkg.installed())
         push!(REQUIRED_PACKAGES, pkg)
     end

@@ -105,9 +105,11 @@ function word_embeddings(word_vectors::Union{Word2Vec.WordVectors{S1,T,H},
                          document_tokens::Vector{S2};
                          keep_size::Bool=true,
                          print_matched_words::Bool=false,
-                         kwargs...) where {S1<:AbstractString, T<:Real, H<:Integer, S2<:AbstractString,
-                                           Q<:QuantizedArrays.AbstractQuantization,
-                                           U<:Unsigned, D<:Distances.PreMetric}
+                         kwargs...
+                        ) where {S1<:AbstractString, T<:Real,
+                                 H<:Integer, S2<:AbstractString,
+                                 Q<:QuantizedArrays.AbstractQuantization,
+                                 U<:Unsigned, D<:Distances.PreMetric}
     # Initializations
     n = size(word_vectors)[1]
     p = length(document_tokens)

@@ -18,10 +18,7 @@ end
 
 HNSWIndex(data::AbstractMatrix{T}) where T<:AbstractFloat = begin
     _data = _build_hnsw_data(data)
-    hnsw = HierarchicalNSW(_data;
-                           efConstruction=100,
-                           M=16,
-                           ef=50)
+    hnsw = HierarchicalNSW(_data; efConstruction=100, M=16, ef=50)
     add_to_graph!(hnsw)
     return HNSWIndex(hnsw)
 end

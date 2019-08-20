@@ -13,7 +13,8 @@ struct DisCEmbedder{S,T} <: WordVectorsEmbedder{S,T}
 end
 
 function DisCEmbedder(embeddings::EmbeddingsLibrary{S,T};
-                      n::Int=DEFAULT_DISC_NGRAM) where {T<:AbstractFloat, S<:AbstractString}
+                      n::Int=DEFAULT_DISC_NGRAM
+                     ) where {T<:AbstractFloat, S<:AbstractString}
     return DisCEmbedder(embeddings, n)
 end
 
@@ -39,8 +40,8 @@ function sentences2vec(embedder::DisCEmbedder,
 end
 
 function distributed_cooccurence(document_embedding::Vector{Matrix{T}},
-                                 n::Int,
-                                 dim::Int) where {T<:AbstractFloat}
+                                 n::Int, dim::Int
+                                ) where {T<:AbstractFloat}
     # Pre-allocate output embeddings
     X = zeros(T, dim, length(document_embedding))
     m = Int(dim/n)
@@ -55,16 +56,15 @@ function distributed_cooccurence(document_embedding::Vector{Matrix{T}},
 end
 
 function k_gram_prodsum_embedding(A::Matrix{T}, k::Int) where {T}
-	n = size(A, 2)		# number of embedded words
-	k = clamp(k, 1, n)  # so it does not fail if too few embeddings
-	X = zeros(T, size(A, 1), n-k+1)  # output
-	col = 1
-	@inbounds @simd for j in 1:n-k+1
+    n = size(A, 2)		# number of embedded words
+    k = clamp(k, 1, n)  # so it does not fail if too few embeddings
+    X = zeros(T, size(A, 1), n-k+1)  # output
+    col = 1
+    @inbounds @simd for j in 1:n-k+1
         # Multiply `k` 'consecutive' embeddings element-wise
         X[:, col] = prod(A[:,j:j+k-1], dims=2)
         col+= 1
-	end
-
-	# Add all embedding products together element-wise and return
+    end
+    # Add all embedding products together element-wise and return
     return 1/k * vec(sum(X, dims=2))
 end
