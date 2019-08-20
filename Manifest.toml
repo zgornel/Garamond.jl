@@ -149,9 +149,9 @@ uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 
 [[EmbeddingsAnalysis]]
 deps = ["ConceptnetNumberbatch", "Distances", "Languages", "LinearAlgebra", "MultivariateStats", "QuantizedArrays", "Random", "Statistics", "StatsBase", "Word2Vec"]
-git-tree-sha1 = "e845abd72f96feff8741818a048d952f66103e33"
+git-tree-sha1 = "760ee8826156ab32fb771c72fd90748293c5d8d5"
 uuid = "827a7f00-4ef9-11e9-22c6-8dc9c6ee7bf4"
-version = "0.1.1"
+version = "0.1.2"
 
 [[EzXML]]
 deps = ["BinaryProvider", "Libdl", "Printf"]
@@ -413,10 +413,10 @@ uuid = "b66b7d2f-f536-51df-9f97-4dfb9d27c005"
 version = "0.3.8"
 
 [[StringDistances]]
-deps = ["Distances", "IterTools", "Random", "Test"]
-git-tree-sha1 = "9307623c6b6e8af1d3b0b3b78f3d115407bf5302"
+deps = ["DataStructures", "Distances", "Random", "Test"]
+git-tree-sha1 = "f9d2e623061009441ab27eb961e3307e492b30d6"
 uuid = "88034a9c-02f8-509d-84a9-84ec65e18404"
-version = "0.3.3"
+version = "0.4.0"
 
 [[Syslogs]]
 deps = ["Printf", "Sockets"]
