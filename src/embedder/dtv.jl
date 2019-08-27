@@ -51,3 +51,10 @@ function document2vec(embedder::DTVEmbedder{S,T},
     end
     return embedded_document, is_embedded
 end
+
+
+# Dimensionality function
+function dimensionality(embedder::DTVEmbedder)
+    # Return output dimensionality (second dim)
+    return size(embedder.model)[2]
+end
