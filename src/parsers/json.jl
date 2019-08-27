@@ -25,15 +25,24 @@ function __parser_json(filename::AbstractString,
         # Update progress bar
         iszero(mod(i, _nl)) && show_progress && next!(progressbar)
         # Create document
-        documents[i] = [get(datapoint, field, "") for field in config["data"]]
+        documents[i] = [_to_string(get(datapoint, field, ""))
+                        for field in config["data"]]
         # Create metadata
         metadata_vector[i] = DocumentMetadata()
         config_meta = Dict(k => Symbol(v) for (k,v) in config["metadata"])
         setfield!(metadata_vector[i], :language,
                   get(STR_TO_LANG, language, DEFAULT_LANGUAGE)())
         for (field, metafield) in config_meta
-            setfield!(metadata_vector[i], metafield, get(datapoint, field, ""))
+            setfield!(metadata_vector[i], metafield,
+                      _to_string(get(datapoint, field, "")))
         end
     end
     return documents, metadata_vector
 end
+
+
+# Function that transforms any array into a concatenation
+# of its string-ified elements
+_to_string(data::AbstractVector) = join(string.(data), " ")
+
+_to_string(data::AbstractString) = data  # make sure it works on strings
