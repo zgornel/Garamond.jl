@@ -39,6 +39,7 @@ mutable struct SearchConfig
     summary_ns::Int                 # the number of sentences in the summary
     keep_data::Bool                 # whether to keep document data, metadata
     stem_words::Bool                # whether to stem data or not
+    ngram_complexity::Int           # ngram complexity (i.e. max number of tokes for an n-gram)
     # vector representation (defines type of search i.e. classic, semantic, implicitly)
     vectors::Symbol                 # how document vectors are calculated i.e. :count, :tf, :tfidf, :bm25, :word2vec, :glove, :conceptnet, :compressed
     vectors_transform::Symbol       # what transform to apply to the vectors i.e. :lsa, :rp, :none
@@ -96,6 +97,7 @@ SearchConfig(;
           summary_ns=DEFAULT_SUMMARY_NS,
           keep_data=DEFAULT_KEEP_DATA,
           stem_words=DEFAULT_STEM_WORDS,
+          ngram_complexity=DEFAULT_NGRAM_COMPLEXITY,
           vectors=DEFAULT_VECTORS,
           vectors_transform=DEFAULT_VECTORS_TRANSFORM,
           vectors_dimension=DEFAULT_VECTORS_DIMENSION,
@@ -124,7 +126,7 @@ SearchConfig(;
     # Call normal constructor
     SearchConfig(id, id_aggregation, description, enabled,
                  config_path, data_path, parser, parser_config, metadata_to_index,
-                 language, build_summary, summary_ns, keep_data, stem_words,
+                 language, build_summary, summary_ns, keep_data, stem_words, ngram_complexity,
                  vectors, vectors_transform, vectors_dimension, vectors_eltype,
                  search_index, embeddings_path, embeddings_kind, doc2vec_method,
                  glove_vocabulary, oov_policy, heuristic,
@@ -188,6 +190,7 @@ function load_search_configs(filename::AbstractString)
             sconfig.summary_ns = Int(get(dconfig, "summary_ns", DEFAULT_SUMMARY_NS))
             sconfig.keep_data = Bool(get(dconfig, "keep_data", DEFAULT_KEEP_DATA))
             sconfig.stem_words = Bool(get(dconfig, "stem_words", DEFAULT_STEM_WORDS))
+            sconfig.ngram_complexity = Int(get(dconfig, "ngram_complexity", DEFAULT_NGRAM_COMPLEXITY))
             sconfig.vectors = Symbol(get(dconfig, "vectors", DEFAULT_VECTORS))
             sconfig.vectors_transform = Symbol(get(dconfig, "vectors_transform", DEFAULT_VECTORS_TRANSFORM))
             sconfig.vectors_dimension = Int(get(dconfig, "vectors_dimension", DEFAULT_VECTORS_DIMENSION))
@@ -246,6 +249,11 @@ function load_search_configs(filename::AbstractString)
             if !(typeof(delimiter) <: AbstractString) || length(delimiter) == 0
                 @warn "$(sconfig.id) Defaulting delimiter=$DEFAULT_DELIMITER."
                 sconfig.delimiter = DEFAULT_DELIMITER
+            end
+            # ngram_complexity
+            if sconfig.ngram_complexity < 1  # maybe put upper bound i.e. || ngram_complexity > 5
+                @warn "$(sconfig.id) Defaulting ngram_complexity=$DEFAULT_NGRAM_COMPLEXITY."
+                sconfig.ngram_complexity = DEFAULT_NGRAM_COMPLEXITY
             end
             # vectors
             if sconfig.vectors in [:count, :tf, :tfidf, :bm25]

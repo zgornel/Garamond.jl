@@ -15,7 +15,6 @@ end
 load_engine_config()
 # Define the variables
 SYMBOLS = Dict(:PDFTOTEXT_PROGRAM => DEFAULT_PDFTOTEXT_PROGRAM,
-               :DOCUMENT_TYPE => DEFAULT_DOCUMENT_TYPE,
                :MAX_EDIT_DISTANCE => DEFAULT_MAX_EDIT_DISTANCE,
                :MAX_MATCHES => DEFAULT_MAX_MATCHES,
                :MAX_SUGGESTIONS => DEFAULT_MAX_SUGGESTIONS,

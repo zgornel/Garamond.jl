@@ -109,10 +109,11 @@ function search(srcher::Searcher{T,D,E,I},
     n = length(srcher.index)  # number of embedded documents
     language = get(STR_TO_LANG, srcher.config.language, DEFAULT_LANGUAGE)()
     flags = srcher.config.query_strip_flags
+    ngram_complexity = srcher.config.ngram_complexity
 
     # When embedding the query, no OOV policy is used i.e. zero vector for
     # a non-embeddable query -> makes possible the `!iszero` check below
-    needles = query_preparation(query, flags, language)
+    needles = query_preparation(query, flags, language, ngram_complexity)
     query_embedding, query_is_embedded = document2vec(srcher.embedder, needles,
                                             srcher.config.oov_policy, isregex=isregex)
 

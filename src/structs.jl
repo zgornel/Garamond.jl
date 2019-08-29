@@ -119,10 +119,10 @@ function build_searcher(sconf::SearchConfig)
     # Build corpus
     merged_sentences = @op merge_documents(document_sentences_prepared,
                                            metadata_sentences_prepared)
-    full_crps = @op build_corpus(merged_sentences, metadata_vector, DOCUMENT_TYPE)
+    full_crps = @op build_corpus(merged_sentences, metadata_vector, sconf.ngram_complexity)
     crps, documents = @op get_corpus_documents(full_crps, sconf.keep_data)
     lex = @op lexicon(full_crps)
-
+    lex_1gram = @op create_lexicon(full_crps, 1)
     # Construct element type
     T = eval(sconf.vectors_eltype)
 
@@ -137,7 +137,7 @@ function build_searcher(sconf::SearchConfig)
     elseif sconf.vectors in [:count, :tf, :tfidf, :bm25]
         embedder = @op get_embedder(sconf.vectors, sconf.vectors_transform,
                             sconf.vectors_dimension, sconf.bm25_kappa,
-                            sconf.bm25_beta, documents, lex, T)
+                            sconf.bm25_beta, documents, lex_1gram, T)
     end
 
     # Calculate embeddings for each document
@@ -151,7 +151,7 @@ function build_searcher(sconf::SearchConfig)
     srchindex = @op IndexType(embedded_documents)
 
     # Build search tree (for suggestions)
-    srchtree = @op get_bktree(sconf.heuristic, lex)
+    srchtree = @op get_bktree(sconf.heuristic, lex_1gram)
 
     # Build searcher
     srcher = @op Searcher(sconf, crps, embedder, srchindex, srchtree)
@@ -203,7 +203,7 @@ end
 
 function get_corpus_documents(crps, keep_data)
     docs = documents(crps)
-    !keep_data && (crps.documents = DOCUMENT_TYPE[])
+    !keep_data && (crps.documents = [])
     return crps, docs
 end
 

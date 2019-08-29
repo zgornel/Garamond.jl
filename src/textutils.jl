@@ -125,16 +125,15 @@ end
 Builds a corpus of documents of type `doctype` using the data in `documents`
 and metadata from `metadata_vector`.
 """
-function build_corpus(documents::Vector{Vector{S}},
+function build_corpus(documents::Vector{Vector{String}},
                       metadata_vector::Vector{DocumentMetadata},
-                      doctype::Type{T},
-                     ) where {S<:AbstractString, T<:AbstractDocument}
+                      ngram_complexity::Int)
     @assert length(documents) == length(metadata_vector)
-    docs = Vector{T}()
+    docs = Vector{StringDocument{String}}()
     @inbounds for (sentences, meta) in zip(documents, metadata_vector)
         lang_type = typeof(meta.language)
         if lang_type in SUPPORTED_LANGUAGES
-            doc = T(join(sentences, " "))
+            doc = StringDocument(join(sentences, " "))
             doc.metadata = meta
             push!(docs, doc)
         else
@@ -143,28 +142,41 @@ function build_corpus(documents::Vector{Vector{S}},
         end
     end
     crps = Corpus(docs)
-    # Update lexicon, inverse index
-    update_lexicon!(crps)
-    update_inverse_index!(crps)
+    ## # Update lexicon, inverse index
+    update_lexicon!(crps, ngram_complexity)
+    update_inverse_index!(crps, ngram_complexity)
     return crps
 end
 
 
 """
-    query_preparation(query, flags, language)
+    query_preparation(query, flags, language, ngram_complexity)
 
 Prepares the query for search (tokenization if the case), pre-processing.
 """
-query_preparation(query::AbstractString, flags::UInt32, language::Languages.Language) = begin
-    String.(tokenize(prepare(query, flags, language=language), method=DEFAULT_TOKENIZER))
+function query_preparation(query::AbstractString,
+                           flags::UInt32,
+                           language::Languages.Language,
+                           ngram_complexity::Int=DEFAULT_NGRAM_COMPLEXITY)
+    collect(String, keys(ngrams(prepare(query, flags, language=language),
+                                ngram_complexity,
+                                tokenizer=DEFAULT_TOKENIZER)
+                        )
+           )
 end
 
-query_preparation(needles::Vector{String}, flags::UInt32, language::Languages.Language) = begin
+function query_preparation(needles::Vector{String},
+                           flags::UInt32,
+                           language::Languages.Language,
+                           ngram_complexity::Int=DEFAULT_NGRAM_COMPLEXITY)
     # To minimize time, no pre-processing is done here.
     # The input is returned as is.
     return needles
 end
 
-query_preparation(query, flags::UInt32, language::Languages.Language) = begin
+function query_preparation(query,
+                           flags::UInt32,
+                           language::Languages.Language,
+                           ngram_complexity::Int=DEFAULT_NGRAM_COMPLEXITY)
     throw(ArgumentError("Query pre-processing requires `String` or Vector{String} inputs."))
 end
