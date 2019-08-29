@@ -133,11 +133,11 @@ function build_searcher(sconf::SearchConfig)
                             sconf.embeddings_kind, sconf.doc2vec_method,
                             sconf.glove_vocabulary, sconf.sif_alpha,
                             sconf.borep_dimension, sconf.borep_pooling_function,
-                            sconf.disc_ngram, lex, T)
+                            sconf.disc_ngram, lex_1gram, T)
     elseif sconf.vectors in [:count, :tf, :tfidf, :bm25]
         embedder = @op get_embedder(sconf.vectors, sconf.vectors_transform,
                             sconf.vectors_dimension, sconf.bm25_kappa,
-                            sconf.bm25_beta, documents, lex_1gram, T)
+                            sconf.bm25_beta, documents, lex, T)
     end
 
     # Calculate embeddings for each document
