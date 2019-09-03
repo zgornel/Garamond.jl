@@ -413,8 +413,6 @@ version = "1.0.1"
 [[StringAnalysis]]
 deps = ["AutoHashEquals", "BinaryProvider", "DataStructures", "Dates", "DelimitedFiles", "Languages", "Libdl", "LinearAlgebra", "SparseArrays", "Statistics", "TSVD", "Test", "Unicode", "WordTokenizers"]
 git-tree-sha1 = "4cd366f9d30b4ca0d6510b0a3021f6379cbf7bb8"
-repo-rev = "master"
-repo-url = "https://github.com/zgornel/StringAnalysis.jl.git"
 uuid = "b66b7d2f-f536-51df-9f97-4dfb9d27c005"
 version = "0.3.9"
 
