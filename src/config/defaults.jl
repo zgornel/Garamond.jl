@@ -57,7 +57,6 @@ const DEFAULT_CACHE_COMPRESSION = "none"
 
 # FILE Configuration: These defaults can be overwritten in .garamondrc.jl
 const DEFAULT_PDFTOTEXT_PROGRAM = "/usr/bin/pdftotext"  # program to convert PDFs to text
-const DEFAULT_DOCUMENT_TYPE = StringAnalysis.NGramDocument{String}  # default document object type
 const DEFAULT_MAX_EDIT_DISTANCE = 2  # maximum edit distance for which to return suggestions
 const DEFAULT_MAX_MATCHES = 1_000  # maximum number of matches that can be retrned
 const DEFAULT_MAX_SUGGESTIONS = 0  # maximum number of overall suggestions
@@ -125,19 +124,19 @@ const STR_TO_LANG = Dict("english"=>Languages.English,
                         )
 
 const LANG_TO_STR = Dict((v=>k) for (k,v) in STR_TO_LANG)
-const SUPPORTED_LANGUAGES=[Languages.English,
-                           Languages.German,
-                           Languages.Romanian,
-                           Languages.French,
-                           Languages.Italian]
-const DEFAULT_LANGUAGE=Languages.English
+const SUPPORTED_LANGUAGES = [Languages.English,
+                             Languages.German,
+                             Languages.Romanian,
+                             Languages.French,
+                             Languages.Italian]
+const DEFAULT_LANGUAGE = Languages.English
 const DEFAULT_LANGUAGE_STR=LANG_TO_STR[DEFAULT_LANGUAGE]
-const DEFAULT_TOKENIZER=:stringanalysis
-
+const DEFAULT_TOKENIZER = :stringanalysis
+const DEFAULT_NGRAM_COMPLEXITY = 1
 
 ##########################
 # OTHER USEFUL CONSTANTS #
 ##########################
 const DEFAULT_VERSION = "0.1.0"
-const DEFAULT_VERSION_DATE = "2019-07-30"
-const DEFAULT_VERSION_COMMIT = "42bfa51*"
+const DEFAULT_VERSION_DATE = "2019-09-03"
+const DEFAULT_VERSION_COMMIT = "c125a1c*"

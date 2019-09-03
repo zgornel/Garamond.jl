@@ -104,18 +104,20 @@ function search(srcher::Searcher{T,D,E,I},
                 max_matches::Int=MAX_MATCHES,
                 max_suggestions::Int=MAX_SUGGESTIONS  # not used
                ) where {T<:AbstractFloat, D<:AbstractDocument, E, I<:AbstractIndex}
-    # Prepare and embed query
+    # Initializations
     isregex = (search_method == :regex)
     n = length(srcher.index)  # number of embedded documents
     language = get(STR_TO_LANG, srcher.config.language, DEFAULT_LANGUAGE)()
     flags = srcher.config.query_strip_flags
+    oov_policy = srcher.config.oov_policy
+    ngram_complexity = srcher.config.ngram_complexity
 
-    # When embedding the query, no OOV policy is used i.e. zero vector for
-    # a non-embeddable query -> makes possible the `!iszero` check below
+    # Prepare and embed query
     needles = query_preparation(query, flags, language)
-    query_embedding, query_is_embedded = document2vec(srcher.embedder, needles,
-                                            srcher.config.oov_policy, isregex=isregex)
-
+    query_embedding, query_is_embedded = document2vec(srcher.embedder,
+                                            needles, oov_policy,
+                                            ngram_complexity=ngram_complexity,
+                                            isregex=isregex)
     # First, find documents with matching needles
     k = min(n, max_matches)
     idxs = Int[]

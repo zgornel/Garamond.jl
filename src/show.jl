@@ -41,23 +41,24 @@ show(io::IO, srcher::Searcher{T,D,E,I}) where {T,D,E,I} = begin
     printstyled(io, ", ")
 
     # Get embeddings type string
-    local _vecs, _suff, _dim
+    local _vecs, _embedder, _indim, _outdim
     if E <: WordVectorsEmbedder
+        _indim = size(srcher.embedder.embeddings)[1]
+        _outdim = dimensionality(srcher.embedder)
         if E<:BOEEmbedder
-            _suff = "BOE"
+            _embedder = "BOE"
         elseif E<:SIFEmbedder
-            _suff = "SIF"
+            _embedder = "SIF"
         elseif E<:BOREPEmbedder
-            _suff = "BOREP"
+            _embedder = "BOREP"
         elseif E<:CPMeanEmbedder
-            _suff = "CPMean"
+            _embedder = "CPMean"
         elseif E<:DisCEmbedder
-            _suff = "DisC"
+            _embedder = "DisC"
         else
-            _suff = "?"
+            _embedder = "?"
         end
         L = typeof(srcher.embedder.embeddings)
-        _dim = size(srcher.embedder.embeddings)[1]
         if L <: Word2Vec.WordVectors
             _vecs = "Word2Vec"
         elseif L <: Glowe.WordVectors
@@ -71,19 +72,20 @@ show(io::IO, srcher::Searcher{T,D,E,I}) where {T,D,E,I} = begin
         end
     elseif E<: DTVEmbedder
         _vecs = "DTV($(srcher.config.vectors))"
-        _dim = length(srcher.corpus.lexicon)
+        _indim = length(srcher.corpus.lexicon)
+        _outdim = _indim
         L = typeof(srcher.embedder.model)
         if L <: StringAnalysis.LSAModel
-            _suff = "LSA"
-            _dim = srcher.config.vectors_dimension
+            _embedder = "LSA"
+            _outdim = dimensionality(srcher.embedder)
         elseif L <: StringAnalysis.RPModel && srcher.config.vectors_transform==:rp
-            _dim = srcher.config.vectors_dimension
-            _suff = "RP"
+            _embedder = "RP"
+            _outdim = dimensionality(srcher.embedder)
         else
-            _suff = "."
+            _embedder = "-"
         end
     end
-    printstyled(io, "$_vecs/$_dim/$_suff", bold=true)
+    printstyled(io, "$_vecs($_indim)/$_embedder($_outdim)", bold=true)
     printstyled(io, ", ")
 
     # Get search index type string

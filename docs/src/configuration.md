@@ -20,9 +20,6 @@ A sample `~/.garamondrc` file with all available configuration options filled wo
 # Text to pdf program
 const PDFTOTEXT_PROGRAM = "/bin/pdftotext"
 
-# Type of StrinAnalysis document
-const DOCUMENT_TYPE = StringAnalysis.NGramDocument{String}
-
 # Maximum edit distance for suggestion search
 const MAX_EDIT_DISTANCE = 2
 

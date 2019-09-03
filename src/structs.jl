@@ -18,6 +18,7 @@ mutable struct Searcher{T<:AbstractFloat,
     search_trees::BKTree{String}                # suggestion structure
 end
 
+
 Searcher(config::SearchConfig,
          corpus::Corpus{String, D},
          embedder::E,
@@ -119,10 +120,10 @@ function build_searcher(sconf::SearchConfig)
     # Build corpus
     merged_sentences = @op merge_documents(document_sentences_prepared,
                                            metadata_sentences_prepared)
-    full_crps = @op build_corpus(merged_sentences, metadata_vector, DOCUMENT_TYPE)
+    full_crps = @op build_corpus(merged_sentences, metadata_vector, sconf.ngram_complexity)
     crps, documents = @op get_corpus_documents(full_crps, sconf.keep_data)
     lex = @op lexicon(full_crps)
-
+    lex_1gram = @op create_lexicon(full_crps, 1)
     # Construct element type
     T = eval(sconf.vectors_eltype)
 
@@ -133,16 +134,17 @@ function build_searcher(sconf::SearchConfig)
                             sconf.embeddings_kind, sconf.doc2vec_method,
                             sconf.glove_vocabulary, sconf.sif_alpha,
                             sconf.borep_dimension, sconf.borep_pooling_function,
-                            sconf.disc_ngram, lex, T)
+                            sconf.disc_ngram, lex_1gram, T)
     elseif sconf.vectors in [:count, :tf, :tfidf, :bm25]
         embedder = @op get_embedder(sconf.vectors, sconf.vectors_transform,
-                            sconf.vectors_dimension, sconf.bm25_kappa,
-                            sconf.bm25_beta, documents, lex, T)
+                            sconf.vectors_dimension, sconf.ngram_complexity,
+                            sconf.bm25_kappa, sconf.bm25_beta,
+                            documents, lex, T)
     end
 
     # Calculate embeddings for each document
-    embedded_documents = @op embed_all_documents(embedder,
-                                merged_sentences, sconf.oov_policy)
+    embedded_documents = @op embed_all_documents(embedder, merged_sentences,
+                                sconf.oov_policy, sconf.ngram_complexity)
 
     # Get search index type
     IndexType = get_search_index_type(sconf)
@@ -151,7 +153,7 @@ function build_searcher(sconf::SearchConfig)
     srchindex = @op IndexType(embedded_documents)
 
     # Build search tree (for suggestions)
-    srchtree = @op get_bktree(sconf.heuristic, lex)
+    srchtree = @op get_bktree(sconf.heuristic, lex_1gram)
 
     # Build searcher
     srcher = @op Searcher(sconf, crps, embedder, srchindex, srchtree)
@@ -177,6 +179,7 @@ end
 # Functions used throughout the searcher build process
 extract(r) = fetch(r[1].result.value)
 
+
 function run_dispatch_graph(endpoint, uncacheable, cachedir::Nothing, compression)
     run!(AsyncExecutor(), [endpoint])
 end
@@ -186,6 +189,7 @@ graph = DispatchGraph(endpoint)
     DispatcherCache.run!(AsyncExecutor(), graph, [endpoint], uncacheable,
                          cachedir=cachedir, compression=compression)
 end
+
 
 function get_bktree(heuristic, lexicon)
     if heuristic != nothing
@@ -197,23 +201,30 @@ function get_bktree(heuristic, lexicon)
     end
 end
 
+
 function merge_documents(docs, docs_meta)
     [vcat(doc, meta) for (doc, meta) in zip(docs, docs_meta)]
 end
 
+
 function get_corpus_documents(crps, keep_data)
     docs = documents(crps)
-    !keep_data && (crps.documents = DOCUMENT_TYPE[])
+    !keep_data && (crps.documents = [])
     return crps, docs
 end
+
 
 function document_preparation(documents, flags, language)
     map(sentences->prepare.(sentences, flags, language=language), documents)
 end
 
-function embed_all_documents(embedder, documents, oov_policy)
-    hcat((document2vec(embedder, doc, oov_policy)[1] for doc in documents)...)
+
+function embed_all_documents(embedder, documents, oov_policy, ngram_complexity)
+    hcat((document2vec(embedder, doc, oov_policy;
+                       ngram_complexity=ngram_complexity)[1]
+          for doc in documents)...)
 end
+
 
 function get_search_index_type(sconf::SearchConfig)
     # Get search index types
@@ -224,19 +235,27 @@ function get_search_index_type(sconf::SearchConfig)
     search_index == :hnsw && return HNSWIndex
 end
 
+
 function get_embedder(vectors::Symbol, vectors_transform::Symbol,
-                      vectors_dimension::Int, bm25_kappa::Int, bm25_beta::Float64,
+                      vectors_dimension::Int, ngram_complexity::Int,
+                      bm25_kappa::Int, bm25_beta::Float64,
                       documents, lex, ::Type{T}) where T<:AbstractFloat
     # Initialize dtm
-    dtm = DocumentTermMatrix{T}(Corpus(documents), lex)
+    dtm = DocumentTermMatrix{T}(Corpus(documents), lex, ngram_complexity=ngram_complexity)
 
     local model
     if vectors_transform == :none
-        model = RPModel(dtm, k=0, stats=vectors, κ=bm25_kappa, β=bm25_beta)
+        model = RPModel(dtm, k=0, stats=vectors,
+                        ngram_complexity=ngram_complexity,
+                        κ=bm25_kappa, β=bm25_beta)
     elseif vectors_transform == :rp
-        model = RPModel(dtm, k=vectors_dimension, stats=vectors, κ=bm25_kappa, β=bm25_beta)
+        model = RPModel(dtm, k=vectors_dimension, stats=vectors,
+                        ngram_complexity=ngram_complexity,
+                        κ=bm25_kappa, β=bm25_beta)
     elseif vectors_transform == :lsa
-        model = LSAModel(dtm, k=vectors_dimension, stats=vectors, κ=bm25_kappa, β=bm25_beta)
+        model = LSAModel(dtm, k=vectors_dimension,
+                         ngram_complexity=ngram_complexity,
+                         stats=vectors, κ=bm25_kappa, β=bm25_beta)
     end
 
     # Construct embedder
