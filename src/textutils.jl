@@ -142,7 +142,7 @@ function build_corpus(documents::Vector{Vector{String}},
         end
     end
     crps = Corpus(docs)
-    ## # Update lexicon, inverse index
+    # Update lexicon, inverse index
     update_lexicon!(crps, ngram_complexity)
     update_inverse_index!(crps, ngram_complexity)
     return crps
@@ -164,9 +164,6 @@ function query_preparation(needles::Vector{String}, flags::UInt32, language::Lan
     return needles
 end
 
-function query_preparation(query,
-                           flags::UInt32,
-                           language::Languages.Language,
-                           ngram_complexity::Int=DEFAULT_NGRAM_COMPLEXITY)
+function query_preparation(query, flags::UInt32, language::Languages.Language)
     throw(ArgumentError("Query pre-processing requires `String` or Vector{String} inputs."))
 end
