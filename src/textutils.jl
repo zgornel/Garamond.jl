@@ -150,25 +150,15 @@ end
 
 
 """
-    query_preparation(query, flags, language, ngram_complexity)
+    query_preparation(query, flags, language)
 
 Prepares the query for search (tokenization if the case), pre-processing.
 """
-function query_preparation(query::AbstractString,
-                           flags::UInt32,
-                           language::Languages.Language,
-                           ngram_complexity::Int=DEFAULT_NGRAM_COMPLEXITY)
-    collect(String, keys(ngrams(prepare(query, flags, language=language),
-                                ngram_complexity,
-                                tokenizer=DEFAULT_TOKENIZER)
-                        )
-           )
+function query_preparation(query::AbstractString, flags::UInt32, language::Languages.Language)
+    String.(tokenize(prepare(query, flags, language=language), method=DEFAULT_TOKENIZER))
 end
 
-function query_preparation(needles::Vector{String},
-                           flags::UInt32,
-                           language::Languages.Language,
-                           ngram_complexity::Int=DEFAULT_NGRAM_COMPLEXITY)
+function query_preparation(needles::Vector{String}, flags::UInt32, language::Languages.Language)
     # To minimize time, no pre-processing is done here.
     # The input is returned as is.
     return needles

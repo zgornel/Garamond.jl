@@ -1,5 +1,11 @@
 # This file is machine-generated - editing it directly is not advised
 
+[[Adapt]]
+deps = ["LinearAlgebra"]
+git-tree-sha1 = "82dab828020b872fa9efd3abec1152b075bc7cbf"
+uuid = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
+version = "1.0.0"
+
 [[ArgParse]]
 deps = ["Compat", "Test", "TextWrap"]
 git-tree-sha1 = "14d5789a99e6bea3e258d668ec09359a9feaf2d1"
@@ -309,9 +315,9 @@ version = "0.11.0"
 
 [[Parsers]]
 deps = ["Dates", "Test"]
-git-tree-sha1 = "db2b35dedab3c0e46dc15996d170af07a5ab91c9"
+git-tree-sha1 = "ef0af6c8601db18c282d092ccbd2f01f3f0cd70b"
 uuid = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
-version = "0.3.6"
+version = "0.3.7"
 
 [[Pkg]]
 deps = ["Dates", "LibGit2", "Markdown", "Printf", "REPL", "Random", "SHA", "UUIDs"]
@@ -406,11 +412,11 @@ version = "1.0.1"
 
 [[StringAnalysis]]
 deps = ["AutoHashEquals", "BinaryProvider", "DataStructures", "Dates", "DelimitedFiles", "Languages", "Libdl", "LinearAlgebra", "SparseArrays", "Statistics", "TSVD", "Test", "Unicode", "WordTokenizers"]
-git-tree-sha1 = "e3dc69ec46b508a38d192771a29a3c3815e78c1c"
+git-tree-sha1 = "4cd366f9d30b4ca0d6510b0a3021f6379cbf7bb8"
 repo-rev = "master"
 repo-url = "https://github.com/zgornel/StringAnalysis.jl.git"
 uuid = "b66b7d2f-f536-51df-9f97-4dfb9d27c005"
-version = "0.3.8"
+version = "0.3.9"
 
 [[StringDistances]]
 deps = ["DataStructures", "Distances", "Random", "Test"]
@@ -425,10 +431,10 @@ uuid = "cea106d9-e007-5e6c-ad93-58fe2094e9c4"
 version = "0.3.0"
 
 [[TSVD]]
-deps = ["LinearAlgebra", "SparseArrays", "Test"]
-git-tree-sha1 = "714329116fe2765856c018791470dcc1549f49e4"
+deps = ["Adapt", "LinearAlgebra"]
+git-tree-sha1 = "4c6caaa3d6658009a22c8c8f1e9de9e2bd7eef25"
 uuid = "9449cd9e-2762-5aa3-a617-5413e99d722e"
-version = "0.3.0"
+version = "0.4.0"
 
 [[Test]]
 deps = ["Distributed", "InteractiveUtils", "Logging", "Random"]
