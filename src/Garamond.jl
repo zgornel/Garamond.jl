@@ -53,6 +53,7 @@ module Garamond
     using Glob
     using HTTP
     using TSVD
+    using JuliaDB
 
     # Import section (extendable methods)
     import Base: size, length, show, keys, values, push!,
