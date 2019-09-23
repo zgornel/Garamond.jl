@@ -4,7 +4,7 @@
 
 # Converts a String to Languages.Language (using STR_TO_LANG)
 convert(::Type{L}, lang::S) where {L<:Languages.Language, S<:AbstractString} = begin
-    TypeLang = get(STR_TO_LANG, strip(lower(lang)), Languages.English)
+    TypeLang = get(STR_TO_LANG, strip(lowercase(lang)), Languages.English)
     return TypeLang()
 end
 
@@ -56,7 +56,7 @@ occursin(r::Regex, strings::T) where T<:AbstractArray{<:AbstractString} =
     any(occursin(r, si) for si in sv);
 
 
-# Overload lowervase function to work with vectors of strings
+# Overload lowercase function to work with vectors of strings
 lowercase(v::T) where T<:AbstractArray{S} where S<:AbstractString =
     Base.lowercase.(v)
 
