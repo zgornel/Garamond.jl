@@ -5,6 +5,7 @@
 const DEFAULT_BUILD_SUMMARY = false  # whether to summarize text before indexing
 const DEFAULT_SUMMARY_NS = 1  # Default number of sentences for a summary
 const DEFAULT_STEM_WORDS = false  # whether to stem words or not
+
 # Search
 const DEFAULT_VECTORS = :bm25  # can be :count, :tf, :tfidf, :bm25, :word2vec, :glove or :conceptnet
 const DEFAULT_VECTORS_TRANSFORM = :none  # can be :none, :lsa or :rp
@@ -26,12 +27,12 @@ const DEFAULT_OOV_POLICY = :none  # values are :none, :large_vector
 const DEFAULT_OOV_VAL = 1000  # default value for OOV vectors
 # Results
 const DEFAULT_RESULT_AGGREGATION_STRATEGY = :mean  # can be :minimum, :maximum, :mean, :median, :product
+
 # Various document parsing constants
-const DEFAULT_PARSER = :no_parse
-const DEFAULT_GLOBBING_PATTERN = "*"  # Can be any regexp-like pattern
-const DEFAULT_DELIMITER = "|"  # For delimited files only (i.e. document is a line/record)
-const DEFAULT_SHOW_PROGRESS = false  # Show progress while loading files (useful lor longer operations)
+const DEFAULT_DATA_LOADER = noop_loader
+const DEFAULT_DATA_LOADER_NAME = :noop
 const DEFAULT_KEEP_DATA = true  # whether to keep the actual document data, metadata
+
 # Text stripping flags
 const DEFAULT_TEXT_STRIP_FLAGS = strip_case | strip_punctuation | strip_articles |
                                  strip_prepositions | strip_whitespace |
@@ -42,11 +43,20 @@ const DEFAULT_QUERY_STRIP_FLAGS = strip_case | strip_punctuation | strip_article
 const DEFAULT_METADATA_STRIP_FLAGS = strip_case | strip_punctuation | strip_articles |
                                      strip_prepositions | strip_whitespace |
                                      strip_corrupt_utf8 | strip_accents
-const DEFAULT_SUMMARIZATION_STRIP_FLAGS = strip_corrupt_utf8 | strip_case |
-                                          strip_stopwords | strip_accents
+
 # Caching options
 const DEFAULT_CACHE_DIRECTORY = nothing
 const DEFAULT_CACHE_COMPRESSION = "none"
+
+# Query parsing
+# TODO(Corneliu): Decide wether/which is to be made configurable
+# in the searcher configuration
+DEFAULT_QUERY_PARSING_SEPARATOR=":"
+DEFAULT_QUERY_GENERATION_FIELDS=Symbol[]
+
+# JuliaDB container options
+# TODO(Corneliu): Add option to change in config
+DEFAULT_DB_ID_KEY = :garamond_linear_id
 
 
 #################

@@ -65,7 +65,6 @@ module Garamond
     # Exports
     export
         search,
-        load_searchers,
         AbstractEmbedder,
         AbstractIndex,
         Searcher,
@@ -80,6 +79,8 @@ module Garamond
         rest_server
 
     # Include section
+    include("data/db.jl")
+    include("data/loaders.jl")  # includes src/data/loaders/*.jl
     include("config/defaults.jl")
     include("config/engine.jl")
     include("config/search.jl")
@@ -100,18 +101,17 @@ module Garamond
     include("index/hnsw.jl")
     include("structs.jl")
     include("update.jl")
-    include("search.jl")
-    include("results.jl")
+    include("query/parser.jl")
+    include("query/generator.jl")
+    include("search/filter.jl")
+    include("search/search.jl")
+    include("search/results.jl")
     include("version.jl")
     include("server/requests.jl")
     include("server/unixsocket.jl")
     include("server/websocket.jl")
     include("server/rest.jl")
     include("server/search_server.jl")
-    include("parsers/delimited_formats.jl")
-    include("parsers/directory_formats.jl")
-    include("parsers/no_parse.jl")
-    include("parsers/json.jl")
     include("show.jl")
 
 end # module

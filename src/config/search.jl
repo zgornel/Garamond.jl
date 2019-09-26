@@ -30,16 +30,13 @@ mutable struct SearchConfig
     description::String             # description of the searcher
     enabled::Bool                   # whether to use the searcher in search or not
     config_path::String             # file path for the configuration file
-    data_path::String               # file/directory path for the data (depends on what the parser accepts)
-    parser::Function                # parser function used to obtain corpus
-    parser_config::Union{Nothing,Dict}  # parser configuration
+
     metadata_to_index::Vector{Symbol}   # fields from the document's metadata to index
     language::String                # the corpus-level language (use "auto" for document-level autodetection)
-    build_summary::Bool             # whether to summarize or not the documents
-    summary_ns::Int                 # the number of sentences in the summary
     keep_data::Bool                 # whether to keep document data, metadata
     stem_words::Bool                # whether to stem data or not
     ngram_complexity::Int           # ngram complexity (i.e. max number of tokes for an n-gram)
+
     # vector representation (defines type of search i.e. classic, semantic, implicitly)
     vectors::Symbol                 # how document vectors are calculated i.e. :count, :tf, :tfidf, :bm25, :word2vec, :glove, :conceptnet, :compressed
     vectors_transform::Symbol       # what transform to apply to the vectors i.e. :lsa, :rp, :none
@@ -51,13 +48,15 @@ mutable struct SearchConfig
     doc2vec_method::Symbol          # How to arrive at a single embedding from multiple i.e. :boe, :sif etc.
     glove_vocabulary::Union{Nothing, String}  # Path to a GloVe-generated vocabulary file (only for binary embeddings)
     oov_policy::Symbol              # what to do with non-embeddable documents i.e. :none, :large_vector
+
     # other
     heuristic::Union{Nothing, Symbol} # search heuristic for suggesting mispelled words (nothing means no recommendations)
+
     # text stripping flags
     text_strip_flags::UInt32        # How to strip text data before indexing
     metadata_strip_flags::UInt32    # How to strip text metadata before indexing
     query_strip_flags::UInt32       # How to strip queries before searching
-    summarization_strip_flags::UInt32 # How to strip text before summarization
+
     # parameters for embedding, scoring
     bm25_kappa::Int                 # κ parameter for BM25 (employed in BM25 only)
     bm25_beta::Float64              # β parameter for BM25 (employed in BM25 only)
@@ -67,6 +66,7 @@ mutable struct SearchConfig
     disc_ngram::Int                 # DisC embedder ngram parameter
     score_alpha::Float64            # score alpha (parameter for the scoring function)
     score_weight::Float64           # weight of scores of searcher (used in result aggregation)
+
     # cache parameters
     cache_directory::Union{Nothing, String}  # path to the DispatcherCache cache directory
     cache_compression::String       # DispatcherCache compression option
@@ -79,22 +79,9 @@ SearchConfig(;
           description="",
           enabled=false,
           config_path="",
-          data_path="",
-          parser=get_parsing_function(DEFAULT_PARSER,
-                                      DEFAULT_PARSER_CONFIG,
-                                      false,
-                                      DEFAULT_DELIMITER,
-                                      DEFAULT_GLOBBING_PATTERN,
-                                      DEFAULT_LANGUAGE_STR,
-                                      DEFAULT_BUILD_SUMMARY,
-                                      DEFAULT_SUMMARY_NS,
-                                      DEFAULT_SUMMARIZATION_STRIP_FLAGS,
-                                      DEFAULT_SHOW_PROGRESS),
-          parser_config=DEFAULT_PARSER_CONFIG,
+
           metadata_to_index=DEFAULT_METADATA_FIELDS_TO_INDEX,
           language=DEFAULT_LANGUAGE_STR,
-          build_summary=DEFAULT_BUILD_SUMMARY,
-          summary_ns=DEFAULT_SUMMARY_NS,
           keep_data=DEFAULT_KEEP_DATA,
           stem_words=DEFAULT_STEM_WORDS,
           ngram_complexity=DEFAULT_NGRAM_COMPLEXITY,
@@ -112,7 +99,6 @@ SearchConfig(;
           text_strip_flags=DEFAULT_TEXT_STRIP_FLAGS,
           metadata_strip_flags=DEFAULT_METADATA_STRIP_FLAGS,
           query_strip_flags=DEFAULT_QUERY_STRIP_FLAGS,
-          summarization_strip_flags=DEFAULT_SUMMARIZATION_STRIP_FLAGS,
           bm25_kappa=DEFAULT_BM25_KAPPA,
           bm25_beta=DEFAULT_BM25_BETA,
           sif_alpha=DEFAULT_SIF_ALPHA,
@@ -125,13 +111,13 @@ SearchConfig(;
           cache_compression=DEFAULT_CACHE_COMPRESSION) =
     # Call normal constructor
     SearchConfig(id, id_aggregation, description, enabled,
-                 config_path, data_path, parser, parser_config, metadata_to_index,
-                 language, build_summary, summary_ns, keep_data, stem_words, ngram_complexity,
+                 config_path,
+                 metadata_to_index,
+                 language, keep_data, stem_words, ngram_complexity,
                  vectors, vectors_transform, vectors_dimension, vectors_eltype,
                  search_index, embeddings_path, embeddings_kind, doc2vec_method,
                  glove_vocabulary, oov_policy, heuristic,
-                 text_strip_flags, metadata_strip_flags,
-                 query_strip_flags, summarization_strip_flags,
+                 text_strip_flags, metadata_strip_flags, query_strip_flags,
                  bm25_kappa, bm25_beta, sif_alpha,
                  borep_dimension, borep_pooling_function,
                  disc_ngram, score_alpha, score_weight,
@@ -139,7 +125,7 @@ SearchConfig(;
 
 
 """
-    load_search_configs(filename)
+    parse_search_configuration(filename)
 
 Creates search configuration objects from a data configuration file
 specified by `filename`. The file name can be either an `AbstractString`
@@ -147,23 +133,35 @@ with the path to the configuration file or a `Vector{AbstractString}`
 specifying multiple configuration file paths. The function returns a
 `Vector{SearchConfig}` that is used to build the `Searcher` objects.
 """
-function load_search_configs(filename::AbstractString)
+function parse_search_configuration(filename::AbstractString)
 
     # Read config (this should fail if config not found)
-    local dict_configs::Vector{Dict{String, Any}}
     fullfilename = abspath(expanduser(filename))
+    dict_configs = Vector{Dict{String, Any}}()
+    data_path = ""
+    data_loader_name = DEFAULT_DATA_LOADER_NAME
+    data_loader = DEFAULT_DATA_LOADER
     try
-        dict_configs = JSON.parse(open(fid->read(fid, String), fullfilename))
+        config = JSON.parse(open(fid->read(fid, String), fullfilename))
+        dict_configs = config["searchers"]
+        data_path = postprocess_path(get(config, "data_path", ""))
+        if !isfile(data_path) && !isdir(data_path)
+            @error "Data path does not exist"
+        end
+        data_loader_name = Symbol(get(config, "data_loader_name", DEFAULT_DATA_LOADER_NAME))
     catch e
         @error "Could not parse data configuration file $fullfilename ($e). Exiting..."
         exit(-1)
     end
 
+    # Construct data loader
+    data_loader = eval(data_loader_name)
+
     # Create search configurations
     n = length(dict_configs)
     search_configs = [SearchConfig() for _ in 1:n]
     removable = Int[]  # search configs that have problems
-    must_have_keys = ["vectors", "data_path", "parser"]
+    must_have_keys = ["vectors"]
 
     for (i, (sconfig, dconfig)) in enumerate(zip(search_configs, dict_configs))
         if !all(map(key->haskey(dconfig, key), must_have_keys))
@@ -174,20 +172,13 @@ function load_search_configs(filename::AbstractString)
         end
         # Get searcher parameter values (assigning default values when the case)
         try
-            header = get(dconfig, "header", false)
-            globbing_pattern = get(dconfig, "globbing_pattern", DEFAULT_GLOBBING_PATTERN)
-            show_progress = get(dconfig, "show_progress", DEFAULT_SHOW_PROGRESS)
-            delimiter = get(dconfig, "delimiter", DEFAULT_DELIMITER)
             sconfig.id = make_id(StringId, get(dconfig, "id", nothing))
             sconfig.id_aggregation = make_id(StringId, get(dconfig, "id_aggregation", sconfig.id.id))
             sconfig.description = get(dconfig, "description", "")
             sconfig.enabled = get(dconfig, "enabled", false)
             sconfig.config_path = fullfilename
-            sconfig.data_path = postprocess_path(get(dconfig, "data_path", ""))
             sconfig.metadata_to_index = Symbol.(get(dconfig, "metadata_to_index", DEFAULT_METADATA_FIELDS_TO_INDEX))
             sconfig.language = lowercase(get(dconfig, "language", DEFAULT_LANGUAGE_STR))
-            sconfig.build_summary = Bool(get(dconfig, "build_summary", DEFAULT_BUILD_SUMMARY))
-            sconfig.summary_ns = Int(get(dconfig, "summary_ns", DEFAULT_SUMMARY_NS))
             sconfig.keep_data = Bool(get(dconfig, "keep_data", DEFAULT_KEEP_DATA))
             sconfig.stem_words = Bool(get(dconfig, "stem_words", DEFAULT_STEM_WORDS))
             sconfig.ngram_complexity = Int(get(dconfig, "ngram_complexity", DEFAULT_NGRAM_COMPLEXITY))
@@ -209,7 +200,6 @@ function load_search_configs(filename::AbstractString)
             sconfig.text_strip_flags = UInt32(get(dconfig, "text_strip_flags", DEFAULT_TEXT_STRIP_FLAGS))
             sconfig.metadata_strip_flags = UInt32(get(dconfig, "metadata_strip_flags", DEFAULT_METADATA_STRIP_FLAGS))
             sconfig.query_strip_flags = UInt32(get(dconfig, "query_strip_flags", DEFAULT_QUERY_STRIP_FLAGS))
-            sconfig.summarization_strip_flags = UInt32(get(dconfig, "summarization_strip_flags", DEFAULT_SUMMARIZATION_STRIP_FLAGS))
             sconfig.bm25_kappa = Int(get(dconfig, "bm25_kappa", DEFAULT_BM25_KAPPA))
             sconfig.bm25_beta = Float64(get(dconfig, "bm25_beta", DEFAULT_BM25_BETA))
             sconfig.sif_alpha = Float64(get(dconfig, "sif_alpha", DEFAULT_SIF_ALPHA))
@@ -220,35 +210,13 @@ function load_search_configs(filename::AbstractString)
             sconfig.score_weight = Float64(get(dconfig, "score_weight", 1.0))
             sconfig.cache_directory = get(dconfig, "cache_directory", DEFAULT_CACHE_DIRECTORY)
             sconfig.cache_compression = get(dconfig, "cache_compression", DEFAULT_CACHE_COMPRESSION)
-            # Construct parser (built last as requires other parameters)
-            sconfig.parser_config = get(dconfig, "parser_config", DEFAULT_PARSER_CONFIG)
-            sconfig.parser = get_parsing_function(Symbol(dconfig["parser"]),
-                                                  sconfig.parser_config,
-                                                  header,
-                                                  delimiter,
-                                                  globbing_pattern,
-                                                  sconfig.language,
-                                                  sconfig.build_summary,
-                                                  sconfig.summary_ns,
-                                                  sconfig.summarization_strip_flags,
-                                                  show_progress)
+
             # Checks of the configuration parameter values;
-            # data path
-            if !isfile(sconfig.data_path) && !isdir(sconfig.data_path)
-                @warn "$(sconfig.id) Missing data, ignoring search configuration..."
-                push!(removable, i)  # if there is no data file, cannot search
-                continue
-            end
             # language
             if !(sconfig.language in [LANG_TO_STR[_lang] for _lang in SUPPORTED_LANGUAGES] ||
                  sconfig.language == "auto")
                 @warn "$(sconfig.id) Defaulting language=$DEFAULT_LANGUAGE_STR."
                 sconfig.language = DEFAULT_LANGUAGE_STR
-            end
-            # delimiter
-            if !(typeof(delimiter) <: AbstractString) || length(delimiter) == 0
-                @warn "$(sconfig.id) Defaulting delimiter=$DEFAULT_DELIMITER."
-                sconfig.delimiter = DEFAULT_DELIMITER
             end
             # ngram_complexity
             if sconfig.ngram_complexity < 1  # maybe put upper bound i.e. || ngram_complexity > 5
@@ -381,29 +349,29 @@ function load_search_configs(filename::AbstractString)
             end
         end
     end
-    return search_configs
+    return (data_loader=data_loader, data_path = data_path, search_configs=search_configs)
 end
 
-function load_search_configs(filenames::Vector{S}) where S<:AbstractString
-    all_configs = Vector{SearchConfig}()
-    all_ids = Vector{StringId}()
-    for filename in filenames
-        configs = load_search_configs(filename)  # read all configs from a file
-        for config in configs
-            if config.id in all_ids          # check id uniqueness
-                @error """Multiple occurences of $(config.id) detected. Data id's
-                          have to be unique. Please correct the error in $filename.
-                          Exiting..."""
-                exit(-1)
-            else
-                push!(all_ids, config.id)
-                push!(all_configs, config)
-            end
-        end
-    end
-    return all_configs
-end
-
+### function parse_search_configuration(filenames::Vector{S}) where S<:AbstractString
+###     all_configs = Vector{SearchConfig}()
+###     all_ids = Vector{StringId}()
+###     for filename in filenames
+###         configs = parse_search_configuration(filename)  # read all configs from a file
+###         for config in configs
+###             if config.id in all_ids          # check id uniqueness
+###                 @error """Multiple occurences of $(config.id) detected. Data id's
+###                           have to be unique. Please correct the error in $filename.
+###                           Exiting..."""
+###                 exit(-1)
+###             else
+###                 push!(all_ids, config.id)
+###                 push!(all_configs, config)
+###             end
+###         end
+###     end
+###     return all_configs
+### end
+###
 
 
 # Small helper function that post-processes file paths
@@ -433,66 +401,4 @@ function read_searcher_configurations_json(srchers)
         @warn "Could not return searcher configurations: $e. Returning empty string..."
         return ""
     end
-end
-
-
-"""
-    get_parsing_function(args...)
-
-Function that generates a parsing function from its input arguments and
-returns it.
-
-# Arguments
-  * `parser::Symbol` is the name of the parser
-  * `parser_config::Union{Nothing, Dict}` can contain optional configuration data
-    for the parser (for delimited parsers)
-  * `header::Bool` whether the file has a header or not (for delimited files only)
-  * `delimiter::String` the delimiting character (for delimited files only)
-  * `globbing_pattern::String` globbing pattern for gathering file lists
-    from directories (for directory parsers only)
-  * `language::String` the plain English name of the language; use "auto" for
-  document-level language autodetection
-  * `build_summary::Bool` whether to use a summary instead of the full document
-    (for directory parsers only)
-  * `summary_ns::Int` how many sentences to use in the summary (for directory
-    parsers only)
-  * `summarization_strip_flags::UInt32` flags used to strip text before summarization
-    (for directory parsers only)
-  * `show_progress::Bool` whether to show the progress when loading files
-
-Note: `parser` must be in the keys of the `PARSER_CONFIGS` constant. The name
-      of the data parsing function is created as: `:__parser_<parser>` so,
-      the function name `:__parser_delimited_format_1` corresponds to the
-      parser `:delimited_format_1`. The function must be defined apriori.
-"""
-function get_parsing_function(parser::Symbol,
-                              parser_config::Union{Nothing, Dict},
-                              header::Bool,
-                              delimiter::String,
-                              globbing_pattern::String,
-                              language::String,
-                              build_summary::Bool,
-                              summary_ns::Int,
-                              summarization_strip_flags::UInt32,
-                              show_progress::Bool)
-    PREFIX = :__parser_
-    # Construct the actual basic parsing function from parser name
-    parsing_function  = eval(Symbol(PREFIX, parser))
-    # Build and return parsing function (a nice closure)
-    function parsing_closure(filename::String)
-        return parsing_function(# Compulsory arguments for all parsers
-                                filename,
-                                parser_config,
-                                # keyword arguments (not used by all parsers)
-                                header=header,
-                                delimiter=delimiter,
-                                globbing_pattern=globbing_pattern,
-                                language=language,
-                                build_summary=build_summary,
-                                summary_ns=summary_ns,
-                                summarization_strip_flags=
-                                    summarization_strip_flags,
-                                show_progress=show_progress)
-    end
-    return parsing_closure
 end

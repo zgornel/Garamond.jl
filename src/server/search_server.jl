@@ -1,9 +1,9 @@
 """
-    search_server(data_config_paths, io_port, search_server_ready)
+    search_server(data_config_path, io_port, search_server_ready)
 
 Search server for Garamond. It is a finite-state-machine that
 when called, creates the searchers i.e. search objects using the
-`data_config_paths` and the proceeds to looping continuously
+`data_config_path` and the proceeds to looping continuously
 in order to:
  - update the searchers regularly (asynchronously);
  - receive requests from clients on the port `io_port`
@@ -13,15 +13,18 @@ in order to:
 After the searchers are loaded, the search server sends a notification
 using `search_server_ready` to any listening I/O servers.
 """
-function search_server(data_config_paths, io_port, search_server_ready)
+function search_server(data_config_path, io_port, search_server_ready)
+
     # Load data
-    srchers = load_searchers(data_config_paths)
+    dbdata, srchers = load_search_env(data_config_path)
 
     # Start updater
     up_in_channel = Channel{String}(0)  # input (searcher id)
     up_out_channel = Channel{typeof(srchers)}(0)  # output (updated searchers)
     channels = (up_in_channel, up_out_channel)
-    @async updater(srchers, channels...)
+
+    #TODO(corneliu) Fix updater, now needs dbdata...
+    ###@async updater(srchers, channels...)
 
     # Notify waiting I/O servers
     @info "Searchers loaded. Notifying I/O servers..."
@@ -43,7 +46,7 @@ function search_server(data_config_paths, io_port, search_server_ready)
         # Start accepting requests and asynchronously
         # respond to them using the opened socket
         sock = accept(server)
-        @async respond(srchers, sock, counter, channels)
+        @async respond(dbdata, srchers, sock, counter, channels)
     end
 end
 
@@ -55,7 +58,7 @@ Responds to search server requests received on `socket` using
 the search data from `searchers`. The requests are counted
 through the variable `counter`.
 """
-function respond(srchers, socket, counter, channels)
+function respond(dbdata, srchers, socket, counter, channels)
     # Channels for updating
     up_in_channel, up_out_channel = channels
 
@@ -66,8 +69,25 @@ function respond(srchers, socket, counter, channels)
 
     t_init = time()
     if request.op == "search"
+        ####################
+        #  TODO(corneliu):
+        #  - add support for a rerank-er based on IDs or linear indices
+        #  - the reranker should be a small TCP server that reads a list
+        #  of IDs/IDXs (an array of numers) and returns a result similar to
+        #  the search: tuple of the same idxs/IDs sent and a vectors of their
+        #  scores i.e. ([1,15,23,..,10], [0.1, 0.023, 0.45, ..., 1])
+        #                ^^^ indices       ^^^ corresponding scores
+        ####################
+        ####################
+
         ### Search ###
-        results = search(srchers, request.query,
+        # TODO(Corneliu) integrate parsed_query.filter as well somewhere
+        #  - make sure both filter and search queries exist
+        #  i.e. parse query and send them somewhere ... search?
+        dbschema = db_schema(dbdata)
+        parsed_query = parse_query(request.query, dbschema, separator=DEFAULT_QUERY_PARSING_SEPARATOR)
+
+        results = search(srchers, parsed_query.search,
                          search_method=request.search_method,
                          max_matches=request.max_matches,
                          max_suggestions=request.max_suggestions,
@@ -85,6 +105,13 @@ function respond(srchers, socket, counter, channels)
         # Write response to I/O server
         write(socket, response * RESPONSE_TERMINATOR)
 
+    elseif request.op == "search-recommend"
+        generated_query = generate_query(request.query, dbdata, id_key=DEFAULT_DB_ID_KEY)
+        parsed_query = parse_query(generated_query.query, dbschema, separator=DEFAULT_QUERY_PARSING_SEPARATOR)
+        similar_ids = indexfilter(dbdata, parsed_query.filter,
+                                  id_key=DEFAULT_DB_ID_KEY,
+                                  exclude=generated_query.id)
+        # TODO(Corneliu) run a search here ^^^ instead of filter only and return formated results...
     elseif request.op == "kill"
         ### Kill the search server ###
         @info "* Kill [#$(counter[1])]: Exiting in 1(s)..."

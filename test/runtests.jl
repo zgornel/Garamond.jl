@@ -7,8 +7,9 @@ using JSON
 
 # Generate test data and
 # searcher configs
-include("datagen.jl")
+# TODO(Corneliu): Re-enable once re-factor complete
+### include("datagen.jl")
 # Test search
-include("search.jl")
+###include("search.jl")
 
 end

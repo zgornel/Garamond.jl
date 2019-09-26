@@ -1,3 +1,5 @@
+#TODO(Corneliu) Update documentation of the functions
+#
 ##############################
 # Interface for the Searcher #
 ##############################
@@ -11,6 +13,7 @@ mutable struct Searcher{T<:AbstractFloat,
                         D<:AbstractDocument,
                         E<:AbstractEmbedder{String, T},
                         I<:AbstractIndex}
+    data::Ref
     config::SearchConfig                        # most of what is not actual data
     corpus::Corpus{String,D}                    # corpus
     embedder::E                                 # needed to embed query
@@ -19,13 +22,14 @@ mutable struct Searcher{T<:AbstractFloat,
 end
 
 
-Searcher(config::SearchConfig,
+Searcher(data::Ref,
+         config::SearchConfig,
          corpus::Corpus{String, D},
          embedder::E,
          index::I,
          search_trees::BKTree{String}
         ) where {T, D<:AbstractDocument, E<:AbstractEmbedder{String,T}, I<:AbstractIndex} =
-    Searcher{T, D, E, I}(config, corpus, embedder, index, search_trees)
+    Searcher{T, D, E, I}(data, config, corpus, embedder, index, search_trees)
 
 
 # Useful methods
@@ -66,33 +70,28 @@ function getindex(srchers::V, an_id::String
 end
 
 
-##################
-# Load searchers #
-##################
 """
-    load_searchers(configs)
+    load_search_env(configs)
 
 Loads/builds searchers using the information provided by `configs`. The
 latter can be either a path, a vector of paths to searcher configuration file(s)
 or a vector of `SearchConfig` objects.
 
 Loading process flow:
-   1. Parse configuration files using `load_search_configs` (if `configs`
+   1. Parse configuration files using `parse_search_configuration` (if `configs`
       contains paths to configuration files)
-   2. The resulting `Vector{SearchConfig}` is passed to `load_searchers`
+   2. The resulting `Vector{SearchConfig}` is passed to `load_search_env`
       (each `SearchConfig` contains the data filepath, parameters etc.)
-   3. Each searcher is build using `build_searcher` and a vector of
+   3. Each searcher is built using `build_searcher` and a vector of
       searcher objects is returned.
 """
-function load_searchers(configs)
-    sconfs = load_search_configs(configs)  # load searcher configs
-    srchers = load_searchers(sconfs)       # load searchers
-    return srchers
-end
-
-function load_searchers(configs::Vector{SearchConfig})
-    srchers = [build_searcher(sconf) for sconf in configs]  # build searchers
-    return srchers
+function load_search_env(configs)
+    # TODO(Corneliu): Export what's needed from here i.e. load_search_env?
+    config = parse_search_configuration(configs)  # load searcher configs
+    #TODO(Corneliu) Review this i.e. fieldmaps should be removed (with removal of METADATA)
+    dbdata, fieldmaps = config.data_loader(config.data_path)
+    srchers = [build_searcher(dbdata, fieldmaps, sconf) for sconf in config.search_configs]  # build searchers
+    return dbdata, srchers
 end
 
 
@@ -101,9 +100,12 @@ end
 
 Creates a Searcher from a searcher configuration `sconf`.
 """
-function build_searcher(sconf::SearchConfig)
-    # Parse file
-    documents_sentences, metadata_vector = sconf.parser(sconf.data_path)
+function build_searcher(dbdata, fieldmaps, sconf::SearchConfig)
+
+    documents_sentences = [dbentry2sentence(dbentry, fieldmaps.data_fields)
+                           for dbentry in dbiterator(dbdata)]
+    metadata_vector = [dbentry2metadata(dbentry, fieldmaps.metadata_fields, language=sconf.language)
+                       for dbentry in dbiterator(dbdata)]
 
     # Create metadata sentences
     metadata_sentences = @op meta2sv(metadata_vector, sconf.metadata_to_index)
@@ -126,6 +128,9 @@ function build_searcher(sconf::SearchConfig)
     lex_1gram = @op create_lexicon(full_crps, 1)
     # Construct element type
     T = eval(sconf.vectors_eltype)
+
+    # TODO(Corneliu) Separate embeddings as well from searchers
+    # i.e. data, embeddings and indexes are separate an re-use each other
 
     # Get embedder (split into two separate call ways so that unused changed
     #               parameters do not influence the cache consistency)
@@ -156,7 +161,7 @@ function build_searcher(sconf::SearchConfig)
     srchtree = @op get_bktree(sconf.heuristic, lex_1gram)
 
     # Build searcher
-    srcher = @op Searcher(sconf, crps, embedder, srchindex, srchtree)
+    srcher = @op Searcher(Ref(dbdata), sconf, crps, embedder, srchindex, srchtree)
 
     # Set Dispatcher logging level to warning
     setlevel!(getlogger("Dispatcher"), "warn")
