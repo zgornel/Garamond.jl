@@ -1,7 +1,3 @@
-##################
-# Search methods #
-##################
-
 """
 	search(srchers, query [;kwargs])
 

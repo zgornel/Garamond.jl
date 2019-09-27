@@ -1,6 +1,6 @@
 # Structure for the internal (search server) representation
 # of requests.
-struct SearchServerRequest
+mutable struct SearchServerRequest
     op::String
     query::String
     max_matches::Int

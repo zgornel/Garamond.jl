@@ -68,31 +68,21 @@ function respond(dbdata, srchers, socket, counter, channels)
     @debug "* Received [#$(counter[1])]: $request."
 
     t_init = time()
+    ####################
+    #  TODO(corneliu):
+    #  - add support for a rerank-er based on IDs or linear indices
+    #  - the reranker should be a small TCP server that reads a list
+    #  of IDs/IDXs (an array of numers) and returns a result similar to
+    #  the search: tuple of the same idxs/IDs sent and a vectors of their
+    #  scores i.e. ([1,15,23,..,10], [0.1, 0.023, 0.45, ..., 1])
+    #                ^^^ indices       ^^^ corresponding scores
+    ranker = nothing
+    ####################
+    ####################
+
     if request.op == "search"
-        ####################
-        #  TODO(corneliu):
-        #  - add support for a rerank-er based on IDs or linear indices
-        #  - the reranker should be a small TCP server that reads a list
-        #  of IDs/IDXs (an array of numers) and returns a result similar to
-        #  the search: tuple of the same idxs/IDs sent and a vectors of their
-        #  scores i.e. ([1,15,23,..,10], [0.1, 0.023, 0.45, ..., 1])
-        #                ^^^ indices       ^^^ corresponding scores
-        ####################
-        ####################
-
         ### Search ###
-        # TODO(Corneliu) integrate parsed_query.filter as well somewhere
-        #  - make sure both filter and search queries exist
-        #  i.e. parse query and send them somewhere ... search?
-        dbschema = db_schema(dbdata)
-        parsed_query = parse_query(request.query, dbschema, separator=DEFAULT_QUERY_PARSING_SEPARATOR)
-
-        results = search(srchers, parsed_query.search,
-                         search_method=request.search_method,
-                         max_matches=request.max_matches,
-                         max_suggestions=request.max_suggestions,
-                         custom_weights=request.custom_weights)
-
+        results = search(dbdata, srchers, request; rerank=ranker)
         query_time = time() - t_init
         @info "* Search [#$(counter[1])]: query='$(request.query)' completed in $query_time(s)."
 
@@ -107,11 +97,21 @@ function respond(dbdata, srchers, socket, counter, channels)
 
     elseif request.op == "search-recommend"
         generated_query = generate_query(request.query, dbdata, id_key=DEFAULT_DB_ID_KEY)
-        parsed_query = parse_query(generated_query.query, dbschema, separator=DEFAULT_QUERY_PARSING_SEPARATOR)
-        similar_ids = indexfilter(dbdata, parsed_query.filter,
-                                  id_key=DEFAULT_DB_ID_KEY,
-                                  exclude=generated_query.id)
-        # TODO(Corneliu) run a search here ^^^ instead of filter only and return formated results...
+        request.query = generated_query.query
+        gid = generated_query.id
+        similar_ids = search(dbdata, srchers, request; exclude=gid, rerank=ranker)
+        query_time = time() - t_init
+        @info "* Search-recommend [#$(counter[1])] for '$gid': completed in $query_time(s)."
+
+        # Construct response for client
+        corpora = select_corpora(srchers, similar_ids, request)
+        response = construct_json_response(similar_ids, corpora,
+                        max_suggestions=request.max_suggestions,
+                        elapsed_time=query_time)
+
+        # Write response to I/O server
+        write(socket, response * RESPONSE_TERMINATOR)
+
     elseif request.op == "kill"
         ### Kill the search server ###
         @info "* Kill [#$(counter[1])]: Exiting in 1(s)..."
