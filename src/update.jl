@@ -1,14 +1,11 @@
 """
-    updater(srchers, in_channel, out_channel)
+    updater(dbdata, fieldmaps, srchers, channels)
 
-Function updates the `srchers` at each and puts the updates on the
-`channel` to be sent to the search server.
+Updates the `srchers` using `dbdata` and communicates with
+the search server using `channels`.
 """
-function updater(srchers::Vector{S},
-                 in_channel::Channel{String},
-                 out_channel::Channel{Vector{S}},
-                ) where S<:Searcher
-    # Loop continuously
+function updater(dbdata, fieldmaps, srchers, channels)
+    in_channel, out_channel = channels
     while true
         sleep(DEFAULT_SEARCHER_UPDATE_POOL_INTERVAL)
         new_srchers = similar(srchers)  # initialize
@@ -16,8 +13,8 @@ function updater(srchers::Vector{S},
         cnt = 0
         for (i, srcher) in enumerate(srchers)
             if isempty(upid) || isequal(id(srcher), StringId(upid))
-                new_srchers[i] = build_searcher(srcher.config)
-                cnt+=1
+                new_srchers[i] = build_searcher(dbdata, fieldmaps, srcher.config)
+                cnt+= 1
             else
                 new_srchers[i] = srchers[i]
             end

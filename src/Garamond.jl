@@ -65,6 +65,8 @@ module Garamond
     # Exports
     export
         search,
+        load_search_env,
+        parse_configuration,
         AbstractEmbedder,
         AbstractIndex,
         Searcher,

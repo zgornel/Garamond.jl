@@ -51,10 +51,7 @@ end
 
 
 # Indexing for vectors of searchers
-function getindex(srchers::V, an_id::StringId
-        ) where {V<:Vector{<:Searcher{T,D,E,I}
-          where T<:AbstractFloat where D<:AbstractDocument
-          where E where I<:AbstractIndex}}
+function getindex(srchers::AbstractVector{Searcher}, an_id::StringId)
     idxs = Int[]
     for (i, srcher) in enumerate(srchers)
         isequal(id(srcher), an_id) && push!(idxs, i)
@@ -62,58 +59,42 @@ function getindex(srchers::V, an_id::StringId
     return srchers[idxs]
 end
 
-function getindex(srchers::V, an_id::String
-        ) where {V<:Vector{<:Searcher{T,D,E,I}
-          where T<:AbstractFloat where D<:AbstractDocument
-          where E where I<:AbstractIndex}}
-    getindex(srchers, StringId(an_id))
-end
+getindex(srchers::AbstractVector{Searcher}, an_id::String) = getindex(srchers, StringId(an_id))
 
 
 """
-    load_search_env(configs)
+    load_search_env(config_file)
 
-Loads/builds searchers using the information provided by `configs`. The
-latter can be either a path, a vector of paths to searcher configuration file(s)
-or a vector of `SearchConfig` objects.
-
-Loading process flow:
-   1. Parse configuration files using `parse_search_configuration` (if `configs`
-      contains paths to configuration files)
-   2. The resulting `Vector{SearchConfig}` is passed to `load_search_env`
-      (each `SearchConfig` contains the data filepath, parameters etc.)
-   3. Each searcher is built using `build_searcher` and a vector of
-      searcher objects is returned.
+Creates a search environment using the information provided by `config_file`.
 """
-function load_search_env(configs)
-    # TODO(Corneliu): Export what's needed from here i.e. load_search_env?
-    config = parse_search_configuration(configs)  # load searcher configs
+function load_search_env(config_file)
+    data_loader, data_path, configs = parse_configuration(config_file)
     #TODO(Corneliu) Review this i.e. fieldmaps should be removed (with removal of METADATA)
-    dbdata, fieldmaps = config.data_loader(config.data_path)
-    srchers = [build_searcher(dbdata, fieldmaps, sconf) for sconf in config.search_configs]  # build searchers
-    return dbdata, srchers
+    dbdata, fieldmaps = data_loader(data_path)
+    srchers = [build_searcher(dbdata, fieldmaps, config) for config in configs]  # build searchers
+    return dbdata, fieldmaps, srchers
 end
 
 
 """
-    build_searcher(sconf::SearchConfig)
+    build_searcher(dbdata, fieldmaps, config)
 
-Creates a Searcher from a searcher configuration `sconf`.
+Creates a Searcher from a searcher configuration `config::SearchConfig`.
 """
-function build_searcher(dbdata, fieldmaps, sconf::SearchConfig)
+function build_searcher(dbdata, fieldmaps, config)
 
     documents_sentences = [dbentry2sentence(dbentry, fieldmaps.data_fields)
                            for dbentry in dbiterator(dbdata)]
-    metadata_vector = [dbentry2metadata(dbentry, fieldmaps.metadata_fields, language=sconf.language)
+    metadata_vector = [dbentry2metadata(dbentry, fieldmaps.metadata_fields, language=config.language)
                        for dbentry in dbiterator(dbdata)]
 
     # Create metadata sentences
-    metadata_sentences = @op meta2sv(metadata_vector, sconf.metadata_to_index)
+    metadata_sentences = @op meta2sv(metadata_vector, config.metadata_to_index)
 
     # Pre-process documents
-    flags = sconf.text_strip_flags | (sconf.stem_words ? stem_words : 0x0)
-    flags_meta = sconf.metadata_strip_flags | (sconf.stem_words ? stem_words : 0x0)
-    language = get(STR_TO_LANG, sconf.language, DEFAULT_LANGUAGE)()
+    flags = config.text_strip_flags | (config.stem_words ? stem_words : 0x0)
+    flags_meta = config.metadata_strip_flags | (config.stem_words ? stem_words : 0x0)
+    language = get(STR_TO_LANG, config.language, DEFAULT_LANGUAGE)()
     document_sentences_prepared = @op document_preparation(documents_sentences,
                                         flags, language)
     metadata_sentences_prepared = @op document_preparation(metadata_sentences,
@@ -122,46 +103,46 @@ function build_searcher(dbdata, fieldmaps, sconf::SearchConfig)
     # Build corpus
     merged_sentences = @op merge_documents(document_sentences_prepared,
                                            metadata_sentences_prepared)
-    full_crps = @op build_corpus(merged_sentences, metadata_vector, sconf.ngram_complexity)
-    crps, documents = @op get_corpus_documents(full_crps, sconf.keep_data)
+    full_crps = @op build_corpus(merged_sentences, metadata_vector, config.ngram_complexity)
+    crps, documents = @op get_corpus_documents(full_crps, config.keep_data)
     lex = @op lexicon(full_crps)
     lex_1gram = @op create_lexicon(full_crps, 1)
     # Construct element type
-    T = eval(sconf.vectors_eltype)
+    T = eval(config.vectors_eltype)
 
     # TODO(Corneliu) Separate embeddings as well from searchers
     # i.e. data, embeddings and indexes are separate an re-use each other
 
     # Get embedder (split into two separate call ways so that unused changed
     #               parameters do not influence the cache consistency)
-    if sconf.vectors in [:word2vec, :glove, :conceptnet, :compressed]
-        embedder = @op get_embedder(sconf.vectors, sconf.embeddings_path,
-                            sconf.embeddings_kind, sconf.doc2vec_method,
-                            sconf.glove_vocabulary, sconf.sif_alpha,
-                            sconf.borep_dimension, sconf.borep_pooling_function,
-                            sconf.disc_ngram, lex_1gram, T)
-    elseif sconf.vectors in [:count, :tf, :tfidf, :bm25]
-        embedder = @op get_embedder(sconf.vectors, sconf.vectors_transform,
-                            sconf.vectors_dimension, sconf.ngram_complexity,
-                            sconf.bm25_kappa, sconf.bm25_beta,
+    if config.vectors in [:word2vec, :glove, :conceptnet, :compressed]
+        embedder = @op get_embedder(config.vectors, config.embeddings_path,
+                            config.embeddings_kind, config.doc2vec_method,
+                            config.glove_vocabulary, config.sif_alpha,
+                            config.borep_dimension, config.borep_pooling_function,
+                            config.disc_ngram, lex_1gram, T)
+    elseif config.vectors in [:count, :tf, :tfidf, :bm25]
+        embedder = @op get_embedder(config.vectors, config.vectors_transform,
+                            config.vectors_dimension, config.ngram_complexity,
+                            config.bm25_kappa, config.bm25_beta,
                             documents, lex, T)
     end
 
     # Calculate embeddings for each document
     embedded_documents = @op embed_all_documents(embedder, merged_sentences,
-                                sconf.oov_policy, sconf.ngram_complexity)
+                                config.oov_policy, config.ngram_complexity)
 
     # Get search index type
-    IndexType = get_search_index_type(sconf)
+    IndexType = get_search_index_type(config)
 
     # Build search index
     srchindex = @op IndexType(embedded_documents)
 
     # Build search tree (for suggestions)
-    srchtree = @op get_bktree(sconf.heuristic, lex_1gram)
+    srchtree = @op get_bktree(config.heuristic, lex_1gram)
 
     # Build searcher
-    srcher = @op Searcher(Ref(dbdata), sconf, crps, embedder, srchindex, srchtree)
+    srcher = @op Searcher(Ref(dbdata), config, crps, embedder, srchindex, srchtree)
 
     # Set Dispatcher logging level to warning
     setlevel!(getlogger("Dispatcher"), "warn")
@@ -169,13 +150,13 @@ function build_searcher(dbdata, fieldmaps, sconf::SearchConfig)
     # Prepare for dispatch graph execution
     endpoint = srcher
     uncacheable = [srcher]
-    sconf.search_index == :hnsw && push!(uncacheable, srchindex)
+    config.search_index == :hnsw && push!(uncacheable, srchindex)
 
     # Execute dispatch graph
     srcher = extract(
                 run_dispatch_graph(endpoint, uncacheable,
-                    sconf.cache_directory,
-                    sconf.cache_compression))
+                    config.cache_directory,
+                    config.cache_compression))
     @debug "* Loaded: $srcher."
     return srcher
 end
@@ -231,9 +212,9 @@ function embed_all_documents(embedder, documents, oov_policy, ngram_complexity)
 end
 
 
-function get_search_index_type(sconf::SearchConfig)
+function get_search_index_type(config::SearchConfig)
     # Get search index types
-    search_index = sconf.search_index
+    search_index = config.search_index
     search_index == :naive && return NaiveIndex
     search_index == :brutetree && return BruteTreeIndex
     search_index == :kdtree && return KDTreeIndex

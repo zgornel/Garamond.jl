@@ -16,15 +16,13 @@ using `search_server_ready` to any listening I/O servers.
 function search_server(data_config_path, io_port, search_server_ready)
 
     # Load data
-    dbdata, srchers = load_search_env(data_config_path)
+    dbdata, fieldmaps, srchers = load_search_env(data_config_path)
 
     # Start updater
     up_in_channel = Channel{String}(0)  # input (searcher id)
     up_out_channel = Channel{typeof(srchers)}(0)  # output (updated searchers)
     channels = (up_in_channel, up_out_channel)
-
-    #TODO(corneliu) Fix updater, now needs dbdata...
-    ###@async updater(srchers, channels...)
+    @async updater(dbdata, fieldmaps, srchers, channels)
 
     # Notify waiting I/O servers
     @info "Searchers loaded. Notifying I/O servers..."

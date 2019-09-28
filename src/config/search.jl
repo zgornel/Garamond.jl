@@ -125,7 +125,7 @@ SearchConfig(;
 
 
 """
-    parse_search_configuration(filename)
+    parse_configuration(filename)
 
 Creates search configuration objects from a data configuration file
 specified by `filename`. The file name can be either an `AbstractString`
@@ -133,7 +133,7 @@ with the path to the configuration file or a `Vector{AbstractString}`
 specifying multiple configuration file paths. The function returns a
 `Vector{SearchConfig}` that is used to build the `Searcher` objects.
 """
-function parse_search_configuration(filename::AbstractString)
+function parse_configuration(filename::AbstractString)
 
     # Read config (this should fail if config not found)
     fullfilename = abspath(expanduser(filename))
@@ -352,27 +352,6 @@ function parse_search_configuration(filename::AbstractString)
     return (data_loader=data_loader, data_path = data_path, search_configs=search_configs)
 end
 
-### function parse_search_configuration(filenames::Vector{S}) where S<:AbstractString
-###     all_configs = Vector{SearchConfig}()
-###     all_ids = Vector{StringId}()
-###     for filename in filenames
-###         configs = parse_search_configuration(filename)  # read all configs from a file
-###         for config in configs
-###             if config.id in all_ids          # check id uniqueness
-###                 @error """Multiple occurences of $(config.id) detected. Data id's
-###                           have to be unique. Please correct the error in $filename.
-###                           Exiting..."""
-###                 exit(-1)
-###             else
-###                 push!(all_ids, config.id)
-###                 push!(all_configs, config)
-###             end
-###         end
-###     end
-###     return all_configs
-### end
-###
-
 
 # Small helper function that post-processes file paths
 # (useful for handling backslash separators on Windows)
@@ -383,7 +362,6 @@ function postprocess_path(path)
     end
     return ppath  # do nothing if not on Windows
 end
-
 
 
 """
