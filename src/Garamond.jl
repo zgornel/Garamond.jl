@@ -90,21 +90,28 @@ module Garamond
     =#
     function __init__()
         CUSTOM_LOADERS_SUBDIR = "data/loaders/custom"
-        loaders_path = joinpath(@__DIR__, CUSTOM_LOADERS_SUBDIR)
-        if isdir(loaders_path)
-            included_loaders = []
-            for file in readdir(loaders_path)
+        CUSTOM_RANKERS_SUBDIR = "search/rankers/custom"
+
+        include_subdir(CUSTOM_LOADERS_SUBDIR, printer="Custom loaders")
+        include_subdir(CUSTOM_RANKERS_SUBDIR, printer="Custom rankers")
+    end
+
+    function include_subdir(subpath; printer="Including")
+        fullpath = joinpath(@__DIR__, subpath)
+        if isdir(fullpath)
+            included_files = []
+            for file in readdir(fullpath)
                 try
-                    filepath = joinpath(loaders_path, file)
+                    filepath = joinpath(fullpath, file)
                     if isfile(filepath) && endswith(filepath, ".jl")
                         include(filepath)
-                        push!(included_loaders, file)
+                        push!(included_files, file)
                     end
                 catch e
                     @warn "Could not include $filepath..."
                 end
             end
-            @info "• Custom data loaders: " * join(included_loaders, ", ")
+            @info "• " * printer * ": " * join(included_files, ", ")
         end
     end
 
@@ -137,7 +144,7 @@ module Garamond
     include("search/index.jl")
     include("search/filter.jl")
     include("search/results.jl")
-    include("search/rerank.jl")
+    include("search/rankers/noop.jl")
     include("search/main.jl")
     include("version.jl")
     include("server/requests.jl")

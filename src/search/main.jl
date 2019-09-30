@@ -1,7 +1,7 @@
 function search(env::SearchEnv,
                 request;
                 exclude=nothing,
-                rerank=nothing,
+                rerank=env.ranker,
                 id_key=DEFAULT_DB_ID_KEY)
 
     # Parse query content
@@ -47,7 +47,5 @@ function search(env::SearchEnv,
     end
 
     # Rerank if the case
-    rerank!(rerank, results)
-
-    return results
+    rerank(results)
 end

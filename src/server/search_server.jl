@@ -66,21 +66,9 @@ function respond(env, socket, counter, channels)
     @debug "* Received [#$(counter[1])]: $request."
 
     t_init = time()
-    ####################
-    #  TODO(corneliu):
-    #  - add support for a rerank-er based on IDs or linear indices
-    #  - the reranker should be a small TCP server that reads a list
-    #  of IDs/IDXs (an array of numers) and returns a result similar to
-    #  the search: tuple of the same idxs/IDs sent and a vectors of their
-    #  scores i.e. ([1,15,23,..,10], [0.1, 0.023, 0.45, ..., 1])
-    #                ^^^ indices       ^^^ corresponding scores
-    ranker = nothing
-    ####################
-    ####################
-
     if request.op == "search"
         ### Search ###
-        results = search(env, request; rerank=ranker, id_key=env.id_key)
+        results = search(env, request; rerank=env.ranker, id_key=env.id_key)
         query_time = time() - t_init
         @info "* Search [#$(counter[1])]: query='$(request.query)' completed in $query_time(s)."
 
@@ -97,7 +85,7 @@ function respond(env, socket, counter, channels)
         generated_query = generate_query(request.query, env.dbdata, id_key=env.id_key)
         request.query = generated_query.query
         gid = generated_query.id
-        similar_ids = search(env, request; exclude=gid, rerank=ranker, idkey=env.id_key)
+        similar_ids = search(env, request; exclude=gid, rerank=env.ranker, idkey=env.id_key)
         query_time = time() - t_init
         @info "* Search-recommend [#$(counter[1])] for '$gid': completed in $query_time(s)."
 

@@ -133,7 +133,8 @@ specifying multiple configuration file paths. The function returns a
 function parse_configuration(filename::AbstractString)
 
     # Read config (this should fail if config not found)
-    local config, dict_configs, data_path, data_loader_name, id_key, id_environment
+    local config, dict_configs, data_path, data_loader_name,
+          ranker_name, id_key, id_environment
     fullfilename = abspath(expanduser(filename))
     try
         # Parse configuration file
@@ -152,6 +153,9 @@ function parse_configuration(filename::AbstractString)
         data_loader_name = Symbol(get(config, "data_loader_name", DEFAULT_DATA_LOADER_NAME))
 
         # Create data loader symbol
+        ranker_name = Symbol(get(config, "ranker_name", DEFAULT_RANKER_NAME))
+
+        # Create data loader symbol
         id_key = Symbol(get(config, "id_key", DEFAULT_DB_ID_KEY))
 
         # Create an environment id
@@ -163,6 +167,9 @@ function parse_configuration(filename::AbstractString)
 
     # Construct data loader
     data_loader = eval(data_loader_name)
+
+    # Construct data loader
+    ranker = eval(ranker_name)
 
     # Create search configurations
     n = length(dict_configs)
@@ -340,6 +347,7 @@ function parse_configuration(filename::AbstractString)
             push!(removable, i)
         end
     end
+
     # Remove search configs that have missing files
     deleteat!(searcher_configs, removable)
     # Last checks
@@ -361,7 +369,12 @@ function parse_configuration(filename::AbstractString)
             end
         end
     end
-    return (data_loader=data_loader, data_path = data_path, id_key=id_key, searcher_configs=searcher_configs)
+
+    return (data_loader=data_loader,
+            data_path = data_path,
+            id_key=id_key,
+            searcher_configs=searcher_configs,
+            ranker=ranker)
 end
 
 
