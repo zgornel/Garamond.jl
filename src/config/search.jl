@@ -1,6 +1,4 @@
-########################################################
-# Corpus Id's i.e. keys that uniquely identify corpora #
-########################################################
+# Corpus Id's i.e. keys that uniquely identify corpora
 struct StringId
     id::String
 end
@@ -15,9 +13,6 @@ make_id(::Type{StringId}, id::T) where T<:Number = StringId(string(id))
 make_id(::Type{StringId}, id::T) where T<:Nothing = random_string_id()
 
 
-################
-# SearchConfig #
-################
 """
 The search engine configuration object `SearchConfig` is used in building
 search objects of type `Searcher` and to provide information about them to

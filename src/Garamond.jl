@@ -80,11 +80,13 @@ module Garamond
         web_socket_server,
         rest_server
 
-    # The __init__() function includes at runtime all the .jl files located
-    # at data/loaders/custom; the files should be either code or symlinks to
-    # files containing data loading functions that take data paths as input
-    # argument and return IdexedTable/NDSparse datasets representing the data
-    # to be indexed
+    #=
+    The __init__() function includes at runtime all the .jl files located
+    at data/loaders/custom; the files should be either code or symlinks to
+    files containing data loading functions that take data paths as input
+    argument and return IdexedTable/NDSparse datasets representing the data
+    to be indexed.
+    =#
     function __init__()
         __CUSTOM_LOADERS_SUBDIR = "data/loaders/custom"
         __loaders_path = joinpath(@__DIR__, __CUSTOM_LOADERS_SUBDIR)

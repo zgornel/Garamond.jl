@@ -1,8 +1,4 @@
 #TODO(Corneliu) Update documentation of the functions
-#
-##############################
-# Interface for the Searcher #
-##############################
 
 # Searcher structures
 """
