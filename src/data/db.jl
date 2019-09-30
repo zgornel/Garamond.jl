@@ -53,11 +53,11 @@ function dbentry2metadata(dbentry, fieldmap; language=DEFAULT_LANGUAGE_STR)
 end
 
 
-# Checks that the id_key exists in dbdata and that its elements are Integer's
+# Checks that the id_key exists in dbdata and that its elements are Int's
 function check_id_key(dbdata, id_key)
     if !in(id_key, colnames(dbdata)) &&
         throw(ErrorException("$id_key must be a column in the loaded data"))
-    elseif !(eltype(getproperty(columns(dbdata), id_key)) <: Integer)
-        throw(ErrorException("$id_key elements must be of Integer type"))
+    elseif !(eltype(getproperty(columns(dbdata), id_key)) <: Int)
+        throw(ErrorException("$id_key elements must be of Int type"))
     end
 end

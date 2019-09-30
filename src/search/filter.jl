@@ -1,7 +1,7 @@
 function indexfilter(dbdata::NDSparse,
                      filter_query;
                      id_key=DEFAULT_DB_ID_KEY,
-                     exclude=nothing)
+                     exclude=nothing)::Vector{Int}
 
     extract_id = dbdata -> map(x -> getproperty(x, id_key), keys(dbdata))
     f_exclude(val) = x -> setdiff(x, [val])
@@ -21,7 +21,7 @@ end
 function indexfilter(dbdata::IndexedTable,
                      filter_query;
                      id_key=DEFAULT_DB_ID_KEY,
-                     exclude=nothing)
+                     exclude=nothing)::Vector{Int}
 
     extract_id = x -> select(x, id_key)
     f_exclude(val) = x -> setdiff(x, [val])
