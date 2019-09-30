@@ -89,22 +89,22 @@ module Garamond
     to be indexed.
     =#
     function __init__()
-        __CUSTOM_LOADERS_SUBDIR = "data/loaders/custom"
-        __loaders_path = joinpath(@__DIR__, __CUSTOM_LOADERS_SUBDIR)
-        if isdir(__loaders_path)
-            __included_loaders = []
-            for content in readdir(__loaders_path)
+        CUSTOM_LOADERS_SUBDIR = "data/loaders/custom"
+        loaders_path = joinpath(@__DIR__, CUSTOM_LOADERS_SUBDIR)
+        if isdir(loaders_path)
+            included_loaders = []
+            for file in readdir(loaders_path)
                 try
-                    contentpath = joinpath(__loaders_path, content)
-                    if isfile(contentpath) && endswith(contentpath, ".jl")
-                        include(contentpath)
-                        push!(__included_loaders, content)
+                    filepath = joinpath(loaders_path, file)
+                    if isfile(filepath) && endswith(filepath, ".jl")
+                        include(filepath)
+                        push!(included_loaders, file)
                     end
                 catch e
-                    @warn "Could not include $contentpath..."
+                    @warn "Could not include $filepath..."
                 end
             end
-            @debug "• Custom data loaders: " * join(__included_loaders, ", ")
+            @info "• Custom data loaders: " * join(included_loaders, ", ")
         end
     end
 
