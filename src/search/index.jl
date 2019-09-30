@@ -133,7 +133,7 @@ function search(srcher::Searcher{T,D,E,I},
     # Search (if document vector is not zero)
     if query_is_embedded
         ### Search
-        idxs, scores = search(srcher.index, query_embedding, k, searchable)
+        idxs, scores = knn_search(srcher.index, query_embedding, k, searchable)
         ###
         score_transform!(scores, alpha=srcher.config.score_alpha)
     end

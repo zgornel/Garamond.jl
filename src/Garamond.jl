@@ -61,6 +61,7 @@ module Garamond
                  occursin, isempty, parse
     import StringAnalysis: id
     import Word2Vec: WordVectors
+    import HNSW: knn_search
 
     # Exports
     export
@@ -103,7 +104,7 @@ module Garamond
                     @warn "Could not include $contentpath..."
                 end
             end
-            @info "• Custom data loaders: " * join(__included_loaders, ", ")
+            @debug "• Custom data loaders: " * join(__included_loaders, ", ")
         end
     end
 
