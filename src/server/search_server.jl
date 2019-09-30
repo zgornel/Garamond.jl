@@ -80,7 +80,7 @@ function respond(env, socket, counter, channels)
 
     if request.op == "search"
         ### Search ###
-        results = search(env, request; rerank=ranker)
+        results = search(env, request; rerank=ranker, id_key=env.id_key)
         query_time = time() - t_init
         @info "* Search [#$(counter[1])]: query='$(request.query)' completed in $query_time(s)."
 
@@ -94,10 +94,10 @@ function respond(env, socket, counter, channels)
         write(socket, response * RESPONSE_TERMINATOR)
 
     elseif request.op == "search-recommend"
-        generated_query = generate_query(request.query, env.dbdata, id_key=DEFAULT_DB_ID_KEY)
+        generated_query = generate_query(request.query, env.dbdata, id_key=env.id_key)
         request.query = generated_query.query
         gid = generated_query.id
-        similar_ids = search(env, request; exclude=gid, rerank=ranker)
+        similar_ids = search(env, request; exclude=gid, rerank=ranker, idkey=env.id_key)
         query_time = time() - t_init
         @info "* Search-recommend [#$(counter[1])] for '$gid': completed in $query_time(s)."
 

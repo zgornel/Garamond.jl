@@ -4,20 +4,30 @@
 """
 mutable struct SearchEnv
     dbdata
+    id_key
     fieldmaps
     searchers
 end
 
 
 """
-    build_search_env(config_file)
+    build_search_env(filepath)
 
-Creates a search environment using the information provided by `config_file`.
+Creates a search environment using the information provided by `filepath`.
 """
-function build_search_env(config_file)
-    data_loader, data_path, configs = parse_configuration(config_file)
+function build_search_env(filepath)
+    # Parse configuration
+    env_config = parse_configuration(filepath)
+
+    # Load data
     #TODO(Corneliu) Review this i.e. fieldmaps should be removed (with removal of METADATA)
-    dbdata, fieldmaps = data_loader(data_path)
-    srchers = [build_searcher(dbdata, fieldmaps, config) for config in configs]  # build searchers
-    return SearchEnv(dbdata, fieldmaps, srchers)
+    dbdata, fieldmaps = env_config.data_loader(env_config.data_path)
+    id_key = env_config.id_key
+    check_id_key(dbdata, id_key)
+
+    # Build searchers
+    srchers = [build_searcher(dbdata, fieldmaps, config) for config in env_config.searcher_configs]
+
+    # Build search environment
+    SearchEnv(dbdata, id_key, fieldmaps, srchers)
 end

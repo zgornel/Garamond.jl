@@ -1,4 +1,8 @@
-function search(env::SearchEnv, request; exclude=nothing, rerank=nothing)
+function search(env::SearchEnv,
+                request;
+                exclude=nothing,
+                rerank=nothing,
+                id_key=DEFAULT_DB_ID_KEY)
 
     # Parse query content
     parsed_query = parse_query(request.query, db_schema(env.dbdata))
@@ -14,16 +18,14 @@ function search(env::SearchEnv, request; exclude=nothing, rerank=nothing)
                          max_suggestions=request.max_suggestions,
                          custom_weights=request.custom_weights)
     elseif !issearch
-        # Filter, no search
-        # TODO(Corneliu) id_key should be read from config
+        # No search, filter only
         filtered_ids = indexfilter(env.dbdata,
                                    parsed_query.filter,
-                                   id_key=DEFAULT_DB_ID_KEY,
+                                   id_key=id_key,
                                    exclude=exclude)
-        results = search_result_from_indexes(filtered_ids, env.searchers[1].config.id_aggregation,
-                                             env.searchers[1].config.vectors_eltype)
+        results = search_result_from_indexes(filtered_ids, make_id(StringId, nothing))
     elseif issearch
-        # Filter and search
+        # Search and filter search results
         results = search(env.searchers,
                          parsed_query.search,
                          search_method=request.search_method,
@@ -32,9 +34,8 @@ function search(env::SearchEnv, request; exclude=nothing, rerank=nothing)
                          custom_weights=request.custom_weights)
         filtered_ids = indexfilter(env.dbdata,
                                    parsed_query.filter,
-                                   id_key=DEFAULT_DB_ID_KEY,
+                                   id_key=id_key,
                                    exclude=exclude)
-        # Merge results of the two
         #TODO(corneliu) Improve this!!! (i.e.e change result format etc.)
         for r in results
             empty_scores=[]

@@ -1,4 +1,5 @@
-function parse_query_generation_string(req::AbstractString, schema;
+function parse_query_generation_string(req::AbstractString,
+                                       schema;
                                        id_key=DEFAULT_DB_ID_KEY)
     # Initializations
     (_target_id, _target_id_type, fields) = ("", String, Symbol[])

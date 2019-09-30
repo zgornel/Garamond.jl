@@ -1,4 +1,3 @@
-#TODO(Corneliu) Update documentation of the functions
 """
     Search object. It contains all the indexed data and related
 configuration that allows for searches to be performed.

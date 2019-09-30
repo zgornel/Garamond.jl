@@ -27,14 +27,15 @@ end
 """
     Constructs a search result from a list of ids.
 """
-function search_result_from_indexes(idxs, id, ::Type{T}; default_score=one(T)) where {T<:AbstractFloat}
+# TODO(Corneliu) Make T vvv of the same time as search results
+function search_result_from_indexes(idxs, id, ::Type{T}=Float32; default_score=one(T)) where {T<:AbstractFloat}
     n = length(idxs)
     scores = fill(default_score, n)
-    SearchResult(id,
-                 MultiDict(zip(scores, idxs)),
-                 String[],
-                 MultiDict{String, Tuple{T, String}}(),
-                 one(T))
+    [SearchResult(id,
+                  MultiDict(zip(scores, idxs)),
+                  String[],
+                  MultiDict{String, Tuple{T, String}}(),
+                  one(T))]
 end
 
 

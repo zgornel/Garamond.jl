@@ -1,4 +1,6 @@
-# Corpus Id's i.e. keys that uniquely identify corpora
+"""
+String ID object.
+"""
 struct StringId
     id::String
 end
@@ -131,7 +133,7 @@ specifying multiple configuration file paths. The function returns a
 function parse_configuration(filename::AbstractString)
 
     # Read config (this should fail if config not found)
-    local config, dict_configs, data_path, data_loader_name, id_environment
+    local config, dict_configs, data_path, data_loader_name, id_key, id_environment
     fullfilename = abspath(expanduser(filename))
     try
         # Parse configuration file
@@ -149,6 +151,9 @@ function parse_configuration(filename::AbstractString)
         # Create data loader symbol
         data_loader_name = Symbol(get(config, "data_loader_name", DEFAULT_DATA_LOADER_NAME))
 
+        # Create data loader symbol
+        id_key = Symbol(get(config, "id_key", DEFAULT_DB_ID_KEY))
+
         # Create an environment id
         id_environment = make_id(StringId, get(config, "id", nothing))
     catch e
@@ -161,11 +166,11 @@ function parse_configuration(filename::AbstractString)
 
     # Create search configurations
     n = length(dict_configs)
-    search_configs = [SearchConfig() for _ in 1:n]
+    searcher_configs = [SearchConfig() for _ in 1:n]
     removable = Int[]  # search configs that have problems
     must_have_keys = ["vectors"]
 
-    for (i, (sconfig, dconfig)) in enumerate(zip(search_configs, dict_configs))
+    for (i, (sconfig, dconfig)) in enumerate(zip(searcher_configs, dict_configs))
         if !all(map(key->haskey(dconfig, key), must_have_keys))
             @warn "Missing options from $must_have_keys in configuration $i. "*
                   "Ignoring search configuration..."
@@ -175,8 +180,12 @@ function parse_configuration(filename::AbstractString)
         # Get searcher parameter values (assigning default values when the case)
         try
             sconfig.id = make_id(StringId, get(dconfig, "id", nothing))
-            #TODO(Corneliu) Ascertain whether having an aggregation id makes sense
-            sconfig.id_aggregation = id_environment
+            id_aggregation = get(dconfig, "id_aggregation", nothing)
+            if id_aggregation == nothing
+                id_aggregation = id_environment
+            else
+                sconfig.id_aggregation = make_id(StringId, id_aggregation)
+            end
             sconfig.description = get(dconfig, "description", "")
             sconfig.enabled = get(dconfig, "enabled", false)
             sconfig.config_path = fullfilename
@@ -332,16 +341,16 @@ function parse_configuration(filename::AbstractString)
         end
     end
     # Remove search configs that have missing files
-    deleteat!(search_configs, removable)
+    deleteat!(searcher_configs, removable)
     # Last checks
-    if isempty(search_configs)
+    if isempty(searcher_configs)
         @error """The search configuration does not contain searchable entities.
                   Please review $fullfilename, add entries or fix the
                   configuration errors. Exiting..."""
         exit(-1)
     else
         all_ids = Vector{StringId}()
-        for config in search_configs
+        for config in searcher_configs
             if config.id in all_ids          # check id uniqueness
                 @error """Multiple occurences of $(config.id) detected. Data id's
                           have to be unique. Please correct the error in $fullfilename.
@@ -352,7 +361,7 @@ function parse_configuration(filename::AbstractString)
             end
         end
     end
-    return (data_loader=data_loader, data_path = data_path, search_configs=search_configs)
+    return (data_loader=data_loader, data_path = data_path, id_key=id_key, searcher_configs=searcher_configs)
 end
 
 
