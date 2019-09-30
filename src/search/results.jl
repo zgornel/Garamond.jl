@@ -1,6 +1,3 @@
-#################################################
-# Search results objects and associated methods #
-#################################################
 """
     Object that stores the search results from a single searcher.
 """
@@ -8,13 +5,12 @@ struct SearchResult{T<:AbstractFloat}
     id::StringId
     query_matches::MultiDict{T, Int}  # score => document indices
     needle_matches::Vector{String}
-    suggestions::MultiDict{String, Tuple{T,String}} # needle => tuples of (score,partial match)
+    suggestions::MultiDict{String, Tuple{T, String}} # needle => tuples of (score,partial match)
     score_weight::T  # a default weight for scores
 end
 
 
-isempty(result::T) where T<:SearchResult =
-    all(isempty(getfield(result, field)) for field in fieldnames(T))
+isempty(result::SearchResult) = isempty(result.query_matches)
 
 
 # Calculate the length of a MultiDict as the number
@@ -25,6 +21,20 @@ valength(md::MultiDict) = begin
     else
         return mapreduce(x->length(x[2]), +, md)
     end
+end
+
+
+"""
+    Constructs a search result from a list of ids.
+"""
+function search_result_from_indexes(idxs, id, ::Type{T}; default_score=one(T)) where {T<:AbstractFloat}
+    n = length(idxs)
+    scores = fill(default_score, n)
+    SearchResult(id,
+                 MultiDict(zip(scores, idxs)),
+                 String[],
+                 MultiDict{String, Tuple{T, String}}(),
+                 one(T))
 end
 
 

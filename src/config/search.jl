@@ -131,19 +131,26 @@ specifying multiple configuration file paths. The function returns a
 function parse_configuration(filename::AbstractString)
 
     # Read config (this should fail if config not found)
+    local config, dict_configs, data_path, data_loader_name, id_environment
     fullfilename = abspath(expanduser(filename))
-    dict_configs = Vector{Dict{String, Any}}()
-    data_path = ""
-    data_loader_name = DEFAULT_DATA_LOADER_NAME
-    data_loader = DEFAULT_DATA_LOADER
     try
+        # Parse configuration file
         config = JSON.parse(open(fid->read(fid, String), fullfilename))
+
+        # Read separately individual searcher configurations
         dict_configs = config["searchers"]
+
+        # Parse and check data path
         data_path = postprocess_path(get(config, "data_path", ""))
         if !isfile(data_path) && !isdir(data_path)
-            @error "Data path does not exist"
+            throw(ErrorException("Data path " * data_path * " does not exist"))
         end
+
+        # Create data loader symbol
         data_loader_name = Symbol(get(config, "data_loader_name", DEFAULT_DATA_LOADER_NAME))
+
+        # Create an environment id
+        id_environment = make_id(StringId, get(config, "id", nothing))
     catch e
         @error "Could not parse data configuration file $fullfilename ($e). Exiting..."
         exit(-1)
@@ -168,7 +175,8 @@ function parse_configuration(filename::AbstractString)
         # Get searcher parameter values (assigning default values when the case)
         try
             sconfig.id = make_id(StringId, get(dconfig, "id", nothing))
-            sconfig.id_aggregation = make_id(StringId, get(dconfig, "id_aggregation", sconfig.id.id))
+            #TODO(Corneliu) Ascertain whether having an aggregation id makes sense
+            sconfig.id_aggregation = id_environment
             sconfig.description = get(dconfig, "description", "")
             sconfig.enabled = get(dconfig, "enabled", false)
             sconfig.config_path = fullfilename
