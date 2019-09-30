@@ -15,14 +15,14 @@ using `search_server_ready` to any listening I/O servers.
 """
 function search_server(data_config_path, io_port, search_server_ready)
 
-    # Load data
-    dbdata, fieldmaps, srchers = load_search_env(data_config_path)
+    # Build search environment
+    env = build_search_env(data_config_path)
 
     # Start updater
     up_in_channel = Channel{String}(0)  # input (searcher id)
-    up_out_channel = Channel{typeof(srchers)}(0)  # output (updated searchers)
+    up_out_channel = Channel{typeof(env.searchers)}(0)  # output (updated searchers)
     channels = (up_in_channel, up_out_channel)
-    @async updater(dbdata, fieldmaps, srchers, channels)
+    @async updater(env, channels)
 
     # Notify waiting I/O servers
     @info "Searchers loaded. Notifying I/O servers..."
@@ -38,25 +38,25 @@ function search_server(data_config_path, io_port, search_server_ready)
     while true
         # Check and update searchers
         if isready(up_out_channel)
-            srchers = take!(up_out_channel)
+            env.searchers = take!(up_out_channel)
         end
 
         # Start accepting requests and asynchronously
         # respond to them using the opened socket
         sock = accept(server)
-        @async respond(dbdata, srchers, sock, counter, channels)
+        @async respond(env, sock, counter, channels)
     end
 end
 
 
 """
-    respond(srchers, socket, counter, channels)
+    respond(env, socket, counter, channels)
 
 Responds to search server requests received on `socket` using
 the search data from `searchers`. The requests are counted
 through the variable `counter`.
 """
-function respond(dbdata, srchers, socket, counter, channels)
+function respond(env, socket, counter, channels)
     # Channels for updating
     up_in_channel, up_out_channel = channels
 
@@ -80,12 +80,12 @@ function respond(dbdata, srchers, socket, counter, channels)
 
     if request.op == "search"
         ### Search ###
-        results = search(dbdata, srchers, request; rerank=ranker)
+        results = search(env, request; rerank=ranker)
         query_time = time() - t_init
         @info "* Search [#$(counter[1])]: query='$(request.query)' completed in $query_time(s)."
 
         # Construct response for client
-        corpora = select_corpora(srchers, results, request)
+        corpora = select_corpora(env.searchers, results, request)
         response = construct_json_response(results, corpora,
                         max_suggestions=request.max_suggestions,
                         elapsed_time=query_time)
@@ -94,15 +94,15 @@ function respond(dbdata, srchers, socket, counter, channels)
         write(socket, response * RESPONSE_TERMINATOR)
 
     elseif request.op == "search-recommend"
-        generated_query = generate_query(request.query, dbdata, id_key=DEFAULT_DB_ID_KEY)
+        generated_query = generate_query(request.query, env.dbdata, id_key=DEFAULT_DB_ID_KEY)
         request.query = generated_query.query
         gid = generated_query.id
-        similar_ids = search(dbdata, srchers, request; exclude=gid, rerank=ranker)
+        similar_ids = search(env, request; exclude=gid, rerank=ranker)
         query_time = time() - t_init
         @info "* Search-recommend [#$(counter[1])] for '$gid': completed in $query_time(s)."
 
         # Construct response for client
-        corpora = select_corpora(srchers, similar_ids, request)
+        corpora = select_corpora(env.searchers, similar_ids, request)
         response = construct_json_response(similar_ids, corpora,
                         max_suggestions=request.max_suggestions,
                         elapsed_time=query_time)
@@ -121,7 +121,7 @@ function respond(dbdata, srchers, socket, counter, channels)
         ### Read and return data configurations ###
         @info "* Get configuration(s) [#$(counter[1])]."
         write(socket,
-              read_searcher_configurations_json(srchers) * RESPONSE_TERMINATOR)
+              read_searcher_configurations_json(env.searchers) * RESPONSE_TERMINATOR)
 
     elseif request.op == "update"
         ### Read and return data configurations ###

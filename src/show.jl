@@ -126,3 +126,10 @@ show(io::IO, request::SearchServerRequest) = begin
     end
     print(io, "$reqstr")
 end
+
+
+# SearchEnv
+Base.show(io::IO, env::SearchEnv) = begin
+    print(io, "SearchEnv, ", length(env.searchers), " searchers, ",
+          length(env.dbdata), " samples")
+end

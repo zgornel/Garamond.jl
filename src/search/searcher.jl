@@ -1,6 +1,4 @@
 #TODO(Corneliu) Update documentation of the functions
-
-# Searcher structures
 """
     Search object. It contains all the indexed data and related
 configuration that allows for searches to be performed.
@@ -56,20 +54,6 @@ function getindex(srchers::AbstractVector{Searcher}, an_id::StringId)
 end
 
 getindex(srchers::AbstractVector{Searcher}, an_id::String) = getindex(srchers, StringId(an_id))
-
-
-"""
-    load_search_env(config_file)
-
-Creates a search environment using the information provided by `config_file`.
-"""
-function load_search_env(config_file)
-    data_loader, data_path, configs = parse_configuration(config_file)
-    #TODO(Corneliu) Review this i.e. fieldmaps should be removed (with removal of METADATA)
-    dbdata, fieldmaps = data_loader(data_path)
-    srchers = [build_searcher(dbdata, fieldmaps, config) for config in configs]  # build searchers
-    return dbdata, fieldmaps, srchers
-end
 
 
 """

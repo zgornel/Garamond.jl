@@ -66,7 +66,7 @@ module Garamond
     # Exports
     export
         search,
-        load_search_env,
+        build_search_env,
         parse_configuration,
         AbstractEmbedder,
         AbstractIndex,
@@ -113,7 +113,6 @@ module Garamond
     include("data/loaders/noop.jl")
     include("config/defaults.jl")
     include("config/engine.jl")
-    include("config/search.jl")
     include("logging.jl")
     include("textutils.jl")
     include("embedder/abstractembedder.jl")
@@ -129,10 +128,12 @@ module Garamond
     include("index/brutetree.jl")
     include("index/kdtree.jl")
     include("index/hnsw.jl")
-    include("structs.jl")
     include("update.jl")
     include("query/parser.jl")
     include("query/generator.jl")
+    include("search/config_parser.jl")
+    include("search/searcher.jl")
+    include("search/env.jl")
     include("search/index.jl")
     include("search/filter.jl")
     include("search/results.jl")
