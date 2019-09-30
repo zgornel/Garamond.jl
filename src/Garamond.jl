@@ -80,9 +80,34 @@ module Garamond
         web_socket_server,
         rest_server
 
+    # The __init__() function includes at runtime all the .jl files located
+    # at data/loaders/custom; the files should be either code or symlinks to
+    # files containing data loading functions that take data paths as input
+    # argument and return IdexedTable/NDSparse datasets representing the data
+    # to be indexed
+    function __init__()
+        __CUSTOM_LOADERS_SUBDIR = "data/loaders/custom"
+        __loaders_path = joinpath(@__DIR__, __CUSTOM_LOADERS_SUBDIR)
+        if isdir(__loaders_path)
+            __included_loaders = []
+            for content in readdir(__loaders_path)
+                try
+                    contentpath = joinpath(__loaders_path, content)
+                    if isfile(contentpath) && endswith(contentpath, ".jl")
+                        include(contentpath)
+                        push!(__included_loaders, content)
+                    end
+                catch e
+                    @warn "Could not include $contentpath..."
+                end
+            end
+            @info "• Custom data loaders: " * join(__included_loaders, ", ")
+        end
+    end
+
     # Include section
     include("data/db.jl")
-    include("data/loaders.jl")  # includes src/data/loaders/*.jl
+    include("data/loaders/noop.jl")
     include("config/defaults.jl")
     include("config/engine.jl")
     include("config/search.jl")
