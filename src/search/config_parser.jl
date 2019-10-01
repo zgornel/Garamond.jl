@@ -22,15 +22,14 @@ other methods.
 """
 mutable struct SearchConfig
     # general, data, processing
-    id::StringId                    # searcher/corpus id
+    id::StringId                    # searcher id
     id_aggregation::StringId        # aggregation id
     description::String             # description of the searcher
     enabled::Bool                   # whether to use the searcher in search or not
     config_path::String             # file path for the configuration file
 
-    metadata_to_index::Vector{Symbol}   # fields from the document's metadata to index
-    language::String                # the corpus-level language (use "auto" for document-level autodetection)
-    keep_data::Bool                 # whether to keep document data, metadata
+    indexable_fields::Vector{Symbol}
+    language::String                # the index-level language
     stem_words::Bool                # whether to stem data or not
     ngram_complexity::Int           # ngram complexity (i.e. max number of tokes for an n-gram)
 
@@ -51,7 +50,6 @@ mutable struct SearchConfig
 
     # text stripping flags
     text_strip_flags::UInt32        # How to strip text data before indexing
-    metadata_strip_flags::UInt32    # How to strip text metadata before indexing
     query_strip_flags::UInt32       # How to strip queries before searching
 
     # parameters for embedding, scoring
@@ -77,9 +75,8 @@ SearchConfig(;
           enabled=false,
           config_path="",
 
-          metadata_to_index=DEFAULT_METADATA_FIELDS_TO_INDEX,
+          indexable_fields=DEFAULT_INDEXABLE_FIELDS,
           language=DEFAULT_LANGUAGE_STR,
-          keep_data=DEFAULT_KEEP_DATA,
           stem_words=DEFAULT_STEM_WORDS,
           ngram_complexity=DEFAULT_NGRAM_COMPLEXITY,
           vectors=DEFAULT_VECTORS,
@@ -94,7 +91,6 @@ SearchConfig(;
           oov_policy=DEFAULT_OOV_POLICY,
           heuristic=DEFAULT_HEURISTIC,
           text_strip_flags=DEFAULT_TEXT_STRIP_FLAGS,
-          metadata_strip_flags=DEFAULT_METADATA_STRIP_FLAGS,
           query_strip_flags=DEFAULT_QUERY_STRIP_FLAGS,
           bm25_kappa=DEFAULT_BM25_KAPPA,
           bm25_beta=DEFAULT_BM25_BETA,
@@ -109,12 +105,12 @@ SearchConfig(;
     # Call normal constructor
     SearchConfig(id, id_aggregation, description, enabled,
                  config_path,
-                 metadata_to_index,
-                 language, keep_data, stem_words, ngram_complexity,
+                 indexable_fields,
+                 language, stem_words, ngram_complexity,
                  vectors, vectors_transform, vectors_dimension, vectors_eltype,
                  search_index, embeddings_path, embeddings_kind, doc2vec_method,
                  glove_vocabulary, oov_policy, heuristic,
-                 text_strip_flags, metadata_strip_flags, query_strip_flags,
+                 text_strip_flags, query_strip_flags,
                  bm25_kappa, bm25_beta, sif_alpha,
                  borep_dimension, borep_pooling_function,
                  disc_ngram, score_alpha, score_weight,
@@ -196,9 +192,8 @@ function parse_configuration(filename::AbstractString)
             sconfig.description = get(dconfig, "description", "")
             sconfig.enabled = get(dconfig, "enabled", false)
             sconfig.config_path = fullfilename
-            sconfig.metadata_to_index = Symbol.(get(dconfig, "metadata_to_index", DEFAULT_METADATA_FIELDS_TO_INDEX))
+            sconfig.indexable_fields = Symbol.(get(dconfig, "indexable_fields", DEFAULT_INDEXABLE_FIELDS))
             sconfig.language = lowercase(get(dconfig, "language", DEFAULT_LANGUAGE_STR))
-            sconfig.keep_data = Bool(get(dconfig, "keep_data", DEFAULT_KEEP_DATA))
             sconfig.stem_words = Bool(get(dconfig, "stem_words", DEFAULT_STEM_WORDS))
             sconfig.ngram_complexity = Int(get(dconfig, "ngram_complexity", DEFAULT_NGRAM_COMPLEXITY))
             sconfig.vectors = Symbol(get(dconfig, "vectors", DEFAULT_VECTORS))
@@ -217,7 +212,6 @@ function parse_configuration(filename::AbstractString)
                 sconfig.heuristic = DEFAULT_HEURISTIC
             end
             sconfig.text_strip_flags = UInt32(get(dconfig, "text_strip_flags", DEFAULT_TEXT_STRIP_FLAGS))
-            sconfig.metadata_strip_flags = UInt32(get(dconfig, "metadata_strip_flags", DEFAULT_METADATA_STRIP_FLAGS))
             sconfig.query_strip_flags = UInt32(get(dconfig, "query_strip_flags", DEFAULT_QUERY_STRIP_FLAGS))
             sconfig.bm25_kappa = Int(get(dconfig, "bm25_kappa", DEFAULT_BM25_KAPPA))
             sconfig.bm25_beta = Float64(get(dconfig, "bm25_beta", DEFAULT_BM25_BETA))
@@ -232,8 +226,7 @@ function parse_configuration(filename::AbstractString)
 
             # Checks of the configuration parameter values;
             # language
-            if !(sconfig.language in [LANG_TO_STR[_lang] for _lang in SUPPORTED_LANGUAGES] ||
-                 sconfig.language == "auto")
+            if !(sconfig.language in [LANG_TO_STR[_lang] for _lang in SUPPORTED_LANGUAGES])
                 @warn "$(sconfig.id) Defaulting language=$DEFAULT_LANGUAGE_STR."
                 sconfig.language = DEFAULT_LANGUAGE_STR
             end

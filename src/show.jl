@@ -30,7 +30,7 @@ end
 
 
 # Searcher
-show(io::IO, srcher::Searcher{T,D,E,I}) where {T,D,E,I} = begin
+show(io::IO, srcher::Searcher{T,E,I}) where {T,E,I} = begin
     _status = ifelse(isenabled(srcher), "enabled", "disabled")
     _status_color = ifelse(isenabled(srcher), :light_green, :light_black)
     printstyled(io, "[$_status] ", color=_status_color, bold=true)
@@ -70,7 +70,7 @@ show(io::IO, srcher::Searcher{T,D,E,I}) where {T,D,E,I} = begin
         end
     elseif E<: DTVEmbedder
         _vecs = "DTV($(srcher.config.vectors))"
-        _indim = length(srcher.corpus.lexicon)
+        _indim = length(srcher.embedder.model.vocab)
         _outdim = _indim
         L = typeof(srcher.embedder.model)
         if L <: StringAnalysis.LSAModel

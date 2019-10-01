@@ -14,7 +14,7 @@ function updater(env, channels)
         cnt = 0
         for (i, srcher) in enumerate(env.searchers)
             if isempty(upid) || isequal(id(srcher), StringId(upid))
-                updates[i] = build_searcher(env.dbdata, env.fieldmaps, srcher.config)
+                updates[i] = build_searcher(env.dbdata, srcher.config)
                 cnt+= 1
             else
                 updates[i] = env.searchers[i]

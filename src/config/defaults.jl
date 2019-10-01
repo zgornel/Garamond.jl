@@ -28,9 +28,6 @@ const DEFAULT_OOV_VAL = 1000  # default value for OOV vectors
 # Results
 const DEFAULT_RESULT_AGGREGATION_STRATEGY = :mean  # can be :minimum, :maximum, :mean, :median, :product
 
-# Various document parsing constants
-const DEFAULT_KEEP_DATA = true  # whether to keep the actual document data, metadata
-
 # Text stripping flags
 const DEFAULT_TEXT_STRIP_FLAGS = strip_case | strip_punctuation | strip_articles |
                                  strip_prepositions | strip_whitespace |
@@ -38,9 +35,6 @@ const DEFAULT_TEXT_STRIP_FLAGS = strip_case | strip_punctuation | strip_articles
 const DEFAULT_QUERY_STRIP_FLAGS = strip_case | strip_punctuation | strip_articles |
                                   strip_prepositions | strip_whitespace |
                                   strip_corrupt_utf8 | strip_accents
-const DEFAULT_METADATA_STRIP_FLAGS = strip_case | strip_punctuation | strip_articles |
-                                     strip_prepositions | strip_whitespace |
-                                     strip_corrupt_utf8 | strip_accents
 
 # Caching options
 const DEFAULT_CACHE_DIRECTORY = nothing
@@ -86,7 +80,7 @@ const HEURISTIC_TO_DISTANCE = Dict(  # heuristic to distance object mapping
     :jaro => StringDistances.Jaro())
 const DEFAULT_DISTANCE = HEURISTIC_TO_DISTANCE[:jaro]  # default distance
 const DEFAULT_PARSER_CONFIG = nothing
-const DEFAULT_METADATA_FIELDS_TO_INDEX = [:author, :name]  # Default metadata fields to index
+const DEFAULT_INDEXABLE_FIELDS = Symbol[]
 # Dictionaries for String <=>Languages.Language / Languages.Languages <=> String
 # conversion
 const STR_TO_LANG = Dict("english"=>Languages.English,

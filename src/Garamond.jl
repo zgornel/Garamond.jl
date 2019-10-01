@@ -111,17 +111,19 @@ module Garamond
                     @warn "Could not include $filepath..."
                 end
             end
-            @info "• " * printer * ": " * join(included_files, ", ")
+
+            !isempty(included_files) &&
+                @info "• " * printer * ": " * join(included_files, ", ")
         end
     end
 
     # Include section
     include("data/db.jl")
+    include("data/text.jl")
     include("data/loaders/noop.jl")
     include("config/defaults.jl")
     include("config/engine.jl")
     include("logging.jl")
-    include("textutils.jl")
     include("embedder/abstractembedder.jl")
     include("embedder/wordvectors.jl")
     include("embedder/boe.jl")
@@ -138,6 +140,7 @@ module Garamond
     include("update.jl")
     include("query/parser.jl")
     include("query/generator.jl")
+    include("query/processing.jl")
     include("search/config_parser.jl")
     include("search/searcher.jl")
     include("search/env.jl")
