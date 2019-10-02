@@ -73,13 +73,14 @@ function respond(env, socket, counter, channels)
         @info "* Search [#$(counter[1])]: query='$(request.query)' completed in $query_time(s)."
 
         # Construct response for client
-        corpora = select_corpora(env.searchers, results, request)
-        response = construct_json_response(results, corpora,
-                        max_suggestions=request.max_suggestions,
-                        elapsed_time=query_time)
+        # TODO: FIX
+        ### corpora = select_corpora(env.searchers, results, request)
+        ### response = construct_json_response(results, corpora,
+        ###                 max_suggestions=request.max_suggestions,
+        ###                 elapsed_time=query_time)
 
-        # Write response to I/O server
-        write(socket, response * RESPONSE_TERMINATOR)
+        ### # Write response to I/O server
+        ### write(socket, response * RESPONSE_TERMINATOR)
 
     elseif request.op == "search-recommend"
         generated_query = generate_query(request.query, env.dbdata, id_key=env.id_key)
@@ -89,14 +90,15 @@ function respond(env, socket, counter, channels)
         query_time = time() - t_init
         @info "* Search-recommend [#$(counter[1])] for '$gid': completed in $query_time(s)."
 
-        # Construct response for client
-        corpora = select_corpora(env.searchers, similar_ids, request)
-        response = construct_json_response(similar_ids, corpora,
-                        max_suggestions=request.max_suggestions,
-                        elapsed_time=query_time)
+        # TODO: FIX
+        ### # Construct response for client
+        ### corpora = select_corpora(env.searchers, similar_ids, request)
+        ### response = construct_json_response(similar_ids, corpora,
+        ###                 max_suggestions=request.max_suggestions,
+        ###                 elapsed_time=query_time)
 
-        # Write response to I/O server
-        write(socket, response * RESPONSE_TERMINATOR)
+        ### # Write response to I/O server
+        ### write(socket, response * RESPONSE_TERMINATOR)
 
     elseif request.op == "kill"
         ### Kill the search server ###
@@ -136,37 +138,37 @@ function respond(env, socket, counter, channels)
 end
 
 
-"""
-    select_corpora(srchers, results, request)
-
-Returns an iterator through the data contained in the searchers
-or `nothing` depending on the search request, searchers and
-search results.
-"""
-function select_corpora(srchers, results, request)
-    # Select the data (if any) that will be reuturned
-    local corpora
-    if request.what_to_return == "json-index"
-        corpora = nothing
-    elseif request.what_to_return == "json-data"
-        idx_corpora = Int[]
-        for result in results
-            for (idx, srcher) in enumerate(srchers)
-                if result.id == srcher.config.id_aggregation ||
-                        result.id == srcher.config.id
-                    push!(idx_corpora, idx)
-                    break
-                end
-            end
-        end
-        corpora = (srchers[idx].corpus for idx in idx_corpora)
-        if length(corpora) == 0
-            @warn "No corpora data from which to return results."
-        end
-    else
-        @warn "Unknown return option \"$(request.what_to_return)\", "*
-              "defaulting to \"json-index\"..."
-        corpora = nothing
-    end
-    return corpora
-end
+### """
+###     select_corpora(srchers, results, request)
+###
+### Returns an iterator through the data contained in the searchers
+### or `nothing` depending on the search request, searchers and
+### search results.
+### """
+### function select_corpora(srchers, results, request)
+###     # Select the data (if any) that will be reuturned
+###     local corpora
+###     if request.what_to_return == "json-index"
+###         corpora = nothing
+###     elseif request.what_to_return == "json-data"
+###         idx_corpora = Int[]
+###         for result in results
+###             for (idx, srcher) in enumerate(srchers)
+###                 if result.id == srcher.config.id_aggregation ||
+###                         result.id == srcher.config.id
+###                     push!(idx_corpora, idx)
+###                     break
+###                 end
+###             end
+###         end
+###         corpora = (srchers[idx].corpus for idx in idx_corpora)
+###         if length(corpora) == 0
+###             @warn "No corpora data from which to return results."
+###         end
+###     else
+###         @warn "Unknown return option \"$(request.what_to_return)\", "*
+###               "defaulting to \"json-index\"..."
+###         corpora = nothing
+###     end
+###     return corpora
+### end

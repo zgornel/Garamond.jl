@@ -12,12 +12,10 @@ a `Vector{SearchResult}`.
 
 # Keyword arguments
   * `search_method::Symbol` controls the type of matching: `:exact`
-     searches for the very same string while `:regex` searches for a string
-     in the corpus that includes the needle
-  * `max_matches::Int` is the maximum number of search results to return from
-     each corpus
+     uses exact matches while `:regex` consideres the needle a regular expression
+  * `max_matches::Int` is the maximum number of search results to return
   * `max_suggestions::Int` is the maximum number of suggestions to return for
-     each missing needle from the search in a corpus
+     each missing needle
   * `custom_weights::Dict{String, Float64}` are custom weights for each
      searcher's results used in result aggregation
 """
@@ -55,7 +53,6 @@ function search(srchers::Vector{<:Searcher{T}},
     ###################################################################
     ### Threads.@threads for i in 1:n_enabled
     for i in 1:n_enabled
-        # Get corpus search results
         results[i] = search(srchers[enabled_searchers[i]],
                             queries[enabled_searchers[i]],
                             search_method=search_method,
@@ -83,13 +80,12 @@ regarding the the documents that match best the query. The function
 returns an object of type `SearchResult`.
 
 # Arguments
-  * `srcher::Searcher` is the corpus searcher
+  * `srcher::Searcher` is the searcher
   * `query` the query, can be either a `String` or `Vector{String}`
 
 # Keyword arguments
   * `search_method::Symbol` controls the type of matching: `:exact`
-     searches for the very same string while `:regex` searches for a string
-     in the corpus that includes the needle
+     uses exact matches while `:regex` consideres the needle a regular expression
   * `max_matches::Int` is the maximum number of search results to return
   * `max_suggestions::Int` is the maximum number of suggestions to return for
      each missing needle
@@ -98,7 +94,7 @@ function search(srcher::Searcher{T,E,I},
                 query;  # can be either a string or vector of strings
                 search_method::Symbol=DEFAULT_SEARCH_METHOD,
                 max_matches::Int=MAX_MATCHES,
-                max_suggestions::Int=MAX_SUGGESTIONS  # not used
+                max_suggestions::Int=MAX_SUGGESTIONS
                ) where {T<:AbstractFloat, E, I<:AbstractIndex}
     # Initializations
     isregex = (search_method == :regex)
@@ -114,38 +110,27 @@ function search(srcher::Searcher{T,E,I},
                                             needles, oov_policy,
                                             ngram_complexity=ngram_complexity,
                                             isregex=isregex)
-    # First, find documents with matching needles
-    idxs = Int[]
-    scores = T[]
-    needle_matches = String[]
-    missing_needles = String[]
-    searchable = Vector(1:n)
-    if srcher.config.vectors in [:count, :tf, :tfidf, :bm25] &&
-            srcher.config.vectors_transform in [:none, :rp]
-        # For certain types of search, check out which documents can be displayed
-        # and which needles have and have not been found
-        needle_matches, searchable = find_matching(srcher.corpus.inverse_index,
-                                        needles, search_method, n)
-        missing_needles = setdiff(needles, needle_matches)
-    end
-
     # Search (if document vector is not zero)
+    scores, idxs = T[], Int[]
     if query_is_embedded
         ### Search
         k = min(n, max_matches)
-        idxs, scores = knn_search(srcher.index, query_embedding, k, searchable)
+        idxs, scores = knn_search(srcher.index, query_embedding, k)
         ###
         score_transform!(scores, alpha=srcher.config.score_alpha)
     end
     query_matches = MultiDict(zip(scores, idxs))
 
+    # Find matching and missing needles
+    needle_matches, missing_needles = find_needles(srcher.embedder, needles)
+
     # Get suggestions
     suggestions = MultiDict{String, Tuple{T, String}}()
     if max_suggestions > 0 && !isempty(missing_needles)
-        search_heuristically!(suggestions,
-                              srcher.search_trees,
-                              missing_needles,
-                              max_suggestions=max_suggestions)
+        suggestion_search!(suggestions,
+                           srcher.search_trees,
+                           missing_needles,
+                           max_suggestions=max_suggestions)
     end
     return SearchResult(id(srcher), query_matches, needle_matches,
                         suggestions, T(srcher.config.score_weight))
@@ -153,15 +138,33 @@ end
 
 
 """
-    search_heuristically!(suggestions, search_tree, needles [;max_suggestions=1])
+Returns found and missing needles using an embedder
+"""
+find_needles
+
+find_needles(embedder::WordVectorsEmbedder, needles) = (String[], String[])
+
+find_needles(embedder::DTVEmbedder, needles) = find_needles(embedder.model, needles)
+
+find_needles(model::StringAnalysis.RPModel, needles) = begin
+    needle_matches = [needle for needle in needles if in(needle, model.vocab)]
+    missing_needles = setdiff(needles, needle_matches)
+    return needle_matches, missing_needles
+end
+
+find_needles(model::StringAnalysis.LSAModel, needles) = (String[], String[])
+
+
+"""
+    suggestion_search!(suggestions, search_tree, needles [;max_suggestions=1])
 
 Searches in the search tree for partial matches for each of  the `needles`.
 """
-function search_heuristically!(suggestions::MultiDict{String, Tuple{T, String}},
-                               search_tree::BKTree{String},
-                               needles::Vector{S};
-                               max_suggestions::Int=1
-                              ) where {S<:AbstractString, T<:AbstractFloat}
+function suggestion_search!(suggestions::MultiDict{String, Tuple{T, String}},
+                            search_tree::BKTree{String},
+                            needles::Vector{S};
+                            max_suggestions::Int=1
+                           ) where {S<:AbstractString, T<:AbstractFloat}
     if isempty(needles)
         return suggestions
     elseif BKTrees.is_empty_node(search_tree.root)
@@ -180,41 +183,6 @@ function search_heuristically!(suggestions::MultiDict{String, Tuple{T, String}},
         end
     end
     return suggestions
-end
-
-
-function find_matching(iv::OrderedDict{String, Vector{Int}},
-                       needles::Vector{String},
-                       method::Symbol,
-                       ndocs::Int)
-    # Initializations
-    p = length(needles)
-    needle_matches = Vector{String}()
-    doc_matches = falses(ndocs)
-    # Search
-    if method == :exact
-        for (j, needle) in enumerate(needles)
-            if haskey(iv, needle)
-                push!(needle_matches, needle)
-                doc_matches[iv[needle]].= true
-            end
-        end
-    end
-    if method == :regex
-        patterns = map(Regex, needles)
-        haystack = keys(iv)
-        for (j, pattern) in enumerate(patterns)
-            for k in haystack
-                if occursin(pattern, k)
-                    needle = needles[j]
-                    !(needle in needle_matches) &&
-                        push!(needle_matches, needles[j])
-                    doc_matches[iv[k]] .= true
-                end
-            end
-        end
-    end
-    return needle_matches, findall(doc_matches)
 end
 
 
