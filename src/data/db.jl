@@ -1,4 +1,4 @@
-function db_schema(dbdata)
+function db_create_schema(dbdata)
     cols = colnames(dbdata)
     coltypes = map(eltype, columns(dbdata))
     pkeys = _get_pkeys(dbdata)
@@ -13,9 +13,9 @@ _get_pkeys(dbdata::IndexedTable) = colnames(dbdata)[dbdata.pkey]
 
 _get_pkeys(dbdata::NDSparse) = colnames(dbdata.index)
 
-dbiterator(dbdata::NDSparse) = (merge(idx, data) for (idx, data) in zip(dbdata.index, dbdata.data))
+db_create_iterator(dbdata::NDSparse) = (merge(idx, data) for (idx, data) in zip(dbdata.index, dbdata.data))
 
-dbiterator(dbdata::IndexedTable) = (entry for entry in dbdata)
+db_create_iterator(dbdata::IndexedTable) = (entry for entry in dbdata)
 
 
 # Concatenate fields of dbentry (which is a named tuple) into a vector of strings
@@ -40,10 +40,43 @@ make_a_string(value::AbstractVector) = join(string.(value), " ")
 
 
 # Checks that the id_key exists in dbdata and that its elements are Int's
-function check_id_key(dbdata, id_key)
+function db_check_id_key(dbdata, id_key)
     if !in(id_key, colnames(dbdata)) &&
         throw(ErrorException("$id_key must be a column in the loaded data"))
     elseif !(eltype(getproperty(columns(dbdata), id_key)) <: Int)
         throw(ErrorException("$id_key elements must be of Int type"))
     end
 end
+
+
+# Selects an entry in dbdata based on the value of id from a column
+# selected by id_key
+function db_select_entry(dbdata, id; id_key=DEFAULT_DB_ID_KEY)
+    __first(dbdata::NDSparse) = first(rows(dbdata))
+	__first(dbdata) = first(dbdata)
+    entry = nothing
+    if id_key in colnames(dbdata)
+        entry = filter(isequal(id), dbdata, select=id_key)
+    end
+    entry != nothing && !isempty(entry) && (return __first(entry))
+    return entry
+end
+
+
+# Transforms a dbentry to a string using only fields; fields of length > max_length are trimmed
+function dbentry2printable(dbentry, fields; max_length=50, separator=" - ")
+    function __stringchop(str, len)
+         str = replace(str, "\n"=>"")
+         idxs = collect(eachindex(str))
+         _idx = findlast(x->x<=len, idxs)
+         if _idx == nothing
+             _len=0
+         else
+             _len = idxs[findlast(x->x<=len, idxs)]
+         end
+         length(str) > len ? str[1:_len]*"..."  : str
+    end
+    join(map(str->__stringchop(str, max_length), dbentry2text(dbentry, fields)), separator)
+end
+
+dbentry2printable(::Nothing, fields; kwargs...) = ""

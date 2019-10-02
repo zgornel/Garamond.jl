@@ -5,7 +5,7 @@ function search(env::SearchEnv,
                 id_key=DEFAULT_DB_ID_KEY)
 
     # Parse query content
-    parsed_query = parse_query(request.query, db_schema(env.dbdata))
+    parsed_query = parse_query(request.query, db_create_schema(env.dbdata))
 
     issearch = !isempty(parsed_query.search)
     isfilter = !isempty(parsed_query.filter)

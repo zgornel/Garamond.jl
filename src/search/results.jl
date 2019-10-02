@@ -140,7 +140,6 @@ function _aggregate(query_matches::Vector{MultiDict{T,Int}},
 end
 
 
-# Squash suggestions for multiple corpora search results
 function squash_suggestions(results::Vector{SearchResult{T}},
                             max_suggestions::Int=MAX_SUGGESTIONS
                            ) where T<:AbstractFloat
@@ -148,12 +147,12 @@ function squash_suggestions(results::Vector{SearchResult{T}},
     # Quickly exit if no suggestions are sought
     max_suggestions <=0 && return suggestions
     if length(results) > 1
-        # Results from multiple corpora, suggestions have to
+        # Results from multiple searchers, suggestions have to
         # be processed somewhat:
-        #  - keep only needles not found across all corpora
+        #  - keep only needles not found across all searchers
         #  - remove suggestions that correspond to found needles
 
-        # Get the needles not found across all corpus results
+        # Get the needles not found across all results
         matched_needles = (needle for _result in results
                            for needle in _result.needle_matches)
         missed_needles = union((keys(_result.suggestions)
@@ -188,7 +187,7 @@ function squash_suggestions(results::Vector{SearchResult{T}},
             end
         end
     elseif length(results) == 1
-        # Results from one corpus, easy situation, just copy the suggestions
+        # Results from one searcher, easy situation, just copy the suggestions
         suggestions = results[1].suggestions
     end
     return suggestions
@@ -196,81 +195,68 @@ end
 
 
 # Pretty printer of results
-function print_search_results(io::IO, srcher, result)
+function print_search_results(io::IO,
+                              dbdata,
+                              result;
+                              fields=colnames(dbdata),
+                              id_key=DEFAULT_DB_ID_KEY,
+                              max_length=50,
+                              separator=" - ")
+    db_check_id_key(dbdata, id_key)
     nm = valength(result.query_matches)
-    ns = length(result.suggestions)
-    @assert id(srcher) == result.id "Searcher and result id's do not match."
-    printstyled(io, "[$(id(srcher))] ", color=:blue, bold=true)
+
+    printstyled(io, "[$(result.id)] ", color=:blue, bold=true)
     printstyled(io, "$(nm) search results", bold=true)
-    ch = ifelse(nm==0, ".", ":"); printstyled(io, "$ch\n")
+
+    ch = ifelse(nm==0, ".", ":");
+    printstyled(io, "$ch\n")
+
     for score in sort(collect(keys(result.query_matches)), rev=true)
-        if isempty(documents(srcher.corpus))
-            printstyled(io, "*** Corpus data is missing ***",
-                        color=:red, bold=true)
-        else
-            for doc in (srcher.corpus[i] for i in result.query_matches[score])
-                printstyled(io, "  $score ~ ", color=:normal, bold=true)
-                printstyled(io, "$(metadata(doc))\n", color=:normal)
-            end
-        end
+        entry_iterator =(db_select_entry(dbdata, i, id_key=id_key)
+                         for i in result.query_matches[score])
+		for entry in entry_iterator
+            entry_string = dbentry2printable(entry, fields,
+                                             max_length=max_length,
+                                             separator=separator)
+			printstyled(io, "  $score ~ ", color=:normal, bold=true)
+            printstyled(io, entry_string, "\n", color=:normal)
+		end
     end
-    ns > 0 && printstyled(io, "$ns suggestions:\n")
-    for (keyword, suggestions) in result.suggestions
-        printstyled(io, "  \"$keyword\": ", color=:normal, bold=true)
-        printstyled(io, "$(join(map(x->x[2], suggestions), ", "))\n", color=:normal)
-    end
+    __print_suggestions(io, result.suggestions)
 end
 
-print_search_results(srcher, result) = print_search_results(stdout, srcher, result)
-
-
-# Pretty printer of results
-function print_search_results(io::IO, srchers::AbstractVector, results::AbstractVector,
-                              max_suggestions::Int=MAX_SUGGESTIONS)
-    if !isempty(results)
-        nt = mapreduce(x->valength(x.query_matches), +, results)
-    else
-        nt = 0
-    end
-    # Map searchers and results by id or id_aggregation
-    result2srcher = Dict{Int, Int}()
-    for (i, _result) in enumerate(results)
-        for (j, _srcher) in enumerate(srchers)
-            if _result.id == _srcher.config.id ||
-                    _result.id == _srcher.config.id_aggregation
-                push!(result2srcher, i=>j)
-                break
-            end
-        end
-    end
-    printstyled(io, "$nt search results from $(length(results)) corpora\n")
-    for (i, _result) in enumerate(results)
-        crps = srchers[result2srcher[i]].corpus
-        nm = valength(_result.query_matches)
-        printstyled(io, "`-[$(_result.id)] ", color=:blue, bold=true)
-        printstyled(io, "$(nm) search results", bold=true)
-        ch = ifelse(nm==0, ".", ":"); printstyled(io, "$ch\n")
-        if isempty(crps)
-            printstyled(io, "*** Corpus data is missing ***\n",
-                        color=:red, bold=true)
-        else
-            for score in sort(collect(keys(_result.query_matches)), rev=true)
-                for doc in (crps[i] for i in _result.query_matches[score])
-                    printstyled(io, "  $score ~ ", color=:normal, bold=true)
-                    printstyled(io, "$(metadata(doc))\n", color=:normal)
-                end
-            end
-        end
-    end
-    suggestions = squash_suggestions(results, max_suggestions)
+__print_suggestions(io::IO, suggestions) = begin
     ns = length(suggestions)
     ns > 0 && printstyled(io, "$ns suggestions:\n")
-    for (keyword, suggest) in suggestions
-        printstyled(io, "  \"$keyword\": ", color=:normal, bold=true)
-        printstyled(io, "$(join(map(x->x[2], suggest), ", "))\n", color=:normal)
+    for (key, s) in suggestions
+        printstyled(io, "  \"$key\": ", color=:normal, bold=true)
+        printstyled(io, "$(join(map(x->x[2], s), ", "))\n", color=:normal)
     end
 end
 
-print_search_results(srchers::AbstractVector, results::AbstractVector,
+print_search_results(dbdata, result; fields=colnames(dbdata),
+                     id_key=DEFAULT_DB_ID_KEY, max_length=50,
+                     separator=" - ") =
+    print_search_results(stdout, dbdata, result, fields=fields, id_key=id_key,
+                         max_length=max_length, separator=separator)
+
+function print_search_results(io::IO,
+                              dbdata,
+                              results::AbstractVector;
+                              fields=colnames(dbdata),
+                              id_key=DEFAULT_DB_ID_KEY,
+                              max_length=50,
+                              separator=" - ",
+                              max_suggestions=MAX_SUGGESTIONS)
+    map(result->print_search_results(io, dbdata, result, fields=fields, id_key=id_key,
+                                     max_length=max_length, separator=separator), results)
+    suggestions = squash_suggestions(results, max_suggestions)
+    __print_suggestions(io, suggestions)
+end
+
+print_search_results(dbdata, results::AbstractVector; fields=colnames(dbdata),
+                     id_key=DEFAULT_DB_ID_KEY, max_length=50, separator=" - ",
                      max_suggestions=MAX_SUGGESTIONS) =
-    print_search_results(stdout, srchers, results, max_suggestions)
+    print_search_results(stdout, dbdata, results, fields=fields, id_key=id_key,
+                         max_length=max_length, separator=separator,
+                         max_suggestions=max_suggestions)

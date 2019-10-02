@@ -21,7 +21,7 @@ function build_search_env(filepath)
 
     # Load data
     dbdata = env_config.data_loader(env_config.data_path)
-    check_id_key(dbdata, env_config.id_key)
+    db_check_id_key(dbdata, env_config.id_key)
 
     # Build searchers
     srchers = [build_searcher(dbdata, config) for config in env_config.searcher_configs]

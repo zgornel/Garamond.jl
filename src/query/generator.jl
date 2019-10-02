@@ -26,7 +26,8 @@ end
 
 function generate_query(req::AbstractString, dbdata::NDSparse; id_key=DEFAULT_DB_ID_KEY)
     # Initializations
-    target_id, fields = parse_query_generation_string(req, db_schema(dbdata), id_key=id_key)
+    dbschema = db_create_schema(dbdata)
+    target_id, fields = parse_query_generation_string(req, dbschema, id_key=id_key)
     data_columns = colnames(dbdata.data)
     index_columns = colnames(dbdata.index)
 
@@ -54,7 +55,8 @@ end
 
 function generate_query(req::AbstractString, dbdata::IndexedTable; id_key=DEFAULT_DB_ID_KEY)
     # Initializations
-    target_id, fields = parse_query_generation_string(req, db_schema(dbdata), id_key=id_key)
+    dbschema = db_create_schema(dbdata)
+    target_id, fields = parse_query_generation_string(req, dbschema, id_key=id_key)
     columns = colnames(dbdata)
 
     # Filter on id, find record

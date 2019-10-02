@@ -92,11 +92,11 @@ module Garamond
         CUSTOM_LOADERS_SUBDIR = "data/loaders/custom"
         CUSTOM_RANKERS_SUBDIR = "search/rankers/custom"
 
-        include_subdir(CUSTOM_LOADERS_SUBDIR, printer="Custom loaders")
-        include_subdir(CUSTOM_RANKERS_SUBDIR, printer="Custom rankers")
+        __include_subdirectory(CUSTOM_LOADERS_SUBDIR, printer="Custom loaders")
+        __include_subdirectory(CUSTOM_RANKERS_SUBDIR, printer="Custom rankers")
     end
 
-    function include_subdir(subpath; printer="Including")
+    function __include_subdirectory(subpath; printer="Including")
         fullpath = joinpath(@__DIR__, subpath)
         if isdir(fullpath)
             included_files = []
