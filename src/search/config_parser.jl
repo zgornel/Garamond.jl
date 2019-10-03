@@ -2,7 +2,7 @@
 String ID object.
 """
 struct StringId
-    id::String
+    value::String
 end
 
 # Utils
@@ -10,9 +10,9 @@ random_hash_string() = string(hash(rand()), base=16)
 random_string_id() = StringId(random_hash_string())
 
 # Construct IDs
-make_id(::Type{StringId}, id::T) where T<:AbstractString = StringId(String(id))
-make_id(::Type{StringId}, id::T) where T<:Number = StringId(string(id))
-make_id(::Type{StringId}, id::T) where T<:Nothing = random_string_id()
+make_id(::Type{StringId}, value::T) where T<:AbstractString = StringId(String(value))
+make_id(::Type{StringId}, value::T) where T<:Number = StringId(string(value))
+make_id(::Type{StringId}, value::T) where T<:Nothing = random_string_id()
 
 
 """

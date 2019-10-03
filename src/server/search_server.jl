@@ -60,64 +60,49 @@ function respond(env, socket, counter, channels)
     # Channels for updating
     up_in_channel, up_out_channel = channels
 
-    # Read and parse JSON request
+    # Read and parse an outside request
     request = parse(SearchServerRequest, readline(socket))
     counter.+= 1
     @debug "* Received [#$(counter[1])]: $request."
 
     t_init = time()
-    if request.op == "search"
+    if request.operation === :search
         ### Search ###
         results = search(env, request; rerank=env.ranker, id_key=env.id_key)
         query_time = time() - t_init
+
+        response = build_response(env.dbdata, request, results, id_key=env.id_key, elapsed_time=query_time)
+        write(socket, response * RESPONSE_TERMINATOR)
         @info "* Search [#$(counter[1])]: query='$(request.query)' completed in $query_time(s)."
 
-        # Construct response for client
-        # TODO: FIX
-        ### corpora = select_corpora(env.searchers, results, request)
-        ### response = construct_json_response(results, corpora,
-        ###                 max_suggestions=request.max_suggestions,
-        ###                 elapsed_time=query_time)
-
-        ### # Write response to I/O server
-        ### write(socket, response * RESPONSE_TERMINATOR)
-
-    elseif request.op == "search-recommend"
+    elseif request.operation === :recommend
         generated_query = generate_query(request.query, env.dbdata, id_key=env.id_key)
         request.query = generated_query.query
         gid = generated_query.id
-        similar_ids = search(env, request; exclude=gid, rerank=env.ranker, idkey=env.id_key)
+        similars = search(env, request; exclude=gid, rerank=env.ranker, idkey=env.id_key)
         query_time = time() - t_init
-        @info "* Search-recommend [#$(counter[1])] for '$gid': completed in $query_time(s)."
 
-        # TODO: FIX
-        ### # Construct response for client
-        ### corpora = select_corpora(env.searchers, similar_ids, request)
-        ### response = construct_json_response(similar_ids, corpora,
-        ###                 max_suggestions=request.max_suggestions,
-        ###                 elapsed_time=query_time)
+        response = build_response(env.dbdata, request, similars, id_key=env.id_key, elapsed_time=query_time)
+        write(socket, response * RESPONSE_TERMINATOR)
+        @info "* Recommendation [#$(counter[1])] for '$gid': completed in $query_time(s)."
 
-        ### # Write response to I/O server
-        ### write(socket, response * RESPONSE_TERMINATOR)
-
-    elseif request.op == "kill"
+    elseif request.operation === :kill
         ### Kill the search server ###
         @info "* Kill [#$(counter[1])]: Exiting in 1(s)..."
         write(socket, RESPONSE_TERMINATOR)
         sleep(1)
         exit()
 
-    elseif request.op == "read-configs"
+    elseif request.operation === :read_configs
         ### Read and return data configurations ###
         @info "* Get configuration(s) [#$(counter[1])]."
         write(socket,
               read_searcher_configurations_json(env.searchers) * RESPONSE_TERMINATOR)
 
-    elseif request.op == "update"
+    elseif request.operation === :update
         ### Read and return data configurations ###
         @info "* Update searcher(s) [#$(counter[1])]."
-        # The request query contains the string id
-        # of the updated searcher
+        # The request query contains the string id of the updated searcher
         if !isready(up_in_channel)
             put!(up_in_channel, request.query)  # the take! is in the search server
         else
@@ -125,7 +110,7 @@ function respond(env, socket, counter, channels)
         end
         write(socket, RESPONSE_TERMINATOR)  # send response asynchronously
 
-    elseif request.op == "request-error"
+    elseif request.operation === :error
         @info "* Errored request [#$(counter[1])]: Ignoring..."
         write(socket, RESPONSE_TERMINATOR)
 
@@ -136,39 +121,3 @@ function respond(env, socket, counter, channels)
 
     @debug "Response [#$(counter[1])]: done after $(time()-t_init)(s)."
 end
-
-
-### """
-###     select_corpora(srchers, results, request)
-###
-### Returns an iterator through the data contained in the searchers
-### or `nothing` depending on the search request, searchers and
-### search results.
-### """
-### function select_corpora(srchers, results, request)
-###     # Select the data (if any) that will be reuturned
-###     local corpora
-###     if request.what_to_return == "json-index"
-###         corpora = nothing
-###     elseif request.what_to_return == "json-data"
-###         idx_corpora = Int[]
-###         for result in results
-###             for (idx, srcher) in enumerate(srchers)
-###                 if result.id == srcher.config.id_aggregation ||
-###                         result.id == srcher.config.id
-###                     push!(idx_corpora, idx)
-###                     break
-###                 end
-###             end
-###         end
-###         corpora = (srchers[idx].corpus for idx in idx_corpora)
-###         if length(corpora) == 0
-###             @warn "No corpora data from which to return results."
-###         end
-###     else
-###         @warn "Unknown return option \"$(request.what_to_return)\", "*
-###               "defaulting to \"json-index\"..."
-###         corpora = nothing
-###     end
-###     return corpora
-### end

@@ -16,7 +16,7 @@ a `Vector{SearchResult}`.
   * `max_matches::Int` is the maximum number of search results to return
   * `max_suggestions::Int` is the maximum number of suggestions to return for
      each missing needle
-  * `custom_weights::Dict{String, Float64}` are custom weights for each
+  * `custom_weights::Dict{Symbol, Float64}` are custom weights for each
      searcher's results used in result aggregation
 """
 function search(srchers::Vector{<:Searcher{T}},
@@ -24,7 +24,7 @@ function search(srchers::Vector{<:Searcher{T}},
                 search_method::Symbol=DEFAULT_SEARCH_METHOD,
                 max_matches::Int=MAX_MATCHES,
                 max_suggestions::Int=MAX_SUGGESTIONS,
-                custom_weights::Dict{String, Float64}=DEFAULT_CUSTOM_WEIGHTS
+                custom_weights::Dict{Symbol, Float64}=DEFAULT_CUSTOM_WEIGHTS
                ) where T<:AbstractFloat
     # Checks
     @assert search_method in [:exact, :regex]

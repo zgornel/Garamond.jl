@@ -1,5 +1,5 @@
 # StringID
-show(io::IO, id::StringId) = print(io, "id=\"$(id.id)\"")
+show(io::IO, id::StringId) = print(io, "id=\"$(id.value)\"")
 
 
 # SearchConfig
@@ -115,16 +115,11 @@ end
 
 
 # SearchServerRequest
-show(io::IO, request::SearchServerRequest) = begin
-    reqstr = "'$(uppercase(request.op)) REQUEST'"
-    if request.op == "search"
-        reqstr *= "/'$(request.search_method)'/'$(request.query)'"*
-                  "/$(request.max_matches)/$(request.max_suggestions)/"*
-                  "'$(request.what_to_return)'/$(request.custom_weights)"
-    elseif request.op == "update"
-        reqstr *= "/'$(request.query)'"
+show(io::IO, request::T) where {T<:SearchServerRequest} = begin
+    print(io, "Request: ")
+    for field in fieldnames(T)
+        print(io, field, "=", getproperty(request, field), " | ")
     end
-    print(io, "$reqstr")
 end
 
 
