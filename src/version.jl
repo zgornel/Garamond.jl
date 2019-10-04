@@ -10,17 +10,19 @@ function version()
     date = DEFAULT_VERSION_DATE
     ver = DEFAULT_VERSION
     try
+        root_path = "/" * joinpath(split(pathof(Garamond), "/")[1:end-2]...)
+
         # Check that the current git repository is the garamond one
         _check_commit = split(Garamond.DEFAULT_VERSION_COMMIT, "*")[1]
+        cd(root_path)
         @assert occursin("master", read(pipeline(`git branch --contains $(_check_commit)`,
                                                  stderr=devnull), String))
         # Try reading the latest commit and date
         gitstr = read(pipeline(`git show --oneline -s --format="%h%ci"`, stderr=devnull), String)
         commit = gitstr[1:7]
         date = gitstr[8:17]
-
         # Try reading the version from the Project.toml file
-        project_file = abspath(joinpath(@__DIR__, "..", "Project.toml"))
+        project_file = "Project.toml"
         open(project_file) do fid
             for line in eachline(fid)
                 if occursin("=", line)
