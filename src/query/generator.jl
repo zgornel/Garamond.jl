@@ -1,6 +1,6 @@
 function parse_query_generation_string(req::AbstractString,
                                        schema;
-                                       id_key=DEFAULT_DB_ID_KEY)
+                                       recommend_id_key=DEFAULT_DB_ID_KEY)
     # Initializations
     (_target_id, _target_id_type, fields) = ("", String, Symbol[])
 
@@ -15,7 +15,8 @@ function parse_query_generation_string(req::AbstractString,
 
     # Get target id type
     for dse in schema
-        dse.column === id_key && (_target_id_type = dse.coltype)
+        dse.column === recommend_id_key &&
+            (_target_id_type = dse.coltype)
     end
 
     # Parse target id
@@ -24,18 +25,21 @@ function parse_query_generation_string(req::AbstractString,
 end
 
 
-function generate_query(req::AbstractString, dbdata::NDSparse; id_key=DEFAULT_DB_ID_KEY)
+function generate_query(req::AbstractString,
+                        dbdata::NDSparse;
+                        recommend_id_key=DEFAULT_DB_ID_KEY)
     # Initializations
     dbschema = db_create_schema(dbdata)
-    target_id, fields = parse_query_generation_string(req, dbschema, id_key=id_key)
+    target_id, fields = parse_query_generation_string(req, dbschema,
+                            recommend_id_key=recommend_id_key)
     data_columns = colnames(dbdata.data)
     index_columns = colnames(dbdata.index)
 
     # Filter on id, find record
     selector = Any[Colon() for _ in 1:length(index_columns)]
-    selector[findfirst(isequal(id_key), index_columns)] = target_id
+    selector[findfirst(isequal(recommend_id_key), index_columns)] = target_id
     target_record = dbdata[selector...]
-    #target_record = filter(row->getproperty(row, id_key)==target_id, dbdata)  # if id is data column, not index column
+    #target_record = filter(row->getproperty(row, recommend_id_key)==target_id, dbdata)  # if id is data column, not index column
 
     # Extract all values using fields (if empty, use all default query generation fields)
     query = ""
@@ -53,14 +57,17 @@ function generate_query(req::AbstractString, dbdata::NDSparse; id_key=DEFAULT_DB
 end
 
 
-function generate_query(req::AbstractString, dbdata::IndexedTable; id_key=DEFAULT_DB_ID_KEY)
+function generate_query(req::AbstractString,
+                        dbdata::IndexedTable;
+                        recommend_id_key=DEFAULT_DB_ID_KEY)
     # Initializations
     dbschema = db_create_schema(dbdata)
-    target_id, fields = parse_query_generation_string(req, dbschema, id_key=id_key)
+    target_id, fields = parse_query_generation_string(req, dbschema,
+                            recommend_id_key=recommend_id_key)
     columns = colnames(dbdata)
 
     # Filter on id, find record
-    target_record = filter(x -> getproperty(x, id_key)==target_id, dbdata)
+    target_record = db_select_entry(dbdata, target_id, recommend_id_key=recommend_id_key)
 
     # Extract all values using fields (if empty, use all default query generation fields)
     query = ""

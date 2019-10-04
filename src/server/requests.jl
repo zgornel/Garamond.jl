@@ -10,6 +10,8 @@ mutable struct SearchServerRequest
     max_suggestions::Int
     return_fields::Vector{Symbol}
     custom_weights::Dict{Symbol,Float64}
+    recommend_id::Any
+    recommend_id_key::Symbol
 end
 
 # Keyword argument constructor
@@ -19,9 +21,12 @@ SearchServerRequest(;operation=:uninitialized_request,
                      search_method=DEFAULT_SEARCH_METHOD,
                      max_suggestions=DEFAULT_MAX_SUGGESTIONS,
                      return_fields=Symbol[],
-                     custom_weights=DEFAULT_CUSTOM_WEIGHTS)=
+                     custom_weights=DEFAULT_CUSTOM_WEIGHTS,
+                     recommend_id=nothing,
+                     recommend_id_key=Symbol(""))=
     SearchServerRequest(operation, query, max_matches, search_method,
-                        max_suggestions, return_fields, custom_weights)
+                        max_suggestions, return_fields, custom_weights,
+                        recommend_id, recommend_id_key)
 
 
 #=
@@ -35,6 +40,12 @@ convert(::Type{Dict}, request::T) where {T<:SearchServerRequest}= begin
     end
     return returned_dict
 end
+
+request2dict(request::T) where {T<:SearchServerRequest} =
+    Dict(field => getproperty(request, field) for field in fieldnames(T))
+
+request2json(request::T) where {T<:SearchServerRequest} =
+    JSON.json(request2dict(request))
 
 
 """
@@ -71,7 +82,11 @@ into a `SearchServerRequest` usable by the search server.
 """
 function parse(::Type{T}, outside_request::AbstractString) where {T<:SearchServerRequest}
     __parse_to(::Type{Vector{Symbol}}, data::Vector) = Symbol.(data)
-    __parse_to(::Type{T}, data::S) where{T,S} = T(data)
+    __parse_to(::Type{T}, data::S) where{T,S} = try
+        T(data)
+    catch
+        data
+    end
     request = T()
     try
         data = JSON.parse(outside_request, dicttype=Dict{Symbol,Any})

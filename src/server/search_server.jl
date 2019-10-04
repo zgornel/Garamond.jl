@@ -76,10 +76,10 @@ function respond(env, socket, counter, channels)
         @info "* Search [#$(counter[1])]: query='$(request.query)' completed in $query_time(s)."
 
     elseif request.operation === :recommend
-        generated_query = generate_query(request.query, env.dbdata, id_key=env.id_key)
+        generated_query = generate_query(request.query, env.dbdata, recommend_id_key=request.recommend_id_key)
         request.query = generated_query.query
-        gid = generated_query.id
-        similars = search(env, request; exclude=gid, rerank=env.ranker, idkey=env.id_key)
+        gid = getproperty(db_select_entry(dbdata, generated_query.id, id_key=request.recommend_id_key), env.id_key)
+        similars = search(env, request; exclude=gid, rerank=env.ranker, id_key=env.id_key)
         query_time = time() - t_init
 
         response = build_response(env.dbdata, request, similars, id_key=env.id_key, elapsed_time=query_time)

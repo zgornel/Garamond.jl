@@ -32,6 +32,7 @@ function search(env::SearchEnv,
                          max_matches=request.max_matches,
                          max_suggestions=request.max_suggestions,
                          custom_weights=request.custom_weights)
+        #TODO(Corneliu) Decide whether to pipe filtered_ids into search
         filtered_ids = indexfilter(env.dbdata,
                                    parsed_query.filter,
                                    id_key=id_key,
