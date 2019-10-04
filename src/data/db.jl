@@ -54,11 +54,13 @@ end
 function db_select_entry(dbdata, id; id_key=DEFAULT_DB_ID_KEY)
     __first(dbdata::NDSparse) = first(rows(dbdata))
 	__first(dbdata) = first(dbdata)
-    entry = nothing
-    if id_key in colnames(dbdata)
+    cols = colnames(dbdata)
+    if id_key in cols
         entry = filter(isequal(id), dbdata, select=id_key)
+    else
+        entry = filter(x -> false, dbdata, select=cols[1])  # empty entry
     end
-    entry != nothing && !isempty(entry) && (return __first(entry))
+    !isempty(entry) && (return __first(entry))
     return entry
 end
 
