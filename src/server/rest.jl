@@ -14,10 +14,9 @@ REST API Specification
     ⋅ POST: /*                    returns a HTTP 501 message i.e. Not Implemented
     ⋅ POST: /api/search           triggers a search using parameters from the HTTP message body
     ⋅ POST: /api/recommed         triggers a recommendation using parameters from the HTTP message body
-    TODO: Implement Re-rank endpoint
-    ⋅ POST: /api/rerank           triggers a re-rank i.e. boost using parameters from the HTTP message body
+    ⋅ POST: /api/rank             triggers a ranking i.e. boost using parameters from the HTTP message body
 
-HTTP Message body specification for the search, recommend and rerank operations
+HTTP Message body specification for the search, recommend and rank operations
 -------------------------------------------------------------------------------
     ⋅ search command format (JSON):
          {
@@ -29,6 +28,7 @@ HTTP Message body specification for the search, recommend and rerank operations
           "custom_weights" : <OPTINAL, a dictionary where the keys are strings with searcher ids and values
                               the weights of the searchers in the result aggregation>
          }
+
     ⋅ recommend command format (JSON):
          {
           "recommend_id" : <the id of the entity for which recommendations are sought>
@@ -42,6 +42,12 @@ HTTP Message body specification for the search, recommend and rerank operations
                               the weights of the searchers in the result aggregation>
          }
 
+    ⋅ rank command format (JSON):
+         {
+            "rank_ids": <list of ids to rank>
+            "rank_id_key": <the db name of the column holding the id values>
+            "return_fields" : <a list of string names for the fields to be returned>
+         }
 =#
 """
     rest_server(port::Integer, io_port::Integer, search_server_ready::Condition [;ipaddr::String])
@@ -76,6 +82,7 @@ function rest_server(port::Integer,
     HTTP.@register(GARAMOND_REST_ROUTER, "POST", "/*", __debug_wrapper(noop_req_handler))
     HTTP.@register(GARAMOND_REST_ROUTER, "POST", "/api/search", __debug_wrapper(search_req_handler))
     HTTP.@register(GARAMOND_REST_ROUTER, "POST", "/api/recommend", __debug_wrapper(recommend_req_handler))
+    HTTP.@register(GARAMOND_REST_ROUTER, "POST", "/api/rank", __debug_wrapper(rank_req_handler))
 
     # Wait for search server to be ready
     wait(search_server_ready)
@@ -113,9 +120,12 @@ end
 # Handlers (receive a HTTP request and return a search server request)
 noop_req_handler(req::HTTP.Request) = UNINITIALIZED_REQUEST
 
+
 kill_req_handler(req::HTTP.Request) = KILL_REQUEST
 
+
 read_configs_req_handler(req::HTTP.Request) = READCONFIGS_REQUEST
+
 
 update_req_handler(req::HTTP.Request) = begin
     parts = HTTP.URIs.splitpath(req.target)
@@ -129,31 +139,44 @@ update_req_handler(req::HTTP.Request) = begin
     end
 end
 
+
 search_req_handler(req::HTTP.Request) = begin
     parameters = __http_req_body_to_json(req)
     return SearchServerRequest(
                 operation=:search,
                 query = parameters["query"],  # if missing, throws
-                return_fields = Symbol.(parameters["return_fields"]),  # id missing, throws
+                return_fields = Symbol.(parameters["return_fields"]),  # if missing, throws
                 search_method = Symbol.(get(parameters, "search_method", DEFAULT_SEARCH_METHOD)),
                 max_matches = get(parameters, "max_matches", DEFAULT_MAX_MATCHES),
                 max_suggestions = get(parameters, "max_suggestions", DEFAULT_MAX_SUGGESTIONS),
                 custom_weights = get(parameters, "custom_weights", DEFAULT_CUSTOM_WEIGHTS))
 end
 
+
 recommend_req_handler(req::HTTP.Request) = begin
     parameters = __http_req_body_to_json(req)
     _query = parameters["recommend_id"] * " " * join(parameters["filter_fields"], " ")
     return SearchServerRequest(
                 operation=:recommend,
-                request_id_key = Symbol.(parameters["recommend_id_key"]),
+                request_id_key = Symbol.(parameters["recommend_id_key"]),  # if missing, throws
                 query = _query,
-                return_fields = Symbol.(parameters["return_fields"]),  # id missing, throws
+                return_fields = Symbol.(parameters["return_fields"]),  # if missing, throws
                 search_method = Symbol.(get(parameters, "search_method", DEFAULT_SEARCH_METHOD)),
                 max_matches = get(parameters, "max_matches", DEFAULT_MAX_MATCHES),
                 max_suggestions = get(parameters, "max_suggestions", DEFAULT_MAX_SUGGESTIONS),
                 custom_weights = get(parameters, "custom_weights", DEFAULT_CUSTOM_WEIGHTS))
 end
+
+
+rank_req_handler(req::HTTP.Request) = begin
+    parameters = __http_req_body_to_json(req)
+    return SearchServerRequest(
+                operation=:rank,
+                query = parameters["rank_ids"],  # if missing, throws
+                request_id_key = Symbol.(parameters["rank_id_key"]),  # if missing, throws
+                return_fields = Symbol.(parameters["return_fields"])) # if missing, throws
+end
+
 
 __http_req_body_to_json(req::HTTP.Request) =
     JSON.parse(read(IOBuffer(HTTP.payload(req)), String))

@@ -70,7 +70,6 @@ function respond(env, socket, counter, channels)
         ### Search ###
         results = search(env, request; rerank=env.ranker, id_key=env.id_key)
         query_time = time() - timer_start
-
         response = build_response(env.dbdata, request, results, id_key=env.id_key, elapsed_time=query_time)
         write(socket, response * RESPONSE_TERMINATOR)
         @info "* Search [#$(counter[1])]: query='$(request.query)' completed in $query_time(s)."
@@ -82,10 +81,19 @@ function respond(env, socket, counter, channels)
         gid = isempty(target_entry) ? nothing : getproperty(target_entry, env.id_key)
         similars = search(env, request; exclude=gid, rerank=env.ranker, id_key=env.id_key)
         query_time = time() - timer_start
-
         response = build_response(env.dbdata, request, similars, id_key=env.id_key, elapsed_time=query_time)
         write(socket, response * RESPONSE_TERMINATOR)
         @info "* Recommendation [#$(counter[1])] for '$(repr(gid))': completed in $query_time(s)."
+
+    elseif request.operation === :rank
+        #TODO(Corneliu): Implement this
+        # ranked = rank(env.dbdata, request, id_key=request.rank_id_key)
+        # query_time = time() - timer_start
+        # response = build_response(env.dbdata, request, ranked, id_key=env.id_key, elapsed_time=query_time)
+        # query_time = time() - timer_start
+        # @info "* Rank [#$(counter[1])]: completed in $query_time(s)."
+        @warn "*** NOT IMPLEMENTED ***"
+        write(socket, RESPONSE_TERMINATOR)
 
     elseif request.operation === :kill
         ### Kill the search server ###
