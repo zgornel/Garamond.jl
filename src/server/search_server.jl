@@ -65,26 +65,27 @@ function respond(env, socket, counter, channels)
     counter.+= 1
     @debug "* Received [#$(counter[1])]: $request."
 
-    t_init = time()
+    timer_start = time()
     if request.operation === :search
         ### Search ###
         results = search(env, request; rerank=env.ranker, id_key=env.id_key)
-        query_time = time() - t_init
+        query_time = time() - timer_start
 
         response = build_response(env.dbdata, request, results, id_key=env.id_key, elapsed_time=query_time)
         write(socket, response * RESPONSE_TERMINATOR)
         @info "* Search [#$(counter[1])]: query='$(request.query)' completed in $query_time(s)."
 
     elseif request.operation === :recommend
-        generated_query = generate_query(request.query, env.dbdata, recommend_id_key=request.recommend_id_key)
+        generated_query = generate_query(request.query, env.dbdata, recommend_id_key=request.request_id_key)
         request.query = generated_query.query
-        gid = getproperty(db_select_entry(dbdata, generated_query.id, id_key=request.recommend_id_key), env.id_key)
+        target_entry = db_select_entry(env.dbdata, generated_query.id, id_key=request.request_id_key)
+        gid = isempty(target_entry) ? nothing : getproperty(target_entry, env.id_key)
         similars = search(env, request; exclude=gid, rerank=env.ranker, id_key=env.id_key)
-        query_time = time() - t_init
+        query_time = time() - timer_start
 
         response = build_response(env.dbdata, request, similars, id_key=env.id_key, elapsed_time=query_time)
         write(socket, response * RESPONSE_TERMINATOR)
-        @info "* Recommendation [#$(counter[1])] for '$gid': completed in $query_time(s)."
+        @info "* Recommendation [#$(counter[1])] for '$(repr(gid))': completed in $query_time(s)."
 
     elseif request.operation === :kill
         ### Kill the search server ###
@@ -119,5 +120,5 @@ function respond(env, socket, counter, channels)
         write(socket, RESPONSE_TERMINATOR)
     end
 
-    @debug "Response [#$(counter[1])]: done after $(time()-t_init)(s)."
+    @debug "Response [#$(counter[1])]: done after $(time()-timer_start)(s)."
 end

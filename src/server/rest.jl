@@ -2,45 +2,45 @@
 REST API Specification
 ----------------------
 
-    - Malformed GET, POST requests return a HTTP 400 i.e. Bad Request
-    - Correct resutls return a HTTP 200 i.e. OK
+    ⋅ Malformed GET, POST requests return a HTTP 400 i.e. Bad Request
+    ⋅ Correct resutls return a HTTP 200 i.e. OK
 
-    - GET:  /*                    returns a HTTP 501 message i.e. Not Implemented
-    - GET:  /api/kill             kills the server
-    - GET:  /api/read-configs     returns the searcher configurations
-    - GET:  /api/update/*         updates all engine searchers
-    - GET:  /api/update/<id>      updates the seacher with an id equal to <id>
+    ⋅ GET:  /*                    returns a HTTP 501 message i.e. Not Implemented
+    ⋅ GET:  /api/kill             kills the server
+    ⋅ GET:  /api/read-configs     returns the searcher configurations
+    ⋅ GET:  /api/update/*         updates all engine searchers
+    ⋅ GET:  /api/update/<id>      updates the seacher with an id equal to <id>
 
-    - POST: /*                    returns a HTTP 501 message i.e. Not Implemented
-    - POST: /api/search           triggers a search using parameters from the HTTP message body
-    - POST: /api/recommed         triggers a recommendation using parameters from the HTTP message body
+    ⋅ POST: /*                    returns a HTTP 501 message i.e. Not Implemented
+    ⋅ POST: /api/search           triggers a search using parameters from the HTTP message body
+    ⋅ POST: /api/recommed         triggers a recommendation using parameters from the HTTP message body
     TODO: Implement Re-rank endpoint
-    - POST: /api/rerank           triggers a re-rank i.e. boost using parameters from the HTTP message body
+    ⋅ POST: /api/rerank           triggers a re-rank i.e. boost using parameters from the HTTP message body
 
 HTTP Message body specification for the search, recommend and rerank operations
 -------------------------------------------------------------------------------
-    - search command format (JSON):
-     {
-      "query" : <the query to be performed, a string>,
-      "return_fields" : <a list of string names for the fields to be returned>,
-      "search_method" : <OPTIONAL, a string defining the type of classic search method>,
-      "max_matches" : <OPTIONAL, an integer defining the maximum number of results>,
-      "max_suggestions" : <OPTIONAL, an integer defining the maximum number of suggestions / mismatches keyword>,
-      "custom_weights" : <OPTINAL, a dictionary where the keys are strings with searcher ids and values
-                          the weights of the searchers in the result aggregation>
-     }
-    - recommend command format (JSON):
-     {
-      "recommend_id" : <the id of the entity for which recommendations are sought>
-      "recommend_id_key": <the db name of the column holding the id value>
-      "filter_fields" : <a list of string name fields containing the fields that will be used by the recommender>,
-      "return_fields" : <a list of string names for the fields to be returned>,
-      "search_method" : <OPTIONAL, a string defining the type of classic search method>,
-      "max_matches" : <OPTIONAL, an integer defining the maximum number of results>,
-      "max_suggestions" : <OPTIONAL, an integer defining the maximum number of suggestions / mismatches keyword>,
-      "custom_weights" : <OPTINAL, a dictionary where the keys are strings with searcher ids and values
-                          the weights of the searchers in the result aggregation>
-     }
+    ⋅ search command format (JSON):
+         {
+          "query" : <the query to be performed, a string>,
+          "return_fields" : <a list of string names for the fields to be returned>,
+          "search_method" : <OPTIONAL, a string defining the type of classic search method>,
+          "max_matches" : <OPTIONAL, an integer defining the maximum number of results>,
+          "max_suggestions" : <OPTIONAL, an integer defining the maximum number of suggestions / mismatches keyword>,
+          "custom_weights" : <OPTINAL, a dictionary where the keys are strings with searcher ids and values
+                              the weights of the searchers in the result aggregation>
+         }
+    ⋅ recommend command format (JSON):
+         {
+          "recommend_id" : <the id of the entity for which recommendations are sought>
+          "recommend_id_key": <the db name of the column holding the id value>
+          "filter_fields" : <a list of string name fields containing the fields that will be used by the recommender>,
+          "return_fields" : <a list of string names for the fields to be returned>,
+          "search_method" : <OPTIONAL, a string defining the type of classic search method>,
+          "max_matches" : <OPTIONAL, an integer defining the maximum number of results>,
+          "max_suggestions" : <OPTIONAL, an integer defining the maximum number of suggestions / mismatches keyword>,
+          "custom_weights" : <OPTINAL, a dictionary where the keys are strings with searcher ids and values
+                              the weights of the searchers in the result aggregation>
+         }
 
 =#
 """
@@ -96,13 +96,15 @@ function rest_server(port::Integer,
         elseif srchsrv_req === ERRORED_REQUEST
             # Something went wrong during handling
             return HTTP.Response(400, ["Access-Control-Allow-Origin"=>"*"], body="")
-        else
+        elseif srchsrv_req isa SearchServerRequest
             # All OK, send request to search server and get response
             ssconn = connect(Sockets.localhost, io_port)
             println(ssconn, request2json(srchsrv_req))                   # writes a "\n" as well
             response = ifelse(isopen(ssconn), readline(ssconn), "")  # expects a "\n" terminator
             close(ssconn)
             return HTTP.Response(200, ["Access-Control-Allow-Origin"=>"*"], body=response)
+        else
+            return HTTP.Response(400, ["Access-Control-Allow-Origin"=>"*"], body="")
         end
     end
 end
@@ -144,8 +146,7 @@ recommend_req_handler(req::HTTP.Request) = begin
     _query = parameters["recommend_id"] * " " * join(parameters["filter_fields"], " ")
     return SearchServerRequest(
                 operation=:recommend,
-                recommend_id = parameters["recommend_id"],
-                recommend_id_key = Symbol.(parameters["recommend_id_key"]),
+                request_id_key = Symbol.(parameters["recommend_id_key"]),
                 query = _query,
                 return_fields = Symbol.(parameters["return_fields"]),  # id missing, throws
                 search_method = Symbol.(get(parameters, "search_method", DEFAULT_SEARCH_METHOD)),
