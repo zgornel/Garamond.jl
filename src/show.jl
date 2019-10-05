@@ -118,7 +118,7 @@ end
 show(io::IO, request::T) where {T<:SearchServerRequest} = begin
     print(io, "Request: ")
     for field in fieldnames(T)
-        print(io, field, "=", getproperty(request, field), " | ")
+        print(io, field, "=", repr(getproperty(request, field)), " | ")
     end
 end
 
