@@ -82,3 +82,29 @@ function dbentry2printable(dbentry, fields; max_length=50, separator=" - ")
 end
 
 dbentry2printable(::Nothing, fields; kwargs...) = ""
+
+
+# Primitives to push/pop from IndexedTable/NDSparse
+# TODO(Corneliu): Add support for updating linear index column
+#                 using id_key kwarg
+push!(dbdata, row) = begin
+    push!(rows(dbdata), data)
+    nothing
+end
+
+pushfirst!(dbdata, data) = begin
+	cols = columns(dbdata)
+    for col in colnames(dbdata)
+        pushfirst!(getproperty(cols, col), getproperty(data, col))
+    end
+    nothing
+end
+
+pop!(dbdata) = map(pop!, columns(dbdata))
+
+popfirst!(dbdata) = map(popfirst!, columns(dbdata))
+
+db_deleteat!(dbdata, idxs) = begin
+    map(x->deleteat!(x, idxs), columns(dbdata))
+    nothing
+end
