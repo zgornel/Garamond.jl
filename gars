@@ -97,7 +97,7 @@ Base.@ccallable function julia_main(ARGS::Vector{String})::Cint
 
     if unixsocket == nothing && ws_port == nothing && http_port == nothing
         @warn """At least a UNIX-socket, WEB-socket port or HTTP port
-                 have to be specified through the -u, -w or -p switches.
+                 have to be specified. Use the -u, -w or -p options.
                  Exiting..."""
         return 0
     end
@@ -110,8 +110,7 @@ Base.@ccallable function julia_main(ARGS::Vector{String})::Cint
     # Check data path
     data_config_path = args["data-config"]
     if isempty(data_config_path)
-        @warn """At least one data configuration file has to be provided
-                 through the -d option. Exiting..."""
+        @warn "Missing data configuration file. Use -d option to specify. Exiting..."
         return 0
     end
 
