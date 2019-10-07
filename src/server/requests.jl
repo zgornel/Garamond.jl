@@ -80,6 +80,7 @@ into a `SearchServerRequest` usable by the search server.
 """
 function parse(::Type{T}, outside_request::AbstractString) where {T<:SearchServerRequest}
     __parse_to(::Type{Vector{Symbol}}, data::Vector) = Symbol.(data)
+    __parse_to(::Type{T}, data::AbstractString) where {T<:Number} = parse(T, data)
     __parse_to(::Type{T}, data::S) where{T,S} = try
         T(data)
     catch
