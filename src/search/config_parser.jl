@@ -129,7 +129,7 @@ specifying multiple configuration file paths. The function returns a
 function parse_configuration(filename::AbstractString)
 
     # Read config (this should fail if config not found)
-    local config, dict_configs, data_path, data_loader_name,
+    local config, dict_configs, data_loader,
           ranker_name, id_key, id_environment
     fullfilename = abspath(expanduser(filename))
     try
@@ -139,15 +139,15 @@ function parse_configuration(filename::AbstractString)
         # Read separately individual searcher configurations
         dict_configs = config["searchers"]
 
-        # Parse and check data path
-        data_path = postprocess_path(get(config, "data_path", ""))
-        if !isfile(data_path) && !isdir(data_path)
-            throw(ErrorException("Data path " * data_path * " does not exist"))
-        end
-
-        # Create data loader symbol
+        # Create data loader
         data_loader_name = Symbol(get(config, "data_loader_name", DEFAULT_DATA_LOADER_NAME))
-
+        data_loader_arguments = get(config, "data_loader_arguments", [])
+        data_loader_kwarguments = Dict{Symbol, Any}(Symbol(k) => v for (k,v) in
+                                       get(config, "data_loader_kwarguments", Dict{String,Any}()))
+        data_loader_function = eval(data_loader_name)
+        data_loader_closure(args...;kwargs...) = () -> data_loader_function(args...;kwargs...)
+        data_loader = data_loader_closure(data_loader_arguments...;
+                                          pairs(data_loader_kwarguments)...)
         # Create data loader symbol
         ranker_name = Symbol(get(config, "ranker_name", DEFAULT_RANKER_NAME))
 
@@ -160,9 +160,6 @@ function parse_configuration(filename::AbstractString)
         @error "Could not parse data configuration file $fullfilename ($e). Exiting..."
         exit(-1)
     end
-
-    # Construct data loader
-    data_loader = eval(data_loader_name)
 
     # Construct data loader
     ranker = eval(ranker_name)
@@ -364,7 +361,6 @@ function parse_configuration(filename::AbstractString)
     end
 
     return (data_loader=data_loader,
-            data_path = data_path,
             id_key=id_key,
             searcher_configs=searcher_configs,
             ranker=ranker)

@@ -20,7 +20,7 @@ function build_search_env(filepath)
     env_config = parse_configuration(filepath)
 
     # Load data
-    dbdata = env_config.data_loader(env_config.data_path)
+    dbdata = env_config.data_loader()
     db_check_id_key(dbdata, env_config.id_key)
 
     # Build searchers
