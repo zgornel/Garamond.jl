@@ -87,15 +87,15 @@ dbentry2printable(::Nothing, fields; kwargs...) = ""
 # Primitives to push/pop from IndexedTable/NDSparse
 # TODO(Corneliu): Add support for updating linear index column
 #                 using id_key kwarg
-push!(dbdata, row) = begin
-    push!(rows(dbdata), data)
+push!(dbdata, entry) = begin
+    push!(rows(dbdata), entry)
     nothing
 end
 
-pushfirst!(dbdata, data) = begin
+pushfirst!(dbdata, entry) = begin
 	cols = columns(dbdata)
     for col in colnames(dbdata)
-        pushfirst!(getproperty(cols, col), getproperty(data, col))
+        pushfirst!(getproperty(cols, col), getproperty(entry, col))
     end
     nothing
 end
