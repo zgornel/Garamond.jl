@@ -58,7 +58,8 @@ module Garamond
     # Import section (extendable methods)
     import Base: size, length, show, keys, values, push!,
                  delete!, getindex, names, convert, lowercase,
-                 occursin, isempty, parse
+                 occursin, isempty, parse,
+                 pop!, popfirst!, push!, pushfirst!, deleteat!
     import StringAnalysis: id
     import Word2Vec: WordVectors
     import HNSW: knn_search
@@ -121,6 +122,7 @@ module Garamond
     include("data/db.jl")
     include("data/text.jl")
     include("data/loaders/noop.jl")
+    include("data/loaders/juliadb.jl")
     include("config/defaults.jl")
     include("config/engine.jl")
     include("logging.jl")

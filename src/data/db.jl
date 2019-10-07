@@ -104,7 +104,7 @@ pop!(dbdata) = map(pop!, columns(dbdata))
 
 popfirst!(dbdata) = map(popfirst!, columns(dbdata))
 
-db_deleteat!(dbdata, idxs) = begin
+deleteat!(dbdata, idxs) = begin
     map(x->deleteat!(x, idxs), columns(dbdata))
     nothing
 end
