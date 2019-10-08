@@ -143,24 +143,21 @@ function build_response(dbdata,
                         id_key=DEFAULT_DB_ID_KEY,
                         elapsed_time=-1.0)
     if !isempty(results)
-        n_total_results = mapreduce(x->valength(x.query_matches), +, results)
+        n_total_results = mapreduce(x->length(x.query_matches), +, results)
     else
         n_total_results = 0
     end
 
     response_results = Dict{String, Vector{Dict{Symbol, Any}}}()
     return_fields = vcat(request.return_fields, id_key)  # id_key always present
+
     for result in results
         dict_vector = []
-        sorted_scores = sort(collect(keys(result.query_matches)), rev=true)
-        for score in sorted_scores
-            entry_iterator =(db_select_entry(dbdata, i, id_key=id_key)
-                             for i in result.query_matches[score])
-            for entry in entry_iterator
-                dict_entry = Dict(filter(nt->in(nt[1], return_fields), pairs(entry)))
-                push!(dict_entry, :score => score)  # hard-push score
-                push!(dict_vector, dict_entry)
-            end
+        for (score, idx) in sort(result.query_matches, by=t->t[1], rev=true)
+            entry = db_select_entry(dbdata, idx, id_key=id_key)
+            dict_entry = Dict(filter(nt->in(nt[1], return_fields), pairs(entry)))
+            push!(dict_entry, :score => score)  # hard-push score
+            push!(dict_vector, dict_entry)
         end
         push!(response_results, result.id.value => dict_vector)
     end

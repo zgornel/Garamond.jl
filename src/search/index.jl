@@ -119,7 +119,7 @@ function search(srcher::Searcher{T,E,I},
         ###
         score_transform!(scores, alpha=srcher.config.score_alpha)
     end
-    query_matches = MultiDict(zip(scores, idxs))
+    query_matches = collect(zip(scores, idxs))
 
     # Find matching and missing needles
     needle_matches, missing_needles = __found_missing_needles(srcher.embedder, needles)
@@ -176,7 +176,7 @@ function suggestion_search!(suggestions::MultiDict{String, Tuple{T, String}},
             _suggestions = sort!(find(search_tree, String(needle),
                                       MAX_EDIT_DISTANCE,
                                       k=max_suggestions),
-                                 by=x->x[1])
+                                 by=t->t[1])
             if !isempty(_suggestions)
                 n = min(max_suggestions, length(_suggestions))
                 push!(suggestions, needle=>_suggestions[1:n])

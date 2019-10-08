@@ -106,7 +106,7 @@ end
 
 # SearchResult
 show(io::IO, result::SearchResult) = begin
-    n = valength(result.query_matches)
+    n = length(result.query_matches)
     nm = length(result.needle_matches)
     ns = length(result.suggestions)
     printstyled(io, "Search results for $(result.id): ")

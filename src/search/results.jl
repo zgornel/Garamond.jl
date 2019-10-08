@@ -3,7 +3,7 @@
 """
 struct SearchResult{T<:AbstractFloat}
     id::StringId
-    query_matches::MultiDict{T, Int}  # score => document indices
+    query_matches::Vector{Tuple{T, Int}}  # vector of (score, idx)
     needle_matches::Vector{String}
     suggestions::MultiDict{String, Tuple{T, String}} # needle => tuples of (score,partial match)
     score_weight::T  # a default weight for scores
@@ -11,17 +11,6 @@ end
 
 
 isempty(result::SearchResult) = isempty(result.query_matches)
-
-
-# Calculate the length of a MultiDict as the number
-# of values considering all keys
-valength(md::MultiDict) = begin
-    if isempty(md)
-        return 0
-    else
-        return mapreduce(x->length(x[2]), +, md)
-    end
-end
 
 
 """
@@ -32,7 +21,7 @@ function search_result_from_indexes(idxs, id, ::Type{T}=Float32; default_score=o
     n = length(idxs)
     scores = fill(default_score, n)
     [SearchResult(id,
-                  MultiDict(zip(scores, idxs)),
+                  collect(zip(scores, idxs)),
                   String[],
                   MultiDict{String, Tuple{T, String}}(),
                   one(T))]
@@ -71,9 +60,7 @@ function aggregate!(results::Vector{S},
             qm = [result.query_matches for result in target_results]
             weights = [T(result.score_weight * get(custom_weights, Symbol(result.id.value), 1.0))
                        for result in target_results]
-            merged_query_matches = __aggregate(qm, weights,
-                                               method=method,
-                                               max_matches=max_matches)
+            merged_query_matches = __aggregate(qm, weights; method=method, max_matches=max_matches)
             # Create SearchResult object
             agg_result = SearchResult(
                 uid,
@@ -91,25 +78,26 @@ function aggregate!(results::Vector{S},
 end
 
 
-function __aggregate(query_matches::Vector{MultiDict{T,Int}},
+function __aggregate(query_matches::Vector{Vector{Tuple{T,Int}}},
                      weights::Vector{T};
-                     method::Symbol=RESULT_AGGREGATION_STRATEGY,
-                     max_matches::Int=DEFAULT_MAX_MATCHES,
+                     method=RESULT_AGGREGATION_STRATEGY,
+                     max_matches=DEFAULT_MAX_MATCHES,
                     ) where T<:AbstractFloat
     # Preprocess data
+    # col  --> searcher index
+    # doc  --> document index in search index
+    # row  --> index in a matrix
     row = 0
     doc2row = Dict{Int,Int}()
     rowcol2score = Dict{Tuple{Int,Int},T}()
     for (col, qm) in enumerate(query_matches)
-        for (score, doc_idxs) in qm
-            for doc in doc_idxs
-                if !(doc in keys(doc2row))
-                    row += 1
-                    push!(doc2row, doc=>row)
-                    push!(rowcol2score, (row, col)=>score)
-                else
-                    push!(rowcol2score, (doc2row[doc], col)=>score)
-                end
+        for (score, doc) in qm
+            if !(doc in keys(doc2row))
+                row += 1
+                push!(doc2row, doc=>row)
+                push!(rowcol2score, (row, col)=>score)
+            else
+                push!(rowcol2score, (doc2row[doc], col)=>score)
             end
         end
     end
@@ -136,14 +124,14 @@ function __aggregate(query_matches::Vector{MultiDict{T,Int}},
     idxs = intersect(sortperm(final_scores, rev=true),
                      findall(x->x>zero(T), final_scores))
     tidxs = idxs[1:min(length(idxs), max_matches)]
-    return MultiDict(zip(final_scores[tidxs], [row2doc[i] for i in tidxs]))
+    return collect(zip(final_scores[tidxs], [row2doc[i] for i in tidxs]))
 end
 
 
 function squash_suggestions(results::Vector{SearchResult{T}},
                             max_suggestions::Int=MAX_SUGGESTIONS
                            ) where T<:AbstractFloat
-    suggestions = MultiDict{String, Tuple{T,String}}()
+    suggestions = MultiDict{String, Tuple{T, String}}()
     # Quickly exit if no suggestions are sought
     max_suggestions <=0 && return suggestions
     if length(results) > 1
@@ -171,7 +159,7 @@ function squash_suggestions(results::Vector{SearchResult{T}},
                 end
             end
             if !isempty(all_needle_suggestions)
-                sort!(all_needle_suggestions, by=x->x[1])  # sort vector of tuples by distance
+                sort!(all_needle_suggestions, by=t->t[1])  # sort vector of tuples by distance
                 # Keep results with the same distance even if the number is
                 # larger than the maximum
                 n = min(max_suggestions, length(all_needle_suggestions))
@@ -203,7 +191,7 @@ function print_search_results(io::IO,
                               max_length=50,
                               separator=" - ")
     db_check_id_key(dbdata, id_key)
-    nm = valength(result.query_matches)
+    nm = length(result.query_matches)
 
     printstyled(io, "[$(result.id)] ", color=:blue, bold=true)
     printstyled(io, "$(nm) search results", bold=true)
@@ -211,16 +199,13 @@ function print_search_results(io::IO,
     ch = ifelse(nm==0, ".", ":");
     printstyled(io, "$ch\n")
 
-    for score in sort(collect(keys(result.query_matches)), rev=true)
-        entry_iterator =(db_select_entry(dbdata, i, id_key=id_key)
-                         for i in result.query_matches[score])
-		for entry in entry_iterator
-            entry_string = dbentry2printable(entry, fields,
-                                             max_length=max_length,
-                                             separator=separator)
-			printstyled(io, "  $score ~ ", color=:normal, bold=true)
-            printstyled(io, entry_string, "\n", color=:normal)
-		end
+    for (score, idx) in sort(result.query_matches, by=t->t[1], rev=true)
+        entry = db_select_entry(dbdata, idx, id_key=id_key)
+        entry_string = dbentry2printable(entry, fields,
+                                         max_length=max_length,
+                                         separator=separator)
+        printstyled(io, "  $score ~ ", color=:normal, bold=true)
+        printstyled(io, entry_string, "\n", color=:normal)
     end
     __print_suggestions(io, result.suggestions)
 end

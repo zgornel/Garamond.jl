@@ -37,13 +37,10 @@ function search(env::SearchEnv,
                                    parsed_query.filter,
                                    id_key=id_key,
                                    exclude=exclude)
-        #TODO(corneliu) Improve this!!! (i.e.e change result format etc.)
+
+        # Filter out ids that are not present in the the filtered ids
         for r in results
-            empty_scores=[]
-            for (score, matches) in r.query_matches
-                intersect!(matches, filtered_ids)
-                isempty(matches) && delete!(r.query_matches, score)
-            end
+            filter!(t -> in(t[2], filtered_ids), r.query_matches)
         end
     end
 
