@@ -56,10 +56,10 @@ function build_searcher(dbdata, config)
     # Pre-process documents
     flags = config.text_strip_flags | (config.stem_words ? stem_words : 0x0)
     language = get(STR_TO_LANG, config.language, DEFAULT_LANGUAGE)()
-    prepared_documents = @op document_preparation(raw_document_iterator, flags, language)
+    prepared_documents = @op __document_preparation(raw_document_iterator, flags, language)
 
     # Build corpus
-    crps = @op build_corpus(prepared_documents, language, config.ngram_complexity)
+    crps = @op __build_corpus(prepared_documents, language, config.ngram_complexity)
 
     # Construct element type
     T = eval(config.vectors_eltype)
@@ -70,30 +70,30 @@ function build_searcher(dbdata, config)
     # Get embedder (split into two separate call ways so that unused changed
     #               parameters do not influence the cache consistency)
     if config.vectors in [:word2vec, :glove, :conceptnet, :compressed]
-        embedder = @op get_embedder(crps, T, config.vectors, config.embeddings_path,
+        embedder = @op __build_embedder(crps, T, config.vectors, config.embeddings_path,
                                     config.embeddings_kind, config.doc2vec_method,
                                     config.glove_vocabulary, config.sif_alpha,
                                     config.borep_dimension, config.borep_pooling_function,
                                     config.disc_ngram)
     elseif config.vectors in [:count, :tf, :tfidf, :bm25]
-        embedder = @op get_embedder(crps, T, config.ngram_complexity,
+        embedder = @op __build_embedder(crps, T, config.ngram_complexity,
                                     config.vectors, config.vectors_transform,
                                     config.vectors_dimension,
                                     config.bm25_kappa, config.bm25_beta)
     end
 
     # Calculate embeddings for each document
-    embedded_documents = @op embed_all_documents(embedder, prepared_documents,
+    embedded_documents = @op __embed_all_documents(embedder, prepared_documents,
                                 config.oov_policy, config.ngram_complexity)
 
     # Get search index type
-    IndexType = get_search_index_type(config)
+    IndexType = __get_search_index_type(config)
 
     # Build search index
     srchindex = @op IndexType(embedded_documents)
 
     # Build search tree (for suggestions)
-    srchtree = @op get_bktree(config.heuristic, crps)
+    srchtree = @op __get_bktree(config.heuristic, crps)
 
     # Build searcher
     srcher = @op Searcher(Ref(dbdata), config, embedder, srchindex, srchtree)
@@ -131,7 +131,7 @@ graph = DispatchGraph(endpoint)
 end
 
 
-function get_bktree(heuristic, crps)
+function __get_bktree(heuristic, crps)
     lexicon = create_lexicon(crps, 1)
     if heuristic != nothing
         distance = get(HEURISTIC_TO_DISTANCE, heuristic, DEFAULT_DISTANCE)
@@ -143,19 +143,19 @@ function get_bktree(heuristic, crps)
 end
 
 
-function document_preparation(documents, flags, language)
+function __document_preparation(documents, flags, language)
     map(sentences->prepare.(sentences, flags, language=language), documents)
 end
 
 
-function embed_all_documents(embedder, documents, oov_policy, ngram_complexity)
+function __embed_all_documents(embedder, documents, oov_policy, ngram_complexity)
     hcat((document2vec(embedder, doc, oov_policy;
                        ngram_complexity=ngram_complexity)[1]
           for doc in documents)...)
 end
 
 
-function get_search_index_type(config::SearchConfig)
+function __get_search_index_type(config::SearchConfig)
     # Get search index types
     search_index = config.search_index
     search_index == :naive && return NaiveIndex
@@ -165,15 +165,15 @@ function get_search_index_type(config::SearchConfig)
 end
 
 
-function get_embedder(crps::Corpus,
-                      ::Type{T},
-                      ngram_complexity::Int,
-                      vectors::Symbol,
-                      vectors_transform::Symbol,
-                      vectors_dimension::Int,
-                      bm25_kappa::Int,
-                      bm25_beta::Float64
-                     ) where T<:AbstractFloat
+function __build_embedder(crps::Corpus,
+                          ::Type{T},
+                          ngram_complexity::Int,
+                          vectors::Symbol,
+                          vectors_transform::Symbol,
+                          vectors_dimension::Int,
+                          bm25_kappa::Int,
+                          bm25_beta::Float64
+                         ) where T<:AbstractFloat
     # Initialize dtm
     dtm = DocumentTermMatrix{T}(crps, ngram_complexity=ngram_complexity)
 
@@ -196,18 +196,18 @@ function get_embedder(crps::Corpus,
     return DTVEmbedder(model)
 end
 
-function get_embedder(crps::Corpus,
-                      ::Type{T},
-                      vectors::Symbol,
-                      embeddings_path::String,
-                      embeddings_kind::Symbol,
-                      doc2vec_method::Symbol,
-                      glove_vocabulary,
-                      sif_alpha::Float64,
-                      borep_dimension::Int,
-                      borep_pooling_function::Symbol,
-                      disc_ngram::Int,
-                     ) where T<:AbstractFloat
+function __build_embedder(crps::Corpus,
+                          ::Type{T},
+                          vectors::Symbol,
+                          embeddings_path::String,
+                          embeddings_kind::Symbol,
+                          doc2vec_method::Symbol,
+                          glove_vocabulary,
+                          sif_alpha::Float64,
+                          borep_dimension::Int,
+                          borep_pooling_function::Symbol,
+                          disc_ngram::Int
+                         ) where T<:AbstractFloat
     # Read word embeddings
     local embeddings
     if vectors == :conceptnet
@@ -246,9 +246,9 @@ function get_embedder(crps::Corpus,
 end
 
 
-function build_corpus(documents::Vector{Vector{String}},
-                      language::Languages.Language,
-                      ngram_complexity::Int)
+function __build_corpus(documents::Vector{Vector{String}},
+                        language::Languages.Language,
+                        ngram_complexity::Int)
     language_type = typeof(language)
     @assert language_type in SUPPORTED_LANGUAGES "Language $language_type is not supported"
 

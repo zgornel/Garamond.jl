@@ -1,7 +1,7 @@
 function db_create_schema(dbdata)
     cols = colnames(dbdata)
     coltypes = map(eltype, columns(dbdata))
-    pkeys = _get_pkeys(dbdata)
+    pkeys = db_get_primary_keys(dbdata)
     schema = [(column=col,
                coltype=getproperty(coltypes, col),
                pkey=in(col, pkeys))
@@ -9,9 +9,9 @@ function db_create_schema(dbdata)
 end
 
 
-_get_pkeys(dbdata::IndexedTable) = colnames(dbdata)[dbdata.pkey]
+db_get_primary_keys(dbdata::IndexedTable) = colnames(dbdata)[dbdata.pkey]
 
-_get_pkeys(dbdata::NDSparse) = colnames(dbdata.index)
+db_get_primary_keys(dbdata::NDSparse) = colnames(dbdata.index)
 
 db_create_iterator(dbdata::NDSparse) = (merge(idx, data) for (idx, data) in zip(dbdata.index, dbdata.data))
 

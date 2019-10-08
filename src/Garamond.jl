@@ -121,6 +121,7 @@ module Garamond
     # Include section
     include("data/db.jl")
     include("data/text.jl")
+    include("data/dunderparse.jl")
     include("data/loaders/noop.jl")
     include("data/loaders/juliadb.jl")
     include("config/defaults.jl")
@@ -156,7 +157,7 @@ module Garamond
     include("server/unixsocket.jl")
     include("server/websocket.jl")
     include("server/rest.jl")
-    include("server/search_server.jl")
+    include("server/search.jl")
     include("show.jl")
 
 end # module

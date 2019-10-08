@@ -33,15 +33,16 @@ function sentences2vec(embedder::DisCEmbedder,
     if isempty(document_embedding)
         return zeros(T, dimensionality(embedder), 0)
     else
-        return distributed_cooccurence(document_embedding,
-                                       embedder.n,
-                                       dimensionality(embedder))
+        return __dist_cooc(document_embedding,
+                           embedder.n,
+                           dimensionality(embedder))
     end
 end
 
-function distributed_cooccurence(document_embedding::Vector{Matrix{T}},
-                                 n::Int, dim::Int
-                                ) where {T<:AbstractFloat}
+function __dist_cooc(document_embedding::Vector{Matrix{T}},
+                     n::Int,
+                     dim::Int
+                    ) where {T<:AbstractFloat}
     # Pre-allocate output embeddings
     X = zeros(T, dim, length(document_embedding))
     m = Int(dim/n)
@@ -49,13 +50,13 @@ function distributed_cooccurence(document_embedding::Vector{Matrix{T}},
         for k in 1:n
             # For each column `j`, `m` values are filled by
             # the inner loop with the `k`-gram embeddings
-            X[(k-1)*m+1:k*m, j] = k_gram_prodsum_embedding(document_embedding[j], k)
+            X[(k-1)*m+1:k*m, j] = __k_gram_prodsum_embedding(document_embedding[j], k)
         end
     end
     return X
 end
 
-function k_gram_prodsum_embedding(A::Matrix{T}, k::Int) where {T}
+function __k_gram_prodsum_embedding(A::Matrix{T}, k::Int) where {T}
     n = size(A, 2)		# number of embedded words
     k = clamp(k, 1, n)  # so it does not fail if too few embeddings
     X = zeros(T, size(A, 1), n-k+1)  # output

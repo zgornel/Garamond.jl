@@ -20,7 +20,7 @@ function parse_query_generation_string(req::AbstractString,
     end
 
     # Parse target id
-    target_id = __parse(_target_id, _target_id_type)
+    target_id = __parse(_target_id_type, _target_id)
     return target_id, fields
 end
 

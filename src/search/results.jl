@@ -71,9 +71,9 @@ function aggregate!(results::Vector{S},
             qm = [result.query_matches for result in target_results]
             weights = [T(result.score_weight * get(custom_weights, Symbol(result.id.value), 1.0))
                        for result in target_results]
-            merged_query_matches = _aggregate(qm, weights,
-                                              method=method,
-                                              max_matches=max_matches)
+            merged_query_matches = __aggregate(qm, weights,
+                                               method=method,
+                                               max_matches=max_matches)
             # Create SearchResult object
             agg_result = SearchResult(
                 uid,
@@ -91,11 +91,11 @@ function aggregate!(results::Vector{S},
 end
 
 
-function _aggregate(query_matches::Vector{MultiDict{T,Int}},
-                    weights::Vector{T};
-                    method::Symbol=RESULT_AGGREGATION_STRATEGY,
-                    max_matches::Int=DEFAULT_MAX_MATCHES,
-                   ) where T<:AbstractFloat
+function __aggregate(query_matches::Vector{MultiDict{T,Int}},
+                     weights::Vector{T};
+                     method::Symbol=RESULT_AGGREGATION_STRATEGY,
+                     max_matches::Int=DEFAULT_MAX_MATCHES,
+                    ) where T<:AbstractFloat
     # Preprocess data
     row = 0
     doc2row = Dict{Int,Int}()

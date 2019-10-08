@@ -79,13 +79,6 @@ Parses an outside request received from a client
 into a `SearchServerRequest` usable by the search server.
 """
 function parse(::Type{T}, outside_request::AbstractString) where {T<:SearchServerRequest}
-    __parse_to(::Type{Vector{Symbol}}, data::Vector) = Symbol.(data)
-    __parse_to(::Type{T}, data::AbstractString) where {T<:Number} = parse(T, data)
-    __parse_to(::Type{T}, data::S) where{T,S} = try
-        T(data)
-    catch
-        data
-    end
     request = T()
     try
         data = JSON.parse(outside_request, dicttype=Dict{Symbol,Any})
@@ -97,7 +90,7 @@ function parse(::Type{T}, outside_request::AbstractString) where {T<:SearchServe
             @warn "Possibly malformed request, missing fields: $missing_fields"
         for (ft, field) in zip(ftypes, fields)
             in(field, datafields) &&
-                setproperty!(request, field, __parse_to(ft, data[field]))
+                setproperty!(request, field, __parse(ft, data[field]))
         end
     catch e
         @debug "Request parse error: $e. Returning ERRORED_REQUEST..."

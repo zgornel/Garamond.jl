@@ -19,7 +19,7 @@ function parse_query(query, schema; separator=DEFAULT_QUERY_PARSING_SEPARATOR)
             key = Symbol(keystr)
             idxkey = findfirst(isequal(key), columns)
             if idxkey != nothing
-                val = parse_values_string(valstr, schema[idxkey].coltype)
+                val = __parse_vals_token(schema[idxkey].coltype, valstr)
                 push!(filter_query, key => val)
             end
         catch
@@ -30,15 +30,10 @@ function parse_query(query, schema; separator=DEFAULT_QUERY_PARSING_SEPARATOR)
 end
 
 
-parse_values_string(valstr::AbstractString, ::Type{T}) where {T}= begin
+__parse_vals_token(::Type{T}, valstr::AbstractString) where {T}= begin
     if startswith(valstr, r"(\(|\[)") && endswith(valstr, r"(\)|\])")
         return eval(Meta.parse(valstr))  # a vector or tuple, evaluate
     else
-        return __parse(valstr, T)  # leave unchanged
+        return __parse(T, valstr)  # leave unchanged
     end
 end
-
-
-__parse(valstr::AbstractString, ::Type{T}) where {T} = convert(T, valstr)
-
-__parse(valstr::AbstractString, ::Type{T}) where {T<:Number} = parse(T, valstr)

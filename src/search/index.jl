@@ -122,7 +122,7 @@ function search(srcher::Searcher{T,E,I},
     query_matches = MultiDict(zip(scores, idxs))
 
     # Find matching and missing needles
-    needle_matches, missing_needles = find_needles(srcher.embedder, needles)
+    needle_matches, missing_needles = __found_missing_needles(srcher.embedder, needles)
 
     # Get suggestions
     suggestions = MultiDict{String, Tuple{T, String}}()
@@ -140,19 +140,20 @@ end
 """
 Returns found and missing needles using an embedder
 """
-find_needles
+__found_missing_needles
 
-find_needles(embedder::WordVectorsEmbedder, needles) = (String[], String[])
+__found_missing_needles(embedder::WordVectorsEmbedder, needles) = (String[], String[])
 
-find_needles(embedder::DTVEmbedder, needles) = find_needles(embedder.model, needles)
+__found_missing_needles(embedder::DTVEmbedder, needles) =
+    __found_missing_needles(embedder.model, needles)
 
-find_needles(model::StringAnalysis.RPModel, needles) = begin
+__found_missing_needles(model::StringAnalysis.RPModel, needles) = begin
     needle_matches = [needle for needle in needles if in(needle, model.vocab)]
     missing_needles = setdiff(needles, needle_matches)
     return needle_matches, missing_needles
 end
 
-find_needles(model::StringAnalysis.LSAModel, needles) = (String[], String[])
+__found_missing_needles(model::StringAnalysis.LSAModel, needles) = (String[], String[])
 
 
 """

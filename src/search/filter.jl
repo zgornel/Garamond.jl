@@ -11,7 +11,7 @@ function indexfilter(dbdata::NDSparse,
     index_values != fill(Colon(), length(index_values)) && (dbdata = dbdata[index_values...])
 
     # Build selectors and filter data
-    selectors = Tuple(key => _build_filter_f(val) for (key, val) in filter_query
+    selectors = Tuple(key => __filter_from_values(val) for (key, val) in filter_query
                       if key in colnames(dbdata.data))
     !isempty(selectors) && (dbdata = filter(all, dbdata, select=selectors))
     return dbdata |> extract_id |> f_exclude(exclude)
@@ -27,7 +27,7 @@ function indexfilter(dbdata::IndexedTable,
     f_exclude(val) = x -> setdiff(x, [val])
 
     # Build selectors and filter data
-    selectors = Tuple(key => _build_filter_f(val) for (key, val) in filter_query
+    selectors = Tuple(key => __filter_from_values(val) for (key, val) in filter_query
                       if key in colnames(dbdata))
     !isempty(selectors) && (dbdata = filter(all, dbdata, select=selectors))
     return dbdata |> extract_id |> f_exclude(exclude)
@@ -35,11 +35,11 @@ end
 
 
 # Function with methods for constructing data filtering functions (x is the current value for a column)
-_build_filter_f(val) = x -> x == val                # filter by equality to a value
+__filter_from_values(val) = x -> x == val                # filter by equality to a value
 
-_build_filter_f(vals::Tuple) = x -> x in vals       # filter by being present in a set
+__filter_from_values(vals::Tuple) = x -> x in vals       # filter by being present in a set
 
-_build_filter_f(vals::NTuple{N,T}) where {N, T<:AbstractString} =
+__filter_from_values(vals::NTuple{N,T}) where {N, T<:AbstractString} =
     x -> any(map(v -> occursin(x, v), vals))        # filter by being a substring of any string in a set
 
-_build_filter_f(vals::Vector) = x -> x >= vals[1] && x <= vals[2]  # filter by belonging to an interval
+__filter_from_values(vals::Vector) = x -> x >= vals[1] && x <= vals[2]  # filter by belonging to an interval
