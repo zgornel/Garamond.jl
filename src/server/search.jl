@@ -130,3 +130,46 @@ function respond(env, socket, counter, channels)
 
     @debug "Response [#$(counter[1])]: done after $(time()-timer_start)(s)."
 end
+
+
+"""
+    build_response(dbdata, request, results, [; kwargs...])
+
+Builds a response for an engine client using the data, request and results.
+"""
+function build_response(dbdata,
+                        request,
+                        results;
+                        id_key=DEFAULT_DB_ID_KEY,
+                        elapsed_time=-1.0)
+    if !isempty(results)
+        n_total_results = mapreduce(x->valength(x.query_matches), +, results)
+    else
+        n_total_results = 0
+    end
+
+    response_results = Dict{String, Vector{Dict{Symbol, Any}}}()
+    return_fields = vcat(request.return_fields, id_key)  # id_key always present
+    for result in results
+        dict_vector = []
+        sorted_scores = sort(collect(keys(result.query_matches)), rev=true)
+        for score in sorted_scores
+            entry_iterator =(db_select_entry(dbdata, i, id_key=id_key)
+                             for i in result.query_matches[score])
+            for entry in entry_iterator
+                dict_entry = Dict(filter(nt->in(nt[1], return_fields), pairs(entry)))
+                push!(dict_entry, :score => score)  # hard-push score
+                push!(dict_vector, dict_entry)
+            end
+        end
+        push!(response_results, result.id.value => dict_vector)
+    end
+
+    response = Dict("elapsed_time"=>elapsed_time,
+                    "results" => response_results,
+                    "n_total_results" => n_total_results,
+                    "n_searchers" => length(results),
+                    "n_searchers_w_results" => mapreduce(r->!isempty(r.query_matches), +, results),
+                    "suggestions" => squash_suggestions(results, request.max_suggestions))
+    JSON.json(response)
+end
