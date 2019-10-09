@@ -19,7 +19,7 @@ db_create_iterator(dbdata::IndexedTable) = (entry for entry in dbdata)
 
 
 # Concatenate fields of dbentry (which is a named tuple) into a vector of strings
-function dbentry2text(dbentry, fields)
+dbentry2text(dbentry, fields) = begin
     concatenated = [field2text(dbentry, field) for field in fields]
     filter!(!isempty, concatenated)
     return concatenated
@@ -40,11 +40,13 @@ make_a_string(value::AbstractVector) = join(string.(value), " ")
 
 
 # Checks that the id_key exists in dbdata and that its elements are Int's
-function db_check_id_key(dbdata, id_key)
-    if !in(id_key, colnames(dbdata)) &&
-        throw(ErrorException("$id_key must be a column in the loaded data"))
-    elseif !(eltype(getproperty(columns(dbdata), id_key)) <: Int)
-        throw(ErrorException("$id_key elements must be of Int type"))
+function db_check_id_key(dbdata, id_key=nothing)
+    if id_key != nothing
+        if !in(id_key, colnames(dbdata)) &&
+            throw(ErrorException("$id_key must be a column in the loaded data"))
+        elseif !(eltype(getproperty(columns(dbdata), id_key)) <: Int)
+            throw(ErrorException("$id_key elements must be of Int type"))
+        end
     end
 end
 
@@ -85,26 +87,67 @@ dbentry2printable(::Nothing, fields; kwargs...) = ""
 
 
 # Primitives to push/pop from IndexedTable/NDSparse
-# TODO(Corneliu): Add support for updating linear index column
-#                 using id_key kwarg
-push!(dbdata, entry) = begin
+function db_check_entry_for_pushing(entry, id_key, expected_value)
+    if id_key != nothing
+        !hasproperty(entry, id_key) &&
+            throw(ErrorException("$id_key must be a column in the loaded data"))
+        getproperty(entry, id_key) != expected_value &&
+            throw(ErrorException("$id_key==$expected_value condition not fulfilled"))
+    end
+end
+
+
+push!(dbdata, entry; id_key=nothing) = begin
+    db_check_id_key(dbdata, id_key)
+    db_check_entry_for_pushing(entry, id_key, length(dbdata) + 1)
     push!(rows(dbdata), entry)
     nothing
 end
 
-pushfirst!(dbdata, entry) = begin
-	cols = columns(dbdata)
+
+pushfirst!(dbdata, entry; id_key=nothing) = begin
+    db_check_id_key(dbdata, id_key)
+    db_check_entry_for_pushing(entry, id_key, 1)
+    cols = columns(dbdata)
+    db_id_key_shift(dbdata, id_key, 1)
     for col in colnames(dbdata)
         pushfirst!(getproperty(cols, col), getproperty(entry, col))
     end
     nothing
 end
 
-pop!(dbdata) = map(pop!, columns(dbdata))
 
-popfirst!(dbdata) = map(popfirst!, columns(dbdata))
+pop!(dbdata; id_key=nothing) = map(pop!, columns(dbdata))
 
-deleteat!(dbdata, idxs) = begin
-    map(x->deleteat!(x, idxs), columns(dbdata))
+
+popfirst!(dbdata; id_key=nothing) = begin
+    db_check_id_key(dbdata, id_key)
+    cols = columns(dbdata)
+    popped = map(popfirst!, cols)
+    db_id_key_shift(dbdata, id_key, -1)
+    return popped
+end
+
+
+deleteat!(dbdata, idxs; id_key=nothing) = begin
+    db_check_id_key(dbdata, id_key)
+    cols = columns(dbdata)
+    map(x->deleteat!(x, idxs), cols)
+    db_id_key_recreate(dbdata, id_key)
+end
+
+
+db_id_key_recreate(dbdata, id_key=nothing) = begin
+    if id_key != nothing
+        getproperty(columns(dbdata), id_key)[:].= 1:length(dbdata)
+    end
+    nothing
+end
+
+
+db_id_key_shift(dbdata, id_key=nothing, by=0) = begin
+    if id_key != nothing
+        getproperty(columns(dbdata), id_key)[:].+= by
+    end
     nothing
 end
