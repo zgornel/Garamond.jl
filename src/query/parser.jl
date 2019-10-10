@@ -9,7 +9,7 @@ function parse_query(query, dbschema; separator=DEFAULT_QUERY_PARSING_SEPARATOR)
 
     # Function that parses a string into a type
     parse_value(::Type{T}, valstr::AbstractString) where {T}= begin
-        if startswith(valstr, r"(\(|\[)") && endswith(valstr, r"(\)|\])")
+        if startswith(valstr, r"(\(|\[|\")") && endswith(valstr, r"(\)|\]|\")")
             return eval(Meta.parse(valstr))  # a vector or tuple, evaluate
         else
             return __parse(T, valstr)  # leave unchanged
@@ -18,7 +18,14 @@ function parse_query(query, dbschema; separator=DEFAULT_QUERY_PARSING_SEPARATOR)
 
     # Define expression to match
     #MATCH_EXPR = Regex("\\w+\\s*$separator(\\s*\\w+|\\s*(\\[|\\().*(\\]|\\)))")
-    MATCH_EXPR = Regex("[_a-zA-Z0-9]+$separator[_a-zA-Z0-9\\(\\[\\]\\),\"]+")
+    #MATCH_EXPR = Regex("[_a-zA-Z0-9]+$separator[_a-zA-Z0-9\\(\\[\\]\\),\"]+")
+    REGEX_ALPHANUM = "_a-zA-Z0-9"
+    MATCH_EXPR = Regex("[$REGEX_ALPHANUM]+"*
+                       "$separator"*
+                       "([$REGEX_ALPHANUM]+|"*
+                       "\\([$REGEX_ALPHANUM,\"\\s]+\\)|"*
+                       "\\[[$REGEX_ALPHANUM,\"\\s]+\\]|"*
+                       "\"[$REGEX_ALPHANUM,\\s]+\")")
 
     # The search query simply is the reminder from the query after
     # removing all key:value(s) matches and tokens that contain punctuation

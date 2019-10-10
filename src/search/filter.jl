@@ -35,11 +35,11 @@ end
 
 
 # Function with methods for constructing data filtering functions (x is the current value for a column)
-__filter_from_values(val) = x -> x == val                # filter by equality to a value
+__filter_from_values(val) = x -> x == val               # filter by equality to a value
 
-__filter_from_values(vals::Tuple) = x -> x in vals       # filter by being present in a set
+__filter_from_values(vals::Tuple) = x -> x in vals      # filter by being present in a set
 
 __filter_from_values(vals::NTuple{N,T}) where {N, T<:AbstractString} =
-    x -> any(map(v -> occursin(x, v), vals))        # filter by being a substring of any string in a set
+    x -> any(v -> occursin(x, v), vals)                 # filter by being a substring of any string in a set
 
 __filter_from_values(vals::Vector) = x -> x >= vals[1] && x <= vals[2]  # filter by belonging to an interval

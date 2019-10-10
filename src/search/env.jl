@@ -3,6 +3,8 @@
     and additional structures needed by the engine to function.
 """
 mutable struct SearchEnv
+    #TODO(Corneliu) Make search environment parametric with respect to
+    #               the type of Float being used
     dbdata      # Union{AbstractNDSparse, AbstractIndexedTable}
     id_key      # Symbol
     searchers   # Vector{<:Searcher}

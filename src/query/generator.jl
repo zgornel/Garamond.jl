@@ -13,7 +13,9 @@ function generate_query(req::AbstractString, dbdata; recommend_id_key=DEFAULT_DB
     if !isempty(target_record)
         for field in fields
             if field in columns
-                push!(query_toks, "$field:$(getproperty(target_record, field))")
+                value = getproperty(target_record, field)
+                value_for_query = __transform_value_for_search(value)
+                push!(query_toks, "$field:$(value_for_query)")
             end
         end
     end
@@ -44,3 +46,10 @@ function __parse_query_generation_request(req::AbstractString,
     target_id = __parse(_target_id_type, _target_id)
     return target_id, fields
 end
+
+
+__transform_value_for_search(value) = value  # default for non-floats, strings, leave untouched
+
+__transform_value_for_search(value::AbstractFloat) = "[$(0.9*value), $(1.1*value)]"
+
+__transform_value_for_search(value::AbstractString) = "\"" * value * "\""  # simple string, wrap in quotes
