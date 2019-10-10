@@ -14,17 +14,19 @@ isempty(result::SearchResult) = isempty(result.query_matches)
 
 
 """
-    Constructs a search result from a list of ids.
+    Constructs a search result from a list of linear data indexes.
 """
-# TODO(Corneliu) Make T vvv of the same time as search results
-function search_result_from_indexes(idxs, id, ::Type{T}=Float32; default_score=one(T)) where {T<:AbstractFloat}
-    n = length(idxs)
-    scores = fill(default_score, n)
+function search_result_from_indexes(idxs,
+                                    id;
+                                    vec_eltype=eval(DEFAULT_VECTORS_ELTYPE),
+                                    default_score=one(vec_eltype),
+                                    max_matches=Inf)
+    n = min(length(idxs), max_matches)
     [SearchResult(id,
-                  collect(zip(scores, idxs)),
+                  collect(zip(fill(default_score, n), idxs[1:n])),
                   String[],
-                  MultiDict{String, Tuple{T, String}}(),
-                  one(T))]
+                  MultiDict{String, Tuple{vec_eltype, String}}(),
+                  one(vec_eltype))]
 end
 
 

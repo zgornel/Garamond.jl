@@ -12,7 +12,7 @@ function search(env::SearchEnv,
     if !isfilter
         # No filter, search always done
         results = search(env.searchers,
-                         parsed_query.search,
+                         parsed_query.search;
                          search_method=request.search_method,
                          max_matches=request.max_matches,
                          max_suggestions=request.max_suggestions,
@@ -20,21 +20,23 @@ function search(env::SearchEnv,
     elseif !issearch
         # No search, filter only
         filtered_ids = indexfilter(env.dbdata,
-                                   parsed_query.filter,
+                                   parsed_query.filter;
                                    id_key=id_key,
                                    exclude=exclude)
-        results = search_result_from_indexes(filtered_ids, make_id(StringId, nothing))
+        results = search_result_from_indexes(filtered_ids,
+                                             make_id(StringId, nothing);
+                                             max_matches=request.max_matches)
     elseif issearch
         # Search and filter search results
         results = search(env.searchers,
-                         parsed_query.search,
+                         parsed_query.search;
                          search_method=request.search_method,
                          max_matches=request.max_matches,
                          max_suggestions=request.max_suggestions,
                          custom_weights=request.custom_weights)
         #TODO(Corneliu) Decide whether to pipe filtered_ids into search
         filtered_ids = indexfilter(env.dbdata,
-                                   parsed_query.filter,
+                                   parsed_query.filter;
                                    id_key=id_key,
                                    exclude=exclude)
 
