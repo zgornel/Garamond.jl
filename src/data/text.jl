@@ -75,3 +75,20 @@ function summarize(sentences::Vector{S};
         return sentences
     end
 end
+
+
+"""
+Post-processes a string to fit a certain length, adding … if necessary
+at the end of its choped represenation.
+"""
+function chop_to_length(input, len)
+     input = replace(input, "\n" => "")
+     idxs = collect(eachindex(input))
+     _idx = findlast(Base.:<=(len), idxs)
+     if _idx == nothing
+         _len=0
+     else
+         _len = idxs[findlast(Base.:<=(len), idxs)]
+     end
+     length(input) > len ? input[1:_len] * "…"  : input
+end

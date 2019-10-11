@@ -1,8 +1,7 @@
-#=
-Structure for the internal (search server) representation
-of requests.
-=#
-mutable struct SearchServerRequest
+"""
+Request object for the internal server of the engine.
+"""
+mutable struct InternalRequest
     operation::Symbol
     query::String
     max_matches::Int
@@ -14,24 +13,24 @@ mutable struct SearchServerRequest
 end
 
 # Keyword argument constructor
-SearchServerRequest(;operation=:uninitialized_request,
-                     query="",
-                     max_matches=DEFAULT_MAX_MATCHES,
-                     search_method=DEFAULT_SEARCH_METHOD,
-                     max_suggestions=DEFAULT_MAX_SUGGESTIONS,
-                     return_fields=Symbol[],
-                     custom_weights=DEFAULT_CUSTOM_WEIGHTS,
-                     request_id_key=Symbol(""))=
-    SearchServerRequest(operation, query, max_matches, search_method,
+InternalRequest(;operation=:uninitialized_request,
+                query="",
+                max_matches=DEFAULT_MAX_MATCHES,
+                search_method=DEFAULT_SEARCH_METHOD,
+                max_suggestions=DEFAULT_MAX_SUGGESTIONS,
+                return_fields=Symbol[],
+                custom_weights=DEFAULT_CUSTOM_WEIGHTS,
+                request_id_key=Symbol(""))=
+    InternalRequest(operation, query, max_matches, search_method,
                         max_suggestions, return_fields, custom_weights,
                         request_id_key)
 
 
 #=
-Convert from SearchServerRequest to Dict - the latter will have
+Converts an InternalRequest to Dict - the latter will have
 String keys with names identical to the request type fields
 =#
-convert(::Type{Dict}, request::T) where {T<:SearchServerRequest}= begin
+convert(::Type{Dict}, request::T) where {T<:InternalRequest}= begin
     returned_dict = Dict{Symbol, Any}()
     for field in fieldnames(T)
         push!(returned_dict, field => getproperty(request, field))
@@ -39,46 +38,46 @@ convert(::Type{Dict}, request::T) where {T<:SearchServerRequest}= begin
     return returned_dict
 end
 
-request2dict(request::T) where {T<:SearchServerRequest} =
+request2dict(request::T) where {T<:InternalRequest} =
     Dict(field => getproperty(request, field) for field in fieldnames(T))
 
-request2json(request::T) where {T<:SearchServerRequest} =
+request2json(request::T) where {T<:InternalRequest} =
     JSON.json(request2dict(request))
 
 
 """
 Default request.
 """
-const UNINITIALIZED_REQUEST = SearchServerRequest(operation=:uninitialized_request)
+const UNINITIALIZED_REQUEST = InternalRequest(operation=:uninitialized_request)
 
 """
 Request corresponding to an error i.e. in parsing.
 """
-const ERRORED_REQUEST = SearchServerRequest(operation=:error)
+const ERRORED_REQUEST = InternalRequest(operation=:error)
 
 """
 Request corresponding to a kill server command.
 """
-const KILL_REQUEST = SearchServerRequest(operation=:kill)
+const KILL_REQUEST = InternalRequest(operation=:kill)
 
 """
 Request corresponding to a searcher read configuration command.
 """
-const READCONFIGS_REQUEST = SearchServerRequest(operation=:read_configs)
+const READCONFIGS_REQUEST = InternalRequest(operation=:read_configs)
 
 """
 Request corresponding to a searcher update command.
 """
-const UPDATE_REQUEST = SearchServerRequest(operation=:update, query="")
+const UPDATE_REQUEST = InternalRequest(operation=:update, query="")
 
 
 """
-    parse(::Type{SearchServerRequest}, request::AbstractString)
+    parse(::Type{InternalRequest}, request::AbstractString)
 
 Parses an outside request received from a client
-into a `SearchServerRequest` usable by the search server.
+into an `InternalRequest` usable by the search server.
 """
-function parse(::Type{T}, outside_request::AbstractString) where {T<:SearchServerRequest}
+function parse(::Type{T}, outside_request::AbstractString) where {T<:InternalRequest}
     request = T()
     try
         data = JSON.parse(outside_request, dicttype=Dict{Symbol,Any})

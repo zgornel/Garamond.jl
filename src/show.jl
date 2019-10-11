@@ -114,12 +114,14 @@ show(io::IO, result::SearchResult) = begin
 end
 
 
-# SearchServerRequest
-show(io::IO, request::T) where {T<:SearchServerRequest} = begin
-    print(io, "Request: ")
-    for field in fieldnames(T)
-        print(io, field, "=", repr(getproperty(request, field)), " | ")
-    end
+# InternalRequest
+show(io::IO, request::T) where {T<:InternalRequest} = begin
+    _field_lengths = Dict(:query => 50)
+    itstr = (uppercase(string(field)) * "=" *
+               chop_to_length(repr(getproperty(request, field)),
+                              get(_field_lengths, field, 10))
+             for field in fieldnames(T))
+    print(io, "InternalRequest: ", join(itstr, " | "))
 end
 
 

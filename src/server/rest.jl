@@ -103,7 +103,7 @@ function rest_server(port::Integer,
         elseif srchsrv_req === ERRORED_REQUEST
             # Something went wrong during handling
             return HTTP.Response(400, ["Access-Control-Allow-Origin"=>"*"], body="")
-        elseif srchsrv_req isa SearchServerRequest
+        elseif srchsrv_req isa InternalRequest
             # All OK, send request to search server and get response
             ssconn = connect(Sockets.localhost, io_port)
             println(ssconn, request2json(srchsrv_req))                   # writes a "\n" as well
@@ -135,14 +135,14 @@ update_req_handler(req::HTTP.Request) = begin
         return UPDATE_REQUEST
     else
         # no searcher specified, update all i.e. /api/update
-        return SearchServerRequest(operation=:update, query=updateable)
+        return InternalRequest(operation=:update, query=updateable)
     end
 end
 
 
 search_req_handler(req::HTTP.Request) = begin
     parameters = __http_req_body_to_json(req)
-    return SearchServerRequest(
+    return InternalRequest(
                 operation=:search,
                 query = parameters["query"],  # if missing, throws
                 return_fields = Symbol.(parameters["return_fields"]),  # if missing, throws
@@ -156,7 +156,7 @@ end
 recommend_req_handler(req::HTTP.Request) = begin
     parameters = __http_req_body_to_json(req)
     _query = parameters["recommend_id"] * " " * join(parameters["filter_fields"], " ")
-    return SearchServerRequest(
+    return InternalRequest(
                 operation=:recommend,
                 request_id_key = Symbol.(parameters["recommend_id_key"]),  # if missing, throws
                 query = _query,
@@ -170,7 +170,7 @@ end
 
 rank_req_handler(req::HTTP.Request) = begin
     parameters = __http_req_body_to_json(req)
-    return SearchServerRequest(
+    return InternalRequest(
                 operation=:rank,
                 query = parameters["rank_ids"],  # if missing, throws
                 request_id_key = Symbol.(parameters["rank_id_key"]),  # if missing, throws

@@ -61,7 +61,7 @@ function respond(env, socket, counter, channels)
     up_in_channel, up_out_channel = channels
 
     # Read and parse an outside request
-    request = parse(SearchServerRequest, readline(socket))
+    request = parse(InternalRequest, readline(socket))
     counter.+= 1
     @debug "* Received [#$(counter[1])]: $request."
 

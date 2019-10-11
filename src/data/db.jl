@@ -69,18 +69,7 @@ end
 
 # Transforms a dbentry to a string using only fields; fields of length > max_length are trimmed
 function dbentry2printable(dbentry, fields; max_length=50, separator=" - ")
-    function __stringchop(str, len)
-         str = replace(str, "\n"=>"")
-         idxs = collect(eachindex(str))
-         _idx = findlast(x->x<=len, idxs)
-         if _idx == nothing
-             _len=0
-         else
-             _len = idxs[findlast(x->x<=len, idxs)]
-         end
-         length(str) > len ? str[1:_len]*"..."  : str
-    end
-    join(map(str->__stringchop(str, max_length), dbentry2text(dbentry, fields)), separator)
+    join(map(str->chop_to_length(str, max_length), dbentry2text(dbentry, fields)), separator)
 end
 
 dbentry2printable(::Nothing, fields; kwargs...) = ""
