@@ -1,8 +1,4 @@
-function search(env::SearchEnv,
-                request;
-                exclude=nothing,
-                rerank=env.ranker,
-                id_key=DEFAULT_DB_ID_KEY)
+function search(env::SearchEnv, request; exclude=nothing)
 
     # Parse query content
     parsed_query = parse_query(request.query, db_create_schema(env.dbdata))
@@ -19,13 +15,17 @@ function search(env::SearchEnv,
                          custom_weights=request.custom_weights)
     elseif !issearch
         # No search, filter only
-        filtered_ids = indexfilter(env.dbdata,
-                                   parsed_query.filter;
-                                   id_key=id_key,
-                                   exclude=exclude)
-        results = search_result_from_indexes(filtered_ids,
-                                             make_id(StringId, nothing);
-                                             max_matches=request.max_matches)
+        idxs_filt = indexfilter(env.dbdata,
+                                parsed_query.filter;
+                                id_key=env.id_key,
+                                exclude=exclude)
+        result = build_result_from_ids(env.dbdata,
+                                       idxs_filt,
+                                       env.id_key,
+                                       make_id(StringId, nothing);
+                                       id_key=env.id_key,
+                                       max_matches=request.max_matches)
+        results = [result]
     elseif issearch
         # Search and filter search results
         results = search(env.searchers,
@@ -34,18 +34,22 @@ function search(env::SearchEnv,
                          max_matches=request.max_matches,
                          max_suggestions=request.max_suggestions,
                          custom_weights=request.custom_weights)
-        #TODO(Corneliu) Decide whether to pipe filtered_ids into search
-        filtered_ids = indexfilter(env.dbdata,
-                                   parsed_query.filter;
-                                   id_key=id_key,
-                                   exclude=exclude)
+        #TODO(Corneliu) Decide whether to pipe idxs_filt into search
+        idxs_filt = indexfilter(env.dbdata,
+                                parsed_query.filter;
+                                id_key=env.id_key,
+                                exclude=exclude)
 
         # Filter out ids that are not present in the the filtered ids
-        for r in results
-            filter!(t -> in(t[2], filtered_ids), r.query_matches)
+        for result in results
+            filter!(score_idx -> in(score_idx[2], idxs_filt), result.query_matches)
         end
     end
 
     # Rerank if the case
-    rerank(results)
+    if request.rank
+        return rank(env, request; results=results)
+    else
+        return results
+    end
 end

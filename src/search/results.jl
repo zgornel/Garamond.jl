@@ -1,5 +1,5 @@
 """
-    Object that stores the search results from a single searcher.
+Object that stores the search results from a single searcher.
 """
 struct SearchResult{T<:AbstractFloat}
     id::StringId
@@ -14,24 +14,39 @@ isempty(result::SearchResult) = isempty(result.query_matches)
 
 
 """
-    Constructs a search result from a list of linear data indexes.
+Constructs a search result from a list of data ids.
 """
-function search_result_from_indexes(idxs,
-                                    id;
-                                    vec_eltype=eval(DEFAULT_VECTORS_ELTYPE),
-                                    default_score=one(vec_eltype),
-                                    max_matches=Inf)
-    n = min(length(idxs), max_matches)
-    [SearchResult(id,
-                  collect(zip(fill(default_score, n), idxs[1:n])),
-                  String[],
-                  MultiDict{String, Tuple{vec_eltype, String}}(),
-                  one(vec_eltype))]
+function build_result_from_ids(dbdata,
+                               idvals,
+                               idvals_key,
+                               result_id;
+                               id_key=Garamond.DEFAULT_DB_ID_KEY,
+                               score_eltype=eval(DEFAULT_VECTORS_ELTYPE),
+                               default_score=one(score_eltype),
+                               max_matches=length(idvals),
+                               linear_scoring=false)
+    if idvals_key != id_key
+        idxs = db_select_idxs_from_values(dbdata, idvals, idvals_key; id_key=id_key)
+    else
+        idxs = idvals
+    end
+
+    n = min(max_matches, length(idxs))
+    if linear_scoring
+        scores = collect(score_eltype, range(1, 0, length=length(idxs)))
+    else
+        scores = fill(default_score, n)
+    end
+    return SearchResult(result_id,
+                        collect(zip(scores, idxs[1:n])),
+                        String[],
+                        MultiDict{String, Tuple{score_eltype, String}}(),
+                        one(score_eltype))
 end
 
 
 """
-    Aggregates search results from several searchers based on
+Aggregates search results from several searchers based on
 their `aggregation_id` i.e. results from searchers with identical
 aggregation id's are merged together into a new search result that
 replaces the individual searcher ones.

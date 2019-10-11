@@ -93,8 +93,8 @@ module Garamond
         CUSTOM_LOADERS_SUBDIR = "data/loaders/custom"
         CUSTOM_RANKERS_SUBDIR = "search/rankers/custom"
 
-        __include_subdirectory(CUSTOM_LOADERS_SUBDIR, printer="Custom loaders")
-        __include_subdirectory(CUSTOM_RANKERS_SUBDIR, printer="Custom rankers")
+        __include_subdirectory(CUSTOM_LOADERS_SUBDIR, printer="Loaders (custom)")
+        __include_subdirectory(CUSTOM_RANKERS_SUBDIR, printer="Rankers (custom)")
     end
 
     function __include_subdirectory(subpath; printer="Including")
@@ -150,6 +150,7 @@ module Garamond
     include("search/index.jl")
     include("search/filter.jl")
     include("search/results.jl")
+    include("search/rank.jl")
     include("search/rankers/noop.jl")
     include("search/main.jl")
     include("version.jl")

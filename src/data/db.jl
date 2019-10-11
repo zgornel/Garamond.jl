@@ -67,6 +67,15 @@ function db_select_entry(dbdata, id; id_key=DEFAULT_DB_ID_KEY)
 end
 
 
+# Selects all id_key's i.e. linear ids that correspond to certain values from a column
+function db_select_idxs_from_values(dbdata, values, values_key; id_key=DEFAULT_DB_ID_KEY)
+    collect(rows(filter(all,
+                        dbdata,
+                        select=values_key=>x->in(x, values)),
+                 id_key))
+end
+
+
 # Transforms a dbentry to a string using only fields; fields of length > max_length are trimmed
 function dbentry2printable(dbentry, fields; max_length=50, separator=" - ")
     join(map(str->chop_to_length(str, max_length), dbentry2text(dbentry, fields)), separator)

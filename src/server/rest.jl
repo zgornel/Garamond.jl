@@ -49,6 +49,8 @@ HTTP Message body specification for the search, recommend and rank operations
             "return_fields" : <a list of string names for the fields to be returned>
          }
 =#
+
+
 """
     rest_server(port::Integer, io_port::Integer, search_server_ready::Condition [;ipaddr::String])
 
@@ -170,9 +172,10 @@ end
 
 rank_req_handler(req::HTTP.Request) = begin
     parameters = __http_req_body_to_json(req)
+    _all_ids = join(strip.(parameters["rank_ids"]), " ")  # if missing, throws
     return InternalRequest(
                 operation=:rank,
-                query = parameters["rank_ids"],  # if missing, throws
+                query = _all_ids,
                 request_id_key = Symbol.(parameters["rank_id_key"]),  # if missing, throws
                 return_fields = Symbol.(parameters["return_fields"])) # if missing, throws
 end

@@ -10,6 +10,7 @@ mutable struct InternalRequest
     return_fields::Vector{Symbol}
     custom_weights::Dict{Symbol,Float64}
     request_id_key::Symbol
+    rank::Bool
 end
 
 # Keyword argument constructor
@@ -20,10 +21,11 @@ InternalRequest(;operation=:uninitialized_request,
                 max_suggestions=DEFAULT_MAX_SUGGESTIONS,
                 return_fields=Symbol[],
                 custom_weights=DEFAULT_CUSTOM_WEIGHTS,
-                request_id_key=Symbol(""))=
+                request_id_key=Symbol(""),
+                rank=false)=
     InternalRequest(operation, query, max_matches, search_method,
                         max_suggestions, return_fields, custom_weights,
-                        request_id_key)
+                        request_id_key, rank)
 
 
 #=
