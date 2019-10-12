@@ -53,18 +53,22 @@ module Garamond
     using Glob
     using HTTP
     using TSVD
+    using JuliaDB
 
     # Import section (extendable methods)
     import Base: size, length, show, keys, values, push!,
                  delete!, getindex, names, convert, lowercase,
-                 occursin, isempty, parse
+                 occursin, isempty, parse,
+                 pop!, popfirst!, push!, pushfirst!, deleteat!
     import StringAnalysis: id
     import Word2Vec: WordVectors
+    import HNSW: knn_search
 
     # Exports
     export
         search,
-        load_searchers,
+        build_search_env,
+        parse_configuration,
         AbstractEmbedder,
         AbstractIndex,
         Searcher,
@@ -78,12 +82,51 @@ module Garamond
         web_socket_server,
         rest_server
 
+    #=
+    The __init__() function includes at runtime all the .jl files located
+    at data/loaders/custom; the files should be either code or symlinks to
+    files containing data loading functions that take data paths as input
+    argument and return IdexedTable/NDSparse datasets representing the data
+    to be indexed.
+    =#
+    function __init__()
+        CUSTOM_LOADERS_SUBDIR = "data/loaders/custom"
+        CUSTOM_RANKERS_SUBDIR = "search/rankers/custom"
+
+        __include_subdirectory(CUSTOM_LOADERS_SUBDIR, printer="Loaders (custom)")
+        __include_subdirectory(CUSTOM_RANKERS_SUBDIR, printer="Rankers (custom)")
+    end
+
+    function __include_subdirectory(subpath; printer="Including")
+        fullpath = joinpath(@__DIR__, subpath)
+        if isdir(fullpath)
+            included_files = []
+            for file in readdir(fullpath)
+                try
+                    filepath = joinpath(fullpath, file)
+                    if isfile(filepath) && endswith(filepath, ".jl")
+                        include(filepath)
+                        push!(included_files, file)
+                    end
+                catch e
+                    @warn "Could not include $filepath..."
+                end
+            end
+
+            !isempty(included_files) &&
+                @info "• " * printer * ": " * join(included_files, ", ")
+        end
+    end
+
     # Include section
+    include("data/db.jl")
+    include("data/text.jl")
+    include("data/dunderparse.jl")
+    include("data/loaders/noop.jl")
+    include("data/loaders/juliadb.jl")
     include("config/defaults.jl")
     include("config/engine.jl")
-    include("config/search.jl")
     include("logging.jl")
-    include("textutils.jl")
     include("embedder/abstractembedder.jl")
     include("embedder/wordvectors.jl")
     include("embedder/boe.jl")
@@ -97,20 +140,25 @@ module Garamond
     include("index/brutetree.jl")
     include("index/kdtree.jl")
     include("index/hnsw.jl")
-    include("structs.jl")
     include("update.jl")
-    include("search.jl")
-    include("results.jl")
+    include("query/parser.jl")
+    include("query/generator.jl")
+    include("query/processing.jl")
+    include("search/config_parser.jl")
+    include("search/searcher.jl")
+    include("search/env.jl")
+    include("search/index.jl")
+    include("search/filter.jl")
+    include("search/results.jl")
+    include("search/rank.jl")
+    include("search/rankers/noop.jl")
+    include("search/main.jl")
     include("version.jl")
     include("server/requests.jl")
     include("server/unixsocket.jl")
     include("server/websocket.jl")
     include("server/rest.jl")
-    include("server/search_server.jl")
-    include("parsers/delimited_formats.jl")
-    include("parsers/directory_formats.jl")
-    include("parsers/no_parse.jl")
-    include("parsers/json.jl")
+    include("server/search.jl")
     include("show.jl")
 
 end # module

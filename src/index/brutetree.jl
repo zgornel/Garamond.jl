@@ -14,11 +14,11 @@ BruteTreeIndex(data::SparseMatrixCSC{T,I}) where {T<:AbstractFloat, I<:Integer} 
 
 
 # Nearest neighbor search method
-function search(index::BruteTreeIndex{A,D},
-                point::AbstractVector,
-                k::Int,
-                keep::Vector{Int}=collect(1:length(index))
-               ) where {A<:AbstractArray, D<:Metric}
+function knn_search(index::BruteTreeIndex{A,D},
+                    point::AbstractVector,
+                    k::Int,
+                    keep::Vector{Int}=collect(1:length(index))
+                   ) where {A<:AbstractArray, D<:Metric}
     # Uses Euclidean distance by default
     _k = min(k, length(keep))
     skip = idx->!in(idx, keep)

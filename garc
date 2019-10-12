@@ -24,7 +24,7 @@ Base.@ccallable function julia_main(ARGS::Vector{String})::Cint
                       "warning" => Logging.Warn,
                       "error" => Logging.Error)
     logger = ConsoleLogger(stdout,
-                get(log_levels, args["log-level"], Logging.Info))
+                get(log_levels, lowercase(args["log-level"]), Logging.Info))
     global_logger(logger)
 
     # Start client
@@ -71,6 +71,9 @@ function get_unix_socket_client_arguments(args::Vector{String})
             help = "UNIX socket for data communication"
             default = ""
             arg_type = String
+        "--return-fields"
+            help = "List of fields to return (ignores wrong names)"
+            nargs = '*'
         "--pretty"
             help = "output is a pretty print of the results"
             action = :store_true
@@ -111,10 +114,8 @@ function construct_json_request(args)
                    "max_matches" => args["max-matches"],
                    "max_suggestions" => args["max-suggestions"],
                    "search_method" => args["search-method"],
-                   "what_to_return" => ifelse(args["pretty"],
-                                        "json-data", "json-index")
-                   # no custom_weights
-                  )
+                   "return_fields" => args["return-fields"],
+                   "custom_weights" =>Dict())
     # Kill request
     if args["kill"]
         dictreq["operation"] = "kill"
@@ -156,17 +157,17 @@ function iosearch(connection, request, pretty=false)
             jr = JSON.parse(data)  # builds a Dict
             # Print search results in a way similar to that
             # of the web client (`garw` web page)
-            println("Elapsed search time: $(jr["etime"])s.")
-            println("Found $(jr["n_matches"]) results in $(jr["n_corpora_match"])" *
-                    " corpora (out of a total of $(jr["n_corpora"])):")
-            for (id, crps_matches) in jr["matches"]
-                !isempty(crps_matches) && println("$id")
-                for (score, metadata) in crps_matches
-                    # format: score ~ name by author, publisher (year)
-                    println("\t$(score) ~ \"$(metadata["name"])\" "*
-                            "by $(metadata["author"]), "*
-                            "[$(metadata["publisher"])] "*
-                            "($(metadata["published_year"]))")
+            println("Elapsed search time: $(jr["elapsed_time"])s.")
+            println(jr["n_searchers_w_results"], "/", jr["n_searchers"],
+                    " search ensemble yielded ", jr["n_total_results"], " results.")
+            for (id, result) in jr["results"]
+                !isempty(result) && println("$id")
+                for entry in result
+                    printable = "["*string(entry["score"])*"] ~ "
+                    for (k, v) in entry
+                        k!="score" && (printable*= (k * ": " *string(v) * " "))
+                    end
+                    println(stdout, printable)
                 end
             end
             # Print suggestions

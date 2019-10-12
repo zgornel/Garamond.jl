@@ -35,17 +35,18 @@ function sentences2vec(embedder::CPMeanEmbedder,
     if isempty(document_embedding)
         return zeros(T, dimensionality(embedder), 0)
     else
-        return concatenated_power_mean(document_embedding,
-                    embedder.powers, embedder.znorm,
-                    dimensionality(embedder))
+        return __cpmean(document_embedding,
+                        embedder.powers,
+                        embedder.znorm,
+                        dimensionality(embedder))
     end
 end
 
-function concatenated_power_mean(document_embedding::Vector{Matrix{T}},
-                                 powers::Vector{T},
-                                 znorm::Bool,
-                                 dim::Int
-                                ) where {T<:AbstractFloat}
+function __cpmean(document_embedding::Vector{Matrix{T}},
+                  powers::Vector{T},
+                  znorm::Bool,
+                  dim::Int
+                 ) where {T<:AbstractFloat}
     embs = hcat(document_embedding...)
     n = size(embs, 2)  # total number of embedded words in all sentences
     m = size(embs, 1)  # embedding dimensionality

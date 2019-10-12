@@ -9,11 +9,11 @@ end
 
 
 # Nearest neighbor search method
-function search(index::NaiveIndex{E,A},
-                point::AbstractVector,
-                k::Int,
-                keep::Vector{Int}=collect(1:length(index))
-               ) where {E<:AbstractFloat, A<:AbstractMatrix{E}}
+function knn_search(index::NaiveIndex{E,A},
+                    point::AbstractVector,
+                    k::Int,
+                    keep::Vector{Int}=collect(1:length(index))
+                   ) where {E<:AbstractFloat, A<:AbstractMatrix{E}}
     _k = min(k, length(keep))
     # Cosine similarity
     scores = index.data[:, keep]' * point

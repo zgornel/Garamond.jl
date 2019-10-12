@@ -1,29 +1,27 @@
 """
-    updater(srchers, in_channel, out_channel)
+    updater(env, channels)
 
-Function updates the `srchers` at each and puts the updates on the
-`channel` to be sent to the search server.
+Updates the searchers from `env`. Communication with the search server
+i.e. getting updatable searcher ids and sending updated searchers is done
+via `channels`.
 """
-function updater(srchers::Vector{S},
-                 in_channel::Channel{String},
-                 out_channel::Channel{Vector{S}},
-                ) where S<:Searcher
-    # Loop continuously
+function updater(env, channels)
+    in_channel, out_channel = channels
     while true
         sleep(DEFAULT_SEARCHER_UPDATE_POOL_INTERVAL)
-        new_srchers = similar(srchers)  # initialize
+        updates = similar(env.searchers)  # initialize
         upid = take!(in_channel)        # take id of updateable searcher
         cnt = 0
-        for (i, srcher) in enumerate(srchers)
+        for (i, srcher) in enumerate(env.searchers)
             if isempty(upid) || isequal(id(srcher), StringId(upid))
-                new_srchers[i] = build_searcher(srcher.config)
-                cnt+=1
+                updates[i] = build_searcher(env.dbdata, srcher.config)
+                cnt+= 1
             else
-                new_srchers[i] = srchers[i]
+                updates[i] = env.searchers[i]
             end
         end
         @info "* Updated: $cnt searcher(s)."
-        put!(out_channel, new_srchers)
+        put!(out_channel, updates)
     end
     return nothing
 end

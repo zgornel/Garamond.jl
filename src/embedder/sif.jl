@@ -27,7 +27,7 @@ function sentences2vec(embedder::SIFEmbedder,
     if isempty(document_embedding)
         return zeros(T, dimensionality(embedder), 0)
     else
-        return smooth_inverse_frequency(document_embedding,
+        return __smooth_inverse_frequency(document_embedding,
                     embedder.lexicon, embedded_words, embedder.alpha,
                     dimensionality(embedder))
     end
@@ -35,18 +35,18 @@ end
 
 
 """
-    smooth_inverse_frequency(document_embedding, lexicon, embedded_words, alpha=DEFAULT_SIF_ALPHA)
+    __smooth_inverse_frequency(document_embedding, lexicon, embedded_words, alpha=DEFAULT_SIF_ALPHA)
 
 Implementation of sentence embedding principled on subtracting the paragraph vector i.e.
 principal vector of a sentence from the sentence's word embeddings.
 """
 #TODO(Corneliu): Make the calculation of `alpha` automatic using some heuristic
-function smooth_inverse_frequency(document_embedding::Vector{Matrix{T}},
-                                  lexicon::OrderedDict{String, Int},
-                                  embedded_words::Vector{Vector{S}},
-                                  alpha::Float64,
-                                  dim::Int
-                                 ) where {T<:AbstractFloat, S<:AbstractString}
+function __smooth_inverse_frequency(document_embedding::Vector{Matrix{T}},
+                                    lexicon::OrderedDict{String, Int},
+                                    embedded_words::Vector{Vector{S}},
+                                    alpha::Float64,
+                                    dim::Int
+                                   ) where {T<:AbstractFloat, S<:AbstractString}
     L = sum(values(lexicon))
     n = length(document_embedding)  # number of sentences in document
     X = zeros(T, dim, n)  # new document embedding

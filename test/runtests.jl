@@ -2,13 +2,10 @@ module GaramondTesting
 
 using Test
 using Random
+using JuliaDB
 using Garamond
-using JSON
+#using JSON
 
-# Generate test data and
-# searcher configs
-include("datagen.jl")
-# Test search
-include("search.jl")
-
+# TODO(Corneliu): Complete testing framework redo
+include("query_parser.jl")
 end

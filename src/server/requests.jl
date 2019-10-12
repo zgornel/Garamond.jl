@@ -1,162 +1,108 @@
-# Structure for the internal (search server) representation
-# of requests.
-struct SearchServerRequest
-    op::String
+"""
+Request object for the internal server of the engine.
+"""
+mutable struct InternalRequest
+    operation::Symbol
     query::String
     max_matches::Int
     search_method::Symbol
     max_suggestions::Int
-    what_to_return::String
-    custom_weights::Dict{String,Float64}
+    return_fields::Vector{Symbol}
+    custom_weights::Dict{Symbol,Float64}
+    request_id_key::Symbol
+    rank::Bool
 end
 
 # Keyword argument constructor
-SearchServerRequest(;op::String="uninitialized_request",
-                     query::String="",
-                     max_matches::Int=0,
-                     search_method::Symbol=:nothing,
-                     max_suggestions::Int=0,
-                     what_to_return::String="",
-                     custom_weights::Dict{String,Float64}=Dict{String,Float64}())=
-    SearchServerRequest(op, query, max_matches, search_method,
-                        max_suggestions, what_to_return, custom_weights)
+InternalRequest(;operation=:uninitialized_request,
+                query="",
+                max_matches=DEFAULT_MAX_MATCHES,
+                search_method=DEFAULT_SEARCH_METHOD,
+                max_suggestions=DEFAULT_MAX_SUGGESTIONS,
+                return_fields=Symbol[],
+                custom_weights=DEFAULT_CUSTOM_WEIGHTS,
+                request_id_key=Symbol(""),
+                rank=false)=
+    InternalRequest(operation, query, max_matches, search_method,
+                        max_suggestions, return_fields, custom_weights,
+                        request_id_key, rank)
 
 
-# Convert from SearchServerRequest to Dict
-convert(::Type{Dict}, request::SearchServerRequest) =
-    Dict{String, Any}("operation" => request.op,
-                      "query" => request.query,
-                      "max_matches" => request.max_matches,
-                      "search_method" => request.search_method,
-                      "max_suggestions" => request.max_suggestions,
-                      "what_to_return" => request.what_to_return,
-                      "custom_weights" => request.custom_weights)
+#=
+Converts an InternalRequest to Dict - the latter will have
+String keys with names identical to the request type fields
+=#
+convert(::Type{Dict}, request::T) where {T<:InternalRequest}= begin
+    returned_dict = Dict{Symbol, Any}()
+    for field in fieldnames(T)
+        push!(returned_dict, field => getproperty(request, field))
+    end
+    return returned_dict
+end
+
+request2dict(request::T) where {T<:InternalRequest} =
+    Dict(field => getproperty(request, field) for field in fieldnames(T))
+
+request2json(request::T) where {T<:InternalRequest} =
+    JSON.json(request2dict(request))
 
 
 """
 Default request.
 """
-const UNINITIALIZED_REQUEST = SearchServerRequest(op="uninitialized_request")
+const UNINITIALIZED_REQUEST = InternalRequest(operation=:uninitialized_request)
 
 """
 Request corresponding to an error i.e. in parsing.
 """
-const ERRORED_REQUEST = SearchServerRequest(op="request-error")
+const ERRORED_REQUEST = InternalRequest(operation=:error)
 
 """
 Request corresponding to a kill server command.
 """
-const KILL_REQUEST = SearchServerRequest(op="kill")
+const KILL_REQUEST = InternalRequest(operation=:kill)
 
 """
 Request corresponding to a searcher read configuration command.
 """
-const READCONFIGS_REQUEST = SearchServerRequest(op="read-configs")
+const READCONFIGS_REQUEST = InternalRequest(operation=:read_configs)
 
 """
 Request corresponding to a searcher update command.
 """
-const UPDATE_REQUEST = SearchServerRequest(op="update", query="")
+const UPDATE_REQUEST = InternalRequest(operation=:update, query="")
 
 
 """
-    parse(::Type{SearchServerRequest}, request::AbstractString)
+    parse(::Type{InternalRequest}, request::AbstractString)
 
-Parses a Garamond JSON request received from a client
-into a `SearchServerRequest` usable by the search server
+Parses an outside request received from a client
+into an `InternalRequest` usable by the search server.
 """
-function parse(::Type{SearchServerRequest}, request::AbstractString)
+function parse(::Type{T}, outside_request::AbstractString) where {T<:InternalRequest}
+    request = T()
     try
-        # Parse JSON request
-        data = JSON.parse(request)
-        # Read fields
-        return SearchServerRequest(
-            op = get(data, "operation", "uninitialized_request"),
-            query = get(data, "query", ""),
-            max_matches = get(data, "max_matches", 0),
-            search_method = Symbol(get(data, "search_method", :nothing)),
-            max_suggestions = get(data, "max_suggestions", 0),
-            what_to_return = get(data, "what_to_return", ""),
-            custom_weights = Dict{String, Float64}(get(data, "custom_weights", Dict()))
-           )
-    catch e
-        @debug "Could not deconstruct request: $e. Passing ERRORED_REQUEST to search server..."
-        return ERRORED_REQUEST
-    end
-end
-
-
-# Standard response terminator. It is used in the client-server
-# communication mark the end of sent and received messages
-const RESPONSE_TERMINATOR="\n"
-
-
-"""
-    construct_json_response(srchers, results, what [; kwargs...])
-
-Function that constructs a JSON response for a Garamond client using
-the search `results`, data from `srchers` and specifier `what`.
-"""
-function construct_json_response(results, corpora;
-                                 max_suggestions::Int=0,
-                                 elapsed_time::Float64=0) where C<:Corpus
-    local result_data
-    if corpora == nothing
-        # Get basic response data
-        result_data = get_basic_result_data(results,
-                        max_suggestions, elapsed_time)
-    else
-        # Get extended response data
-        result_data = get_extended_result_data(results, corpora,
-                        max_suggestions, elapsed_time)
-    end
-    return JSON.json(result_data)
-end
-
-
-# Get basic results data
-function get_basic_result_data(results::T,
-                               max_suggestions::Int,
-                               elapsed_time::Float64
-                              ) where T<:AbstractVector{<:SearchResult}
-    # TODO: Decide on a final format
-    return results
-end
-
-
-# Get extended results data
-# Note: This should only be used for internal testing
-#       by using the `garc` and `garw` clients
-function get_extended_result_data(results::T,
-                                  corpora,
-                                  max_suggestions::Int,
-                                  elapsed_time::Float64
-                                 ) where T<:AbstractVector{<:SearchResult}
-    # Count the total number of results
-    if !isempty(results)
-        nt = mapreduce(x->valength(x.query_matches), +, results)
-    else
-        nt = 0
-    end
-
-    r = Dict("etime"=>elapsed_time,
-             "matches" => Dict{String, Vector{Tuple{Float64, Dict{String,String}}}}(),
-             "n_matches" => nt,
-             "n_corpora" => length(results),
-             "n_corpora_match" => mapreduce(r->!isempty(r.query_matches), +, results),
-             "suggestions" => squash_suggestions(results, max_suggestions))
-
-    # Populate the "matches" field
-    for (i, (_result, crps)) in enumerate(zip(results, corpora))
-        push!(r["matches"], _result.id.id => Vector{Dict{String,String}}())
-        if !isempty(crps)
-            for score in sort(collect(keys(_result.query_matches)), rev=true)
-                for doc in (crps[i] for i in _result.query_matches[score])
-                    dictdoc = convert(Dict, metadata(doc))
-                    push!(r["matches"][_result.id.id], (score, dictdoc))
-                end
-            end
+        data = JSON.parse(outside_request, dicttype=Dict{Symbol,Any})
+        datafields = keys(data)
+        fields = fieldnames(T)
+        ftypes = fieldtypes(T)
+        missing_fields = setdiff(fields, datafields)
+        !isempty(missing_fields) &&
+            @warn "Possibly malformed request, missing fields: $missing_fields"
+        for (ft, field) in zip(ftypes, fields)
+            in(field, datafields) &&
+                setproperty!(request, field, __parse(ft, data[field]))
         end
+    catch e
+        @debug "Request parse error: $e. Returning ERRORED_REQUEST..."
+        request = ERRORED_REQUEST
     end
-    return r
+    return request
 end
+
+
+"""
+Standard response terminator. It is used in the client-server
+communication mark the end of sent and received messages.
+"""
+const RESPONSE_TERMINATOR="\n"

@@ -5,6 +5,7 @@
 const DEFAULT_BUILD_SUMMARY = false  # whether to summarize text before indexing
 const DEFAULT_SUMMARY_NS = 1  # Default number of sentences for a summary
 const DEFAULT_STEM_WORDS = false  # whether to stem words or not
+
 # Search
 const DEFAULT_VECTORS = :bm25  # can be :count, :tf, :tfidf, :bm25, :word2vec, :glove or :conceptnet
 const DEFAULT_VECTORS_TRANSFORM = :none  # can be :none, :lsa or :rp
@@ -26,12 +27,7 @@ const DEFAULT_OOV_POLICY = :none  # values are :none, :large_vector
 const DEFAULT_OOV_VAL = 1000  # default value for OOV vectors
 # Results
 const DEFAULT_RESULT_AGGREGATION_STRATEGY = :mean  # can be :minimum, :maximum, :mean, :median, :product
-# Various document parsing constants
-const DEFAULT_PARSER = :no_parse
-const DEFAULT_GLOBBING_PATTERN = "*"  # Can be any regexp-like pattern
-const DEFAULT_DELIMITER = "|"  # For delimited files only (i.e. document is a line/record)
-const DEFAULT_SHOW_PROGRESS = false  # Show progress while loading files (useful lor longer operations)
-const DEFAULT_KEEP_DATA = true  # whether to keep the actual document data, metadata
+
 # Text stripping flags
 const DEFAULT_TEXT_STRIP_FLAGS = strip_case | strip_punctuation | strip_articles |
                                  strip_prepositions | strip_whitespace |
@@ -39,14 +35,22 @@ const DEFAULT_TEXT_STRIP_FLAGS = strip_case | strip_punctuation | strip_articles
 const DEFAULT_QUERY_STRIP_FLAGS = strip_case | strip_punctuation | strip_articles |
                                   strip_prepositions | strip_whitespace |
                                   strip_corrupt_utf8 | strip_accents
-const DEFAULT_METADATA_STRIP_FLAGS = strip_case | strip_punctuation | strip_articles |
-                                     strip_prepositions | strip_whitespace |
-                                     strip_corrupt_utf8 | strip_accents
-const DEFAULT_SUMMARIZATION_STRIP_FLAGS = strip_corrupt_utf8 | strip_case |
-                                          strip_stopwords | strip_accents
+
 # Caching options
 const DEFAULT_CACHE_DIRECTORY = nothing
 const DEFAULT_CACHE_COMPRESSION = "none"
+
+# Query parsing
+# TODO(Corneliu): Decide wether/which is to be made configurable
+# in the searcher configuration
+const DEFAULT_QUERY_PARSING_SEPARATOR=":"
+const DEFAULT_QUERY_GENERATION_FIELDS=Symbol[]
+
+# SearchEnv-related options
+# TODO(Corneliu): Add option to change in config
+const DEFAULT_DB_ID_KEY = :garamond_linear_id
+const DEFAULT_DATA_LOADER_NAME = :noop_loader
+const DEFAULT_RANKER_NAME = :noop_ranker
 
 
 #################
@@ -58,9 +62,9 @@ const DEFAULT_CACHE_COMPRESSION = "none"
 # FILE Configuration: These defaults can be overwritten in .garamondrc.jl
 const DEFAULT_PDFTOTEXT_PROGRAM = "/usr/bin/pdftotext"  # program to convert PDFs to text
 const DEFAULT_MAX_EDIT_DISTANCE = 2  # maximum edit distance for which to return suggestions
-const DEFAULT_MAX_MATCHES = 1_000  # maximum number of matches that can be retrned
+const DEFAULT_MAX_MATCHES = 1  # maximum number of matches that can be retrned
 const DEFAULT_MAX_SUGGESTIONS = 0  # maximum number of overall suggestions
-const DEFAULT_CUSTOM_WEIGHTS = Dict{String, Float64}()  # default custom searcher weights
+const DEFAULT_CUSTOM_WEIGHTS = Dict{Symbol, Float64}()  # default custom searcher weights
 # DYNAMIC Configuration: These defaults can be through run-time options of the
 #                        Garamond CLI client/server utilities
 const DEFAULT_LOG_LEVEL = Logging.Info
@@ -76,7 +80,7 @@ const HEURISTIC_TO_DISTANCE = Dict(  # heuristic to distance object mapping
     :jaro => StringDistances.Jaro())
 const DEFAULT_DISTANCE = HEURISTIC_TO_DISTANCE[:jaro]  # default distance
 const DEFAULT_PARSER_CONFIG = nothing
-const DEFAULT_METADATA_FIELDS_TO_INDEX = [:author, :name]  # Default metadata fields to index
+const DEFAULT_INDEXABLE_FIELDS = Symbol[]
 # Dictionaries for String <=>Languages.Language / Languages.Languages <=> String
 # conversion
 const STR_TO_LANG = Dict("english"=>Languages.English,
@@ -137,6 +141,6 @@ const DEFAULT_NGRAM_COMPLEXITY = 1
 ##########################
 # OTHER USEFUL CONSTANTS #
 ##########################
-const DEFAULT_VERSION = "0.1.0"
-const DEFAULT_VERSION_DATE = "2019-09-03"
-const DEFAULT_VERSION_COMMIT = "c125a1c*"
+const DEFAULT_VERSION = "0.2.0"
+const DEFAULT_VERSION_DATE = "2019-10-12"
+const DEFAULT_VERSION_COMMIT = "0b143c3*"

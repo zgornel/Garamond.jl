@@ -19,7 +19,7 @@ function get_server_commandline_arguments(args::Vector{String})
 	@add_arg_table s begin
         "--data-config", "-d"
             help = "data configuration file"
-            action = :append_arg
+            arg_type = String
         "--log-level"
             help = "logging level"
             default = "info"
@@ -97,7 +97,7 @@ Base.@ccallable function julia_main(ARGS::Vector{String})::Cint
 
     if unixsocket == nothing && ws_port == nothing && http_port == nothing
         @warn """At least a UNIX-socket, WEB-socket port or HTTP port
-                 have to be specified through the -u, -w or -p switches.
+                 have to be specified. Use the -u, -w or -p options.
                  Exiting..."""
         return 0
     end
@@ -108,10 +108,9 @@ Base.@ccallable function julia_main(ARGS::Vector{String})::Cint
     end
 
     # Check data path
-    data_config_paths = String.(args["data-config"])
-    if isempty(data_config_paths)
-        @warn """At least one data configuration file has to be provided
-                 through the -d option. Exiting..."""
+    data_config_path = args["data-config"]
+    if isempty(data_config_path)
+        @warn "Missing data configuration file. Use -d option to specify. Exiting..."
         return 0
     end
 
@@ -122,7 +121,7 @@ Base.@ccallable function julia_main(ARGS::Vector{String})::Cint
     http_port != nothing && @async rest_server(http_port, io_port, sserver_ready, ipaddr=http_ip)
 
     # Start Search server
-    Garamond.search_server(data_config_paths, io_port, sserver_ready)
+    Garamond.search_server(data_config_path, io_port, sserver_ready)
     return 0
 end
 

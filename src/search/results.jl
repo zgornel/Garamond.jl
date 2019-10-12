@@ -1,35 +1,52 @@
-#################################################
-# Search results objects and associated methods #
-#################################################
 """
-    Object that stores the search results from a single searcher.
+Object that stores the search results from a single searcher.
 """
 struct SearchResult{T<:AbstractFloat}
     id::StringId
-    query_matches::MultiDict{T, Int}  # score => document indices
+    query_matches::Vector{Tuple{T, Int}}  # vector of (score, idx)
     needle_matches::Vector{String}
-    suggestions::MultiDict{String, Tuple{T,String}} # needle => tuples of (score,partial match)
+    suggestions::MultiDict{String, Tuple{T, String}} # needle => tuples of (score,partial match)
     score_weight::T  # a default weight for scores
 end
 
 
-isempty(result::T) where T<:SearchResult =
-    all(isempty(getfield(result, field)) for field in fieldnames(T))
+isempty(result::SearchResult) = isempty(result.query_matches)
 
 
-# Calculate the length of a MultiDict as the number
-# of values considering all keys
-valength(md::MultiDict) = begin
-    if isempty(md)
-        return 0
+"""
+Constructs a search result from a list of data ids.
+"""
+function build_result_from_ids(dbdata,
+                               idvals,
+                               idvals_key,
+                               result_id;
+                               id_key=Garamond.DEFAULT_DB_ID_KEY,
+                               score_eltype=eval(DEFAULT_VECTORS_ELTYPE),
+                               default_score=one(score_eltype),
+                               max_matches=length(idvals),
+                               linear_scoring=false)
+    if idvals_key != id_key
+        idxs = db_select_idxs_from_values(dbdata, idvals, idvals_key; id_key=id_key)
     else
-        return mapreduce(x->length(x[2]), +, md)
+        idxs = idvals
     end
+
+    n = min(max_matches, length(idxs))
+    if linear_scoring && length(idxs) > 1
+        scores = collect(score_eltype, range(1, 0, length=length(idxs)))
+    else
+        scores = fill(default_score, n)
+    end
+    return SearchResult(result_id,
+                        collect(zip(scores, idxs[1:n])),
+                        String[],
+                        MultiDict{String, Tuple{score_eltype, String}}(),
+                        one(score_eltype))
 end
 
 
 """
-    Aggregates search results from several searchers based on
+Aggregates search results from several searchers based on
 their `aggregation_id` i.e. results from searchers with identical
 aggregation id's are merged together into a new search result that
 replaces the individual searcher ones.
@@ -39,7 +56,7 @@ function aggregate!(results::Vector{S},
                     method::Symbol=RESULT_AGGREGATION_STRATEGY,
                     max_matches::Int=MAX_MATCHES,
                     max_suggestions::Int=MAX_SUGGESTIONS,
-                    custom_weights::Dict{String, Float64}=DEFAULT_CUSTOM_WEIGHTS
+                    custom_weights::Dict{Symbol, Float64}=DEFAULT_CUSTOM_WEIGHTS
                    ) where S<:SearchResult{T} where T
     if !(method in [:minimum, :maximum, :median, :product, :mean])
         @warn "Unknown aggregation strategy :$method. " *
@@ -58,11 +75,9 @@ function aggregate!(results::Vector{S},
             target_results = results[positions]
             # aggregate
             qm = [result.query_matches for result in target_results]
-            weights = [T(result.score_weight * get(custom_weights, result.id.id, 1.0))
+            weights = [T(result.score_weight * get(custom_weights, Symbol(result.id.value), 1.0))
                        for result in target_results]
-            merged_query_matches = _aggregate(qm, weights,
-                                              method=method,
-                                              max_matches=max_matches)
+            merged_query_matches = __aggregate(qm, weights; method=method, max_matches=max_matches)
             # Create SearchResult object
             agg_result = SearchResult(
                 uid,
@@ -80,25 +95,26 @@ function aggregate!(results::Vector{S},
 end
 
 
-function _aggregate(query_matches::Vector{MultiDict{T,Int}},
-                    weights::Vector{T};
-                    method::Symbol=RESULT_AGGREGATION_STRATEGY,
-                    max_matches::Int=DEFAULT_MAX_MATCHES,
-                   ) where T<:AbstractFloat
+function __aggregate(query_matches::Vector{Vector{Tuple{T,Int}}},
+                     weights::Vector{T};
+                     method=RESULT_AGGREGATION_STRATEGY,
+                     max_matches=DEFAULT_MAX_MATCHES,
+                    ) where T<:AbstractFloat
     # Preprocess data
+    # col  --> searcher index
+    # doc  --> document index in search index
+    # row  --> index in a matrix
     row = 0
     doc2row = Dict{Int,Int}()
     rowcol2score = Dict{Tuple{Int,Int},T}()
     for (col, qm) in enumerate(query_matches)
-        for (score, doc_idxs) in qm
-            for doc in doc_idxs
-                if !(doc in keys(doc2row))
-                    row += 1
-                    push!(doc2row, doc=>row)
-                    push!(rowcol2score, (row, col)=>score)
-                else
-                    push!(rowcol2score, (doc2row[doc], col)=>score)
-                end
+        for (score, doc) in qm
+            if !(doc in keys(doc2row))
+                row += 1
+                push!(doc2row, doc=>row)
+                push!(rowcol2score, (row, col)=>score)
+            else
+                push!(rowcol2score, (doc2row[doc], col)=>score)
             end
         end
     end
@@ -125,24 +141,23 @@ function _aggregate(query_matches::Vector{MultiDict{T,Int}},
     idxs = intersect(sortperm(final_scores, rev=true),
                      findall(x->x>zero(T), final_scores))
     tidxs = idxs[1:min(length(idxs), max_matches)]
-    return MultiDict(zip(final_scores[tidxs], [row2doc[i] for i in tidxs]))
+    return collect(zip(final_scores[tidxs], [row2doc[i] for i in tidxs]))
 end
 
 
-# Squash suggestions for multiple corpora search results
 function squash_suggestions(results::Vector{SearchResult{T}},
                             max_suggestions::Int=MAX_SUGGESTIONS
                            ) where T<:AbstractFloat
-    suggestions = MultiDict{String, Tuple{T,String}}()
+    suggestions = MultiDict{String, Tuple{T, String}}()
     # Quickly exit if no suggestions are sought
     max_suggestions <=0 && return suggestions
     if length(results) > 1
-        # Results from multiple corpora, suggestions have to
+        # Results from multiple searchers, suggestions have to
         # be processed somewhat:
-        #  - keep only needles not found across all corpora
+        #  - keep only needles not found across all searchers
         #  - remove suggestions that correspond to found needles
 
-        # Get the needles not found across all corpus results
+        # Get the needles not found across all results
         matched_needles = (needle for _result in results
                            for needle in _result.needle_matches)
         missed_needles = union((keys(_result.suggestions)
@@ -161,7 +176,7 @@ function squash_suggestions(results::Vector{SearchResult{T}},
                 end
             end
             if !isempty(all_needle_suggestions)
-                sort!(all_needle_suggestions, by=x->x[1])  # sort vector of tuples by distance
+                sort!(all_needle_suggestions, by=t->t[1])  # sort vector of tuples by distance
                 # Keep results with the same distance even if the number is
                 # larger than the maximum
                 n = min(max_suggestions, length(all_needle_suggestions))
@@ -177,7 +192,7 @@ function squash_suggestions(results::Vector{SearchResult{T}},
             end
         end
     elseif length(results) == 1
-        # Results from one corpus, easy situation, just copy the suggestions
+        # Results from one searcher, easy situation, just copy the suggestions
         suggestions = results[1].suggestions
     end
     return suggestions
@@ -185,81 +200,65 @@ end
 
 
 # Pretty printer of results
-function print_search_results(io::IO, srcher, result)
-    nm = valength(result.query_matches)
-    ns = length(result.suggestions)
-    @assert id(srcher) == result.id "Searcher and result id's do not match."
-    printstyled(io, "[$(id(srcher))] ", color=:blue, bold=true)
+function print_search_results(io::IO,
+                              dbdata,
+                              result;
+                              fields=colnames(dbdata),
+                              id_key=DEFAULT_DB_ID_KEY,
+                              max_length=50,
+                              separator=" - ")
+    db_check_id_key(dbdata, id_key)
+    nm = length(result.query_matches)
+
+    printstyled(io, "[$(result.id)] ", color=:blue, bold=true)
     printstyled(io, "$(nm) search results", bold=true)
-    ch = ifelse(nm==0, ".", ":"); printstyled(io, "$ch\n")
-    for score in sort(collect(keys(result.query_matches)), rev=true)
-        if isempty(documents(srcher.corpus))
-            printstyled(io, "*** Corpus data is missing ***",
-                        color=:red, bold=true)
-        else
-            for doc in (srcher.corpus[i] for i in result.query_matches[score])
-                printstyled(io, "  $score ~ ", color=:normal, bold=true)
-                printstyled(io, "$(metadata(doc))\n", color=:normal)
-            end
-        end
+
+    ch = ifelse(nm==0, ".", ":");
+    printstyled(io, "$ch\n")
+
+    for (score, idx) in sort(result.query_matches, by=t->t[1], rev=true)
+        entry = db_select_entry(dbdata, idx, id_key=id_key)
+        entry_string = dbentry2printable(entry, fields,
+                                         max_length=max_length,
+                                         separator=separator)
+        printstyled(io, "  $score ~ ", color=:normal, bold=true)
+        printstyled(io, entry_string, "\n", color=:normal)
     end
-    ns > 0 && printstyled(io, "$ns suggestions:\n")
-    for (keyword, suggestions) in result.suggestions
-        printstyled(io, "  \"$keyword\": ", color=:normal, bold=true)
-        printstyled(io, "$(join(map(x->x[2], suggestions), ", "))\n", color=:normal)
-    end
+    __print_suggestions(io, result.suggestions)
 end
 
-print_search_results(srcher, result) = print_search_results(stdout, srcher, result)
-
-
-# Pretty printer of results
-function print_search_results(io::IO, srchers::AbstractVector, results::AbstractVector,
-                              max_suggestions::Int=MAX_SUGGESTIONS)
-    if !isempty(results)
-        nt = mapreduce(x->valength(x.query_matches), +, results)
-    else
-        nt = 0
-    end
-    # Map searchers and results by id or id_aggregation
-    result2srcher = Dict{Int, Int}()
-    for (i, _result) in enumerate(results)
-        for (j, _srcher) in enumerate(srchers)
-            if _result.id == _srcher.config.id ||
-                    _result.id == _srcher.config.id_aggregation
-                push!(result2srcher, i=>j)
-                break
-            end
-        end
-    end
-    printstyled(io, "$nt search results from $(length(results)) corpora\n")
-    for (i, _result) in enumerate(results)
-        crps = srchers[result2srcher[i]].corpus
-        nm = valength(_result.query_matches)
-        printstyled(io, "`-[$(_result.id)] ", color=:blue, bold=true)
-        printstyled(io, "$(nm) search results", bold=true)
-        ch = ifelse(nm==0, ".", ":"); printstyled(io, "$ch\n")
-        if isempty(crps)
-            printstyled(io, "*** Corpus data is missing ***\n",
-                        color=:red, bold=true)
-        else
-            for score in sort(collect(keys(_result.query_matches)), rev=true)
-                for doc in (crps[i] for i in _result.query_matches[score])
-                    printstyled(io, "  $score ~ ", color=:normal, bold=true)
-                    printstyled(io, "$(metadata(doc))\n", color=:normal)
-                end
-            end
-        end
-    end
-    suggestions = squash_suggestions(results, max_suggestions)
+__print_suggestions(io::IO, suggestions) = begin
     ns = length(suggestions)
     ns > 0 && printstyled(io, "$ns suggestions:\n")
-    for (keyword, suggest) in suggestions
-        printstyled(io, "  \"$keyword\": ", color=:normal, bold=true)
-        printstyled(io, "$(join(map(x->x[2], suggest), ", "))\n", color=:normal)
+    for (key, s) in suggestions
+        printstyled(io, "  \"$key\": ", color=:normal, bold=true)
+        printstyled(io, "$(join(map(x->x[2], s), ", "))\n", color=:normal)
     end
 end
 
-print_search_results(srchers::AbstractVector, results::AbstractVector,
+print_search_results(dbdata, result; fields=colnames(dbdata),
+                     id_key=DEFAULT_DB_ID_KEY, max_length=50,
+                     separator=" - ") =
+    print_search_results(stdout, dbdata, result, fields=fields, id_key=id_key,
+                         max_length=max_length, separator=separator)
+
+function print_search_results(io::IO,
+                              dbdata,
+                              results::AbstractVector;
+                              fields=colnames(dbdata),
+                              id_key=DEFAULT_DB_ID_KEY,
+                              max_length=50,
+                              separator=" - ",
+                              max_suggestions=MAX_SUGGESTIONS)
+    map(result->print_search_results(io, dbdata, result, fields=fields, id_key=id_key,
+                                     max_length=max_length, separator=separator), results)
+    suggestions = squash_suggestions(results, max_suggestions)
+    __print_suggestions(io, suggestions)
+end
+
+print_search_results(dbdata, results::AbstractVector; fields=colnames(dbdata),
+                     id_key=DEFAULT_DB_ID_KEY, max_length=50, separator=" - ",
                      max_suggestions=MAX_SUGGESTIONS) =
-    print_search_results(stdout, srchers, results, max_suggestions)
+    print_search_results(stdout, dbdata, results, fields=fields, id_key=id_key,
+                         max_length=max_length, separator=separator,
+                         max_suggestions=max_suggestions)

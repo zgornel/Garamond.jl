@@ -32,6 +32,9 @@ function get_web_socket_client_arguments(args::Vector{String})
         "--web-page"
             help = "Search web page to serve"
             arg_type = String
+        "--return-fields"
+            help = "List of fields to return (ignores wrong names)"
+            nargs = '*'
 	end
 	return parse_args(args,s)
 end
@@ -50,20 +53,22 @@ Base.@ccallable function julia_main(ARGS::Vector{String})::Cint
                       "warning" => Logging.Warn,
                       "error" => Logging.Error)
     logger = ConsoleLogger(stdout,
-                get(log_levels, args["log-level"], Logging.Info))
+                get(log_levels, lowercase(args["log-level"]), Logging.Info))
     global_logger(logger)
 
     # Start client
     @info "~ GARAMOND ~ (web-socket client)"
     ws_ip = args["web-socket-ip"]
     ws_port = args["web-socket-port"]
+    return_fields = args["return-fields"]
+
     if ws_port > 0
         # Get web page
         webpage_file = args["web-page"]
         if webpage_file != nothing && isfile(webpage_file)
             webpage = read(webpage_file, String)
         else
-            webpage = _default_webpage(ws_ip, ws_port)
+            webpage = _default_webpage(ws_ip, ws_port; fields=return_fields)
         end
 
         # Start HTTP server
@@ -85,14 +90,17 @@ Base.@ccallable function julia_main(ARGS::Vector{String})::Cint
 end
 
 
+stringvec(vv) = "[" * join(map(v->"\"" * string(v) * "\"", vv), ",") * "]"
+
 # Function that returns the default webpage
-function _default_webpage(ws_ip::String, ws_port::UInt16)
+function _default_webpage(ws_ip::String, ws_port::UInt16; fields=[])
     return "
 	<!doctype html>
 	<html>
 	<head>
 	    <title>~ Garamond Search ~ by 0x0a Research </title>
 	    <style>
+        html,body{overflow: auto; }
 		form {
 			width:500px;
 			margin:100px auto;
@@ -159,36 +167,37 @@ function _default_webpage(ws_ip::String, ws_port::UInt16)
             window.lastmessage = r;
 			console.log(\"Response received!\");
 
-            // Response example: { \"etime\": 0.2,
-            //			\"n_matches\": 3 ,
-            //			\"matches\":<list of book Dicts>}
+            // Response example: { \"elapsed_time\": 0.2,
+            //                     \"n_total_results\": 3 ,
+            //                     \"results\":{\"srcher1\":[...], \"srcher2\": [...]}
             jr = JSON.parse(r.data);
 
-            // Process JSON data (access with jr.etime, etc)
-            var search_time = jr.etime;
-            var n_matches = jr.n_matches;
-            var matches = jr.matches;
+            // Process JSON data (access with jr.elapsed_time etc.)
+            var search_time = jr.elapsed_time;
+            var n_total_results = jr.n_total_results;
+            var results = jr.results;
             // NOTE: Suggestions are not supported
 
-            results_text = \"<p>Elapsed search time: <b>\" + jr.etime + \"</b>s.</br></p>\";
-            results_text += \"<p>Found \" + jr.n_matches + \" results in \" + jr.n_corpora_match +
-                \" corpora (out of a total of \" + jr.n_corpora + \"):</p>\";
+            results_text = \"<p>Elapsed search time: <b>\" + jr.elapsed_time + \"</b>s.</br></p>\";
+            results_text += \"<p>Found \" + jr.n_total_results + \" results in \" + jr.n_searchers_w_results +
+                \" searchers (out of a total of \" + jr.n_searchers + \"):</p>\";
             results_text += \"<p>\";
 
-            for (let crps_id in jr.matches){
-                let crps_matches = jr.matches[crps_id]  // individual corpus matches
-                // Display corpus id only if there are results
-                if (crps_matches.length > 0){
-				    results_text +=\"<p><b>\" + crps_id +\"</b></br></p>\"
+            for (let _id in jr.results){
+                let _result = jr.results[_id]  // individual searcher matches
+                // Display id only if there are results
+                if (_result.length > 0){
+				    results_text +=\"<p><b>\" + _id +\"</b></br></p>\"
                 }
-            for (i=0; i < crps_matches.length; i++){
-                results_text += \"&emsp;\"+
-                    crps_matches[i][0] + \" ~ \" +
-                    \"<i> \\\"\" +
-                    crps_matches[i][1].name + \"\\\"</i>\" + \" by \" +
-                    crps_matches[i][1].author + \", <b>\" +
-                    crps_matches[i][1].publisher + \"</b> \" +
-                    \"(\" + crps_matches[i][1].published_year + \")\" + \"<br>\"
+                for (let i=0; i < _result.length; i++){
+                    results_text += \"&emsp;\"
+                    results_text += \"<b>[\" + _result[i][\"score\"] + \"]</b>\" + \" ~ \";
+                    for (let field in _result[i]){
+                        if (field != \"score\"){
+                            results_text += field + \": \" + _result[i][field] + \" \";
+                        }
+                    }
+                    results_text += \"<br>\";
                 }
             }
             results_text += \"</p>\"
@@ -205,10 +214,11 @@ function _default_webpage(ws_ip::String, ws_port::UInt16)
                 max_matches: 1000,
                 search_method: \"exact\",
                 max_suggestions: 0,
-                what_to_return: \"json-data\"
+                return_fields: $(stringvec(fields))
                 //date: Date()
                 // no custom_weights
             }
+            //console.log(jq.return_fields);
             connection.send(JSON.stringify(jq));
         }
 
