@@ -117,9 +117,9 @@ version = "1.1.0"
 
 [[DataStructures]]
 deps = ["InteractiveUtils", "OrderedCollections"]
-git-tree-sha1 = "517ce30aa57cdfae1ab444a7c0aef8bb86345bc2"
+git-tree-sha1 = "f94423c68f2e47db0d6f626a26d4872266e0ec3d"
 uuid = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
-version = "0.17.1"
+version = "0.17.2"
 
 [[DataValueInterfaces]]
 git-tree-sha1 = "bfc1187b79289637fa0ef6d4436ebdfe6905cbd6"
@@ -212,9 +212,9 @@ version = "0.1.1"
 
 [[HDF5]]
 deps = ["BinaryProvider", "Blosc", "CMakeWrapper", "Libdl", "Mmap"]
-git-tree-sha1 = "9f7e7eebd3cd46e541928ef6f1d5b992abd8d384"
+git-tree-sha1 = "c14a84878428b66222fccea6ed89cdafa7c22ae4"
 uuid = "f67ccb44-e63f-5c2f-98bd-6dc0ccc4ba2f"
-version = "0.12.3"
+version = "0.12.4"
 
 [[HNSW]]
 deps = ["Distances", "LinearAlgebra", "Reexport"]

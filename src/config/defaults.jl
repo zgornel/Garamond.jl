@@ -141,6 +141,6 @@ const DEFAULT_NGRAM_COMPLEXITY = 1
 ##########################
 # OTHER USEFUL CONSTANTS #
 ##########################
-const DEFAULT_VERSION = "0.1.0"
-const DEFAULT_VERSION_DATE = "2019-09-03"
-const DEFAULT_VERSION_COMMIT = "c125a1c*"
+const DEFAULT_VERSION = "0.2.0"
+const DEFAULT_VERSION_DATE = "2019-10-12"
+const DEFAULT_VERSION_COMMIT = "0b143c3*"
