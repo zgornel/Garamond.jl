@@ -32,7 +32,7 @@ function build_result_from_ids(dbdata,
     end
 
     n = min(max_matches, length(idxs))
-    if linear_scoring
+    if linear_scoring && length(idxs) > 1
         scores = collect(score_eltype, range(1, 0, length=length(idxs)))
     else
         scores = fill(default_score, n)
