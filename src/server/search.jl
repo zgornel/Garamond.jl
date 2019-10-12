@@ -90,7 +90,7 @@ function respond(env, socket, counter, channels)
         query_time = time() - timer_start
         response = build_response(env.dbdata, request, ranked, id_key=env.id_key, elapsed_time=query_time)
         @info "* Rank [#$(counter[1])]: completed in $query_time(s)."
-        write(socket, RESPONSE_TERMINATOR)
+        write(socket, response * RESPONSE_TERMINATOR)
 
     elseif request.operation === :kill
         ### Kill the search server ###

@@ -27,6 +27,7 @@ HTTP Message body specification for the search, recommend and rank operations
           "max_suggestions" : <OPTIONAL, an integer defining the maximum number of suggestions / mismatches keyword>,
           "custom_weights" : <OPTINAL, a dictionary where the keys are strings with searcher ids and values
                               the weights of the searchers in the result aggregation>
+          "rank": <a boolean that when true, enables the use of ranking; false by default>
          }
 
     ⋅ recommend command format (JSON):
@@ -40,13 +41,15 @@ HTTP Message body specification for the search, recommend and rank operations
           "max_suggestions" : <OPTIONAL, an integer defining the maximum number of suggestions / mismatches keyword>,
           "custom_weights" : <OPTINAL, a dictionary where the keys are strings with searcher ids and values
                               the weights of the searchers in the result aggregation>
+          "rank": <a boolean that when true, enables the use of ranking; false by default>
          }
 
     ⋅ rank command format (JSON):
          {
-            "rank_ids": <list of ids to rank>
-            "rank_id_key": <the db name of the column holding the id values>
-            "return_fields" : <a list of string names for the fields to be returned>
+            "rank_ids": <list of ids to rank>,
+            "rank_id_key": <the db name of the column holding the id values>,
+            "return_fields" : <a list of string names for the fields to be returned>,
+            "max_matches" : <OPTIONAL, an integer defining the maximum number of results>
          }
 =#
 
@@ -145,13 +148,14 @@ end
 search_req_handler(req::HTTP.Request) = begin
     parameters = __http_req_body_to_json(req)
     return InternalRequest(
-                operation=:search,
+                operation = :search,
                 query = parameters["query"],  # if missing, throws
                 return_fields = Symbol.(parameters["return_fields"]),  # if missing, throws
                 search_method = Symbol.(get(parameters, "search_method", DEFAULT_SEARCH_METHOD)),
                 max_matches = get(parameters, "max_matches", DEFAULT_MAX_MATCHES),
                 max_suggestions = get(parameters, "max_suggestions", DEFAULT_MAX_SUGGESTIONS),
-                custom_weights = get(parameters, "custom_weights", DEFAULT_CUSTOM_WEIGHTS))
+                custom_weights = get(parameters, "custom_weights", DEFAULT_CUSTOM_WEIGHTS),
+                rank = get(parameters, "rank", false))
 end
 
 
@@ -159,14 +163,15 @@ recommend_req_handler(req::HTTP.Request) = begin
     parameters = __http_req_body_to_json(req)
     _query = parameters["recommend_id"] * " " * join(parameters["filter_fields"], " ")
     return InternalRequest(
-                operation=:recommend,
+                operation = :recommend,
                 request_id_key = Symbol.(parameters["recommend_id_key"]),  # if missing, throws
                 query = _query,
                 return_fields = Symbol.(parameters["return_fields"]),  # if missing, throws
                 search_method = Symbol.(get(parameters, "search_method", DEFAULT_SEARCH_METHOD)),
                 max_matches = get(parameters, "max_matches", DEFAULT_MAX_MATCHES),
                 max_suggestions = get(parameters, "max_suggestions", DEFAULT_MAX_SUGGESTIONS),
-                custom_weights = get(parameters, "custom_weights", DEFAULT_CUSTOM_WEIGHTS))
+                custom_weights = get(parameters, "custom_weights", DEFAULT_CUSTOM_WEIGHTS),
+                rank = get(parameters, "rank", false))
 end
 
 
@@ -174,10 +179,11 @@ rank_req_handler(req::HTTP.Request) = begin
     parameters = __http_req_body_to_json(req)
     _all_ids = join(strip.(parameters["rank_ids"]), " ")  # if missing, throws
     return InternalRequest(
-                operation=:rank,
+                operation = :rank,
                 query = _all_ids,
-                request_id_key = Symbol.(parameters["rank_id_key"]),  # if missing, throws
-                return_fields = Symbol.(parameters["return_fields"])) # if missing, throws
+                request_id_key = Symbol.(parameters["rank_id_key"]),   # if missing, throws
+                return_fields = Symbol.(parameters["return_fields"]),  # if missing, throws
+                max_matches = get(parameters, "max_matches", DEFAULT_MAX_MATCHES))
 end
 
 
