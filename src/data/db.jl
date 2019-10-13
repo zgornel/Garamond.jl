@@ -13,10 +13,6 @@ db_get_primary_keys(dbdata::IndexedTable) = colnames(dbdata)[dbdata.pkey]
 
 db_get_primary_keys(dbdata::NDSparse) = colnames(dbdata.index)
 
-db_create_iterator(dbdata::NDSparse) = (merge(idx, data) for (idx, data) in zip(dbdata.index, dbdata.data))
-
-db_create_iterator(dbdata::IndexedTable) = (entry for entry in dbdata)
-
 
 # Concatenate fields of dbentry (which is a named tuple) into a vector of strings
 dbentry2text(dbentry, fields) = begin
