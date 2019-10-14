@@ -2,8 +2,18 @@
 Ranking API
 -----------
 The ranker is present in the `SearchEnv` i.e. search environment object.
-In order to become usable by the `rank` function, ranker function signatures
-should be of the form:
+Ranking is performed by calling:
+
+    rank(env, request [; results=nothing]
+where:
+    `env::SearchEnv` is the search environment object
+    `request::InternalRequest` is the request
+    `results::Union{Nothing, SearchResult}` are search results; if `nothing`,
+        ranking if performed on the IDs present in the query of the request;
+        otherwise, the results are re-ranked.
+
+
+The ranker function signatures (`env.ranker`) should be of the form:
 
     some_ranker(idxs, request; scores=nothing, environment=nothing)
 
@@ -21,16 +31,12 @@ where:
 The arguments above should be enough to implement any ranker.
 =#
 rank(env::SearchEnv, request; results=nothing) = begin
-    environment = (dbdata=env.dbdata, id_key=env.id_key, ranker=env.ranker)
-    if results == nothing
-        return rank_from_request(environment, request)
-    else
-        return rank_from_results(environment, request, results)
-    end
+    rankenv = (dbdata=env.dbdata, id_key=env.id_key, ranker=env.ranker)
+    __rank(rankenv, request, results)
 end
 
 
-function rank_from_request(env, request)
+function __rank(env, request, ::Nothing)
     result_id = make_id(StringId, nothing)
     ids = strip.(split(request.query))
     unranked_idxs = db_select_idxs_from_values(env.dbdata,
@@ -51,7 +57,7 @@ function rank_from_request(env, request)
 end
 
 
-function rank_from_results(env, request, results)
+function __rank(env, request, results)
     ranked_results = similar(results)
     for i in eachindex(results)
         unranked_idxs = map(t->t[2], results[i].query_matches)
