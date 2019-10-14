@@ -67,6 +67,8 @@ module Garamond
     # Exports
     export
         search,
+        recommend,
+        rank,
         build_search_env,
         parse_configuration,
         AbstractEmbedder,
@@ -74,7 +76,8 @@ module Garamond
         Searcher,
         SearchConfig,
         SearchResult,
-        id, description,
+        id,
+        description,
         isenabled, enable!, disable!,
         print_search_results,
         search_server,
@@ -149,6 +152,7 @@ module Garamond
     include("search/env.jl")
     include("search/index.jl")
     include("search/filter.jl")
+    include("search/recommend.jl")
     include("search/results.jl")
     include("search/rank.jl")
     include("search/rankers/noop.jl")

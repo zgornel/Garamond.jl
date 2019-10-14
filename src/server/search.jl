@@ -69,27 +69,24 @@ function respond(env, socket, counter, channels)
     if request.operation === :search
         ### Search ###
         results = search(env, request)
-        query_time = time() - timer_start
-        response = build_response(env.dbdata, request, results, id_key=env.id_key, elapsed_time=query_time)
+        etime = time() - timer_start
+        response = build_response(env.dbdata, request, results; id_key=env.id_key, elapsed_time=etime)
         write(socket, response * RESPONSE_TERMINATOR)
-        @info "* Search [#$(counter[1])]: query='$(request.query)' completed in $query_time(s)."
+        @info "* Search [#$(counter[1])]: query='$(request.query)' completed in $etime(s)."
 
     elseif request.operation === :recommend
-        generated_query = generate_query(request.query, env.dbdata, recommend_id_key=request.request_id_key)
-        request.query = generated_query.query
-        target_entry = db_select_entry(env.dbdata, generated_query.id, id_key=request.request_id_key)
-        gid = isempty(target_entry) ? nothing : getproperty(target_entry, env.id_key)
-        similars = search(env, request; exclude=gid)
-        query_time = time() - timer_start
-        response = build_response(env.dbdata, request, similars, id_key=env.id_key, elapsed_time=query_time)
+        ### Recommend ###
+        recommendations = recommend(env, request)
+        etime = time() - timer_start
+        response = build_response(env.dbdata, request, recommendations; id_key=env.id_key, elapsed_time=etime)
         write(socket, response * RESPONSE_TERMINATOR)
-        @info "* Recommendation [#$(counter[1])] for '$(repr(gid))': completed in $query_time(s)."
+        @info "* Recommendation [#$(counter[1])] for '$(repr(gid))': completed in $etime(s)."
 
     elseif request.operation === :rank
         ranked = rank(env, request)  #::Vector{SearchResult}
-        query_time = time() - timer_start
-        response = build_response(env.dbdata, request, ranked, id_key=env.id_key, elapsed_time=query_time)
-        @info "* Rank [#$(counter[1])]: completed in $query_time(s)."
+        etime = time() - timer_start
+        response = build_response(env.dbdata, request, ranked; id_key=env.id_key, elapsed_time=etime)
+        @info "* Rank [#$(counter[1])]: completed in $etime(s)."
         write(socket, response * RESPONSE_TERMINATOR)
 
     elseif request.operation === :kill
