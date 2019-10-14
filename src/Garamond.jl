@@ -95,9 +95,11 @@ module Garamond
     function __init__()
         CUSTOM_LOADERS_SUBDIR = "data/loaders/custom"
         CUSTOM_RANKERS_SUBDIR = "search/rankers/custom"
+        CUSTOM_RECOMMENDERS_SUBDIR = "search/recommenders/custom"
 
         __include_subdirectory(CUSTOM_LOADERS_SUBDIR, printer="Loaders (custom)")
         __include_subdirectory(CUSTOM_RANKERS_SUBDIR, printer="Rankers (custom)")
+        __include_subdirectory(CUSTOM_RECOMMENDERS_SUBDIR, printer="Recommenders (custom)")
     end
 
     function __include_subdirectory(subpath; printer="Including")
@@ -112,7 +114,7 @@ module Garamond
                         push!(included_files, file)
                     end
                 catch e
-                    @warn "Could not include $filepath..."
+                    @warn "Could not include $filepath...\n$e"
                 end
             end
 
@@ -153,7 +155,7 @@ module Garamond
     include("search/filter.jl")
     include("search/results.jl")
     include("search/recommend.jl")
-    include("search/recommenders/search_based.jl")
+    include("search/recommenders/search.jl")
     include("search/rank.jl")
     include("search/rankers/noop.jl")
     include("search/main.jl")
