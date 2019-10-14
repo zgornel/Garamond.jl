@@ -30,7 +30,7 @@ where:
 
 The arguments above should be enough to implement any ranker.
 =#
-rank(env::SearchEnv, request; results=nothing) = begin
+function rank(env::SearchEnv, request; results=nothing)
     rankenv = (dbdata=env.dbdata, id_key=env.id_key, ranker=env.ranker)
     __rank(rankenv, request, results)
 end
@@ -44,7 +44,7 @@ function __rank(env, request, ::Nothing)
                                                request.request_id_key;
                                                id_key=env.id_key)
     ### Call ranker
-    ranked_idxs = env.ranker(unranked_idxs, request, environment=env)
+    ranked_idxs = env.ranker(unranked_idxs, request; scores=nothing, environment=env)
     ###
     ranked_result = build_result_from_ids(env.dbdata,
                                           ranked_idxs,
@@ -63,7 +63,7 @@ function __rank(env, request, results)
         unranked_idxs = map(t->t[2], results[i].query_matches)
         scores = map(t->t[1], results[i].query_matches)
         ### Call ranker
-        ranked_idxs = env.ranker(unranked_idxs, request; environment=env, scores=scores)
+        ranked_idxs = env.ranker(unranked_idxs, request; scores=scores, environment=env)
         ###
         ranked_results[i] = build_result_from_ids(env.dbdata,
                                                   ranked_idxs,

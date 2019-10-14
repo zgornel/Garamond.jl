@@ -1,4 +1,23 @@
+function search_recommender(request; environment=nothing)
+    environment == nothing && @error "No search environment provided for search recommender."
+    # Generate new  query and overwrite the original one
+    request.query, id = generate_query(request.query, environment.dbdata, recommend_id_key=request.request_id_key)
+
+    # Get the linear id of the entry for which recommendations are sought
+    target_entry = db_select_entry(environment.dbdata, id, id_key=request.request_id_key)
+    linear_id = isempty(target_entry) ? nothing : getproperty(target_entry, environment.id_key)
+
+    # Search (end exclude original entry)
+    search(environment, request; exclude=linear_id)
+end
+
+
 function generate_query(req::AbstractString, dbdata; recommend_id_key=DEFAULT_DB_ID_KEY)
+    # Methods for transforming various julia types into search query string values
+    __transform_value_for_search(value) = value  # default for non-floats, strings, leave untouched
+    __transform_value_for_search(value::AbstractFloat) = "[$(0.9*value), $(1.1*value)]"
+    __transform_value_for_search(value::AbstractString) = "\"" * value * "\""  # simple string, wrap in quotes
+
     # Initializations
     dbschema = db_create_schema(dbdata)
     target_id, fields = __parse_query_generation_request(req, dbschema,
@@ -46,10 +65,3 @@ function __parse_query_generation_request(req::AbstractString,
     target_id = __parse(_target_id_type, _target_id)
     return target_id, fields
 end
-
-
-__transform_value_for_search(value) = value  # default for non-floats, strings, leave untouched
-
-__transform_value_for_search(value::AbstractFloat) = "[$(0.9*value), $(1.1*value)]"
-
-__transform_value_for_search(value::AbstractString) = "\"" * value * "\""  # simple string, wrap in quotes
