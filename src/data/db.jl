@@ -103,10 +103,10 @@ pushfirst!(dbdata, entry; id_key=nothing) = begin
     db_check_id_key(dbdata, id_key)
     db_check_entry_for_pushing(entry, id_key, 1)
     cols = columns(dbdata)
-    db_id_key_shift(dbdata, id_key, 1)
     for col in colnames(dbdata)
         pushfirst!(getproperty(cols, col), getproperty(entry, col))
     end
+    db_id_key_recreate!(dbdata, id_key)
     nothing
 end
 
@@ -118,7 +118,7 @@ popfirst!(dbdata; id_key=nothing) = begin
     db_check_id_key(dbdata, id_key)
     cols = columns(dbdata)
     popped = map(popfirst!, cols)
-    db_id_key_shift(dbdata, id_key, -1)
+    db_id_key_recreate!(dbdata, id_key)
     return popped
 end
 
@@ -127,11 +127,11 @@ deleteat!(dbdata, idxs; id_key=nothing) = begin
     db_check_id_key(dbdata, id_key)
     cols = columns(dbdata)
     map(x->deleteat!(x, idxs), cols)
-    db_id_key_recreate(dbdata, id_key)
+    db_id_key_recreate!(dbdata, id_key)
 end
 
 
-db_id_key_recreate(dbdata, id_key=nothing) = begin
+db_id_key_recreate!(dbdata, id_key=nothing) = begin
     if id_key != nothing
         getproperty(columns(dbdata), id_key)[:].= 1:length(dbdata)
     end
@@ -139,7 +139,7 @@ db_id_key_recreate(dbdata, id_key=nothing) = begin
 end
 
 
-db_id_key_shift(dbdata, id_key=nothing, by=0) = begin
+db_id_key_shift!(dbdata, id_key=nothing, by=0) = begin
     if id_key != nothing
         getproperty(columns(dbdata), id_key)[:].+= by
     end
