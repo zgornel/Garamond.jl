@@ -26,25 +26,27 @@ where:
     `environment` a named tuple with at least two fields
         ⋅ `dbdata` - an `IndexedTable` or `NDSparse` object containint the data
         ⋅ `id_key` - the name of the data primary key
-        ⋅ `ranker` - the ranking function
 
 The arguments above should be enough to implement any ranker.
 =#
 function rank(env::SearchEnv, request; results=nothing)
-    rankenv = (dbdata=env.dbdata, id_key=env.id_key, ranker=env.ranker)
-    __rank(rankenv, request, results)
+    __rank(env, request, results)
 end
 
 
+# Corresponds to ouside rank request
+# (IDs specified explicitly in request)
 function __rank(env, request, ::Nothing)
     result_id = make_id(StringId, nothing)
+    # Extract IDss to be ranked
     ids = strip.(split(request.query))
     unranked_idxs = db_select_idxs_from_values(env.dbdata,
                                                ids,
                                                request.request_id_key;
                                                id_key=env.id_key)
     ### Call ranker
-    ranked_idxs = env.ranker(unranked_idxs, request; scores=nothing, environment=env)
+    rankenv = (dbdata=env.dbdata, id_key=env.id_key)
+    ranked_idxs = env.ranker(unranked_idxs, request; scores=nothing, environment=rankenv)
     ###
     ranked_result = build_result_from_ids(env.dbdata,
                                           ranked_idxs,
@@ -57,13 +59,16 @@ function __rank(env, request, ::Nothing)
 end
 
 
+# Corresponds to ranking of search/recommendation request
+# (IDs specified implicitly in results)
 function __rank(env, request, results)
     ranked_results = similar(results)
+    rankenv = (dbdata=env.dbdata, id_key=env.id_key)
     for i in eachindex(results)
         unranked_idxs = map(t->t[2], results[i].query_matches)
         scores = map(t->t[1], results[i].query_matches)
         ### Call ranker
-        ranked_idxs = env.ranker(unranked_idxs, request; scores=scores, environment=env)
+        ranked_idxs = env.ranker(unranked_idxs, request; scores=scores, environment=rankenv)
         ###
         ranked_results[i] = build_result_from_ids(env.dbdata,
                                                   ranked_idxs,
