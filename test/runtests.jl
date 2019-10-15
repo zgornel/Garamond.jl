@@ -8,4 +8,6 @@ using Garamond
 
 # TODO(Corneliu): Complete testing framework redo
 include("query_parser.jl")
+include("db.jl")
+
 end
