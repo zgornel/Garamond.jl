@@ -47,10 +47,10 @@ const DEFAULT_QUERY_PARSING_SEPARATOR=":"
 const DEFAULT_QUERY_GENERATION_FIELDS=Symbol[]
 
 # SearchEnv-related options
-# TODO(Corneliu): Add option to change in config
 const DEFAULT_DB_ID_KEY = :garamond_linear_id
 const DEFAULT_DATA_LOADER_NAME = :noop_loader
 const DEFAULT_RANKER_NAME = :noop_ranker
+const DEFAULT_RECOMMENDER_NAME = :search_recommender
 
 
 #################

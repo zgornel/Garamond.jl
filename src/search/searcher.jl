@@ -51,7 +51,7 @@ Creates a Searcher from a searcher configuration `config::SearchConfig`.
 function build_searcher(dbdata, config)
 
     raw_document_iterator = (dbentry2text(dbentry, config.indexable_fields)
-                             for dbentry in db_create_iterator(dbdata))
+                             for dbentry in rows(dbdata))
 
     # Pre-process documents
     flags = config.text_strip_flags | (config.stem_words ? stem_words : 0x0)

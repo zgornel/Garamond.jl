@@ -130,7 +130,8 @@ function parse_configuration(filename::AbstractString)
 
     # Read config (this should fail if config not found)
     local config, dict_configs, data_loader,
-          ranker_name, id_key, id_environment
+          ranker_name, recommender_name,
+          id_key, id_environment
     fullfilename = abspath(expanduser(filename))
     try
         # Parse configuration file
@@ -150,6 +151,7 @@ function parse_configuration(filename::AbstractString)
                                           pairs(data_loader_kwarguments)...)
         # Create data loader symbol
         ranker_name = Symbol(get(config, "ranker_name", DEFAULT_RANKER_NAME))
+        recommender_name = Symbol(get(config, "recommender_name", DEFAULT_RECOMMENDER_NAME))
 
         # Create data loader symbol
         id_key = Symbol(get(config, "id_key", DEFAULT_DB_ID_KEY))
@@ -161,8 +163,11 @@ function parse_configuration(filename::AbstractString)
         exit(-1)
     end
 
-    # Construct data loader
+    # Construct result ranker
     ranker = eval(ranker_name)
+
+    # Construct recommender
+    recommender = eval(recommender_name)
 
     # Create search configurations
     n = length(dict_configs)
@@ -363,7 +368,8 @@ function parse_configuration(filename::AbstractString)
     return (data_loader=data_loader,
             id_key=id_key,
             searcher_configs=searcher_configs,
-            ranker=ranker)
+            ranker=ranker,
+            recommender=recommender)
 end
 
 

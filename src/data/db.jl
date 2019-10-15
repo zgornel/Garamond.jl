@@ -11,11 +11,7 @@ end
 
 db_get_primary_keys(dbdata::IndexedTable) = colnames(dbdata)[dbdata.pkey]
 
-db_get_primary_keys(dbdata::NDSparse) = colnames(dbdata.index)
-
-db_create_iterator(dbdata::NDSparse) = (merge(idx, data) for (idx, data) in zip(dbdata.index, dbdata.data))
-
-db_create_iterator(dbdata::IndexedTable) = (entry for entry in dbdata)
+db_get_primary_keys(dbdata::AbstractNDSparse) = colnames(dbdata.index)
 
 
 # Concatenate fields of dbentry (which is a named tuple) into a vector of strings
@@ -54,7 +50,7 @@ end
 # Selects an entry in dbdata based on the value of id from a column
 # selected by id_key
 function db_select_entry(dbdata, id; id_key=DEFAULT_DB_ID_KEY)
-    __first(dbdata::NDSparse) = first(rows(dbdata))
+    __first(dbdata::AbstractNDSparse) = first(rows(dbdata))
 	__first(dbdata) = first(dbdata)
     cols = colnames(dbdata)
     if id_key in cols
