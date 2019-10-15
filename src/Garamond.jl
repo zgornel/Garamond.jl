@@ -58,8 +58,7 @@ module Garamond
     # Import section (extendable methods)
     import Base: size, length, show, keys, values, push!,
                  delete!, getindex, names, convert, lowercase,
-                 occursin, isempty, parse,
-                 pop!, popfirst!, push!, pushfirst!, deleteat!
+                 occursin, isempty, parse
     import StringAnalysis: id
     import Word2Vec: WordVectors
     import HNSW: knn_search

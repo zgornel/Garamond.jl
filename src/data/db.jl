@@ -81,27 +81,38 @@ dbentry2printable(::Nothing, fields; kwargs...) = ""
 
 
 # Primitives to push/pop from IndexedTable/NDSparse
-function db_check_entry_for_pushing(entry, id_key, expected_value)
+function db_check_entry_for_pushing(dbdata, entry, id_key, expected_value)
     if id_key != nothing
         !hasproperty(entry, id_key) &&
             throw(ErrorException("$id_key must be a column in the loaded data"))
         getproperty(entry, id_key) != expected_value &&
             throw(ErrorException("$id_key==$expected_value condition not fulfilled"))
+        field_problem = false
+        entry_fields = map(eltype, entry)
+        dbdata_fields = map(eltype, columns(dbdata))
+        for field in colnames(dbdata)
+            if !hasproperty(entry_fields, field) || (getproperty(entry_fields, field) != getproperty(dbdata_fields, field))
+                field_problem = true
+                @show getproperty(entry_fields, field)
+                @show getproperty(dbdata_fields, field)
+            end
+        end
+        field_problem && throw(ErrorException("Missing entry field or wrong type."))
     end
 end
 
 
-push!(dbdata, entry; id_key=nothing) = begin
+db_push!(dbdata, entry; id_key=nothing) = begin
     db_check_id_key(dbdata, id_key)
-    db_check_entry_for_pushing(entry, id_key, length(dbdata) + 1)
+    db_check_entry_for_pushing(dbdata, entry, id_key, length(dbdata) + 1)
     push!(rows(dbdata), entry)
     nothing
 end
 
 
-pushfirst!(dbdata, entry; id_key=nothing) = begin
+db_pushfirst!(dbdata, entry; id_key=nothing) = begin
     db_check_id_key(dbdata, id_key)
-    db_check_entry_for_pushing(entry, id_key, 1)
+    db_check_entry_for_pushing(dbdata, entry, id_key, 1)
     cols = columns(dbdata)
     for col in colnames(dbdata)
         pushfirst!(getproperty(cols, col), getproperty(entry, col))
@@ -111,10 +122,10 @@ pushfirst!(dbdata, entry; id_key=nothing) = begin
 end
 
 
-pop!(dbdata; id_key=nothing) = map(pop!, columns(dbdata))
+db_pop!(dbdata; id_key=nothing) = map(pop!, columns(dbdata))
 
 
-popfirst!(dbdata; id_key=nothing) = begin
+db_popfirst!(dbdata; id_key=nothing) = begin
     db_check_id_key(dbdata, id_key)
     cols = columns(dbdata)
     popped = map(popfirst!, cols)
@@ -123,7 +134,7 @@ popfirst!(dbdata; id_key=nothing) = begin
 end
 
 
-deleteat!(dbdata, idxs; id_key=nothing) = begin
+db_deleteat!(dbdata, idxs; id_key=nothing) = begin
     db_check_id_key(dbdata, id_key)
     cols = columns(dbdata)
     map(x->deleteat!(x, idxs), cols)

@@ -36,66 +36,66 @@ nds = ndsparse(deepcopy(tbl))
     @test _nds isa NDSparse && isempty(_nds)
 
 
-    # push!
+    # db_push!
     _len = length(tbl)
-    data = (x=-100.0, y=-11.1, z=_len+1)
-    @test push!(tbl, data; id_key=_pkey) == nothing && length(tbl) == _len + 1
-    @test push!(nds, data; id_key=_pkey) == nothing && length(nds) == _len + 1
-    #@test_throws ErrorException push!(tbl, data)
-    #@test_throws ErrorException push!(nds, data)
-    wrong_data = [(x=0.0, y=-11.0, z=100),         # wrong pkey
-                  (x="a", y=1.0, z=_len+1),        # wrong eltype
-                  (x=1.0, y=2.0, z=_len+1, γ="a"), # additional column
-                  (x=1.0, y=2.0)]                  # missing column
+    data = (x=T(-100.0), y=T(-11.1), z=_len+1)
+    @test Garamond.db_push!(tbl, data; id_key=_pkey) == nothing && length(tbl) == _len + 1
+    @test Garamond.db_push!(nds, data; id_key=_pkey) == nothing && length(nds) == _len + 1
+    #@test_throws ErrorException Garamond.db_push!(tbl, data)
+    #@test_throws ErrorException Garamond.db_push!(nds, data)
+    wrong_data = [(x=T(0.0), y=-T(11.0), z=100),         # wrong pkey
+                  (x="a", y=T(1.0), z=_len+1),        # wrong eltype
+                  (x=T(1.0), y=T(2.0), z=_len+1, γ="a"), # additional column
+                  (x=T(1.0), y=T(2.0))]                  # missing column
     for wrong in wrong_data
-        @test_throws ErrorException push!(tbl, wrong; id_key=_pkey)
-        @test_throws ErrorException push!(nds, wrong; id_key=_pkey)
+        @test_throws ErrorException Garamond.db_push!(tbl, wrong; id_key=_pkey)
+        @test_throws ErrorException Garamond.db_push!(nds, wrong; id_key=_pkey)
     end
 
 
-    # pushfirst!
+    # db_pushfirst!
     _len = length(tbl)
-    data = (x=-100.0, y=-11.1, z=1)
-    @test pushfirst!(tbl, data; id_key=_pkey) == nothing && length(tbl) == _len + 1
+    data = (x=T(-100.0), y=T(-11.1), z=1)
+    @test Garamond.db_pushfirst!(tbl, data; id_key=_pkey) == nothing && length(tbl) == _len + 1
     @test getproperty(columns(tbl), _pkey) == collect(1:_len+1)
-    @test pushfirst!(nds, data; id_key=_pkey) == nothing && length(nds) == _len + 1
+    @test Garamond.db_pushfirst!(nds, data; id_key=_pkey) == nothing && length(nds) == _len + 1
     @test getproperty(columns(nds), _pkey) == collect(1:_len+1)
-    #@test_throws ErrorException pushfirst!(tbl, data)
-    #@test_throws ErrorException pushfirst!(nds, data)
-    wrong_data = [(x=0.0, y=-11.0, z=2),      # wrong pkey
-                  (x=1.0, y=2.0)]             # missing column
+    #@test_throws ErrorException Garamond.db_pushfirst!(tbl, data)
+    #@test_throws ErrorException Garamond.db_pushfirst!(nds, data)
+    wrong_data = [(x=T(0.0), y=-T(11.0), z=100),         # wrong pkey
+                  (x="a", y=T(1.0), z=_len+1),        # wrong eltype
+                  (x=T(1.0), y=T(2.0), z=_len+1, γ="a"), # additional column
+                  (x=T(1.0), y=T(2.0))]                  # missing column
     for wrong in wrong_data
-        @test_throws ErrorException pushfirst!(tbl, wrong; id_key=_pkey)
-        @test_throws ErrorException pushfirst!(nds, wrong; id_key=_pkey)
+        @test_throws ErrorException Garamond.db_pushfirst!(tbl, wrong; id_key=_pkey)
+        @test_throws ErrorException Garamond.db_pushfirst!(nds, wrong; id_key=_pkey)
     end
-    @test_throws MethodError pushfirst!(tbl, (x="a", y=1.0, z=1); id_key=_pkey)  # wrong eltype
-    @test_throws MethodError pushfirst!(nds, (x="a", y=1.0, z=1); id_key=_pkey)  # wrong eltype
 
 
-    # pop!
+    # db_pop!
     _len = length(tbl)
     last_row_tbl = last(rows(tbl))
     last_row_nds = last(rows(nds))
-    @test pop!(tbl) == last_row_tbl && length(tbl) == _len - 1
-    @test pop!(nds) == last_row_nds && length(nds) == _len - 1
+    @test Garamond.db_pop!(tbl) == last_row_tbl && length(tbl) == _len - 1
+    @test Garamond.db_pop!(nds) == last_row_nds && length(nds) == _len - 1
 
 
-    # popfirst!
+    # db_popfirst!
     _len = length(tbl)
     first_row_tbl = first(rows(tbl))
     first_row_nds = first(rows(nds))
-    @test popfirst!(tbl; id_key=_pkey) == first_row_tbl && length(tbl) == _len - 1
+    @test Garamond.db_popfirst!(tbl; id_key=_pkey) == first_row_tbl && length(tbl) == _len - 1
     @test getproperty(columns(tbl), _pkey) == collect(1:_len-1)
-    @test popfirst!(nds; id_key=_pkey) == first_row_nds && length(nds) == _len - 1
+    @test Garamond.db_popfirst!(nds; id_key=_pkey) == first_row_nds && length(nds) == _len - 1
     @test getproperty(columns(nds), _pkey) == collect(1:_len-1)
 
     # deleteat!
     _len = length(tbl)
     to_delete = sort(unique(rand(1:_len, 3)))
-    @test deleteat!(tbl, to_delete; id_key=_pkey) == nothing &&
+    @test Garamond.db_deleteat!(tbl, to_delete; id_key=_pkey) == nothing &&
         length(tbl) == _len - length(to_delete)
     @test getproperty(columns(tbl), _pkey) == collect(1:(_len-length(to_delete)))
-    @test deleteat!(nds, to_delete; id_key=_pkey) == nothing &&
-        length(tbl) == _len - length(to_delete)
+    @test Garamond.db_deleteat!(nds, to_delete; id_key=_pkey) == nothing &&
+        length(nds) == _len - length(to_delete)
     @test getproperty(columns(nds), _pkey) == collect(1:(_len-length(to_delete)))
 end
