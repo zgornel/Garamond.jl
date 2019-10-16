@@ -128,9 +128,10 @@ module Garamond
     include("data/dunderparse.jl")
     include("data/loaders/noop.jl")
     include("data/loaders/juliadb.jl")
+
     include("config/defaults.jl")
     include("config/engine.jl")
-    include("logging.jl")
+
     include("embedder/abstractembedder.jl")
     include("embedder/wordvectors.jl")
     include("embedder/boe.jl")
@@ -139,17 +140,21 @@ module Garamond
     include("embedder/cpmean.jl")
     include("embedder/disc.jl")
     include("embedder/dtv.jl")
+
     include("index/abstractindex.jl")
     include("index/naive.jl")
     include("index/brutetree.jl")
     include("index/kdtree.jl")
     include("index/hnsw.jl")
-    include("update.jl")
+
+    include("searchable/config_parser.jl")
+    include("searchable/searcher.jl")
+    include("searchable/env.jl")
+    include("searchable/update.jl")
+
     include("query/parser.jl")
     include("query/processing.jl")
-    include("search/config_parser.jl")
-    include("search/searcher.jl")
-    include("search/env.jl")
+
     include("search/index.jl")
     include("search/filter.jl")
     include("search/results.jl")
@@ -158,12 +163,15 @@ module Garamond
     include("search/rank.jl")
     include("search/rankers/noop.jl")
     include("search/main.jl")
-    include("version.jl")
+
     include("server/requests.jl")
     include("server/unixsocket.jl")
     include("server/websocket.jl")
     include("server/rest.jl")
     include("server/search.jl")
-    include("show.jl")
+
+    include("utils/logging.jl")
+    include("utils/show.jl")
+    include("utils/version.jl")
 
 end # module
