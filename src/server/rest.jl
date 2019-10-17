@@ -67,6 +67,7 @@ function rest_server(port::Integer,
                      io_port::Integer,
                      search_server_ready::Condition;
                      ipaddr::String="0.0.0.0")
+    _HEADERS = ["Access-Control-Allow-Origin"=>"*"]
     #Checks
     if port <= 0
         @error "Please specify a HTTP REST port of positive integer value."
@@ -104,19 +105,24 @@ function rest_server(port::Integer,
 
         if srchsrv_req === UNINITIALIZED_REQUEST
             # An unsupported endpoint was called
-            return HTTP.Response(501, ["Access-Control-Allow-Origin"=>"*"], body="")
+            return HTTP.Response(501)
         elseif srchsrv_req === ERRORED_REQUEST
             # Something went wrong during handling
-            return HTTP.Response(400, ["Access-Control-Allow-Origin"=>"*"], body="")
+            return HTTP.Response(400)
         elseif srchsrv_req isa InternalRequest
             # All OK, send request to search server and get response
-            ssconn = connect(Sockets.localhost, io_port)
+            ssconn = TCPSocket()
+            try
+                Sockets.connect!(ssconn, Sockets.localhost, io_port)
+            catch
+                return HTTP.Response(503)
+            end
             println(ssconn, request2json(srchsrv_req))                   # writes a "\n" as well
             response = ifelse(isopen(ssconn), readline(ssconn), "")  # expects a "\n" terminator
             close(ssconn)
-            return HTTP.Response(200, ["Access-Control-Allow-Origin"=>"*"], body=response)
+            return HTTP.Response(200, _HEADERS, body=response)
         else
-            return HTTP.Response(400, ["Access-Control-Allow-Origin"=>"*"], body="")
+            return HTTP.Response(400)
         end
     end
 end

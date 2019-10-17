@@ -122,6 +122,7 @@ function respond(env, socket, counter, channels)
         write(socket, RESPONSE_TERMINATOR)
     end
 
+    close(socket)
     @debug "Response [#$(counter[1])]: done after $(time()-timer_start)(s)."
 end
 
