@@ -72,7 +72,7 @@ function respond(env, socket, counter, channels)
         etime = time() - timer_start
         response = build_response(env.dbdata, request, results; id_key=env.id_key, elapsed_time=etime)
         write(socket, response * RESPONSE_TERMINATOR)
-        @info "* Search [#$(counter[1])]: query='$(request.query)' completed in $etime(s)."
+        @info "• Search [#$(counter[1])]: query='$(request.query)' completed in $etime(s)."
 
     elseif request.operation === :recommend
         ### Recommend ###
@@ -80,31 +80,31 @@ function respond(env, socket, counter, channels)
         etime = time() - timer_start
         response = build_response(env.dbdata, request, recommendations; id_key=env.id_key, elapsed_time=etime)
         write(socket, response * RESPONSE_TERMINATOR)
-        @info "* Recommendation [#$(counter[1])]: completed in $etime(s)."
+        @info "• Recommendation [#$(counter[1])]: completed in $etime(s)."
 
     elseif request.operation === :rank
         ranked = rank(env, request)  #::Vector{SearchResult}
         etime = time() - timer_start
         response = build_response(env.dbdata, request, ranked; id_key=env.id_key, elapsed_time=etime)
-        @info "* Rank [#$(counter[1])]: completed in $etime(s)."
+        @info "• Rank [#$(counter[1])]: completed in $etime(s)."
         write(socket, response * RESPONSE_TERMINATOR)
 
     elseif request.operation === :kill
         ### Kill the search server ###
-        @info "* Kill [#$(counter[1])]: Exiting in 1(s)..."
+        @info "• Kill [#$(counter[1])]: Exiting in 1(s)..."
         write(socket, RESPONSE_TERMINATOR)
         sleep(1)
         exit()
 
     elseif request.operation === :read_configs
         ### Read and return data configurations ###
-        @info "* Get configuration(s) [#$(counter[1])]."
+        @info "• Get configuration(s) [#$(counter[1])]."
         write(socket,
               read_searcher_configurations_json(env.searchers) * RESPONSE_TERMINATOR)
 
     elseif request.operation === :update
         ### Read and return data configurations ###
-        @info "* Update searcher(s) [#$(counter[1])]."
+        @info "• Update searcher(s) [#$(counter[1])]."
         # The request query contains the string id of the updated searcher
         if !isready(up_in_channel)
             put!(up_in_channel, request.query)  # the take! is in the search server
@@ -114,16 +114,16 @@ function respond(env, socket, counter, channels)
         write(socket, RESPONSE_TERMINATOR)  # send response asynchronously
 
     elseif request.operation === :error
-        @info "* Errored request [#$(counter[1])]: Ignoring..."
+        @info "• Errored request [#$(counter[1])]: Ignoring..."
         write(socket, RESPONSE_TERMINATOR)
 
     else
-        @info "* Unknown request [#$(counter[1])]: Ignoring..."
+        @info "• Unknown request [#$(counter[1])]: Ignoring..."
         write(socket, RESPONSE_TERMINATOR)
     end
 
     close(socket)
-    @debug "Response [#$(counter[1])]: done after $(time()-timer_start)(s)."
+    @debug "* Response [#$(counter[1])]: done after $(time()-timer_start)(s)."
 end
 
 

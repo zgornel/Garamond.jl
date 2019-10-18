@@ -93,8 +93,6 @@ function db_check_entry_for_pushing(dbdata, entry, id_key, expected_value)
         for field in colnames(dbdata)
             if !hasproperty(entry_fields, field) || (getproperty(entry_fields, field) != getproperty(dbdata_fields, field))
                 field_problem = true
-                @show getproperty(entry_fields, field)
-                @show getproperty(dbdata_fields, field)
             end
         end
         field_problem && throw(ErrorException("Missing entry field or wrong type."))
