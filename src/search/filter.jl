@@ -8,7 +8,7 @@ function indexfilter(dbdata,
     __filter_from_values(vals::Tuple) = x -> x in vals      # filter by being present in a set
 
     __filter_from_values(vals::NTuple{N,T}) where {N, T<:AbstractString} =
-        x -> any(v -> occursin(x, v), vals)                 # filter by being a substring of any string in a set
+        x -> any(v -> occursin(v, x), vals)                 # filter by having at least one value from a string set
 
     __filter_from_values(vals::Vector) =
         x -> x >= vals[1] && x <= vals[2]                   # filter by belonging to an interval
