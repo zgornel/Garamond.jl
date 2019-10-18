@@ -106,6 +106,7 @@ module Garamond
         if isdir(fullpath)
             included_files = []
             for file in readdir(fullpath)
+                local filepath
                 try
                     filepath = joinpath(fullpath, file)
                     if isfile(filepath) && endswith(filepath, ".jl")
@@ -113,7 +114,7 @@ module Garamond
                         push!(included_files, file)
                     end
                 catch e
-                    @warn "Could not include $filepath...\n$e"
+                    @warn "Could not include \"$filepath\".\n$e"
                 end
             end
 
