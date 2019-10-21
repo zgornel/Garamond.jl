@@ -33,32 +33,26 @@ function search(srchers::Vector{<:Searcher{T}},
 
     # Initializations
     n = length(srchers)
-    enabled_searchers = [i for i in 1:n if isenabled(srchers[i])]
-    n_enabled = length(enabled_searchers)
     queries = fill(query, n)
 
     # Search
-    results = Vector{SearchResult{T}}(undef, n_enabled)
     ###################################################################
-    # A `Threads.@threads` statement in front of the for loop here
-    # idicates the use of multi-threading. If multi-threading is used,
-    # OPENBLAS multi-threading support has to be disabled by using:
-    #   `export OPENBLAS_NUM_THREADS=1` in the shell
-    # or start julia with:
-    #   `env OPENBLAS_NUM_THREADS=1 julia`
-    #
-    # WARNING: Multi-theading support (as of v1.1 is still EXPERIMENTAL)
-    #          and floating point operations are not thread-safe!
-    #          Do not use with semantic search!!
+    # Multi-threading is used: leverage the number of hardware threads
+    # that OpenBLAS and Julia use with the environment variables:
+    #   `OPENBLAS_NUM_THREADS`
+    # and
+    #   `JULIA_NUM_THREADS=1`
+    # For example to use 2 blas and 4 julia threads, use:
+    #   `env OPENBLAS_NUM_THREADS=2 JULIA_NUM_THREADS=4 julia`
+    # to start julia.
     ###################################################################
-    ### Threads.@threads for i in 1:n_enabled
-    for i in 1:n_enabled
-        results[i] = search(srchers[enabled_searchers[i]],
-                            queries[enabled_searchers[i]],
-                            search_method=search_method,
-                            max_matches=max_matches,
-                            max_suggestions=max_suggestions)
-    end
+    results = fetch.(Threads.@spawn search(srchers[enabled_searchers[i]],
+                                           queries[enabled_searchers[i]],
+                                           search_method=search_method,
+                                           max_matches=max_matches,
+                                           max_suggestions=max_suggestions)
+                     for i in 1:n if isenabled(srchers[i])
+                    )::Vector{SearchResult{T}}
     # Aggregate results
     ids_agg = [srcher.config.id_aggregation for srcher in srchers if isenabled(srcher)]
     aggregate!(results,

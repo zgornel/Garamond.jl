@@ -103,10 +103,15 @@ function __document_preparation(documents, flags, language)
 end
 
 
-function __embed_all_documents(embedder, documents, oov_policy, ngram_complexity)
-    hcat((document2vec(embedder, doc, oov_policy;
-                       ngram_complexity=ngram_complexity)[1]
-          for doc in documents)...)
+function __embed_all_documents(embedder::AbstractEmbedder{S,T},
+                               documents,
+                               oov_policy,
+                               ngram_complexity) where {S,T}
+    hcat(fetch.(Threads.@spawn document2vec(embedder,
+                                            doc,
+                                            oov_policy;
+                                            ngram_complexity=ngram_complexity)[1]
+                for doc in documents)...)::AbstractMatrix{T}
 end
 
 
