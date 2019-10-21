@@ -154,3 +154,33 @@ db_id_key_shift!(dbdata, id_key=nothing, by=0) = begin
     end
     nothing
 end
+
+
+function db_drop_columns(dbdata::JuliaDB.IndexedTables.AbstractIndexedTable, to_drop)
+    try
+        return select(dbdata, Tuple(col for col in colnames(dbdata) if !in(col, to_drop)))
+    catch
+        @debug "Could not drop $(to_drop), returning original data."
+        return dbdata
+    end
+end
+
+
+function db_drop_columns(dbdata::AbstractNDSparse, to_drop)
+    nchunks(dbdata::JuliaDB.DNDSparse) = length(dbdata.chunks)
+    nchunks(dbdata::NDSparse) = nothing
+    try
+        ## simple oneliner: ndsparse(db_drop_columns(table(dbdata), to_drop))
+        cols = columns(dbdata)
+        indexcols = (col for col in colnames(dbdata.index) if !in(col, to_drop))
+        datacols = (col for col in colnames(dbdata.data) if !in(col, to_drop))
+        indexes = (getproperty(cols, col) for col in indexcols)
+        data = (getproperty(cols, col) for col in datacols)
+        return ndsparse(NamedTuple{Tuple(indexcols)}(indexes),
+                        NamedTuple{Tuple(datacols)}(data);
+                        chunks=nchunks(dbdata))
+    catch
+        @debug "Could not drop $(to_drop), returning original data."
+        return dbdata
+    end
+end
