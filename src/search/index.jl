@@ -31,10 +31,6 @@ function search(srchers::Vector{<:Searcher{T}},
     @assert max_matches >= 0
     @assert max_suggestions >=0
 
-    # Initializations
-    n = length(srchers)
-    queries = fill(query, n)
-
     # Search
     ###################################################################
     # Multi-threading is used: leverage the number of hardware threads
@@ -46,13 +42,13 @@ function search(srchers::Vector{<:Searcher{T}},
     #   `env OPENBLAS_NUM_THREADS=2 JULIA_NUM_THREADS=4 julia`
     # to start julia.
     ###################################################################
-    results = fetch.(Threads.@spawn search(srchers[enabled_searchers[i]],
-                                           queries[enabled_searchers[i]],
+    queries = fill(query, length(srchers))
+    results = fetch.(Threads.@spawn search(srchers[i],
+                                           queries[i],
                                            search_method=search_method,
                                            max_matches=max_matches,
                                            max_suggestions=max_suggestions)
-                     for i in 1:n if isenabled(srchers[i])
-                    )::Vector{SearchResult{T}}
+                     for i in eachindex(srchers) if isenabled(srchers[i]))::Vector{SearchResult{T}}
     # Aggregate results
     ids_agg = [srcher.config.id_aggregation for srcher in srchers if isenabled(srcher)]
     aggregate!(results,
