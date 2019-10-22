@@ -144,24 +144,25 @@ function build_response(dbdata,
     end
 
     response_results = Dict{String, Vector{Dict{Symbol, Any}}}()
-    return_fields = vcat(request.return_fields, id_key)  # id_key always present
-
+    return_fields = Tuple(filter!(in(colnames(dbdata)), vcat(request.return_fields, id_key)))  # id_key always present
     for result in results
         dict_vector = []
-        for (score, idx) in sort(result.query_matches, by=t->t[1], rev=true)
-            entry = db_select_entry(dbdata, idx, id_key=id_key)
-            dict_entry = Dict(filter(nt->in(nt[1], return_fields), pairs(entry)))
-            push!(dict_entry, :score => score)  # hard-push score
+        indices, scores = map(i->getindex.(result.query_matches, i), [2, 1])
+        dataresult = sort(rows(filter(in(indices), dbdata, select=id_key), return_fields),
+                          by=row->getproperty(row, id_key))
+        for (entry, score) in sort(collect(zip(dataresult, scores[sortperm(indices)])),
+                                   by=zipped->zipped[2], rev=true)
+            dict_entry = Dict(pairs(entry))
+            push!(dict_entry, :score => score)
             push!(dict_vector, dict_entry)
         end
         push!(response_results, result.id.value => dict_vector)
     end
-
     response = Dict("elapsed_time"=>elapsed_time,
                     "results" => response_results,
                     "n_total_results" => n_total_results,
                     "n_searchers" => length(results),
                     "n_searchers_w_results" => mapreduce(r->!isempty(r.query_matches), +, results),
                     "suggestions" => squash_suggestions(results, request.max_suggestions))
-    JSON.json(response)
-end
+    return JSON.json(response)
+ end

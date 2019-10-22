@@ -216,8 +216,11 @@ function print_search_results(io::IO,
     ch = ifelse(nm==0, ".", ":");
     printstyled(io, "$ch\n")
 
-    for (score, idx) in sort(result.query_matches, by=t->t[1], rev=true)
-        entry = db_select_entry(dbdata, idx, id_key=id_key)
+    indices, scores = map(i->getindex.(result.query_matches, i), [2, 1])
+    dataresult = sort(rows(filter(in(indices), dbdata, select=id_key), colnames(dbdata)),
+                      by=row->getproperty(row, id_key))
+    for (entry, score) in sort(collect(zip(dataresult, scores[sortperm(indices)])),
+                               by=zipped->zipped[2], rev=true)
         entry_string = dbentry2printable(entry, fields,
                                          max_length=max_length,
                                          separator=separator)
