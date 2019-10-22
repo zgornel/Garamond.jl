@@ -29,6 +29,7 @@ module Garamond
     using Sockets
     using LinearAlgebra
     using Statistics
+    using PooledArrays
     using SparseArrays
     using QuantizedArrays
     using DataStructures
@@ -58,8 +59,7 @@ module Garamond
     # Import section (extendable methods)
     import Base: size, length, show, keys, values, push!,
                  delete!, getindex, names, convert, lowercase,
-                 occursin, isempty, parse,
-                 pop!, popfirst!, push!, pushfirst!, deleteat!
+                 occursin, isempty, parse
     import StringAnalysis: id
     import Word2Vec: WordVectors
     import HNSW: knn_search
@@ -107,6 +107,7 @@ module Garamond
         if isdir(fullpath)
             included_files = []
             for file in readdir(fullpath)
+                local filepath
                 try
                     filepath = joinpath(fullpath, file)
                     if isfile(filepath) && endswith(filepath, ".jl")
@@ -114,7 +115,7 @@ module Garamond
                         push!(included_files, file)
                     end
                 catch e
-                    @warn "Could not include $filepath...\n$e"
+                    @warn "Could not include \"$filepath\".\n$e"
                 end
             end
 
@@ -129,9 +130,10 @@ module Garamond
     include("data/dunderparse.jl")
     include("data/loaders/noop.jl")
     include("data/loaders/juliadb.jl")
+
     include("config/defaults.jl")
     include("config/engine.jl")
-    include("logging.jl")
+
     include("embedder/abstractembedder.jl")
     include("embedder/wordvectors.jl")
     include("embedder/boe.jl")
@@ -140,17 +142,21 @@ module Garamond
     include("embedder/cpmean.jl")
     include("embedder/disc.jl")
     include("embedder/dtv.jl")
+
     include("index/abstractindex.jl")
     include("index/naive.jl")
     include("index/brutetree.jl")
     include("index/kdtree.jl")
     include("index/hnsw.jl")
-    include("update.jl")
+
+    include("searchable/config_parser.jl")
+    include("searchable/searcher.jl")
+    include("searchable/env.jl")
+    include("searchable/update.jl")
+
     include("query/parser.jl")
     include("query/processing.jl")
-    include("search/config_parser.jl")
-    include("search/searcher.jl")
-    include("search/env.jl")
+
     include("search/index.jl")
     include("search/filter.jl")
     include("search/results.jl")
@@ -159,12 +165,15 @@ module Garamond
     include("search/rank.jl")
     include("search/rankers/noop.jl")
     include("search/main.jl")
-    include("version.jl")
+
     include("server/requests.jl")
     include("server/unixsocket.jl")
     include("server/websocket.jl")
     include("server/rest.jl")
     include("server/search.jl")
-    include("show.jl")
+
+    include("utils/logging.jl")
+    include("utils/show.jl")
+    include("utils/version.jl")
 
 end # module

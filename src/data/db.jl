@@ -8,10 +8,15 @@ function db_create_schema(dbdata)
               for col in cols]
 end
 
-
+# Primary key getter
 db_get_primary_keys(dbdata::IndexedTable) = colnames(dbdata)[dbdata.pkey]
 
 db_get_primary_keys(dbdata::AbstractNDSparse) = colnames(dbdata.index)
+
+
+# Sorted row iterator
+db_sorted_row_iterator(dbdata; id_key=DEFAULT_DB_ID_KEY, rev=false) =
+    sort(rows(dbdata); by=row->getproperty(row, id_key), rev=rev)
 
 
 # Concatenate fields of dbentry (which is a named tuple) into a vector of strings
@@ -65,10 +70,7 @@ end
 
 # Selects all id_key's i.e. linear ids that correspond to certain values from a column
 function db_select_idxs_from_values(dbdata, values, values_key; id_key=DEFAULT_DB_ID_KEY)
-    collect(rows(filter(all,
-                        dbdata,
-                        select=values_key=>x->in(x, values)),
-                 id_key))
+    collect(rows(filter(in(values), dbdata, select=values_key), id_key))
 end
 
 
@@ -81,57 +83,66 @@ dbentry2printable(::Nothing, fields; kwargs...) = ""
 
 
 # Primitives to push/pop from IndexedTable/NDSparse
-function db_check_entry_for_pushing(entry, id_key, expected_value)
+function db_check_entry_for_pushing(dbdata, entry, id_key, expected_value)
     if id_key != nothing
         !hasproperty(entry, id_key) &&
             throw(ErrorException("$id_key must be a column in the loaded data"))
         getproperty(entry, id_key) != expected_value &&
             throw(ErrorException("$id_key==$expected_value condition not fulfilled"))
+        field_problem = false
+        entry_fields = map(eltype, entry)
+        dbdata_fields = map(eltype, columns(dbdata))
+        for field in colnames(dbdata)
+            if !hasproperty(entry_fields, field) || (getproperty(entry_fields, field) != getproperty(dbdata_fields, field))
+                field_problem = true
+            end
+        end
+        field_problem && throw(ErrorException("Missing entry field or wrong type."))
     end
 end
 
 
-push!(dbdata, entry; id_key=nothing) = begin
+db_push!(dbdata, entry; id_key=nothing) = begin
     db_check_id_key(dbdata, id_key)
-    db_check_entry_for_pushing(entry, id_key, length(dbdata) + 1)
+    db_check_entry_for_pushing(dbdata, entry, id_key, length(dbdata) + 1)
     push!(rows(dbdata), entry)
     nothing
 end
 
 
-pushfirst!(dbdata, entry; id_key=nothing) = begin
+db_pushfirst!(dbdata, entry; id_key=nothing) = begin
     db_check_id_key(dbdata, id_key)
-    db_check_entry_for_pushing(entry, id_key, 1)
+    db_check_entry_for_pushing(dbdata, entry, id_key, 1)
     cols = columns(dbdata)
-    db_id_key_shift(dbdata, id_key, 1)
     for col in colnames(dbdata)
         pushfirst!(getproperty(cols, col), getproperty(entry, col))
     end
+    db_id_key_recreate!(dbdata, id_key)
     nothing
 end
 
 
-pop!(dbdata; id_key=nothing) = map(pop!, columns(dbdata))
+db_pop!(dbdata; id_key=nothing) = map(pop!, columns(dbdata))
 
 
-popfirst!(dbdata; id_key=nothing) = begin
+db_popfirst!(dbdata; id_key=nothing) = begin
     db_check_id_key(dbdata, id_key)
     cols = columns(dbdata)
     popped = map(popfirst!, cols)
-    db_id_key_shift(dbdata, id_key, -1)
+    db_id_key_recreate!(dbdata, id_key)
     return popped
 end
 
 
-deleteat!(dbdata, idxs; id_key=nothing) = begin
+db_deleteat!(dbdata, idxs; id_key=nothing) = begin
     db_check_id_key(dbdata, id_key)
     cols = columns(dbdata)
     map(x->deleteat!(x, idxs), cols)
-    db_id_key_recreate(dbdata, id_key)
+    db_id_key_recreate!(dbdata, id_key)
 end
 
 
-db_id_key_recreate(dbdata, id_key=nothing) = begin
+db_id_key_recreate!(dbdata, id_key=nothing) = begin
     if id_key != nothing
         getproperty(columns(dbdata), id_key)[:].= 1:length(dbdata)
     end
@@ -139,9 +150,39 @@ db_id_key_recreate(dbdata, id_key=nothing) = begin
 end
 
 
-db_id_key_shift(dbdata, id_key=nothing, by=0) = begin
+db_id_key_shift!(dbdata, id_key=nothing, by=0) = begin
     if id_key != nothing
         getproperty(columns(dbdata), id_key)[:].+= by
     end
     nothing
+end
+
+
+function db_drop_columns(dbdata::JuliaDB.IndexedTables.AbstractIndexedTable, to_drop)
+    try
+        return select(dbdata, Tuple(col for col in colnames(dbdata) if !in(col, to_drop)))
+    catch
+        @debug "Could not drop $(to_drop), returning original data."
+        return dbdata
+    end
+end
+
+
+function db_drop_columns(dbdata::AbstractNDSparse, to_drop)
+    nchunks(dbdata::JuliaDB.DNDSparse) = length(dbdata.chunks)
+    nchunks(dbdata::NDSparse) = nothing
+    try
+        ## simple oneliner: ndsparse(db_drop_columns(table(dbdata), to_drop))
+        cols = columns(dbdata)
+        indexcols = (col for col in colnames(dbdata.index) if !in(col, to_drop))
+        datacols = (col for col in colnames(dbdata.data) if !in(col, to_drop))
+        indexes = (getproperty(cols, col) for col in indexcols)
+        data = (getproperty(cols, col) for col in datacols)
+        return ndsparse(NamedTuple{Tuple(indexcols)}(indexes),
+                        NamedTuple{Tuple(datacols)}(data);
+                        chunks=nchunks(dbdata))
+    catch
+        @debug "Could not drop $(to_drop), returning original data."
+        return dbdata
+    end
 end

@@ -72,7 +72,7 @@ function respond(env, socket, counter, channels)
         etime = time() - timer_start
         response = build_response(env.dbdata, request, results; id_key=env.id_key, elapsed_time=etime)
         write(socket, response * RESPONSE_TERMINATOR)
-        @info "* Search [#$(counter[1])]: query='$(request.query)' completed in $etime(s)."
+        @info "• Search [#$(counter[1])]: query='$(request.query)' completed in $etime(s)."
 
     elseif request.operation === :recommend
         ### Recommend ###
@@ -80,31 +80,31 @@ function respond(env, socket, counter, channels)
         etime = time() - timer_start
         response = build_response(env.dbdata, request, recommendations; id_key=env.id_key, elapsed_time=etime)
         write(socket, response * RESPONSE_TERMINATOR)
-        @info "* Recommendation [#$(counter[1])]: completed in $etime(s)."
+        @info "• Recommendation [#$(counter[1])]: completed in $etime(s)."
 
     elseif request.operation === :rank
         ranked = rank(env, request)  #::Vector{SearchResult}
         etime = time() - timer_start
         response = build_response(env.dbdata, request, ranked; id_key=env.id_key, elapsed_time=etime)
-        @info "* Rank [#$(counter[1])]: completed in $etime(s)."
+        @info "• Rank [#$(counter[1])]: completed in $etime(s)."
         write(socket, response * RESPONSE_TERMINATOR)
 
     elseif request.operation === :kill
         ### Kill the search server ###
-        @info "* Kill [#$(counter[1])]: Exiting in 1(s)..."
+        @info "• Kill [#$(counter[1])]: Exiting in 1(s)..."
         write(socket, RESPONSE_TERMINATOR)
         sleep(1)
         exit()
 
     elseif request.operation === :read_configs
         ### Read and return data configurations ###
-        @info "* Get configuration(s) [#$(counter[1])]."
+        @info "• Get configuration(s) [#$(counter[1])]."
         write(socket,
               read_searcher_configurations_json(env.searchers) * RESPONSE_TERMINATOR)
 
     elseif request.operation === :update
         ### Read and return data configurations ###
-        @info "* Update searcher(s) [#$(counter[1])]."
+        @info "• Update searcher(s) [#$(counter[1])]."
         # The request query contains the string id of the updated searcher
         if !isready(up_in_channel)
             put!(up_in_channel, request.query)  # the take! is in the search server
@@ -114,15 +114,16 @@ function respond(env, socket, counter, channels)
         write(socket, RESPONSE_TERMINATOR)  # send response asynchronously
 
     elseif request.operation === :error
-        @info "* Errored request [#$(counter[1])]: Ignoring..."
+        @info "• Errored request [#$(counter[1])]: Ignoring..."
         write(socket, RESPONSE_TERMINATOR)
 
     else
-        @info "* Unknown request [#$(counter[1])]: Ignoring..."
+        @info "• Unknown request [#$(counter[1])]: Ignoring..."
         write(socket, RESPONSE_TERMINATOR)
     end
 
-    @debug "Response [#$(counter[1])]: done after $(time()-timer_start)(s)."
+    close(socket)
+    @debug "* Response [#$(counter[1])]: done after $(time()-timer_start)(s)."
 end
 
 
@@ -143,24 +144,25 @@ function build_response(dbdata,
     end
 
     response_results = Dict{String, Vector{Dict{Symbol, Any}}}()
-    return_fields = vcat(request.return_fields, id_key)  # id_key always present
-
+    return_fields = Tuple(filter!(in(colnames(dbdata)), vcat(request.return_fields, id_key)))  # id_key always present
     for result in results
         dict_vector = []
-        for (score, idx) in sort(result.query_matches, by=t->t[1], rev=true)
-            entry = db_select_entry(dbdata, idx, id_key=id_key)
-            dict_entry = Dict(filter(nt->in(nt[1], return_fields), pairs(entry)))
-            push!(dict_entry, :score => score)  # hard-push score
+        indices, scores = map(i->getindex.(result.query_matches, i), [2, 1])
+        dataresult = sort(rows(filter(in(indices), dbdata, select=id_key), return_fields),
+                          by=row->getproperty(row, id_key))
+        for (entry, score) in sort(collect(zip(dataresult, scores[sortperm(indices)])),
+                                   by=zipped->zipped[2], rev=true)
+            dict_entry = Dict(pairs(entry))
+            push!(dict_entry, :score => score)
             push!(dict_vector, dict_entry)
         end
         push!(response_results, result.id.value => dict_vector)
     end
-
     response = Dict("elapsed_time"=>elapsed_time,
                     "results" => response_results,
                     "n_total_results" => n_total_results,
                     "n_searchers" => length(results),
                     "n_searchers_w_results" => mapreduce(r->!isempty(r.query_matches), +, results),
                     "suggestions" => squash_suggestions(results, request.max_suggestions))
-    JSON.json(response)
-end
+    return JSON.json(response)
+ end
