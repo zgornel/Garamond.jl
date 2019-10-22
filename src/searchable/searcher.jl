@@ -48,11 +48,12 @@ getindex(srchers::AbstractVector{Searcher}, an_id::String) = getindex(srchers, S
 
 Creates a Searcher from a searcher configuration `config::SearchConfig`.
 """
-function build_searcher(dbdata, config)
+function build_searcher(dbdata, config; id_key=DEFAULT_DB_ID_KEY)
 
     raw_document_iterator = (dbentry2text(dbentry, config.indexable_fields)
-                             for dbentry in rows(dbdata))
-
+                             for dbentry in db_sorted_row_iterator(dbdata;
+                                                                   id_key=id_key,
+                                                                   rev=false))
     # Pre-process documents
     flags = config.text_strip_flags | (config.stem_words ? stem_words : 0x0)
     language = get(STR_TO_LANG, config.language, DEFAULT_LANGUAGE)()

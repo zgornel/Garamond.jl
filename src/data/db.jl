@@ -8,10 +8,15 @@ function db_create_schema(dbdata)
               for col in cols]
 end
 
-
+# Primary key getter
 db_get_primary_keys(dbdata::IndexedTable) = colnames(dbdata)[dbdata.pkey]
 
 db_get_primary_keys(dbdata::AbstractNDSparse) = colnames(dbdata.index)
+
+
+# Sorted row iterator
+db_sorted_row_iterator(dbdata; id_key=DEFAULT_DB_ID_KEY, rev=false) =
+    sort(rows(dbdata); by=row->getproperty(row, id_key), rev=rev)
 
 
 # Concatenate fields of dbentry (which is a named tuple) into a vector of strings

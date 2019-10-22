@@ -27,8 +27,8 @@ function build_search_env(filepath)
     db_check_id_key(dbdata, env_config.id_key)
 
     # Build searchers
-    srchers = [build_searcher(dbdata, config) for config in env_config.searcher_configs]
-
+    srchers = [build_searcher(dbdata, config; id_key=env_config.id_key)
+               for config in env_config.searcher_configs]
     # Build search environment
     SearchEnv(dbdata, env_config.id_key, srchers, env_config.ranker, env_config.recommender)
 end
