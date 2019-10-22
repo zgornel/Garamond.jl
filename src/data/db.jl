@@ -65,10 +65,7 @@ end
 
 # Selects all id_key's i.e. linear ids that correspond to certain values from a column
 function db_select_idxs_from_values(dbdata, values, values_key; id_key=DEFAULT_DB_ID_KEY)
-    collect(rows(filter(all,
-                        dbdata,
-                        select=values_key=>x->in(x, values)),
-                 id_key))
+    collect(rows(filter(in(values), dbdata, select=values_key), id_key))
 end
 
 
