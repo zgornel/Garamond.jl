@@ -144,7 +144,8 @@ function build_response(dbdata,
     end
 
     response_results = Dict{String, Vector{Dict{Symbol, Any}}}()
-    return_fields = Tuple(filter!(in(colnames(dbdata)), vcat(request.return_fields, id_key)))  # id_key always present
+    return_fields = Tuple(filter!(in(colnames(dbdata)),
+                                  unique(vcat(request.return_fields, id_key))))  # id_key always present
     for result in results
         dict_vector = []
         indices, scores = map(i->getindex.(result.query_matches, i), [2, 1])
@@ -152,7 +153,7 @@ function build_response(dbdata,
                           by=row->getproperty(row, id_key))
         for (entry, score) in sort(collect(zip(dataresult, scores[sortperm(indices)])),
                                    by=zipped->zipped[2], rev=true)
-            dict_entry = Dict(pairs(entry))
+            dict_entry = Dict{Symbol, Any}(pairs(entry))
             push!(dict_entry, :score => score)
             push!(dict_vector, dict_entry)
         end
