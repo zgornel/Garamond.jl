@@ -144,8 +144,8 @@ function build_response(dbdata,
     end
 
     response_results = Dict{String, Vector{Dict{Symbol, Any}}}()
-    return_fields = Tuple(filter!(in(colnames(dbdata)),
-                                  unique(vcat(request.return_fields, id_key))))  # id_key always present
+    return_fields = Tuple(intersect!(unique!([request.return_fields..., id_key]),
+                                     colnames(dbdata)))
     for result in results
         dict_vector = []
         indices, scores = map(i->getindex.(result.query_matches, i), [2, 1])
