@@ -1,3 +1,4 @@
 function noop_loader(args...; kwargs...)
-    @error "Noop data loader: provide a valid data loader."
+    @info "Noop data loader: exiting gracefully (nothing to do)..."
+    exit()
 end

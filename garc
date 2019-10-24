@@ -89,6 +89,10 @@ function get_unix_socket_client_arguments(args::Vector{String})
             help = "How many suggestions to return for each mismatched query term"
             arg_type = Int
             default = 0
+        "--id-key"
+            help = "The linear ID key"
+            arg_type = String
+            default = "garamond_linear_id"
         "--kill", "-k"
             help = "Kill the search engine server"
             action = :store_true
@@ -98,6 +102,9 @@ function get_unix_socket_client_arguments(args::Vector{String})
             default = ""
         "--update-all"
             help = "Update all searchers"
+            action = :store_true
+        "--rank"
+            help = "Use ranker (if any)"
             action = :store_true
 	end
 	return parse_args(args,s)
@@ -115,7 +122,9 @@ function construct_json_request(args)
                    "max_suggestions" => args["max-suggestions"],
                    "search_method" => args["search-method"],
                    "return_fields" => args["return-fields"],
-                   "custom_weights" =>Dict())
+                   "custom_weights" =>Dict(),
+                   "request_id_key" => args["id-key"],
+                   "rank" => args["rank"])
     # Kill request
     if args["kill"]
         dictreq["operation"] = "kill"

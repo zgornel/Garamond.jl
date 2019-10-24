@@ -215,13 +215,14 @@ function print_search_results(io::IO,
 
     ch = ifelse(nm==0, ".", ":");
     printstyled(io, "$ch\n")
-
+    print_fields = Tuple(intersect!(unique!([fields..., id_key]), colnames(dbdata)))
     indices, scores = map(i->getindex.(result.query_matches, i), [2, 1])
-    dataresult = sort(rows(filter(in(indices), dbdata, select=id_key), colnames(dbdata)),
+    dataresult = sort(rows(filter(in(indices), dbdata, select=id_key), print_fields),
                       by=row->getproperty(row, id_key))
     for (entry, score) in sort(collect(zip(dataresult, scores[sortperm(indices)])),
                                by=zipped->zipped[2], rev=true)
-        entry_string = dbentry2printable(entry, fields,
+        entry_string = dbentry2printable(entry,
+                                         print_fields,
                                          max_length=max_length,
                                          separator=separator)
         printstyled(io, "  $score ~ ", color=:normal, bold=true)
@@ -239,8 +240,11 @@ __print_suggestions(io::IO, suggestions) = begin
     end
 end
 
-print_search_results(dbdata, result; fields=colnames(dbdata),
-                     id_key=DEFAULT_DB_ID_KEY, max_length=50,
+print_search_results(dbdata,
+                     result;
+                     fields=colnames(dbdata),
+                     id_key=DEFAULT_DB_ID_KEY,
+                     max_length=50,
                      separator=" - ") =
     print_search_results(stdout, dbdata, result, fields=fields, id_key=id_key,
                          max_length=max_length, separator=separator)
@@ -259,8 +263,12 @@ function print_search_results(io::IO,
     __print_suggestions(io, suggestions)
 end
 
-print_search_results(dbdata, results::AbstractVector; fields=colnames(dbdata),
-                     id_key=DEFAULT_DB_ID_KEY, max_length=50, separator=" - ",
+print_search_results(dbdata,
+                     results::AbstractVector;
+                     fields=colnames(dbdata),
+                     id_key=DEFAULT_DB_ID_KEY,
+                     max_length=50,
+                     separator=" - ",
                      max_suggestions=MAX_SUGGESTIONS) =
     print_search_results(stdout, dbdata, results, fields=fields, id_key=id_key,
                          max_length=max_length, separator=separator,
