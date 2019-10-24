@@ -4,4 +4,3 @@
 ```@autodocs
 Modules = [Garamond]
 ```
-

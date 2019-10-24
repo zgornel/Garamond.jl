@@ -8,7 +8,7 @@ push!(LOAD_PATH,"../src/")
 # Make documentation
 makedocs(
     modules = [Garamond],
-    format = :html,
+    format = Documenter.HTML(),
     sitename = " ",
     authors = "Corneliu Cofaru, 0x0α Research",
     clean = true,
@@ -20,7 +20,6 @@ makedocs(
         "Client/Server" => "clientserver.md",
         "Building" => "build.md",
         "Notes" => "notes.md",
-        "Feature list" => "features.md",
         "API Reference" => "api.md",
     ]
 )
