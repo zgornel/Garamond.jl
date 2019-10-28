@@ -26,7 +26,6 @@ mutable struct SearchConfig
     id_aggregation::StringId        # aggregation id
     description::String             # description of the searcher
     enabled::Bool                   # whether to use the searcher in search or not
-    config_path::String             # file path for the configuration file
 
     indexable_fields::Vector{Symbol}
     language::String                # the index-level language
@@ -73,7 +72,6 @@ SearchConfig(;
           id_aggregation=id,
           description="",
           enabled=false,
-          config_path="",
 
           indexable_fields=DEFAULT_INDEXABLE_FIELDS,
           language=DEFAULT_LANGUAGE_STR,
@@ -104,7 +102,6 @@ SearchConfig(;
           cache_compression=DEFAULT_CACHE_COMPRESSION) =
     # Call normal constructor
     SearchConfig(id, id_aggregation, description, enabled,
-                 config_path,
                  indexable_fields,
                  language, stem_words, ngram_complexity,
                  vectors, vectors_transform, vectors_dimension, vectors_eltype,
@@ -129,13 +126,14 @@ specifying multiple configuration file paths. The function returns a
 function parse_configuration(filename::AbstractString)
 
     # Read config (this should fail if config not found)
-    local config, dict_configs, data_loader,
+    local config, dict_configs,
+          data_loader_name, data_loader_arguments, data_loader_kwarguments,
           ranker_name, recommender_name,
           id_key, id_environment
-    fullfilename = abspath(expanduser(filename))
+    fullpathconfig = abspath(expanduser(filename))
     try
         # Parse configuration file
-        config = JSON.parse(open(fid->read(fid, String), fullfilename))
+        config = JSON.parse(open(fid->read(fid, String), fullpathconfig))
 
         # Read separately individual searcher configurations
         dict_configs = config["searchers"]
@@ -145,10 +143,6 @@ function parse_configuration(filename::AbstractString)
         data_loader_arguments = get(config, "data_loader_arguments", [])
         data_loader_kwarguments = Dict{Symbol, Any}(Symbol(k) => v for (k,v) in
                                        get(config, "data_loader_kwarguments", Dict{String,Any}()))
-        data_loader_function = eval(data_loader_name)
-        data_loader_closure(args...;kwargs...) = () -> data_loader_function(args...;kwargs...)
-        data_loader = data_loader_closure(data_loader_arguments...;
-                                          pairs(data_loader_kwarguments)...)
         # Create data loader symbol
         ranker_name = Symbol(get(config, "ranker_name", DEFAULT_RANKER_NAME))
         recommender_name = Symbol(get(config, "recommender_name", DEFAULT_RECOMMENDER_NAME))
@@ -159,9 +153,14 @@ function parse_configuration(filename::AbstractString)
         # Create an environment id
         id_environment = make_id(StringId, get(config, "id", nothing))
     catch e
-        @error "Could not parse data configuration file $fullfilename ($e). Exiting..."
+        @error "Could not parse configuration in $fullpathconfig ($e). Exiting..."
         exit(-1)
     end
+
+    # Construct data loader
+    data_loader_function = eval(data_loader_name)
+    data_loader_closure(args...;kwargs...) = () -> data_loader_function(args...;kwargs...)
+    data_loader = data_loader_closure(data_loader_arguments...; pairs(data_loader_kwarguments)...)
 
     # Construct result ranker
     ranker = eval(ranker_name)
@@ -193,7 +192,6 @@ function parse_configuration(filename::AbstractString)
             end
             sconfig.description = get(dconfig, "description", "")
             sconfig.enabled = get(dconfig, "enabled", false)
-            sconfig.config_path = fullfilename
             sconfig.indexable_fields = Symbol.(get(dconfig, "indexable_fields", DEFAULT_INDEXABLE_FIELDS))
             sconfig.language = lowercase(get(dconfig, "language", DEFAULT_LANGUAGE_STR))
             sconfig.stem_words = Bool(get(dconfig, "stem_words", DEFAULT_STEM_WORDS))
@@ -336,7 +334,7 @@ function parse_configuration(filename::AbstractString)
                 sconfig.cache_compression = DEFAULT_CACHE_COMPRESSION
             end
         catch e
-            @warn """$(sconfig.id) Could not correctly parse configuration in $(fullfilename).
+            @warn """$(sconfig.id) Could not correctly parse configuration in $(fullpathconfig).
                      Exception: $(e)
                      Ignoring search configuration..."""
             push!(removable, i)
@@ -348,7 +346,7 @@ function parse_configuration(filename::AbstractString)
     # Last checks
     if isempty(searcher_configs)
         @error """The search configuration does not contain searchable entities.
-                  Please review $fullfilename, add entries or fix the
+                  Please review $fullpathconfig, add entries or fix the
                   configuration errors. Exiting..."""
         exit(-1)
     else
@@ -356,7 +354,7 @@ function parse_configuration(filename::AbstractString)
         for config in searcher_configs
             if config.id in all_ids          # check id uniqueness
                 @error """Multiple occurences of $(config.id) detected. Data id's
-                          have to be unique. Please correct the error in $fullfilename.
+                          have to be unique. Please correct the error in $fullpathconfig.
                           Exiting..."""
                 exit(-1)
             else
@@ -369,7 +367,8 @@ function parse_configuration(filename::AbstractString)
             id_key=id_key,
             searcher_configs=searcher_configs,
             ranker=ranker,
-            recommender=recommender)
+            recommender=recommender,
+            config_path=fullpathconfig)
 end
 
 
@@ -385,18 +384,16 @@ end
 
 
 """
-    read_searcher_configurations_json(srchers)
+    read_configuration_to_json(env)
 
-Returns a string containing a JSON dictionary where the keys are the paths
-to the data configuration files for the loaded searchers and the values are
-the searcher configurations contained in the respective files.
+Returns a JSON dictionary with the full configuration of the search environment.
 """
-function read_searcher_configurations_json(srchers)
+function read_configuration_to_json(env)
     try
-        files = unique(map(srcher->srcher.config.config_path, srchers))
-        return JSON.json(Dict(file=>JSON.parse(read(file, String)) for file in files))
+        _config = JSON.parse(open(fid->read(fid, String), env.config_path))
+        return JSON.json(Dict(env.config_path => _config))
     catch e
-        @warn "Could not return searcher configurations: $e. Returning empty string..."
+        @warn "Could not return search configuration. Returning empty string.\n$e"
         return ""
     end
 end

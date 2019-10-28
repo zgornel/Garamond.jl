@@ -10,6 +10,7 @@ mutable struct SearchEnv
     searchers    #::Vector{<:Searcher}
     ranker       #::Function
     recommender  #::Function
+    config_path  #::String
 end
 
 
@@ -27,8 +28,14 @@ function build_search_env(filepath)
     db_check_id_key(dbdata, env_config.id_key)
 
     # Build searchers
-    srchers = [build_searcher(dbdata, config; id_key=env_config.id_key)
-               for config in env_config.searcher_configs]
+    srchers = [build_searcher(dbdata, srcher_config; id_key=env_config.id_key)
+               for srcher_config in env_config.searcher_configs]
+
     # Build search environment
-    SearchEnv(dbdata, env_config.id_key, srchers, env_config.ranker, env_config.recommender)
+    SearchEnv(dbdata,
+              env_config.id_key,
+              srchers,
+              env_config.ranker,
+              env_config.recommender,
+              env_config.config_path)
 end
