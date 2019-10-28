@@ -20,13 +20,13 @@ function build_logger(logging_stream="stdout", log_level="info")
     # Handle logging stream option
     if logging_stream == "stdout"
         _stream = stdout
-    elseif isfile(logging_stream)
-        _stream = logging_stream
     else
-        # Create a default log file
-        logdir = abspath(dirname(logging_stream))
-        !isdir(logdir) && mkpath(logdir)
-        _stream = joinpath(logdir, ".garamond.log")
+        try
+            _stream = open(logging_stream, "a+")
+        catch e
+            @warn "Failed to create logfile $logging_stream.\n$e"
+            _stream = stdout
+        end
     end
     # Logging
     if log_level == "debug"

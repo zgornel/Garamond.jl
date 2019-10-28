@@ -18,9 +18,9 @@ where:
     `some_recommender` is the name of the recommender
     `request` is the recommendation request, containing all needed parameters
     `environment` a named tuple with at least two fields
-        ⋅ `dbdata` - an `IndexedTable` or `NDSparse` object containint the data
-        ⋅ `id_key` - the name of the data primary key
-        ⋅ `ranker` - the ranking function
+        • `dbdata` - an `IndexedTable` or `NDSparse` object containint the data
+        • `id_key` - the name of the data primary key
+        • `ranker` - the ranking function
 
 The arguments above should be enough to implement any ranker.
 =#

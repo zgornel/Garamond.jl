@@ -2,23 +2,23 @@
 REST API Specification
 ----------------------
 
-    ⋅ Malformed GET, POST requests return a HTTP 400 i.e. Bad Request
-    ⋅ Correct resutls return a HTTP 200 i.e. OK
+    • Malformed GET, POST requests return a HTTP 400 i.e. Bad Request
+    • Correct resutls return a HTTP 200 i.e. OK
 
-    ⋅ GET:  /*                    returns a HTTP 501 message i.e. Not Implemented
-    ⋅ GET:  /api/kill             kills the server
-    ⋅ GET:  /api/read-configs     returns the searcher configurations
-    ⋅ GET:  /api/update/*         updates all engine searchers
-    ⋅ GET:  /api/update/<id>      updates the seacher with an id equal to <id>
+    • GET:  /*                    returns a HTTP 501 message i.e. Not Implemented
+    • GET:  /api/kill             kills the server
+    • GET:  /api/read-configs     returns the searcher configurations
+    • GET:  /api/update/*         updates all engine searchers
+    • GET:  /api/update/<id>      updates the seacher with an id equal to <id>
 
-    ⋅ POST: /*                    returns a HTTP 501 message i.e. Not Implemented
-    ⋅ POST: /api/search           triggers a search using parameters from the HTTP message body
-    ⋅ POST: /api/recommed         triggers a recommendation using parameters from the HTTP message body
-    ⋅ POST: /api/rank             triggers a ranking i.e. boost using parameters from the HTTP message body
+    • POST: /*                    returns a HTTP 501 message i.e. Not Implemented
+    • POST: /api/search           triggers a search using parameters from the HTTP message body
+    • POST: /api/recommed         triggers a recommendation using parameters from the HTTP message body
+    • POST: /api/rank             triggers a ranking i.e. boost using parameters from the HTTP message body
 
 HTTP Message body specification for the search, recommend and rank operations
 -------------------------------------------------------------------------------
-    ⋅ search command format (JSON):
+    • search command format (JSON):
          {
           "query" : <the query to be performed, a string>,
           "return_fields" : <a list of string names for the fields to be returned>,
@@ -30,7 +30,7 @@ HTTP Message body specification for the search, recommend and rank operations
           "rank": <a boolean that when true, enables the use of ranking; false by default>
          }
 
-    ⋅ recommend command format (JSON):
+    • recommend command format (JSON):
          {
           "recommend_id" : <the id of the entity for which recommendations are sought>
           "recommend_id_key": <the db name of the column holding the id value>
@@ -44,7 +44,7 @@ HTTP Message body specification for the search, recommend and rank operations
           "rank": <a boolean that when true, enables the use of ranking; false by default>
          }
 
-    ⋅ rank command format (JSON):
+    • rank command format (JSON):
          {
             "rank_ids": <list of ids to rank>,
             "rank_id_key": <the db name of the column holding the id values>,

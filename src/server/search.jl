@@ -99,8 +99,7 @@ function respond(env, socket, counter, channels)
     elseif request.operation === :read_configs
         ### Read and return data configurations ###
         @info "• Get configuration(s) [#$(counter[1])]."
-        write(socket,
-              read_searcher_configurations_json(env.searchers) * RESPONSE_TERMINATOR)
+        write(socket, read_configuration_to_json(env) * RESPONSE_TERMINATOR)
 
     elseif request.operation === :update
         ### Read and return data configurations ###
