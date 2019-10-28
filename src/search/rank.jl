@@ -24,8 +24,8 @@ where:
     `scores=nothing` if not empty, indicates the scores associated to the
                      data indices
     `environment` a named tuple with at least two fields
-        ⋅ `dbdata` - an `IndexedTable` or `NDSparse` object containint the data
-        ⋅ `id_key` - the name of the data primary key
+        • `dbdata` - an `IndexedTable` or `NDSparse` object containint the data
+        • `id_key` - the name of the data primary key
 
 The arguments above should be enough to implement any ranker.
 =#
