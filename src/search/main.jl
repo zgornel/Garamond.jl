@@ -1,10 +1,12 @@
 function search(env::SearchEnv, request; exclude=nothing)
 
     # Parse query content
-    parsed_query = parse_query(request.query, db_create_schema(env.dbdata))
-
+    parsed_query = parse_query(request.query,
+                               db_create_schema(env.dbdata);
+                               searchable_filters=request.searchable_filters)
     issearch = !isempty(parsed_query.search)
     isfilter = !isempty(parsed_query.filter)
+
     if !isfilter
         # No filter, search always done
         results = search(env.searchers,
@@ -34,7 +36,9 @@ function search(env::SearchEnv, request; exclude=nothing)
                          max_matches=request.max_matches,
                          max_suggestions=request.max_suggestions,
                          custom_weights=request.custom_weights)
-        #TODO(Corneliu) Decide whether to pipe idxs_filt into search
+        #TODO(Corneliu) Decide whether to do multiple searches with
+        # higher max_matches (needs InternalRequest specification) to
+        # match filter
         idxs_filt = indexfilter(env.dbdata,
                                 parsed_query.filter;
                                 id_key=env.id_key,

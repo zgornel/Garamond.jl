@@ -23,6 +23,7 @@ HTTP Message body specification for the search, recommend and rank operations
           "query" : <the query to be performed, a string>,
           "return_fields" : <a list of string names for the fields to be returned>,
           "search_method" : <OPTIONAL, a string defining the type of classic search method>,
+          "searchable_filters" : <OPTIONAL, a list of fields whose values will also be part of search if used for filtering>
           "max_matches" : <OPTIONAL, an integer defining the maximum number of results>,
           "max_suggestions" : <OPTIONAL, an integer defining the maximum number of suggestions / mismatches keyword>,
           "custom_weights" : <OPTINAL, a dictionary where the keys are strings with searcher ids and values
@@ -37,6 +38,7 @@ HTTP Message body specification for the search, recommend and rank operations
           "filter_fields" : <a list of string name fields containing the fields that will be used by the recommender>,
           "return_fields" : <a list of string names for the fields to be returned>,
           "search_method" : <OPTIONAL, a string defining the type of classic search method>,
+          "searchable_filters" : <OPTIONAL, a list of fields whose values will form a search query if used in filter_fields>
           "max_matches" : <OPTIONAL, an integer defining the maximum number of results>,
           "max_suggestions" : <OPTIONAL, an integer defining the maximum number of suggestions / mismatches keyword>,
           "custom_weights" : <OPTINAL, a dictionary where the keys are strings with searcher ids and values
@@ -157,7 +159,8 @@ search_req_handler(req::HTTP.Request) = begin
                 operation = :search,
                 query = parameters["query"],  # if missing, throws
                 return_fields = Symbol.(parameters["return_fields"]),  # if missing, throws
-                search_method = Symbol.(get(parameters, "search_method", DEFAULT_SEARCH_METHOD)),
+                search_method = Symbol(get(parameters, "search_method", DEFAULT_SEARCH_METHOD)),
+                searchable_filters = Symbol.(get(parameters, "searchable_filters", String[])),
                 max_matches = get(parameters, "max_matches", DEFAULT_MAX_MATCHES),
                 max_suggestions = get(parameters, "max_suggestions", DEFAULT_MAX_SUGGESTIONS),
                 custom_weights = get(parameters, "custom_weights", DEFAULT_CUSTOM_WEIGHTS),
@@ -173,7 +176,8 @@ recommend_req_handler(req::HTTP.Request) = begin
                 request_id_key = Symbol.(parameters["recommend_id_key"]),  # if missing, throws
                 query = _query,
                 return_fields = Symbol.(parameters["return_fields"]),  # if missing, throws
-                search_method = Symbol.(get(parameters, "search_method", DEFAULT_SEARCH_METHOD)),
+                search_method = Symbol(get(parameters, "search_method", DEFAULT_SEARCH_METHOD)),
+                searchable_filters = Symbol.(get(parameters, "searchable_filters", String[])),
                 max_matches = get(parameters, "max_matches", DEFAULT_MAX_MATCHES),
                 max_suggestions = get(parameters, "max_suggestions", DEFAULT_MAX_SUGGESTIONS),
                 custom_weights = get(parameters, "custom_weights", DEFAULT_CUSTOM_WEIGHTS),
