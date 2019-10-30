@@ -6,6 +6,7 @@ mutable struct InternalRequest
     query::String
     max_matches::Int
     search_method::Symbol
+    searchable_filters::Vector{Symbol}
     max_suggestions::Int
     return_fields::Vector{Symbol}
     custom_weights::Dict{Symbol,Float64}
@@ -18,14 +19,22 @@ InternalRequest(;operation=:uninitialized_request,
                 query="",
                 max_matches=DEFAULT_MAX_MATCHES,
                 search_method=DEFAULT_SEARCH_METHOD,
+                searchable_filters=Symbol[],
                 max_suggestions=DEFAULT_MAX_SUGGESTIONS,
                 return_fields=Symbol[],
                 custom_weights=DEFAULT_CUSTOM_WEIGHTS,
                 request_id_key=Symbol(""),
                 rank=false)=
-    InternalRequest(operation, query, max_matches, search_method,
-                        max_suggestions, return_fields, custom_weights,
-                        request_id_key, rank)
+    InternalRequest(operation,
+                    query,
+                    max_matches,
+                    search_method,
+                    searchable_filters,
+                    max_suggestions,
+                    return_fields,
+                    custom_weights,
+                    request_id_key,
+                    rank)
 
 
 #=
