@@ -27,7 +27,7 @@ function parse_query(query,
     # Define expression to match
     #MATCH_EXPR = Regex("\\w+\\s*$separator(\\s*\\w+|\\s*(\\[|\\().*(\\]|\\)))")
     #MATCH_EXPR = Regex("[_a-zA-Z0-9]+$separator[_a-zA-Z0-9\\(\\[\\]\\),\"]+")
-    REGEX_ALPHANUM = "_a-zA-Z0-9"
+    REGEX_ALPHANUM = "_a-zA-Z0-9\\."
     MATCH_EXPR = Regex("[$REGEX_ALPHANUM]+"*
                        "$separator"*
                        "([$REGEX_ALPHANUM]+|"*
