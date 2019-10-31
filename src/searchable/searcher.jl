@@ -57,10 +57,10 @@ function build_searcher(dbdata, config; id_key=DEFAULT_DB_ID_KEY)
     # Pre-process documents
     flags = config.text_strip_flags | (config.stem_words ? stem_words : 0x0)
     language = get(STR_TO_LANG, config.language, DEFAULT_LANGUAGE)()
-    prepared_documents = @op __document_preparation(raw_document_iterator, flags, language)
+    prepared_documents = __document_preparation(raw_document_iterator, flags, language)
 
     # Build corpus
-    crps = @op __build_corpus(prepared_documents, language, config.ngram_complexity)
+    crps = __build_corpus(prepared_documents, language, config.ngram_complexity)
 
     # Construct element type
     T = eval(config.vectors_eltype)
@@ -68,67 +68,38 @@ function build_searcher(dbdata, config; id_key=DEFAULT_DB_ID_KEY)
     # TODO(Corneliu) Separate embeddings as well from searchers
     # i.e. data, embeddings and indexes are separate an re-use each other
 
-    # Get embedder (split into two separate call ways so that unused changed
-    #               parameters do not influence the cache consistency)
+    # Get embedder
     if config.vectors in [:word2vec, :glove, :conceptnet, :compressed]
-        embedder = @op __build_embedder(crps, T, config.vectors, config.embeddings_path,
+        embedder = __build_embedder(crps, T, config.vectors, config.embeddings_path,
                                     config.embeddings_kind, config.doc2vec_method,
                                     config.glove_vocabulary, config.sif_alpha,
                                     config.borep_dimension, config.borep_pooling_function,
                                     config.disc_ngram)
     elseif config.vectors in [:count, :tf, :tfidf, :bm25]
-        embedder = @op __build_embedder(crps, T, config.ngram_complexity,
+        embedder = __build_embedder(crps, T, config.ngram_complexity,
                                     config.vectors, config.vectors_transform,
                                     config.vectors_dimension,
                                     config.bm25_kappa, config.bm25_beta)
     end
 
     # Calculate embeddings for each document
-    embedded_documents = @op __embed_all_documents(embedder, prepared_documents,
+    embedded_documents = __embed_all_documents(embedder, prepared_documents,
                                 config.oov_policy, config.ngram_complexity)
 
     # Get search index type
     IndexType = __get_search_index_type(config)
 
     # Build search index
-    srchindex = @op IndexType(embedded_documents)
+    srchindex = IndexType(embedded_documents)
 
     # Build search tree (for suggestions)
-    srchtree = @op __get_bktree(config.heuristic, crps)
+    srchtree = __get_bktree(config.heuristic, crps)
 
     # Build searcher
-    srcher = @op Searcher(Ref(dbdata), config, embedder, srchindex, srchtree)
+    srcher = Searcher(Ref(dbdata), config, embedder, srchindex, srchtree)
 
-    # Set Dispatcher logging level to warning
-    setlevel!(getlogger("Dispatcher"), "warn")
-
-    # Prepare for dispatch graph execution
-    endpoint = srcher
-    uncacheable = [srcher]
-    config.search_index == :hnsw && push!(uncacheable, srchindex)
-
-    # Execute dispatch graph
-    srcher = extract(
-                run_dispatch_graph(endpoint, uncacheable,
-                    config.cache_directory,
-                    config.cache_compression))
     @debug "* Loaded: $srcher."
     return srcher
-end
-
-
-# Functions used throughout the searcher build process
-extract(r) = fetch(r[1].result.value)
-
-
-function run_dispatch_graph(endpoint, uncacheable, cachedir::Nothing, compression)
-    run!(AsyncExecutor(), [endpoint])
-end
-
-function run_dispatch_graph(endpoint, uncacheable, cachedir::AbstractString, compression)
-graph = DispatchGraph(endpoint)
-    DispatcherCache.run!(AsyncExecutor(), graph, [endpoint], uncacheable,
-                         cachedir=cachedir, compression=compression)
 end
 
 

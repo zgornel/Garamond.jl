@@ -60,10 +60,6 @@ mutable struct SearchConfig
     disc_ngram::Int                 # DisC embedder ngram parameter
     score_alpha::Float64            # score alpha (parameter for the scoring function)
     score_weight::Float64           # weight of scores of searcher (used in result aggregation)
-
-    # cache parameters
-    cache_directory::Union{Nothing, String}  # path to the DispatcherCache cache directory
-    cache_compression::String       # DispatcherCache compression option
 end
 
 # Keyword argument constructor; all arguments sho
@@ -72,7 +68,6 @@ SearchConfig(;
           id_aggregation=id,
           description="",
           enabled=false,
-
           indexable_fields=DEFAULT_INDEXABLE_FIELDS,
           language=DEFAULT_LANGUAGE_STR,
           stem_words=DEFAULT_STEM_WORDS,
@@ -97,9 +92,7 @@ SearchConfig(;
           borep_pooling_function=DEFAULT_BOREP_POOLING_FUNCTION,
           disc_ngram=DEFAULT_DISC_NGRAM,
           score_alpha=DEFAULT_SCORE_ALPHA,
-          score_weight=1.0,
-          cache_directory=DEFAULT_CACHE_DIRECTORY,
-          cache_compression=DEFAULT_CACHE_COMPRESSION) =
+          score_weight=1.0)=
     # Call normal constructor
     SearchConfig(id, id_aggregation, description, enabled,
                  indexable_fields,
@@ -110,8 +103,7 @@ SearchConfig(;
                  text_strip_flags, query_strip_flags,
                  bm25_kappa, bm25_beta, sif_alpha,
                  borep_dimension, borep_pooling_function,
-                 disc_ngram, score_alpha, score_weight,
-                 cache_directory, cache_compression)
+                 disc_ngram, score_alpha, score_weight)
 
 
 """
@@ -221,8 +213,6 @@ function parse_configuration(filename::AbstractString)
             sconfig.disc_ngram = Int(get(dconfig, "disc_ngram", DEFAULT_DISC_NGRAM))
             sconfig.score_alpha = Float64(get(dconfig, "score_alpha", DEFAULT_SCORE_ALPHA))
             sconfig.score_weight = Float64(get(dconfig, "score_weight", 1.0))
-            sconfig.cache_directory = get(dconfig, "cache_directory", DEFAULT_CACHE_DIRECTORY)
-            sconfig.cache_compression = get(dconfig, "cache_compression", DEFAULT_CACHE_COMPRESSION)
 
             # Checks of the configuration parameter values;
             # language
@@ -326,12 +316,6 @@ function parse_configuration(filename::AbstractString)
             if !(typeof(sconfig.heuristic) <: Nothing) && !(sconfig.heuristic in keys(HEURISTIC_TO_DISTANCE))
                 @warn "$(sconfig.id) Defaulting heuristic=$DEFAULT_HEURISTIC."
                 sconfig.heuristic = DEFAULT_HEURISTIC
-            end
-            # cache directory - should work with any directory with write acess
-            # cache compression
-            if !(sconfig.cache_compression in ["bz2", "bzip2", "gz", "gzip", "none"])
-                @warn "$(sconfig.id) Defaulting cache_compression=$DEFAULT_CACHE_COMPRESSION."
-                sconfig.cache_compression = DEFAULT_CACHE_COMPRESSION
             end
         catch e
             @warn """$(sconfig.id) Could not correctly parse configuration in $(fullpathconfig).
