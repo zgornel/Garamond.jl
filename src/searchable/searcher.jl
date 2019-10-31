@@ -62,25 +62,8 @@ function build_searcher(dbdata, config; id_key=DEFAULT_DB_ID_KEY)
     # Build corpus
     crps = __build_corpus(prepared_documents, language, config.ngram_complexity)
 
-    # Construct element type
-    T = eval(config.vectors_eltype)
-
-    # TODO(Corneliu) Separate embeddings as well from searchers
-    # i.e. data, embeddings and indexes are separate an re-use each other
-
     # Get embedder
-    if config.vectors in [:word2vec, :glove, :conceptnet, :compressed]
-        embedder = __build_embedder(crps, T, config.vectors, config.embeddings_path,
-                                    config.embeddings_kind, config.doc2vec_method,
-                                    config.glove_vocabulary, config.sif_alpha,
-                                    config.borep_dimension, config.borep_pooling_function,
-                                    config.disc_ngram)
-    elseif config.vectors in [:count, :tf, :tfidf, :bm25]
-        embedder = __build_embedder(crps, T, config.ngram_complexity,
-                                    config.vectors, config.vectors_transform,
-                                    config.vectors_dimension,
-                                    config.bm25_kappa, config.bm25_beta)
-    end
+    embedder = __build_embedder(crps, config)
 
     # Calculate embeddings for each document
     embedded_documents = __embed_all_documents(embedder, prepared_documents,
@@ -134,6 +117,48 @@ function __get_search_index_type(config::SearchConfig)
     search_index == :brutetree && return BruteTreeIndex
     search_index == :kdtree && return KDTreeIndex
     search_index == :hnsw && return HNSWIndex
+end
+
+
+function __build_corpus(documents::Vector{Vector{String}},
+                        language::Languages.Language,
+                        ngram_complexity::Int)
+    language_type = typeof(language)
+    @assert language_type in SUPPORTED_LANGUAGES "Language $language_type is not supported"
+
+    docs = Vector{StringDocument{String}}()
+    for sentences in documents
+        doc = StringDocument(join(sentences, " "))
+        StringAnalysis.language!(doc, language)
+        push!(docs, doc)
+    end
+    crps = Corpus(docs)
+
+    # Update lexicon, inverse index
+    update_lexicon!(crps, ngram_complexity)
+    update_inverse_index!(crps, ngram_complexity)
+    return crps
+end
+
+
+# TODO(Corneliu) Separate embeddings as well from searchers
+# i.e. data, embeddings and indexes are separate an re-use each other
+function __build_embedder(crps, config)
+    # Construct element type
+    T = eval(config.vectors_eltype)
+
+    if config.vectors in [:word2vec, :glove, :conceptnet, :compressed]
+        embedder = __build_embedder(crps, T, config.vectors, config.embeddings_path,
+                                    config.embeddings_kind, config.doc2vec_method,
+                                    config.glove_vocabulary, config.sif_alpha,
+                                    config.borep_dimension, config.borep_pooling_function,
+                                    config.disc_ngram)
+    elseif config.vectors in [:count, :tf, :tfidf, :bm25]
+        embedder = __build_embedder(crps, T, config.ngram_complexity,
+                                    config.vectors, config.vectors_transform,
+                                    config.vectors_dimension,
+                                    config.bm25_kappa, config.bm25_beta)
+    end
 end
 
 
@@ -215,25 +240,4 @@ function __build_embedder(crps::Corpus,
     elseif doc2vec_method == :disc
         return DisCEmbedder(embeddings, n=disc_ngram)
     end
-end
-
-
-function __build_corpus(documents::Vector{Vector{String}},
-                        language::Languages.Language,
-                        ngram_complexity::Int)
-    language_type = typeof(language)
-    @assert language_type in SUPPORTED_LANGUAGES "Language $language_type is not supported"
-
-    docs = Vector{StringDocument{String}}()
-    for sentences in documents
-        doc = StringDocument(join(sentences, " "))
-        StringAnalysis.language!(doc, language)
-        push!(docs, doc)
-    end
-    crps = Corpus(docs)
-
-    # Update lexicon, inverse index
-    update_lexicon!(crps, ngram_complexity)
-    update_inverse_index!(crps, ngram_complexity)
-    return crps
 end

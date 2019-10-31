@@ -39,7 +39,7 @@ function document2vec(embedder::WordVectorsEmbedder{S,T},
     @inbounds for i in 1:n
         words = tokenize(document[i], method=:stringanalysis)
         _embs, _mtoks = word_embeddings(embedder.embeddings,
-                                        words,
+                                        words;
                                         keep_size=false,
                                         max_compound_word_length=1,
                                         wildcard_matching=true,
@@ -54,7 +54,7 @@ function document2vec(embedder::WordVectorsEmbedder{S,T},
 
     # Create sentence embeddings
     sntembs = sentences2vec(embedder,
-                            doc_word_embeddings,
+                            doc_word_embeddings;
                             embedded_words=embedded_words)
     # If no words were embedded, sntembs is a `D`×0 Matrix
     # which, when squashed, becomes a `D`-element zero Vector
