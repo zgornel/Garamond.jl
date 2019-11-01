@@ -10,7 +10,6 @@ const TARGETS = ["gars", "garc", "garw"]                                # files 
 const TARGETS_PATH = abspath.(joinpath.(BASEDIR, "..", TARGETS))        # full path to the targes
 const REQUIRED_PACKAGES = ["SnoopCompile", "PackageCompiler"]           # Base required packages
 const PACKAGE_REVS = Dict(                                              # Packag revisions/branches/etc
-    "HNSW"=>("https://github.com/zgornel/HNSW.jl", "master"),
     "PackageCompiler"=>("https://github.com/JuliaLang/PackageCompiler.jl", "master"))
 
 
