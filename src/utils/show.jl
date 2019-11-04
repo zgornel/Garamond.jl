@@ -88,15 +88,17 @@ show(io::IO, srcher::Searcher{T,E,I}) where {T,E,I} = begin
 
     # Get search index type string
     if I <: NaiveIndex
-        _index_type = "Naive/Matrix"
+        _index_type = "Naive index"
+    elseif I <: NaiveFastIndex
+        _index_type = "Naive/Fast index"
     elseif I <: BruteTreeIndex
-        _index_type = "Brute-Tree"
+        _index_type = "BruteTree index"
     elseif I<: KDTreeIndex
-        _index_type = "KD-Tree"
+        _index_type = "KDTree index"
     elseif I <: HNSWIndex
-        _index_type = "HNSW"
+        _index_type = "HNSW index"
     else
-        _index_type = "<Unknown>"
+        _index_type = "<Unknown index>"
     end
     printstyled(io, "$_index_type", bold=true)
     #printstyled(io, "$(description(srcher))", color=:normal)
