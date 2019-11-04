@@ -141,6 +141,7 @@ module Garamond
 
     include("index/abstractindex.jl")
     include("index/naive.jl")
+    include("index/naivefast.jl")
     include("index/brutetree.jl")
     include("index/kdtree.jl")
     include("index/hnsw.jl")
