@@ -37,7 +37,8 @@ function parse_query(query,
 
     # The search query simply is the reminder from the query after
     # removing all key:value(s) matches and tokens that contain punctuation
-    search_query = remove_punct_tokens(strip(replace(query, MATCH_EXPR => "")))
+    search_query = strip(remove_punct_tokens(replace(query, MATCH_EXPR => "")))
+    filteronly = isempty(search_query)
 
     # Initialize filter query for index columns with Colon() i.e. all
     columns = getproperty.(dbschema, :column)
@@ -57,7 +58,8 @@ function parse_query(query,
                 push!(filter_query, key => val)
 
                 # Add to search_query if key is a searchable_filter
-                if key in searchable_filters
+                # and there we do not have only filters i.e. empty search_query
+                if key in searchable_filters && !filteronly
                     search_query *= text2searchstring(val)
                 end
             end

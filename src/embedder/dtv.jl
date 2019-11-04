@@ -18,7 +18,7 @@ end
 # Document to vector embedding function
 function document2vec(embedder::DTVEmbedder{S,T},
                       document::Vector{String};  # a vector of sentences
-                      ngram_complexity::Int=ngram_complexity,
+                      ngram_complexity::Int=DEFAULT_NGRAM_COMPLEXITY,
                       isregex::Bool=false,
                       kwargs...  # for the unused arguments
                      )::SparseVector{T, Int} where {S,T}
@@ -31,7 +31,7 @@ function document2vec(embedder::DTVEmbedder{S,T},
     end
     vocab_hash = embedder.model.vocab_hash
     model = embedder.model
-    v = dtv_function(words, vocab_hash, T,
+    v = dtv_function(words, vocab_hash, T;
                      ngram_complexity=ngram_complexity,
                      tokenizer=DEFAULT_TOKENIZER,
                      lex_is_row_indices=true)
@@ -47,9 +47,9 @@ function document2vec(embedder::DTVEmbedder{S,T},
                       kwargs...  # for the unused arguments
                      )::Tuple{SparseVector{T, Int}, Bool} where {S,T}
     embedded_document = document2vec(embedder,
-                                     document,
+                                     document;
                                      ngram_complexity=ngram_complexity,
-                                     isregex=isregex;
+                                     isregex=isregex,
                                      kwargs...)
     is_embedded = !iszero(embedded_document)
     # Check for OOV (out-of-vocabulary) policy

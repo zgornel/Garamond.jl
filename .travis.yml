@@ -26,7 +26,6 @@ jobs:
       os: linux
       script:
         - julia --project=docs/ -e 'using Pkg;
-                                    Pkg.add(PackageSpec(url="https://github.com/zgornel/HNSW.jl", rev="master"));
                                     Pkg.develop(PackageSpec(path=pwd()));
                                     Pkg.instantiate();
                                     Pkg.build() '
@@ -34,9 +33,6 @@ jobs:
       after_success: skip
 
 after_success:
-    # generate documentation
-    #- julia -e 'using Pkg; ps=Pkg.PackageSpec(name="Documenter", version="0.20"); Pkg.add(ps); Pkg.pin(ps); Pkg.add("Garamond")'
-    #- julia -e 'using Pkg; cd(Pkg.dir("Garamond")); include(joinpath("docs", "make.jl"))'
   # push coverage results to Coveralls
   - julia -e 'using Pkg; Pkg.add("Coverage"); cd(Pkg.dir("Garamond"));
               using Coverage;

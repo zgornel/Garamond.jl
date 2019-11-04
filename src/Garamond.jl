@@ -33,9 +33,6 @@ module Garamond
     using SparseArrays
     using QuantizedArrays
     using DataStructures
-    using Memento
-    using Dispatcher
-    using DispatcherCache
     using Languages
     using StringAnalysis
     using StringDistances
@@ -51,7 +48,6 @@ module Garamond
     using Distances
     using LightGraphs: Graph, pagerank
     using JSON
-    using Glob
     using HTTP
     using TSVD
     using JuliaDB

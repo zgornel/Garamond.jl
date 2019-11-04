@@ -14,9 +14,13 @@ function knn_search(index::NaiveIndex{E,A},
                     k::Int,
                     keep::Vector{Int}=collect(1:length(index))
                    ) where {E<:AbstractFloat, A<:AbstractMatrix{E}}
+    # Turn sparse vectors into dense ones
+    __densify(v::AbstractVector) = v
+    __densify(v::AbstractSparseVector) = Vector(v)
+
     _k = min(k, length(keep))
     # Cosine similarity
-    scores = index.data[:, keep]' * point
+    scores = index.data[:, keep]' * __densify(point)
     idxs = sortperm(scores, rev=true)[1:_k]
     return keep[idxs], one(E) .- scores[idxs]
 end

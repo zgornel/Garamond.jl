@@ -45,10 +45,10 @@ uuid = "9e28174c-4ba2-5203-b857-d8d62c4213ee"
 version = "0.8.10"
 
 [[BinaryProvider]]
-deps = ["Libdl", "Logging", "SHA"]
-git-tree-sha1 = "c7361ce8a2129f20b0e05a89f7070820cfed6648"
+deps = ["Libdl", "SHA"]
+git-tree-sha1 = "29995a7b317bbd06be147e1974a3541ce2502dca"
 uuid = "b99e7846-7c00-51b0-8f62-c81ae34c0232"
-version = "0.5.6"
+version = "0.5.7"
 
 [[Blosc]]
 deps = ["BinaryProvider", "CMakeWrapper", "Compat", "Libdl"]
@@ -70,21 +70,15 @@ version = "0.2.3"
 
 [[CSTParser]]
 deps = ["Tokenize"]
-git-tree-sha1 = "c69698c3d4a7255bc1b4bc2afc09f59db910243b"
+git-tree-sha1 = "99dda94f5af21a4565dc2b97edf6a95485f116c3"
 uuid = "00ebfdb7-1f24-5e51-bd34-a7502290713f"
-version = "0.6.2"
+version = "1.0.0"
 
 [[Clustering]]
 deps = ["Distances", "LinearAlgebra", "NearestNeighbors", "Printf", "SparseArrays", "Statistics", "StatsBase"]
 git-tree-sha1 = "f387d5937d0c9d0191c711d7d204bce15bd23b45"
 uuid = "aaaa29a8-35af-508c-8bc3-b662a17a0fe5"
 version = "0.13.3"
-
-[[CodecBzip2]]
-deps = ["BinaryProvider", "Libdl", "TranscodingStreams"]
-git-tree-sha1 = "5db086e510c11b4c87d05067627eadb2dc079995"
-uuid = "523fee87-0ab8-5b00-afb7-3ecf72e48cfd"
-version = "0.6.0"
 
 [[CodecZlib]]
 deps = ["BinaryProvider", "Libdl", "TranscodingStreams"]
@@ -117,9 +111,9 @@ version = "1.1.0"
 
 [[DataStructures]]
 deps = ["InteractiveUtils", "OrderedCollections"]
-git-tree-sha1 = "f94423c68f2e47db0d6f626a26d4872266e0ec3d"
+git-tree-sha1 = "1fe8fad5fc84686dcbc674aa255bc867a64f8132"
 uuid = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
-version = "0.17.2"
+version = "0.17.5"
 
 [[DataValueInterfaces]]
 git-tree-sha1 = "bfc1187b79289637fa0ef6d4436ebdfe6905cbd6"
@@ -136,27 +130,9 @@ version = "0.4.12"
 deps = ["Printf"]
 uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
 
-[[DeferredFutures]]
-deps = ["AutoHashEquals", "Compat", "Serialization"]
-git-tree-sha1 = "7634d72cd59a0e91c42789d77749b7e597fddc30"
-uuid = "d2772ebe-fee8-5277-ba6e-705bb5633645"
-version = "0.6.0"
-
 [[DelimitedFiles]]
 deps = ["Mmap"]
 uuid = "8bb1440f-4735-579b-a4ab-409b98df4dab"
-
-[[Dispatcher]]
-deps = ["AutoHashEquals", "Compat", "DataStructures", "DeferredFutures", "IterTools", "LightGraphs", "Memento", "ResultTypes"]
-git-tree-sha1 = "01d6d79ae62d4cb364ac10104b8de3fffa30b0d7"
-uuid = "a48d5fe2-965b-541b-8ad8-ab19b69f3f25"
-version = "0.5.0"
-
-[[DispatcherCache]]
-deps = ["CodecBzip2", "CodecZlib", "Dispatcher", "IterTools", "JSON", "Memento", "Pkg", "Serialization", "Test", "TranscodingStreams"]
-git-tree-sha1 = "46b94ab89b7cfc439e8a34d9022eedcd0897b1fc"
-uuid = "38708fd2-87cb-5685-8cf6-f81d134ed590"
-version = "0.1.2"
 
 [[Distances]]
 deps = ["LinearAlgebra", "Statistics"]
@@ -179,12 +155,6 @@ deps = ["ConceptnetNumberbatch", "Distances", "Languages", "LinearAlgebra", "Mul
 git-tree-sha1 = "760ee8826156ab32fb771c72fd90748293c5d8d5"
 uuid = "827a7f00-4ef9-11e9-22c6-8dc9c6ee7bf4"
 version = "0.1.2"
-
-[[EzXML]]
-deps = ["BinaryProvider", "Libdl", "Printf"]
-git-tree-sha1 = "aed48d722e528bc634bd36a7d0e090fa2952a3c0"
-uuid = "8f5d6c58-4d21-5cfd-889c-e3ad7ee6a615"
-version = "0.9.4"
 
 [[GenericSVD]]
 deps = ["LinearAlgebra"]
@@ -218,9 +188,7 @@ version = "0.12.4"
 
 [[HNSW]]
 deps = ["Distances", "LinearAlgebra", "Reexport"]
-git-tree-sha1 = "57d97959748507ee5dd619d68265d3f614dbaaa8"
-repo-rev = "master"
-repo-url = "https://github.com/zgornel/HNSW.jl.git"
+git-tree-sha1 = "eb8140f7a54fd15c5611a9a673c83d82c47ab9c7"
 uuid = "540f64fa-c57e-11e8-081c-41422cda4629"
 version = "0.1.0"
 
@@ -258,11 +226,6 @@ version = "0.5.0"
 deps = ["Markdown"]
 uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 
-[[IterTools]]
-git-tree-sha1 = "2ebe60d7343962966d1779a74a760f13217a6901"
-uuid = "c8e1da08-722c-5040-9ed9-7db0dc04731e"
-version = "1.2.0"
-
 [[IteratorInterfaceExtensions]]
 git-tree-sha1 = "a3f24677c21f5bbe9d2a714f95dcd58337fb2856"
 uuid = "82899510-4779-5014-852e-03e436cf321d"
@@ -293,6 +256,7 @@ uuid = "7f8f8fb0-2700-5f03-b4bd-41f8cfc144b6"
 version = "0.2.2"
 
 [[LibGit2]]
+deps = ["Printf"]
 uuid = "76f85450-5226-5b5a-8eaa-529ad045b433"
 
 [[Libdl]]
@@ -339,12 +303,6 @@ git-tree-sha1 = "d52799152697059353a8eac1000d32ba8d92aa25"
 uuid = "f9f48841-c794-520a-933b-121f7ba6ed94"
 version = "0.2.0"
 
-[[Memento]]
-deps = ["Dates", "Distributed", "JSON", "Serialization", "Sockets", "Syslogs", "Test", "TimeZones", "UUIDs"]
-git-tree-sha1 = "090463b13da88689e5eae6468a6f531a21392175"
-uuid = "f28f55f0-a522-5efc-85c2-fe41dfb9b2d9"
-version = "0.12.1"
-
 [[Missings]]
 deps = ["DataAPI"]
 git-tree-sha1 = "de0a5ce9e5289f27df672ffabef4d1e5861247d5"
@@ -353,11 +311,6 @@ version = "0.4.3"
 
 [[Mmap]]
 uuid = "a63ad114-7e13-5084-954f-fe012c677804"
-
-[[Mocking]]
-git-tree-sha1 = "bd2623f8b728af988d2afec53d611acb621f3bc4"
-uuid = "78c3b35d-d492-501b-9361-3d52fe80e533"
-version = "0.7.0"
 
 [[MultivariateStats]]
 deps = ["Arpack", "LinearAlgebra", "SparseArrays", "Statistics", "StatsBase"]
@@ -414,7 +367,7 @@ uuid = "06bb1623-fdd5-5ca2-a01c-88eae3ea319e"
 version = "0.1.2"
 
 [[Pkg]]
-deps = ["Dates", "LibGit2", "Markdown", "Printf", "REPL", "Random", "SHA", "UUIDs"]
+deps = ["Dates", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "UUIDs"]
 uuid = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 
 [[Polynomials]]
@@ -479,12 +432,6 @@ git-tree-sha1 = "f6fbf4ba64d295e146e49e021207993b6b48c7d1"
 uuid = "ae029012-a4dd-5104-9daa-d747884805df"
 version = "0.5.2"
 
-[[ResultTypes]]
-deps = ["Test"]
-git-tree-sha1 = "b073e5565568f1735da33ffc58fbf23c594cc4ee"
-uuid = "08a2b407-ddc3-586a-afd6-c784ad1fffe2"
-version = "3.0.0"
-
 [[SHA]]
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
 
@@ -516,9 +463,9 @@ uuid = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [[StaticArrays]]
 deps = ["LinearAlgebra", "Random", "Statistics"]
-git-tree-sha1 = "1085ffbf5fd48fdba64ef8e902ca429c4e1212d3"
+git-tree-sha1 = "1e9c5d89cba8047d518f1ffef432906ef1a3e8bd"
 uuid = "90137ffa-7385-5640-81b9-e52037218182"
-version = "0.11.1"
+version = "0.12.0"
 
 [[Statistics]]
 deps = ["LinearAlgebra", "SparseArrays"]
@@ -560,12 +507,6 @@ git-tree-sha1 = "2039aaa96f7b21634a1b3246cb2699dd1d26d473"
 uuid = "7522ee7d-7047-56d0-94d9-4bc626e7058d"
 version = "0.2.0"
 
-[[Syslogs]]
-deps = ["Printf", "Sockets"]
-git-tree-sha1 = "46badfcc7c6e74535cc7d833a91f4ac4f805f86d"
-uuid = "cea106d9-e007-5e6c-ad93-58fe2094e9c4"
-version = "0.3.0"
-
 [[TSVD]]
 deps = ["Adapt", "LinearAlgebra"]
 git-tree-sha1 = "4c6caaa3d6658009a22c8c8f1e9de9e2bd7eef25"
@@ -605,12 +546,6 @@ deps = ["Compat", "Test"]
 git-tree-sha1 = "8355cc559e85469cd4dbe927c375f61d3750e002"
 uuid = "b718987f-49a8-5099-9789-dcd902bef87d"
 version = "0.3.0"
-
-[[TimeZones]]
-deps = ["Dates", "EzXML", "Mocking", "Printf", "Serialization", "Unicode"]
-git-tree-sha1 = "4d2d681e1dd715fdaa47d31a7208cead357bb357"
-uuid = "f269a46b-ccf7-5d73-abea-4c690281aa53"
-version = "0.10.2"
 
 [[Tokenize]]
 git-tree-sha1 = "dfcdbbfb2d0370716c815cbd6f8a364efb6f42cf"
