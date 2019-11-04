@@ -260,7 +260,7 @@ function parse_configuration(filename::AbstractString)
                     # vectors_dimension
                     if sconfig.vectors_transform != :none && sconfig.search_index == :naivefast
                         @warn "$(sconfig.id) Defaulting vectors_transform=$(:none) (search_index=$(sconfig.search_index))."
-                        sconfig.vectors_transformn = :none
+                        sconfig.vectors_transform = :none
                     end
                 end
                 # embedings_path
