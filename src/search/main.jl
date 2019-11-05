@@ -1,9 +1,9 @@
 function search(env::SearchEnv, request; exclude=nothing)
 
     # Parse query content
-    parsed_query = parse_query(request.query,
-                               db_create_schema(env.dbdata);
-                               searchable_filters=request.searchable_filters)
+    parsed_query = env.input_parser(request.query,
+                                    db_create_schema(env.dbdata);
+                                    searchable_filters=request.searchable_filters)
     issearch = !isempty(parsed_query.search)
     isfilter = !isempty(parsed_query.filter)
 

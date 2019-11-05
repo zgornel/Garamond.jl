@@ -1,10 +1,12 @@
 #=
-Recommendation API
-------------------
+    Recommendation API
+    ------------------
+
 The recommender is present in the `SearchEnv` i.e. search environment object.
 Recommendations are performed by calling:
 
     recommend(env, request)
+
 where:
     `env::SearchEnv` is the search environment object
     `request::InternalRequest` is the request

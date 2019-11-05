@@ -5,12 +5,13 @@
 mutable struct SearchEnv
     #TODO(Corneliu) Make search environment parametric with respect to
     #               the type of Float being used
-    dbdata       #::Union{AbstractNDSparse, AbstractIndexedTable}
-    id_key       #::Symbol
-    searchers    #::Vector{<:Searcher}
-    ranker       #::Function
-    recommender  #::Function
-    config_path  #::String
+    dbdata        #::Union{AbstractNDSparse, AbstractIndexedTable}
+    id_key        #::Symbol
+    searchers     #::Vector{<:Searcher}
+    ranker        #::Function
+    recommender   #::Function
+    input_parser  #::Function
+    config_path   #::String
 end
 
 
@@ -37,5 +38,6 @@ function build_search_env(filepath)
               srchers,
               env_config.ranker,
               env_config.recommender,
+              env_config.input_parser,
               env_config.config_path)
 end

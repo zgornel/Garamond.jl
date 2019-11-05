@@ -92,10 +92,12 @@ module Garamond
         CUSTOM_LOADERS_SUBDIR = "data/loaders/custom"
         CUSTOM_RANKERS_SUBDIR = "search/rankers/custom"
         CUSTOM_RECOMMENDERS_SUBDIR = "search/recommenders/custom"
+        CUSTOM_INPUT_SUBDIR = "input/custom"
 
         __include_subdirectory(CUSTOM_LOADERS_SUBDIR, printer="Loaders (custom)")
         __include_subdirectory(CUSTOM_RANKERS_SUBDIR, printer="Rankers (custom)")
         __include_subdirectory(CUSTOM_RECOMMENDERS_SUBDIR, printer="Recommenders (custom)")
+        __include_subdirectory(CUSTOM_INPUT_SUBDIR, printer="Input processors (custom)")
     end
 
     function __include_subdirectory(subpath; printer="Including")
@@ -151,8 +153,8 @@ module Garamond
     include("searchable/env.jl")
     include("searchable/update.jl")
 
-    include("query/parser.jl")
-    include("query/processing.jl")
+    include("input/text_parsers.jl")
+    include("input/text_processing.jl")
 
     include("search/index.jl")
     include("search/filter.jl")
