@@ -18,7 +18,6 @@ function generate_query(req::AbstractString, dbdata; recommend_id_key=DEFAULT_DB
     __transform_value_for_search(value::AbstractFloat) = "[$(0.9*value), $(1.1*value)]"
     __transform_value_for_search(value::AbstractString) = "\"" * value * "\""  # simple string, wrap in quotes
 
-
     # Parse a query generation request
     function __parse_request(req::AbstractString, dbschema; recommend_id_key=DEFAULT_DB_ID_KEY)
         # Get target id and fields from request string
