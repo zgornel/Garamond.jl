@@ -67,6 +67,7 @@ module Garamond
         rank,
         build_search_env,
         parse_configuration,
+        parse_input,
         AbstractEmbedder,
         AbstractIndex,
         Searcher,

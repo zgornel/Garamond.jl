@@ -1,16 +1,14 @@
 function search(env::SearchEnv, request; exclude=nothing)
 
-    # Parse query content
-    parsed_query = env.input_parser(request.query,
-                                    db_create_schema(env.dbdata);
-                                    searchable_filters=request.searchable_filters)
-    issearch = !isempty(parsed_query.search)
-    isfilter = !isempty(parsed_query.filter)
+    # Parse the input from the request
+    parsedinput = parse_input(env, request)
+    issearch = !isempty(parsedinput.search)
+    isfilter = !isempty(parsedinput.filter)
 
     if !isfilter
         # No filter, search always done
         results = search(env.searchers,
-                         parsed_query.search;
+                         parsedinput.search;
                          search_method=request.search_method,
                          max_matches=request.max_matches,
                          max_suggestions=request.max_suggestions,
@@ -18,7 +16,7 @@ function search(env::SearchEnv, request; exclude=nothing)
     elseif !issearch
         # No search, filter only
         idxs_filt = indexfilter(env.dbdata,
-                                parsed_query.filter;
+                                parsedinput.filter;
                                 id_key=env.id_key,
                                 exclude=exclude)
         result = build_result_from_ids(env.dbdata,
@@ -31,7 +29,7 @@ function search(env::SearchEnv, request; exclude=nothing)
     elseif issearch
         # Search and filter search results
         results = search(env.searchers,
-                         parsed_query.search;
+                         parsedinput.search;
                          search_method=request.search_method,
                          max_matches=request.max_matches,
                          max_suggestions=request.max_suggestions,
@@ -40,7 +38,7 @@ function search(env::SearchEnv, request; exclude=nothing)
         # higher max_matches (needs InternalRequest specification) to
         # match filter
         idxs_filt = indexfilter(env.dbdata,
-                                parsed_query.filter;
+                                parsedinput.filter;
                                 id_key=env.id_key,
                                 exclude=exclude)
 
