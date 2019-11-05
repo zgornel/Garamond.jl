@@ -18,9 +18,17 @@ QUERIES = [(input_query = "this is a query", filter_response = Dict{String,Any}(
            #(input_query = "", filter_reponse=Dict(), search_response=""),
 ]
 
-@testset "Query: parser" begin
+@testset "Input: noop_parser" begin
 	for query in QUERIES
-		sq, filt = Garamond.parse_query(query.input_query, schema; separator=":")
+		sq, filt = Garamond.noop_parser(query.input_query)
+		@test sq == query.input_query
+        @test filt == Dict{String, Any}()
+	end
+end
+
+@testset "Input: base_parser" begin
+	for query in QUERIES
+		sq, filt = Garamond.base_parser(query.input_query, schema; separator=":")
 		@test filt == query.filter_response
 		@test sq == query.search_response
 	end

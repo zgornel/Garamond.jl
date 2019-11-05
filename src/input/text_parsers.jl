@@ -1,10 +1,32 @@
+#=
+    Input Parsing (for text) API
+    ----------------------------
+
+Parsing is performed by calling:
+
+    parse_input(env, request)
+
+where:
+    `env::SearchEnv` is the search environment object
+    `request::InternalRequest` is the request
+
+The parser function stored in `env.input_parser` has to return a NamedTuple with fields
+    - `search_query::AbstractString`
+    - `filter_query::Dict{String, Any}`
+=#
+function parse_input(env, request)
+    env.input_parser(request.query,
+                     db_create_schema(env.dbdata);
+                     searchable_filters=request.searchable_filters)
+end
+
+
 # This function shoud parse an input query and return a Dict with the fields and
 # values necessary to filter the data later on.
-function parse_query(query,
+function base_parser(query,
                      dbschema;
                      separator=DEFAULT_QUERY_PARSING_SEPARATOR,
                      searchable_filters=Symbol[])
-
     # Function that removes all tokens containing punctuation from a string
     function remove_punct_tokens(input, punct_regex=r"[\"!?:,.\[\]\(\)\*\&\^\%\$]")
         toks = filter!(token->!occursin(punct_regex, token), split(input))
@@ -68,5 +90,13 @@ function parse_query(query,
         end
 
     end
+    return (search=search_query, filter=filter_query)
+end
+
+
+# Parser that does nothing
+function noop_parser(query, args...; kwargs...)
+    search_query = query
+    filter_query = Dict{Symbol, Any}()
     return (search=search_query, filter=filter_query)
 end

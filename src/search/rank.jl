@@ -1,10 +1,12 @@
 #=
-Ranking API
------------
+    Ranking API
+    -----------
+
 The ranker is present in the `SearchEnv` i.e. search environment object.
 Ranking is performed by calling:
 
     rank(env, request [; results=nothing]
+
 where:
     `env::SearchEnv` is the search environment object
     `request::InternalRequest` is the request

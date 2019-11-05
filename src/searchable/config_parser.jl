@@ -120,7 +120,7 @@ function parse_configuration(filename::AbstractString)
     # Read config (this should fail if config not found)
     local config, dict_configs,
           data_loader_name, data_loader_arguments, data_loader_kwarguments,
-          ranker_name, recommender_name,
+          ranker_name, recommender_name, input_parser_name,
           id_key, id_environment
     fullpathconfig = abspath(expanduser(filename))
     try
@@ -138,6 +138,7 @@ function parse_configuration(filename::AbstractString)
         # Create data loader symbol
         ranker_name = Symbol(get(config, "ranker_name", DEFAULT_RANKER_NAME))
         recommender_name = Symbol(get(config, "recommender_name", DEFAULT_RECOMMENDER_NAME))
+        input_parser_name = Symbol(get(config, "input_parser_name", DEFAULT_INPUT_PARSER_NAME))
 
         # Create data loader symbol
         id_key = Symbol(get(config, "id_key", DEFAULT_DB_ID_KEY))
@@ -159,6 +160,9 @@ function parse_configuration(filename::AbstractString)
 
     # Construct recommender
     recommender = eval(recommender_name)
+
+    # Construct input_parser
+    input_parser = eval(input_parser_name)
 
     # Create search configurations
     n = length(dict_configs)
@@ -241,7 +245,7 @@ function parse_configuration(filename::AbstractString)
                 sconfig.vectors_eltype= DEFAULT_VECTORS_ELTYPE
             end
             # search_index
-            if !(sconfig.search_index in [:naive, :brutetree, :kdtree, :hnsw])
+            if !(sconfig.search_index in [:naive, :naivefast, :brutetree, :kdtree, :hnsw])
                 @warn "$(sconfig.id) Defaulting search_index=$DEFAULT_SEARCH_INDEX."
                 sconfig.search_index = DEFAULT_SEARCH_INDEX
             end
@@ -256,6 +260,11 @@ function parse_configuration(filename::AbstractString)
                     if sconfig.vectors_transform != :none && sconfig.vectors_dimension <= 0
                         @warn "$(sconfig.id) Defaulting vectors_dimension=$DEFAULT_VECTORS_DIMENSION."
                         sconfig.vectors_dimension = DEFAULT_VECTORS_DIMENSION
+                    end
+                    # vectors_dimension
+                    if sconfig.vectors_transform != :none && sconfig.search_index == :naivefast
+                        @warn "$(sconfig.id) Defaulting vectors_transform=$(:none) (search_index=$(sconfig.search_index))."
+                        sconfig.vectors_transform = :none
                     end
                 end
                 # embedings_path
@@ -352,6 +361,7 @@ function parse_configuration(filename::AbstractString)
             searcher_configs=searcher_configs,
             ranker=ranker,
             recommender=recommender,
+            input_parser=input_parser,
             config_path=fullpathconfig)
 end
 

@@ -88,15 +88,17 @@ show(io::IO, srcher::Searcher{T,E,I}) where {T,E,I} = begin
 
     # Get search index type string
     if I <: NaiveIndex
-        _index_type = "Naive/Matrix"
+        _index_type = "Naive index"
+    elseif I <: NaiveFastIndex
+        _index_type = "Naive/Fast index"
     elseif I <: BruteTreeIndex
-        _index_type = "Brute-Tree"
+        _index_type = "BruteTree index"
     elseif I<: KDTreeIndex
-        _index_type = "KD-Tree"
+        _index_type = "KDTree index"
     elseif I <: HNSWIndex
-        _index_type = "HNSW"
+        _index_type = "HNSW index"
     else
-        _index_type = "<Unknown>"
+        _index_type = "<Unknown index>"
     end
     printstyled(io, "$_index_type", bold=true)
     #printstyled(io, "$(description(srcher))", color=:normal)
@@ -127,6 +129,23 @@ end
 
 # SearchEnv
 Base.show(io::IO, env::SearchEnv) = begin
-    print(io, "SearchEnv, ", length(env.searchers), " searchers, ",
-          length(env.dbdata), " samples")
+    print(io, "SearchEnv with:\n")
+    printstyled(io, "`-dbdata = ")
+    buf = IOBuffer();
+    print(buf, env.dbdata);
+    seekstart(buf);
+    dbstr = readuntil(buf, ':')
+    printstyled(io, "$(dbstr)\n", bold=true)
+    printstyled(io, "  id_key = ")
+    printstyled(io, "$(env.id_key)\n", bold=true)
+    printstyled(io, "  searchers = ")
+    printstyled(io, "$(length(env.searchers))\n", bold=true)
+    printstyled(io, "  input_parser = ")
+    printstyled(io, "$(env.input_parser)\n", bold=true)
+    printstyled(io, "  recommender = ")
+    printstyled(io, "$(env.recommender)\n", bold=true)
+    printstyled(io, "  ranker = ")
+    printstyled(io, "$(env.ranker)\n", bold=true)
+    printstyled(io, "  config_path = ")
+    printstyled(io, "$(env.config_path)", bold=true)
 end
