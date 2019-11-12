@@ -147,7 +147,8 @@ function build_response(dbdata,
                                      colnames(dbdata)))
     for result in results
         dict_vector = []
-        indices, scores = map(i->getindex.(result.query_matches, i), [2, 1])
+        indices, scores = map(i->getindex(getindex.(result.query_matches, i),
+                                          1:request.response_size), [2, 1])
         dataresult = sort(rows(filter(in(indices), dbdata, select=id_key), return_fields),
                           by=row->getproperty(row, id_key))
         for (entry, score) in sort(collect(zip(dataresult, scores[sortperm(indices)])),

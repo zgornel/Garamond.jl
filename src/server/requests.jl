@@ -11,6 +11,7 @@ mutable struct InternalRequest
     return_fields::Vector{Symbol}
     custom_weights::Dict{Symbol,Float64}
     request_id_key::Symbol
+    response_size::Int
     rank::Bool
 end
 
@@ -24,6 +25,7 @@ InternalRequest(;operation=:uninitialized_request,
                 return_fields=Symbol[],
                 custom_weights=DEFAULT_CUSTOM_WEIGHTS,
                 request_id_key=Symbol(""),
+                response_size=DEFAULT_RESPONSE_SIZE,
                 rank=false)=
     InternalRequest(operation,
                     query,
@@ -34,6 +36,7 @@ InternalRequest(;operation=:uninitialized_request,
                     return_fields,
                     custom_weights,
                     request_id_key,
+                    min(max_matches, response_size),
                     rank)
 
 

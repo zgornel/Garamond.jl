@@ -212,6 +212,7 @@ function _default_webpage(ws_ip::String, ws_port::UInt16; fields=[])
                 operation: \"search\",
                 query: q,
                 max_matches: 1000,
+                response_size: 1000,
                 search_method: \"exact\",
                 max_suggestions: 0,
                 return_fields: $(stringvec(fields))

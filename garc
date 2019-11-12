@@ -78,7 +78,11 @@ function get_unix_socket_client_arguments(args::Vector{String})
             help = "output is a pretty print of the results"
             action = :store_true
         "--max-matches"
-            help = "maximum results to return"
+            help = "maximum number of results for internal neighbor searches"
+            arg_type = Int
+            default = 10
+        "--response-size"
+            help = "maximum number of results to return"
             arg_type = Int
             default = 10
         "--search-method"
@@ -124,6 +128,7 @@ function construct_json_request(args)
                    "return_fields" => args["return-fields"],
                    "custom_weights" =>Dict(),
                    "request_id_key" => args["id-key"],
+                   "response_size" => args["response-size"],
                    "rank" => args["rank"])
     # Kill request
     if args["kill"]

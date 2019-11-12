@@ -24,7 +24,8 @@ HTTP Message body specification for the search, recommend and rank operations
           "return_fields" : <a list of string names for the fields to be returned>,
           "search_method" : <OPTIONAL, a string defining the type of classic search method>,
           "searchable_filters" : <OPTIONAL, a list of fields whose values will also be part of search if used for filtering>
-          "max_matches" : <OPTIONAL, an integer defining the maximum number of results>,
+          "max_matches" : <OPTIONAL, an integer defining the maximum number of results for search>,
+          "response_size" : <OPTIONAL, an integer defining the maximum number of results to be actually returned>,
           "max_suggestions" : <OPTIONAL, an integer defining the maximum number of suggestions / mismatches keyword>,
           "custom_weights" : <OPTINAL, a dictionary where the keys are strings with searcher ids and values
                               the weights of the searchers in the result aggregation>
@@ -39,7 +40,8 @@ HTTP Message body specification for the search, recommend and rank operations
           "return_fields" : <a list of string names for the fields to be returned>,
           "search_method" : <OPTIONAL, a string defining the type of classic search method>,
           "searchable_filters" : <OPTIONAL, a list of fields whose values will form a search query if used in filter_fields>
-          "max_matches" : <OPTIONAL, an integer defining the maximum number of results>,
+          "max_matches" : <OPTIONAL, an integer defining the maximum number of results for recommendations>,
+          "response_size" : <OPTIONAL, an integer defining the maximum number of results to be actually returned>,
           "max_suggestions" : <OPTIONAL, an integer defining the maximum number of suggestions / mismatches keyword>,
           "custom_weights" : <OPTINAL, a dictionary where the keys are strings with searcher ids and values
                               the weights of the searchers in the result aggregation>
@@ -162,6 +164,7 @@ search_req_handler(req::HTTP.Request) = begin
                 search_method = Symbol(get(parameters, "search_method", DEFAULT_SEARCH_METHOD)),
                 searchable_filters = Symbol.(get(parameters, "searchable_filters", String[])),
                 max_matches = get(parameters, "max_matches", DEFAULT_MAX_MATCHES),
+                response_size = get(parameters, "response_size", DEFAULT_RESPONSE_SIZE),
                 max_suggestions = get(parameters, "max_suggestions", DEFAULT_MAX_SUGGESTIONS),
                 custom_weights = get(parameters, "custom_weights", DEFAULT_CUSTOM_WEIGHTS),
                 rank = get(parameters, "rank", false))
@@ -179,6 +182,7 @@ recommend_req_handler(req::HTTP.Request) = begin
                 search_method = Symbol(get(parameters, "search_method", DEFAULT_SEARCH_METHOD)),
                 searchable_filters = Symbol.(get(parameters, "searchable_filters", String[])),
                 max_matches = get(parameters, "max_matches", DEFAULT_MAX_MATCHES),
+                response_size = get(parameters, "response_size", DEFAULT_RESPONSE_SIZE),
                 max_suggestions = get(parameters, "max_suggestions", DEFAULT_MAX_SUGGESTIONS),
                 custom_weights = get(parameters, "custom_weights", DEFAULT_CUSTOM_WEIGHTS),
                 rank = get(parameters, "rank", false))

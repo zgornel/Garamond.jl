@@ -64,6 +64,7 @@ const DEFAULT_INPUT_PARSER_NAME = :base_parser
 const DEFAULT_PDFTOTEXT_PROGRAM = "/usr/bin/pdftotext"  # program to convert PDFs to text
 const DEFAULT_MAX_EDIT_DISTANCE = 2  # maximum edit distance for which to return suggestions
 const DEFAULT_MAX_MATCHES = 1  # maximum number of matches that can be retrned
+const DEFAULT_RESPONSE_SIZE = DEFAULT_MAX_MATCHES  # maximum number of matches that are returned for a request
 const DEFAULT_MAX_SUGGESTIONS = 0  # maximum number of overall suggestions
 const DEFAULT_CUSTOM_WEIGHTS = Dict{Symbol, Float64}()  # default custom searcher weights
 # DYNAMIC Configuration: These defaults can be through run-time options of the
