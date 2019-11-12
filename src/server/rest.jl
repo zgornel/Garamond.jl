@@ -53,7 +53,7 @@ HTTP Message body specification for the search, recommend and rank operations
             "rank_ids": <list of ids to rank>,
             "rank_id_key": <the db name of the column holding the id values>,
             "return_fields" : <a list of string names for the fields to be returned>,
-            "max_matches" : <OPTIONAL, an integer defining the maximum number of results>
+            "response_size" : <OPTIONAL, an integer defining the maximum number of results to be actually returned>
          }
 =#
 
@@ -191,13 +191,13 @@ end
 
 rank_req_handler(req::HTTP.Request) = begin
     parameters = __http_req_body_to_json(req)
-    _all_ids = join(strip.(parameters["rank_ids"]), " ")  # if missing, throws
+    _all_ids = strip.(parameters["rank_ids"])  # if missing, throws
     return InternalRequest(
                 operation = :rank,
-                query = _all_ids,
+                query = join(_all_ids, " "),
                 request_id_key = Symbol.(parameters["rank_id_key"]),   # if missing, throws
                 return_fields = Symbol.(parameters["return_fields"]),  # if missing, throws
-                max_matches = get(parameters, "max_matches", DEFAULT_MAX_MATCHES))
+                response_size = get(parameters, "response_size", length(_all_ids)))
 end
 
 

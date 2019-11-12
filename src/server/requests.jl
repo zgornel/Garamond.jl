@@ -36,7 +36,7 @@ InternalRequest(;operation=:uninitialized_request,
                     return_fields,
                     custom_weights,
                     request_id_key,
-                    min(max_matches, response_size),
+                    response_size,
                     rank)
 
 

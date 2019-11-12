@@ -55,7 +55,7 @@ function __rank(env, request, ::Nothing)
                                           env.id_key,
                                           result_id,
                                           id_key=env.id_key,
-                                          max_matches=request.max_matches,
+                                          max_matches=length(ranked_idxs),
                                           linear_scoring=true)  #::SearchResult
     return [ranked_result]
 end
@@ -77,7 +77,7 @@ function __rank(env, request, results)
                                                   env.id_key,
                                                   results[i].id;
                                                   id_key=env.id_key,
-                                                  max_matches=request.max_matches,
+                                                  max_matches=length(ranked_idxs),
                                                   linear_scoring=true)  #::SearchResult
     end
     return ranked_results
