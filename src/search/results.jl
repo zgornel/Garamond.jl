@@ -216,7 +216,7 @@ function print_search_results(io::IO,
     ch = ifelse(nm==0, ".", ":");
     printstyled(io, "$ch\n")
     print_fields = Tuple(intersect!(unique!([fields..., id_key]), colnames(dbdata)))
-    indices, scores = map(i->getindex.(result.query_matches, i), [2, 1])
+    scores, indices = unzip(result.query_matches; ndims=2)
     dataresult = sort(rows(filter(in(indices), dbdata, select=id_key), print_fields),
                       by=row->getproperty(row, id_key))
     for (entry, score) in sort(collect(zip(dataresult, scores[sortperm(indices)])),

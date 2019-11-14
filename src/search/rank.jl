@@ -45,12 +45,12 @@ function rank(env::SearchEnv, request, ::Nothing)
     ### Call ranker
     ranker = safe_symbol_eval(request.ranker, DEFAULT_RANKER_NAME)
     rankenv = (dbdata=env.dbdata, id_key=env.id_key)
-    ranked_idxs = ranker(unranked_idxs, request; scores=nothing, environment=rankenv)
+    ranked_idxs, _  = ranker(unranked_idxs, nothing, request; environment=rankenv)  # scores are not useful
     ###
     ranked_result = build_result_from_ids(env.dbdata,
                                           ranked_idxs,
                                           env.id_key,
-                                          result_id,
+                                          result_id;
                                           id_key=env.id_key,
                                           max_matches=length(ranked_idxs),
                                           linear_scoring=true)  #::SearchResult
@@ -64,20 +64,16 @@ function rank(env::SearchEnv, request, results)
     ranked_results = similar(results)
     rankenv = build_data_env(env)
     for i in eachindex(results)
-        unranked_idxs = map(t->t[2], results[i].query_matches)
-        scores = map(t->t[1], results[i].query_matches)
-
+        scores, unranked_idxs = unzip(results[i].query_matches; ndims=2)
         ### Call ranker
         ranker = safe_symbol_eval(request.ranker, DEFAULT_RANKER_NAME)
-        ranked_idxs = ranker(unranked_idxs, request; scores=scores, environment=rankenv)
+        ranked_idxs, ranked_scores = ranker(unranked_idxs, scores, request; environment=rankenv)
         ###
-        ranked_results[i] = build_result_from_ids(env.dbdata,
-                                                  ranked_idxs,
-                                                  env.id_key,
-                                                  results[i].id;
-                                                  id_key=env.id_key,
-                                                  max_matches=length(ranked_idxs),
-                                                  linear_scoring=true)  #::SearchResult
+        ranked_results[i] = SearchResult(results[i].id,
+                                         collect(zip(ranked_scores, ranked_idxs)),
+                                         results[i].needle_matches,
+                                         results[i].suggestions,
+                                         results[i].score_weight)
     end
     return ranked_results
 end

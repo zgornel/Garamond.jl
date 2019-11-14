@@ -21,3 +21,6 @@ safe_symbol_eval(input_symbol, default_symbol) = begin
         return eval(default_symbol)
     end
 end
+
+
+unzip(it; n=length(it), ndims=1) = map(i->getindex(getindex.(it, i), 1:n), 1:ndims)
