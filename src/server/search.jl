@@ -69,16 +69,18 @@ function respond(env, socket, counter, channels)
     if request.operation === :search
         ### Search ###
         results = search(env, request)
+        ranked = rank(env, request, results)
         etime = time() - timer_start
-        response = build_response(env.dbdata, request, results; id_key=env.id_key, elapsed_time=etime)
+        response = build_response(env.dbdata, request, ranked; id_key=env.id_key, elapsed_time=etime)
         write(socket, response * RESPONSE_TERMINATOR)
         @info "• Search [#$(counter[1])]: query='$(request.query)' completed in $etime(s)."
 
     elseif request.operation === :recommend
         ### Recommend ###
         recommendations = recommend(env, request)
+        ranked = rank(env, request, recommendations)
         etime = time() - timer_start
-        response = build_response(env.dbdata, request, recommendations; id_key=env.id_key, elapsed_time=etime)
+        response = build_response(env.dbdata, request, ranked; id_key=env.id_key, elapsed_time=etime)
         write(socket, response * RESPONSE_TERMINATOR)
         @info "• Recommendation [#$(counter[1])]: completed in $etime(s)."
 

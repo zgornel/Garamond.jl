@@ -48,6 +48,5 @@ function search(env::SearchEnv, request; exclude=nothing)
         end
     end
 
-    # Rerank
-    return rank(env, request, results)
+    return results
 end
