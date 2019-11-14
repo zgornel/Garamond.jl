@@ -12,7 +12,9 @@ mutable struct InternalRequest
     custom_weights::Dict{Symbol,Float64}
     request_id_key::Symbol
     response_size::Int
-    rank::Bool
+    input_parser::Symbol
+    ranker::Symbol
+    recommender::Symbol
 end
 
 # Keyword argument constructor
@@ -26,7 +28,9 @@ InternalRequest(;operation=:uninitialized_request,
                 custom_weights=DEFAULT_CUSTOM_WEIGHTS,
                 request_id_key=Symbol(""),
                 response_size=DEFAULT_RESPONSE_SIZE,
-                rank=false)=
+                input_parser=DEFAULT_INPUT_PARSER_NAME,
+                ranker=DEFAULT_RANKER_NAME,
+                recommender=DEFAULT_RECOMMENDER_NAME)=
     InternalRequest(operation,
                     query,
                     max_matches,
@@ -37,7 +41,9 @@ InternalRequest(;operation=:uninitialized_request,
                     custom_weights,
                     request_id_key,
                     response_size,
-                    rank)
+                    input_parser,
+                    ranker,
+                    recommender)
 
 
 #=

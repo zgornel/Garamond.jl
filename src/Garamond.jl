@@ -126,7 +126,7 @@ module Garamond
     # Include section
     include("data/db.jl")
     include("data/text.jl")
-    include("data/dunderparse.jl")
+    include("data/parse_and_eval.jl")
     include("data/loaders/noop.jl")
     include("data/loaders/juliadb.jl")
 
@@ -162,6 +162,7 @@ module Garamond
     include("search/results.jl")
     include("search/recommend.jl")
     include("search/recommenders/search.jl")
+    include("search/recommenders/noop.jl")
     include("search/rank.jl")
     include("search/rankers/noop.jl")
     include("search/main.jl")

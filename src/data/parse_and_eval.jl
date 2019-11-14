@@ -11,3 +11,13 @@ __parse(::Type{T}, data::S) where{T,S} = try
 catch
     convert(T, data)
 end
+
+
+safe_symbol_eval(input_symbol, default_symbol) = begin
+    if isdefined(@__MODULE__, input_symbol)
+        return eval(input_symbol)
+    else
+        @warn "$input_symbol is not defined, defaulting to $default_symbol."
+        return eval(default_symbol)
+    end
+end

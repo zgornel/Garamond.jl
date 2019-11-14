@@ -140,12 +140,6 @@ Base.show(io::IO, env::SearchEnv) = begin
     printstyled(io, "$(env.id_key)\n", bold=true)
     printstyled(io, "  searchers = ")
     printstyled(io, "$(length(env.searchers))\n", bold=true)
-    printstyled(io, "  input_parser = ")
-    printstyled(io, "$(env.input_parser)\n", bold=true)
-    printstyled(io, "  recommender = ")
-    printstyled(io, "$(env.recommender)\n", bold=true)
-    printstyled(io, "  ranker = ")
-    printstyled(io, "$(env.ranker)\n", bold=true)
     printstyled(io, "  config_path = ")
     printstyled(io, "$(env.config_path)", bold=true)
 end

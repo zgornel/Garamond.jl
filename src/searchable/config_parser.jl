@@ -120,7 +120,6 @@ function parse_configuration(filename::AbstractString)
     # Read config (this should fail if config not found)
     local config, dict_configs,
           data_loader_name, data_loader_arguments, data_loader_kwarguments,
-          ranker_name, recommender_name, input_parser_name,
           id_key, id_environment
     fullpathconfig = abspath(expanduser(filename))
     try
@@ -136,11 +135,6 @@ function parse_configuration(filename::AbstractString)
         data_loader_kwarguments = Dict{Symbol, Any}(Symbol(k) => v for (k,v) in
                                        get(config, "data_loader_kwarguments", Dict{String,Any}()))
         # Create data loader symbol
-        ranker_name = Symbol(get(config, "ranker_name", DEFAULT_RANKER_NAME))
-        recommender_name = Symbol(get(config, "recommender_name", DEFAULT_RECOMMENDER_NAME))
-        input_parser_name = Symbol(get(config, "input_parser_name", DEFAULT_INPUT_PARSER_NAME))
-
-        # Create data loader symbol
         id_key = Symbol(get(config, "id_key", DEFAULT_DB_ID_KEY))
 
         # Create an environment id
@@ -154,15 +148,6 @@ function parse_configuration(filename::AbstractString)
     data_loader_function = eval(data_loader_name)
     data_loader_closure(args...;kwargs...) = () -> data_loader_function(args...;kwargs...)
     data_loader = data_loader_closure(data_loader_arguments...; pairs(data_loader_kwarguments)...)
-
-    # Construct result ranker
-    ranker = eval(ranker_name)
-
-    # Construct recommender
-    recommender = eval(recommender_name)
-
-    # Construct input_parser
-    input_parser = eval(input_parser_name)
 
     # Create search configurations
     n = length(dict_configs)
@@ -359,9 +344,6 @@ function parse_configuration(filename::AbstractString)
     return (data_loader=data_loader,
             id_key=id_key,
             searcher_configs=searcher_configs,
-            ranker=ranker,
-            recommender=recommender,
-            input_parser=input_parser,
             config_path=fullpathconfig)
 end
 

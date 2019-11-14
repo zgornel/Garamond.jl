@@ -83,7 +83,7 @@ function respond(env, socket, counter, channels)
         @info "• Recommendation [#$(counter[1])]: completed in $etime(s)."
 
     elseif request.operation === :rank
-        ranked = rank(env, request)  #::Vector{SearchResult}
+        ranked = rank(env, request, nothing)  #::Vector{SearchResult}
         etime = time() - timer_start
         response = build_response(env.dbdata, request, ranked; id_key=env.id_key, elapsed_time=etime)
         @info "• Rank [#$(counter[1])]: completed in $etime(s)."

@@ -2,10 +2,9 @@
     Ranking API
     -----------
 
-The ranker is present in the `SearchEnv` i.e. search environment object.
 Ranking is performed by calling:
 
-    rank(env, request [; results=nothing]
+    rank(env, request, results)
 
 where:
     `env::SearchEnv` is the search environment object
@@ -15,7 +14,7 @@ where:
         otherwise, the results are re-ranked.
 
 
-The ranker function signatures (`env.ranker`) should be of the form:
+The ranker function signatures should be of the form:
 
     some_ranker(idxs, request; scores=nothing, environment=nothing)
 
@@ -31,14 +30,11 @@ where:
 
 The arguments above should be enough to implement any ranker.
 =#
-function rank(env::SearchEnv, request; results=nothing)
-    __rank(env, request, results)
-end
 
 
 # Corresponds to ouside rank request
 # (IDs specified explicitly in request)
-function __rank(env, request, ::Nothing)
+function rank(env::SearchEnv, request, ::Nothing)
     result_id = make_id(StringId, nothing)
     # Extract IDss to be ranked
     ids = strip.(split(request.query))
@@ -47,8 +43,9 @@ function __rank(env, request, ::Nothing)
                                                request.request_id_key;
                                                id_key=env.id_key)
     ### Call ranker
+    ranker = safe_symbol_eval(request.ranker, DEFAULT_RANKER_NAME)
     rankenv = (dbdata=env.dbdata, id_key=env.id_key)
-    ranked_idxs = env.ranker(unranked_idxs, request; scores=nothing, environment=rankenv)
+    ranked_idxs = ranker(unranked_idxs, request; scores=nothing, environment=rankenv)
     ###
     ranked_result = build_result_from_ids(env.dbdata,
                                           ranked_idxs,
@@ -63,14 +60,16 @@ end
 
 # Corresponds to ranking of search/recommendation request
 # (IDs specified implicitly in results)
-function __rank(env, request, results)
+function rank(env::SearchEnv, request, results)
     ranked_results = similar(results)
-    rankenv = (dbdata=env.dbdata, id_key=env.id_key)
+    rankenv = build_data_env(env)
     for i in eachindex(results)
         unranked_idxs = map(t->t[2], results[i].query_matches)
         scores = map(t->t[1], results[i].query_matches)
+
         ### Call ranker
-        ranked_idxs = env.ranker(unranked_idxs, request; scores=scores, environment=rankenv)
+        ranker = safe_symbol_eval(request.ranker, DEFAULT_RANKER_NAME)
+        ranked_idxs = ranker(unranked_idxs, request; scores=scores, environment=rankenv)
         ###
         ranked_results[i] = build_result_from_ids(env.dbdata,
                                                   ranked_idxs,

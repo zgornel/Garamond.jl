@@ -2,7 +2,6 @@
     Recommendation API
     ------------------
 
-The recommender is present in the `SearchEnv` i.e. search environment object.
 Recommendations are performed by calling:
 
     recommend(env, request)
@@ -12,7 +11,7 @@ where:
     `request::InternalRequest` is the request
 
 
-The recommender function signatures (`env.recommender`) should be of the form:
+The recommender function signatures should be of the form:
 
     some_recommender(request; environment=nothing)
 
@@ -27,11 +26,12 @@ where:
 The arguments above should be enough to implement any ranker.
 =#
 function recommend(env::SearchEnv, request)
-    if env.recommender !== search_recommender
+    recommender = safe_symbol_eval(request.recommender, DEFAULT_RECOMMENDER_NAME)
+    if recommender !== search_recommender
         # Generic recommender, does not need full environment i.e. strip indexes
-        env = (dbdata=env.dbdata,
-               id_key=env.id_key,
-               ranker=env.ranker)
+        env = build_data_env(env)
     end
-    env.recommender(request; environment=env)
+    ## Call recommender
+    recommender(request; environment=env)
+    ##
 end
