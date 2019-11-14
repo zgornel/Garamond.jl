@@ -68,26 +68,34 @@ function respond(env, socket, counter, channels)
     timer_start = time()
     if request.operation === :search
         ### Search ###
-        results = search(env, request)
-        ranked = rank(env, request, results)
+        search_results = search(env, request)
+        ranked_search_results = rank(env, request, search_results)
         etime = time() - timer_start
-        response = build_response(env.dbdata, request, ranked; id_key=env.id_key, elapsed_time=etime)
+        response = build_response(env.dbdata,
+                                  request,
+                                  ranked_search_results;
+                                  id_key=env.id_key,
+                                  elapsed_time=etime)
         write(socket, response * RESPONSE_TERMINATOR)
         @info "• Search [#$(counter[1])]: query='$(request.query)' completed in $etime(s)."
 
     elseif request.operation === :recommend
         ### Recommend ###
         recommendations = recommend(env, request)
-        ranked = rank(env, request, recommendations)
+        ranked_recommendations = rank(env, request, recommendations)
         etime = time() - timer_start
-        response = build_response(env.dbdata, request, ranked; id_key=env.id_key, elapsed_time=etime)
+        response = build_response(env.dbdata,
+                                  request,
+                                  ranked_recommendations;
+                                  id_key=env.id_key,
+                                  elapsed_time=etime)
         write(socket, response * RESPONSE_TERMINATOR)
         @info "• Recommendation [#$(counter[1])]: completed in $etime(s)."
 
     elseif request.operation === :rank
-        ranked = rank(env, request, nothing)  #::Vector{SearchResult}
+        ranked_ids = rank(env, request, nothing)  #::Vector{SearchResult}
         etime = time() - timer_start
-        response = build_response(env.dbdata, request, ranked; id_key=env.id_key, elapsed_time=etime)
+        response = build_response(env.dbdata, request, ranked_ids; id_key=env.id_key, elapsed_time=etime)
         @info "• Rank [#$(counter[1])]: completed in $etime(s)."
         write(socket, response * RESPONSE_TERMINATOR)
 
