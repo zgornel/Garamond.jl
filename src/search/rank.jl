@@ -60,14 +60,15 @@ end
 
 # Corresponds to ranking of search/recommendation request
 # (IDs specified implicitly in results)
-function rank(env::SearchEnv, request, results)
+function rank(env::SearchEnv, request, results::Vector{SearchResult{T}}) where {T}
     ranked_results = similar(results)
+    ranker = safe_symbol_eval(request.ranker, DEFAULT_RANKER_NAME)
     rankenv = build_data_env(env)
     for i in eachindex(results)
         scores, unranked_idxs = unzip(results[i].query_matches; ndims=2)
         ### Call ranker
-        ranker = safe_symbol_eval(request.ranker, DEFAULT_RANKER_NAME)
-        ranked_idxs, ranked_scores = ranker(unranked_idxs, scores, request; environment=rankenv)
+        ranked_idxs::Vector{Int}, ranked_scores::Vector{T} =
+            ranker(unranked_idxs, scores, request; environment=rankenv)
         ###
         ranked_results[i] = SearchResult(results[i].id,
                                          collect(zip(ranked_scores, ranked_idxs)),
