@@ -107,9 +107,14 @@ function get_unix_socket_client_arguments(args::Vector{String})
         "--update-all"
             help = "Update all searchers"
             action = :store_true
-        "--rank"
-            help = "Use ranker (if any)"
-            action = :store_true
+        "--ranker"
+            help = "The ranker to use; avalilable: noop_ranker"
+            arg_type = String
+            default = "noop_ranker"
+        "--input-parser"
+            help = "The input parser to use; available: noop_input_parser, base_input_parser"
+            arg_type = String
+            default = "noop_input_parser"
 	end
 	return parse_args(args,s)
 end
@@ -129,7 +134,8 @@ function construct_json_request(args)
                    "custom_weights" =>Dict(),
                    "request_id_key" => args["id-key"],
                    "response_size" => args["response-size"],
-                   "rank" => args["rank"])
+                   "ranker" => args["ranker"],
+                   "input_parser" => args["input-parser"])
     # Kill request
     if args["kill"]
         dictreq["operation"] = "kill"
