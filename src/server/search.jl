@@ -68,24 +68,34 @@ function respond(env, socket, counter, channels)
     timer_start = time()
     if request.operation === :search
         ### Search ###
-        results = search(env, request)
+        search_results = search(env, request)
+        ranked_search_results = rank(env, request, search_results)
         etime = time() - timer_start
-        response = build_response(env.dbdata, request, results; id_key=env.id_key, elapsed_time=etime)
+        response = build_response(env.dbdata,
+                                  request,
+                                  ranked_search_results;
+                                  id_key=env.id_key,
+                                  elapsed_time=etime)
         write(socket, response * RESPONSE_TERMINATOR)
         @info "• Search [#$(counter[1])]: query='$(request.query)' completed in $etime(s)."
 
     elseif request.operation === :recommend
         ### Recommend ###
         recommendations = recommend(env, request)
+        ranked_recommendations = rank(env, request, recommendations)
         etime = time() - timer_start
-        response = build_response(env.dbdata, request, recommendations; id_key=env.id_key, elapsed_time=etime)
+        response = build_response(env.dbdata,
+                                  request,
+                                  ranked_recommendations;
+                                  id_key=env.id_key,
+                                  elapsed_time=etime)
         write(socket, response * RESPONSE_TERMINATOR)
         @info "• Recommendation [#$(counter[1])]: completed in $etime(s)."
 
     elseif request.operation === :rank
-        ranked = rank(env, request)  #::Vector{SearchResult}
+        ranked_ids = rank(env, request, nothing)  #::Vector{SearchResult}
         etime = time() - timer_start
-        response = build_response(env.dbdata, request, ranked; id_key=env.id_key, elapsed_time=etime)
+        response = build_response(env.dbdata, request, ranked_ids; id_key=env.id_key, elapsed_time=etime)
         @info "• Rank [#$(counter[1])]: completed in $etime(s)."
         write(socket, response * RESPONSE_TERMINATOR)
 
@@ -147,7 +157,8 @@ function build_response(dbdata,
                                      colnames(dbdata)))
     for result in results
         dict_vector = []
-        indices, scores = map(i->getindex.(result.query_matches, i), [2, 1])
+        nresults = min(request.response_size, length(result.query_matches))
+        scores, indices = unzip(result.query_matches; n=nresults, ndims=2)
         dataresult = sort(rows(filter(in(indices), dbdata, select=id_key), return_fields),
                           by=row->getproperty(row, id_key))
         for (entry, score) in sort(collect(zip(dataresult, scores[sortperm(indices)])),

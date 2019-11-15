@@ -48,10 +48,5 @@ function search(env::SearchEnv, request; exclude=nothing)
         end
     end
 
-    # Rerank if the case
-    if request.rank
-        return rank(env, request; results=results)
-    else
-        return results
-    end
+    return results
 end

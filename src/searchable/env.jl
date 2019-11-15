@@ -8,9 +8,6 @@ mutable struct SearchEnv
     dbdata        #::Union{AbstractNDSparse, AbstractIndexedTable}
     id_key        #::Symbol
     searchers     #::Vector{<:Searcher}
-    ranker        #::Function
-    recommender   #::Function
-    input_parser  #::Function
     config_path   #::String
 end
 
@@ -36,8 +33,13 @@ function build_search_env(filepath)
     SearchEnv(dbdata,
               env_config.id_key,
               srchers,
-              env_config.ranker,
-              env_config.recommender,
-              env_config.input_parser,
               env_config.config_path)
 end
+
+
+"""
+    build_data_env(env::SearchEnv)
+
+Strips searchers from `env`.
+"""
+build_data_env(env::SearchEnv) = (dbdata=env.dbdata, id_key=env.id_key, config_path=env.config_path)

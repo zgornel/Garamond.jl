@@ -78,7 +78,11 @@ function get_unix_socket_client_arguments(args::Vector{String})
             help = "output is a pretty print of the results"
             action = :store_true
         "--max-matches"
-            help = "maximum results to return"
+            help = "maximum number of results for internal neighbor searches"
+            arg_type = Int
+            default = 10
+        "--response-size"
+            help = "maximum number of results to return"
             arg_type = Int
             default = 10
         "--search-method"
@@ -103,9 +107,14 @@ function get_unix_socket_client_arguments(args::Vector{String})
         "--update-all"
             help = "Update all searchers"
             action = :store_true
-        "--rank"
-            help = "Use ranker (if any)"
-            action = :store_true
+        "--ranker"
+            help = "The ranker to use; avalilable: noop_ranker"
+            arg_type = String
+            default = "noop_ranker"
+        "--input-parser"
+            help = "The input parser to use; available: noop_input_parser, base_input_parser"
+            arg_type = String
+            default = "noop_input_parser"
 	end
 	return parse_args(args,s)
 end
@@ -124,7 +133,9 @@ function construct_json_request(args)
                    "return_fields" => args["return-fields"],
                    "custom_weights" =>Dict(),
                    "request_id_key" => args["id-key"],
-                   "rank" => args["rank"])
+                   "response_size" => args["response-size"],
+                   "ranker" => args["ranker"],
+                   "input_parser" => args["input-parser"])
     # Kill request
     if args["kill"]
         dictreq["operation"] = "kill"

@@ -21,37 +21,43 @@ HTTP Message body specification for the search, recommend and rank operations
     • search command format (JSON):
          {
           "query" : <the query to be performed, a string>,
+          "input_parser": <the input parser to use; available: 'noop_input_parser', 'base_input_parser'>
           "return_fields" : <a list of string names for the fields to be returned>,
           "search_method" : <OPTIONAL, a string defining the type of classic search method>,
           "searchable_filters" : <OPTIONAL, a list of fields whose values will also be part of search if used for filtering>
-          "max_matches" : <OPTIONAL, an integer defining the maximum number of results>,
+          "max_matches" : <OPTIONAL, an integer defining the maximum number of results for search>,
+          "response_size" : <OPTIONAL, an integer defining the maximum number of results to be actually returned>,
           "max_suggestions" : <OPTIONAL, an integer defining the maximum number of suggestions / mismatches keyword>,
-          "custom_weights" : <OPTINAL, a dictionary where the keys are strings with searcher ids and values
+          "custom_weights" : <OPTIONAL, a dictionary where the keys are strings with searcher ids and values
                               the weights of the searchers in the result aggregation>
-          "rank": <a boolean that when true, enables the use of ranking; false by default>
+          "ranker": <OPTIONAL, the ranked to use; available: 'noop_ranker'>
          }
 
     • recommend command format (JSON):
          {
+          "recommender": <a string with the name of the recommender to use; available: 'noop_recommender', 'search_recommender'>
           "recommend_id" : <the id of the entity for which recommendations are sought>
           "recommend_id_key": <the db name of the column holding the id value>
+          "input_parser": <the input parser to use; available: 'noop_input_parser', 'base_input_parser'>
           "filter_fields" : <a list of string name fields containing the fields that will be used by the recommender>,
           "return_fields" : <a list of string names for the fields to be returned>,
           "search_method" : <OPTIONAL, a string defining the type of classic search method>,
           "searchable_filters" : <OPTIONAL, a list of fields whose values will form a search query if used in filter_fields>
-          "max_matches" : <OPTIONAL, an integer defining the maximum number of results>,
+          "max_matches" : <OPTIONAL, an integer defining the maximum number of results for recommendations>,
+          "response_size" : <OPTIONAL, an integer defining the maximum number of results to be actually returned>,
           "max_suggestions" : <OPTIONAL, an integer defining the maximum number of suggestions / mismatches keyword>,
-          "custom_weights" : <OPTINAL, a dictionary where the keys are strings with searcher ids and values
+          "custom_weights" : <OPTIONAL, a dictionary where the keys are strings with searcher ids and values
                               the weights of the searchers in the result aggregation>
-          "rank": <a boolean that when true, enables the use of ranking; false by default>
+          "ranker": <OPTIONAL, the ranked to use; available: 'noop_ranker'>
          }
 
     • rank command format (JSON):
          {
+            "ranker": <a string with the name of the ranker to use; available: 'noop_ranker'>
             "rank_ids": <list of ids to rank>,
             "rank_id_key": <the db name of the column holding the id values>,
             "return_fields" : <a list of string names for the fields to be returned>,
-            "max_matches" : <OPTIONAL, an integer defining the maximum number of results>
+            "response_size" : <OPTIONAL, an integer defining the maximum number of results to be actually returned>
          }
 =#
 
@@ -158,13 +164,15 @@ search_req_handler(req::HTTP.Request) = begin
     return InternalRequest(
                 operation = :search,
                 query = parameters["query"],  # if missing, throws
+                input_parser = Symbol(parameters["input_parser"]),  # if missing, throws
                 return_fields = Symbol.(parameters["return_fields"]),  # if missing, throws
                 search_method = Symbol(get(parameters, "search_method", DEFAULT_SEARCH_METHOD)),
                 searchable_filters = Symbol.(get(parameters, "searchable_filters", String[])),
                 max_matches = get(parameters, "max_matches", DEFAULT_MAX_MATCHES),
+                response_size = get(parameters, "response_size", DEFAULT_RESPONSE_SIZE),
                 max_suggestions = get(parameters, "max_suggestions", DEFAULT_MAX_SUGGESTIONS),
                 custom_weights = get(parameters, "custom_weights", DEFAULT_CUSTOM_WEIGHTS),
-                rank = get(parameters, "rank", false))
+                ranker = Symbol(get(parameters, "ranker", DEFAULT_RANKER_NAME)))
 end
 
 
@@ -173,27 +181,31 @@ recommend_req_handler(req::HTTP.Request) = begin
     _query = parameters["recommend_id"] * " " * join(parameters["filter_fields"], " ")
     return InternalRequest(
                 operation = :recommend,
+                recommender = Symbol(parameters["recommender"]),  # if missing, throws
                 request_id_key = Symbol.(parameters["recommend_id_key"]),  # if missing, throws
                 query = _query,
+                input_parser = Symbol(parameters["input_parser"]),  # if missing, throws
                 return_fields = Symbol.(parameters["return_fields"]),  # if missing, throws
                 search_method = Symbol(get(parameters, "search_method", DEFAULT_SEARCH_METHOD)),
                 searchable_filters = Symbol.(get(parameters, "searchable_filters", String[])),
                 max_matches = get(parameters, "max_matches", DEFAULT_MAX_MATCHES),
+                response_size = get(parameters, "response_size", DEFAULT_RESPONSE_SIZE),
                 max_suggestions = get(parameters, "max_suggestions", DEFAULT_MAX_SUGGESTIONS),
                 custom_weights = get(parameters, "custom_weights", DEFAULT_CUSTOM_WEIGHTS),
-                rank = get(parameters, "rank", false))
+                ranker = Symbol(get(parameters, "ranker", DEFAULT_RANKER_NAME)))
 end
 
 
 rank_req_handler(req::HTTP.Request) = begin
     parameters = __http_req_body_to_json(req)
-    _all_ids = join(strip.(parameters["rank_ids"]), " ")  # if missing, throws
+    _all_ids = strip.(parameters["rank_ids"])  # if missing, throws
     return InternalRequest(
                 operation = :rank,
-                query = _all_ids,
+                ranker = Symbol(parameters["ranker"]),  # if missing, throws
+                query = join(_all_ids, " "),
                 request_id_key = Symbol.(parameters["rank_id_key"]),   # if missing, throws
                 return_fields = Symbol.(parameters["return_fields"]),  # if missing, throws
-                max_matches = get(parameters, "max_matches", DEFAULT_MAX_MATCHES))
+                response_size = get(parameters, "response_size", length(_all_ids)))
 end
 
 
