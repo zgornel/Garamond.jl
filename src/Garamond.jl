@@ -29,6 +29,7 @@ module Garamond
     using Sockets
     using LinearAlgebra
     using Statistics
+    using Serialization
     using PooledArrays
     using SparseArrays
     using QuantizedArrays
