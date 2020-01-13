@@ -244,10 +244,12 @@ uuid = "a93385a2-3734-596a-9a66-3cfbb77141e6"
 version = "0.13.0"
 
 [[Languages]]
-deps = ["JSON", "Test"]
-git-tree-sha1 = "fc6ee05e35074a66dc12a716065a25d9deece6fb"
+deps = ["InteractiveUtils", "JSON", "Test"]
+git-tree-sha1 = "aff18044f996de4d980600433f09f11375e8b920"
+repo-rev = "master"
+repo-url = "https://github.com/JuliaText/Languages.jl.git"
 uuid = "8ef0a80b-9436-5d2c-a485-80b904378c43"
-version = "0.4.2"
+version = "0.4.2+"
 
 [[LearnBase]]
 deps = ["LinearAlgebra", "SparseArrays", "StatsBase", "Test"]
