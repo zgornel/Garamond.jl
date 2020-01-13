@@ -89,8 +89,6 @@ show(io::IO, srcher::Searcher{T,E,I}) where {T,E,I} = begin
     # Get search index type string
     if I <: NaiveIndex
         _index_type = "Naive index"
-    elseif I <: NaiveFastIndex
-        _index_type = "Naive/Fast index"
     elseif I <: BruteTreeIndex
         _index_type = "BruteTree index"
     elseif I<: KDTreeIndex
