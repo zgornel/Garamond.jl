@@ -7,7 +7,7 @@ using Garamond
 #using JSON
 
 # TODO(Corneliu): Complete testing framework redo
-include("query_parser.jl")
+include("input_parsers.jl")
 include("db.jl")
 
 end

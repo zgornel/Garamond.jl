@@ -91,7 +91,6 @@ const STR_TO_LANG = Dict("english"=>Languages.English,
                          "italian"=>Languages.Italian,
                          "finnish"=>Languages.Finnish,
                          "dutch"=>Languages.Dutch,
-                         "afrikaans"=>Languages.Dutch,
                          "portuguese"=>Languages.Portuguese,
                          "spanish"=>Languages.Spanish,
                          "russian"=>Languages.Russian,
@@ -134,7 +133,8 @@ const SUPPORTED_LANGUAGES = [Languages.English,
                              Languages.German,
                              Languages.Romanian,
                              Languages.French,
-                             Languages.Italian]
+                             Languages.Italian,
+                             Languages.Dutch]
 const DEFAULT_LANGUAGE = Languages.English
 const DEFAULT_LANGUAGE_STR=LANG_TO_STR[DEFAULT_LANGUAGE]
 const DEFAULT_TOKENIZER = :stringanalysis

@@ -6,6 +6,10 @@ __parse(::Type{T}, data::AbstractString) where {T<:Symbol} = T(data)
 
 __parse(::Type{Vector{Symbol}}, data::Vector) = Symbol.(data)
 
+__parse(::Type{Dict{Symbol, T1}}, data::Dict{String, T2}
+       ) where {T1<:AbstractFloat, T2} =
+    Dict(Symbol(k)=>T1(v) for (k,v) in data)
+
 __parse(::Type{T}, data::S) where{T,S} = try
     T(data)
 catch
