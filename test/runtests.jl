@@ -3,6 +3,7 @@ module GaramondTesting
 using Test
 using Random
 using JuliaDB
+using EmbeddingsAnalysis
 using Garamond
 #using JSON
 
