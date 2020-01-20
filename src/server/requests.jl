@@ -86,9 +86,9 @@ Request corresponding to a searcher read configuration command.
 const READCONFIGS_REQUEST = InternalRequest(operation=:read_configs)
 
 """
-Request corresponding to a searcher update command.
+Request corresponding to an environment operation command.
 """
-const UPDATE_REQUEST = InternalRequest(operation=:update, query="")
+const ENVOP_REQUEST = InternalRequest(operation=:envop, query="{}")
 
 
 """

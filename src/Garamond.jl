@@ -152,7 +152,7 @@ module Garamond
     include("searchable/config_parser.jl")
     include("searchable/searcher.jl")
     include("searchable/env.jl")
-    include("searchable/update.jl")
+    include("searchable/env_operations.jl")
 
     include("input/text_parsers.jl")
     include("input/text_processing.jl")
