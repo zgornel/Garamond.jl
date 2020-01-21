@@ -34,7 +34,7 @@ function search_server(data_config_path, io_port, search_server_ready)
     while true
         # Check and update searchers
         if isready(up_out_channel)
-            env.searchers = take!(up_out_channel)
+            env = take!(up_out_channel)
         end
 
         # Start accepting requests and asynchronously

@@ -131,7 +131,7 @@ function rest_server(port::Integer,
                 return HTTP.Response(503)
             end
             println(ssconn, request2json(srchsrv_req))                   # writes a "\n" as well
-            response = ifelse(isopen(ssconn), readline(ssconn), "")  # expects a "\n" terminator
+            response = ifelse(isopen(ssconn), readline(ssconn), "")      # expects a "\n" terminator
             close(ssconn)
             return HTTP.Response(200, _HEADERS, body=response)
         else
@@ -152,16 +152,6 @@ read_configs_req_handler(req::HTTP.Request) = READCONFIGS_REQUEST
 
 
 envop_req_handler(req::HTTP.Request) = begin
-    ### TODO: Remove the triple-commented part
-    ### parts = HTTP.URIs.splitpath(req.target)
-    ### updateable = parts[findfirst(isequal("update"), parts) + 1]
-    ### if updateable == "*"
-    ###     # update all i.e. /api/update/*
-    ###     return UPDATE_REQUEST
-    ### else
-    ###     # no searcher specified, update all i.e. /api/update
-    ###     return InternalRequest(operation=:update, query=updateable)
-    ### end
     return InternalRequest(operation=:envop, query=httpbody2string(req))
 end
 
