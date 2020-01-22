@@ -8,16 +8,16 @@ via `channels`.
 """
 function env_operator(env, channels)
     in_channel, out_channel = channels
+    _env = env
     while true
         # Sleep and take updateble searchers IDs
         sleep(DEFAULT_ENVOP_SLEEP_INTERVAL)
         opdict = JSON.parse(take!(in_channel))
         cmd = Symbol(get(opdict, "cmd", ""))
         cmd_argument = get(opdict, "cmd_argument", "")
-        _env = env
         if cmd === :save
             try
-                serialize(cmd_argument, env)
+                serialize(cmd_argument, _env)
                 @info "• Environment successfully saved (serialized) in $cmd_argument."
             catch
                 @warn "Could not save (serialize) environment in $cmd_argument."
@@ -54,7 +54,7 @@ function env_operator(env, channels)
         else
             @warn "Unknown environment operation command $cmd"
         end
-        @async put!(out_channel, _env)
+        put!(out_channel, _env)
     end
     return nothing
 end

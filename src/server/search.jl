@@ -29,17 +29,14 @@ function search_server(data_config_path, io_port, search_server_ready)
     server = listen(ipaddr, io_port)
     @info "SEARCH server online @$ipaddr:$io_port..."
 
-    # Main loop
+    # Main loop: accept connection, update (if updates available) and respond
     counter = [0]  # vector so the value is mutable
     while true
-        # Check and update searchers
+        sock = accept(server)
         if isready(up_out_channel)
             env = take!(up_out_channel)
+            @info "Took environment $(env)"
         end
-
-        # Start accepting requests and asynchronously
-        # respond to them using the opened socket
-        sock = accept(server)
         @async respond(env, sock, counter, channels)
     end
 end
@@ -111,7 +108,7 @@ function respond(env, socket, counter, channels)
         ### Read and return data configurations ###
         @info "• Environment operation [#$(counter[1])]."
         if !isready(up_in_channel)
-            put!(up_in_channel, request.query)  # the take! is in the search server
+            @async put!(up_in_channel, request.query)  # the take! is in the search server
         else
             @warn "Environment operation request ignored, another in progress."
         end
