@@ -145,7 +145,6 @@ module Garamond
 
     include("index/abstractindex.jl")
     include("index/naive.jl")
-    include("index/naivefast.jl")
     include("index/brutetree.jl")
     include("index/kdtree.jl")
     include("index/hnsw.jl")
@@ -153,7 +152,7 @@ module Garamond
     include("searchable/config_parser.jl")
     include("searchable/searcher.jl")
     include("searchable/env.jl")
-    include("searchable/update.jl")
+    include("searchable/env_operations.jl")
 
     include("input/text_parsers.jl")
     include("input/text_processing.jl")

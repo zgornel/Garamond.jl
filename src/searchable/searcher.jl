@@ -114,7 +114,6 @@ function __get_search_index_type(config::SearchConfig)
     # Get search index types
     search_index = config.search_index
     search_index == :naive && return NaiveIndex
-    search_index == :naivefast && return NaiveFastIndex
     search_index == :brutetree && return BruteTreeIndex
     search_index == :kdtree && return KDTreeIndex
     search_index == :hnsw && return HNSWIndex

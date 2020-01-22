@@ -4,11 +4,7 @@
 Search server for Garamond. It is a finite-state-machine that
 when called, creates the searchers i.e. search objects using the
 `data_config_path` and the proceeds to looping continuously
-in order to:
- - update the searchers regularly (asynchronously);
- - receive requests from clients on the port `io_port`
- - call search and route responses asynchronouslt back
-   to the clients through `io_port`
+in order to asynchronously handle outside requests.
 
 After the searchers are loaded, the search server sends a notification
 using `search_server_ready` to any listening I/O servers.
@@ -18,11 +14,11 @@ function search_server(data_config_path, io_port, search_server_ready)
     # Build search environment
     env = build_search_env(data_config_path)
 
-    # Start updater
-    up_in_channel = Channel{String}(0)  # input (searcher id)
-    up_out_channel = Channel{typeof(env.searchers)}(0)  # output (updated searchers)
+    # Start the search environment operator
+    up_in_channel = Channel{String}(0)          # input: dictionary with keys the command and its argument
+    up_out_channel = Channel{typeof(env)}(0)    # output: updated environment
     channels = (up_in_channel, up_out_channel)
-    @async updater(env, channels)
+    @async env_operator(env, channels)
 
     # Notify waiting I/O servers
     @info "Searchers loaded. Notifying I/O servers..."
@@ -33,17 +29,13 @@ function search_server(data_config_path, io_port, search_server_ready)
     server = listen(ipaddr, io_port)
     @info "SEARCH server online @$ipaddr:$io_port..."
 
-    # Main loop
+    # Main loop: accept connection, update (if updates available) and respond
     counter = [0]  # vector so the value is mutable
     while true
-        # Check and update searchers
-        if isready(up_out_channel)
-            env.searchers = take!(up_out_channel)
-        end
-
-        # Start accepting requests and asynchronously
-        # respond to them using the opened socket
         sock = accept(server)
+        if isready(up_out_channel)
+            env = take!(up_out_channel)
+        end
         @async respond(env, sock, counter, channels)
     end
 end
@@ -108,17 +100,16 @@ function respond(env, socket, counter, channels)
 
     elseif request.operation === :read_configs
         ### Read and return data configurations ###
-        @info "• Get configuration(s) [#$(counter[1])]."
+        @info "• Get configuration [#$(counter[1])]."
         write(socket, read_configuration_to_json(env) * RESPONSE_TERMINATOR)
 
-    elseif request.operation === :update
+    elseif request.operation === :envop
         ### Read and return data configurations ###
-        @info "• Update searcher(s) [#$(counter[1])]."
-        # The request query contains the string id of the updated searcher
+        @info "• Environment operation [#$(counter[1])]."
         if !isready(up_in_channel)
-            put!(up_in_channel, request.query)  # the take! is in the search server
+            @async put!(up_in_channel, request.query)  # the take! is in the search server
         else
-            @warn "Update request ignored: update in progress..."
+            @warn "Environment operation request ignored, another in progress."
         end
         write(socket, RESPONSE_TERMINATOR)  # send response asynchronously
 

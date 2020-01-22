@@ -8,17 +8,22 @@ REST API Specification
     • GET:  /*                    returns a HTTP 501 message i.e. Not Implemented
     • GET:  /api/kill             kills the server
     • GET:  /api/read-configs     returns the searcher configurations
-    • GET:  /api/update/*         updates all engine searchers
-    • GET:  /api/update/<id>      updates the seacher with an id equal to <id>
 
     • POST: /*                    returns a HTTP 501 message i.e. Not Implemented
+    • POST: /api/envop            loads (deserializes)/ saves (serializes)/ re-indexes the search environment
     • POST: /api/search           triggers a search using parameters from the HTTP message body
     • POST: /api/recommed         triggers a recommendation using parameters from the HTTP message body
     • POST: /api/rank             triggers a ranking i.e. boost using parameters from the HTTP message body
 
-HTTP Message body specification for the search, recommend and rank operations
--------------------------------------------------------------------------------
-    • search command format (JSON):
+HTTP Message body specification for the search, recommend, ranking and environment operations
+---------------------------------------------------------------------------------------
+    • /api/envop body format (JSON):
+         {
+          "cmd" : <the environment operation to be performed, a string; available: 'load', 'save' and 'reindex'>,
+          "cmd_argument": <argument for the operation, a string; for 'load' and 'save' it should be a filepath,
+                           for 'reindex' it should be either a searcher id or '*' i.e. all searchers>
+         }
+    • /api/search body format (JSON):
          {
           "query" : <the query to be performed, a string>,
           "input_parser": <the input parser to use; available: 'noop_input_parser', 'base_input_parser'>
@@ -33,7 +38,7 @@ HTTP Message body specification for the search, recommend and rank operations
           "ranker": <OPTIONAL, the ranked to use; available: 'noop_ranker'>
          }
 
-    • recommend command format (JSON):
+    • /api/recommend body format (JSON):
          {
           "recommender": <a string with the name of the recommender to use; available: 'noop_recommender', 'search_recommender'>
           "recommend_id" : <the id of the entity for which recommendations are sought>
@@ -51,7 +56,7 @@ HTTP Message body specification for the search, recommend and rank operations
           "ranker": <OPTIONAL, the ranked to use; available: 'noop_ranker'>
          }
 
-    • rank command format (JSON):
+    • /api/rank body format (JSON):
          {
             "ranker": <a string with the name of the ranker to use; available: 'noop_ranker'>
             "rank_ids": <list of ids to rank>,
@@ -92,8 +97,8 @@ function rest_server(port::Integer,
     HTTP.@register(GARAMOND_REST_ROUTER, "GET", "/*", __debug_wrapper(noop_req_handler))
     HTTP.@register(GARAMOND_REST_ROUTER, "GET", "/api/kill", __debug_wrapper(kill_req_handler))
     HTTP.@register(GARAMOND_REST_ROUTER, "GET", "/api/read-configs", __debug_wrapper(read_configs_req_handler))
-    HTTP.@register(GARAMOND_REST_ROUTER, "GET", "/api/update/*", __debug_wrapper(update_req_handler))
     HTTP.@register(GARAMOND_REST_ROUTER, "POST", "/*", __debug_wrapper(noop_req_handler))
+    HTTP.@register(GARAMOND_REST_ROUTER, "POST", "/api/envop", __debug_wrapper(envop_req_handler))
     HTTP.@register(GARAMOND_REST_ROUTER, "POST", "/api/search", __debug_wrapper(search_req_handler))
     HTTP.@register(GARAMOND_REST_ROUTER, "POST", "/api/recommend", __debug_wrapper(recommend_req_handler))
     HTTP.@register(GARAMOND_REST_ROUTER, "POST", "/api/rank", __debug_wrapper(rank_req_handler))
@@ -126,7 +131,7 @@ function rest_server(port::Integer,
                 return HTTP.Response(503)
             end
             println(ssconn, request2json(srchsrv_req))                   # writes a "\n" as well
-            response = ifelse(isopen(ssconn), readline(ssconn), "")  # expects a "\n" terminator
+            response = ifelse(isopen(ssconn), readline(ssconn), "")      # expects a "\n" terminator
             close(ssconn)
             return HTTP.Response(200, _HEADERS, body=response)
         else
@@ -146,21 +151,13 @@ kill_req_handler(req::HTTP.Request) = KILL_REQUEST
 read_configs_req_handler(req::HTTP.Request) = READCONFIGS_REQUEST
 
 
-update_req_handler(req::HTTP.Request) = begin
-    parts = HTTP.URIs.splitpath(req.target)
-    updateable = parts[findfirst(isequal("update"), parts) + 1]
-    if updateable == "*"
-        # update all i.e. /api/update/*
-        return UPDATE_REQUEST
-    else
-        # no searcher specified, update all i.e. /api/update
-        return InternalRequest(operation=:update, query=updateable)
-    end
+envop_req_handler(req::HTTP.Request) = begin
+    return InternalRequest(operation=:envop, query=httpbody2string(req))
 end
 
 
 search_req_handler(req::HTTP.Request) = begin
-    parameters = __http_req_body_to_json(req)
+    parameters = httpbody2dict(req)
     return InternalRequest(
                 operation = :search,
                 query = parameters["query"],  # if missing, throws
@@ -177,7 +174,7 @@ end
 
 
 recommend_req_handler(req::HTTP.Request) = begin
-    parameters = __http_req_body_to_json(req)
+    parameters = httpbody2dict(req)
     _query = parameters["recommend_id"] * " " * join(parameters["filter_fields"], " ")
     return InternalRequest(
                 operation = :recommend,
@@ -197,7 +194,7 @@ end
 
 
 rank_req_handler(req::HTTP.Request) = begin
-    parameters = __http_req_body_to_json(req)
+    parameters = httpbody2dict(req)
     _all_ids = strip.(parameters["rank_ids"])  # if missing, throws
     return InternalRequest(
                 operation = :rank,
@@ -209,5 +206,5 @@ rank_req_handler(req::HTTP.Request) = begin
 end
 
 
-__http_req_body_to_json(req::HTTP.Request) =
-    JSON.parse(read(IOBuffer(HTTP.payload(req)), String))
+httpbody2string(req::HTTP.Request) = read(IOBuffer(HTTP.payload(req)), String)
+httpbody2dict(req::HTTP.Request) = JSON.parse(httpbody2string(req))

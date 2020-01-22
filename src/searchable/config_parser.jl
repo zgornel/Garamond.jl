@@ -230,7 +230,7 @@ function parse_configuration(filename::AbstractString)
                 sconfig.vectors_eltype= DEFAULT_VECTORS_ELTYPE
             end
             # search_index
-            if !(sconfig.search_index in [:naive, :naivefast, :brutetree, :kdtree, :hnsw])
+            if !(sconfig.search_index in [:naive, :brutetree, :kdtree, :hnsw])
                 @warn "$(sconfig.id) Defaulting search_index=$DEFAULT_SEARCH_INDEX."
                 sconfig.search_index = DEFAULT_SEARCH_INDEX
             end
@@ -245,11 +245,6 @@ function parse_configuration(filename::AbstractString)
                     if sconfig.vectors_transform != :none && sconfig.vectors_dimension <= 0
                         @warn "$(sconfig.id) Defaulting vectors_dimension=$DEFAULT_VECTORS_DIMENSION."
                         sconfig.vectors_dimension = DEFAULT_VECTORS_DIMENSION
-                    end
-                    # vectors_dimension
-                    if sconfig.vectors_transform != :none && sconfig.search_index == :naivefast
-                        @warn "$(sconfig.id) Defaulting vectors_transform=$(:none) (search_index=$(sconfig.search_index))."
-                        sconfig.vectors_transform = :none
                     end
                 end
                 # embedings_path
