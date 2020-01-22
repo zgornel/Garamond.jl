@@ -10,9 +10,12 @@ function env_operator(env, channels)
     in_channel, out_channel = channels
     _env = env
     while true
-        # Sleep and take updateble searchers IDs
         sleep(DEFAULT_ENVOP_SLEEP_INTERVAL)
-        opdict = JSON.parse(take!(in_channel))
+        opdict = try
+            JSON.parse(take!(in_channel))
+        catch
+            Dict{String, String}()
+        end
         cmd = Symbol(get(opdict, "cmd", ""))
         cmd_argument = get(opdict, "cmd_argument", "")
         if cmd === :save

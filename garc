@@ -100,13 +100,10 @@ function get_unix_socket_client_arguments(args::Vector{String})
         "--kill", "-k"
             help = "Kill the search engine server"
             action = :store_true
-        "--update-searcher"
-            help = "Update a searcher"
+        "--env-operation"
+            help = "Environment operation"
             arg_type = String
-            default = ""
-        "--update-all"
-            help = "Update all searchers"
-            action = :store_true
+            nargs = 2
         "--ranker"
             help = "The ranker to use; avalilable: noop_ranker"
             arg_type = String
@@ -135,17 +132,18 @@ function construct_json_request(args)
                    "request_id_key" => args["id-key"],
                    "response_size" => args["response-size"],
                    "ranker" => args["ranker"],
-                   "input_parser" => args["input-parser"])
+                   "input_parser" => args["input-parser"],
+                   "recommender" => "noop_recommender",
+                   "searchable_filters" => [])
     # Kill request
     if args["kill"]
         dictreq["operation"] = "kill"
 
-    # Update request of some form
-    elseif !isempty(args["update-searcher"]) || args["update-all"]
-        dictreq["operation"] = "update"
-        if !args["update-all"]
-            dictreq["query"] = args["update-searcher"]  # which searchers to update
-        end
+    # Environment operation
+    elseif !isempty(args["env-operation"])
+        dictreq["operation"] = "envop"
+        dictreq["query"] = "{\"cmd\":\"$(args["env-operation"][1])\","*
+                            "\"cmd_argument\":\"$(args["env-operation"][2])\"}"
     else
         dictreq["operation"] = "search"
         dictreq["query"] = args["query"]

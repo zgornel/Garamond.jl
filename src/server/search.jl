@@ -35,7 +35,6 @@ function search_server(data_config_path, io_port, search_server_ready)
         sock = accept(server)
         if isready(up_out_channel)
             env = take!(up_out_channel)
-            @info "Took environment $(env)"
         end
         @async respond(env, sock, counter, channels)
     end
