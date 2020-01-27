@@ -1,17 +1,20 @@
-# Search server and clients
+# Search server, clients and REST APIs
 
-Garamond is designed as a [client-server architecture](http://catb.org/~esr/writings/taoup/html/ch11s06.html#id2958899) in which the server receives queries, performs the search action and returns the results to a client that handles the interaction. The client can be either human or machine controlled. There are three utilities designed to handle the search process, all of which can be found in the root directory of the package:
-- **gars** - starts the search server. The operations performed by the search engine server at this point are indexing data at a given location and listening to a socket.
-- **garc** - command line client supporting Unix socket communication. Through it, a single search can be performed and all search parameters can be specified. It supports printing search results in a human-readable way.
-- **garw** - web client supporting Web socket communication (EXPERIMENTAL). The basic principle is that the client starts a HTTP server which serves a page at a given HTTP port. If the web page is not specified, a default one is generated internally and served. The user connects with a web browser of choice at the local address (i.e. `127.0.0.1`) and specified port and performs the search queries from the page. It naturally supports multiple queries however, the parameters of the search cannot be changed.
+Garamond is designed as a [client-server architecture](http://catb.org/~esr/writings/taoup/html/ch11s06.html#id2958899) in which the server receives requests, performs the search, recommendation or ranking operations and returns the response i.e. results back to the client.
 
-Notes:
-- The clients do not depend on the Garamond package and are very lightweight.
-- Another way of communicating with the server is through a HTTP REST API, from any browser, [curl](https://curl.haxx.se/), etc. 
+!!! note
+
+    - The clients do not depend on the Garamond package and are very lightweight.
+    - The prefered way of communicating with the server is through a REST API using HTTP clients such as [curl](https://curl.haxx.se/), etc.
+
+In the root directory of the package the search server utility and two thin clients can be found:
+- **gars** - starts the search server. The operations performed by the search engine server at this point are indexing data according to a given configuration and serving requests coming from connections to sockets or HTTP ports.
+- **garc** - command line client supporting Unix socket communication. Through it, a single search can be performed and many of the search request parameters can be specified. It supports printing search results in a human-readable way.
+- **garw** - web client supporting Web socket communication (experimental and feature limited). The basic principle is that it starts a HTTP server which serves a page at a given HTTP port. If the web page is not specified, a default one is generated internally and served. The user connects with a web browser of choice at the local address and port (i.e. `127.0.0.1`) and performs the search queries from the page. It naturally supports multiple queries however, the parameters of the search cannot be changed.
 
 
-## Starting the search server
-The search server listens to a socket for incoming queries. Once the query is received, it is processed and the answer written back to same socket. Looking at the `gars` command line help
+## Server
+The search server listens on an ip and socket for incoming requests. Once one is received, it is processed and the response sent back to same socket. Looking at the `gars` command line help
 ```
 $ ./gars --help
 Activating environment at `~/projects/Garamond.jl/Project.toml`
@@ -59,8 +62,10 @@ Activating environment at `~/projects/Garamond.jl/Project.toml`
 Through the `-d` switch, a data configuration is specified for use. It holds all the necessary information related to data loading, indexing, searching, recommending etc.
 
 
-## Commandline client
-The commandline client `garc` sends the query to an open Unix socket and waits the search results on the same socket. It is worthwhile checking the available commandline options:
+## Clients
+
+### garc: Commandline client
+The commandline client `garc` sends the request to an open Unix socket and waits the search response on the same socket. It is worthwhile checking the available commandline options:
 ```
 $ ./garc --help
 usage: garc [--log-level LOG-LEVEL] [-u UNIX-SOCKET]
@@ -115,7 +120,7 @@ searcher-1
 ```
 
 
-## Web client
+### garw: Web-socket client
 The web client `garw` starts a HTTP server that locally serves a page: it is the page that has to connect to the search server through a user-specified web-socket. Therefore, `garw` is technically not fully a client but for the sake of consistency we will consider it to be one. Its commandline arguments are more simplistic:
 ```
 $ ./garw --help
@@ -148,3 +153,14 @@ $ ./garw -w 9100
 [ Info: Serving page on 127.0.0.1:8888
 ```
 Using a browser, one can open the page at `locahost:8888` and search.
+
+
+### HTTP client
+A generic HTTP client such as curl can easily be used. Assuming that the search server listens at `localhost:9000`,
+```
+$curl -d '{<request JSON content>}' -H "Content-Type: application/json" http://localhost:9000/api/search
+```
+will send a request to the server. The content of the request is a JSON file conforming to the [REST API specification](@ref rest-api-specification).
+
+
+## [REST API](@id rest-api-specification)

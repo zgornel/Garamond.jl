@@ -4,9 +4,9 @@ CurrentModule=Garamond
 
 # Introduction
 
-Garamond is a small, flexible data search engine. It can be used both as a Julia package, with search functionality available through API method calls, as well as a standalone search server with search functionality accessible through clients that send queries and receive search results to and from the server.
+Garamond is a small, flexible neural and data search engine. It can be used both as a Julia package i.e. search functionality available through API method calls or as a standalone search server i.e. search functionality accessible through clients that communicate with the server.
 
-Internally, the engine's architecture is that of an ensemble of searchers, each with its own characteristics, whose individual search results can be combined in a variety of ways. The searchers can perform either classical search i.e. based on word-statistics or semantic search i.e. based on word embeddings. The engine can be provided with custom data loaders, recommendation engines and result rankers.
+Internally, the engine's architecture is that of an ensemble of searchers, with an analytical database as data backend. Each searcher has its own characteristics i.e. ways of embedding documents, searching through the vectors and the search results from all searchers can be combined in a variety of ways. The engine supports runtime loading and use of custom data loaders, recommendation engines and result rankers.
 
 ## Installation
 
@@ -33,10 +33,10 @@ downloads the `master` branch of the repository and adds `Garamond` to the curre
 - Compressed vector support for low-memory footprint
 - Suggestion support using [BK Trees](https://en.wikipedia.org/wiki/BK-tree)
 - Many state-of-the-art document and sentence embedding methods
-- Multi-threading supported (different branch)
-- Portable (and statically compilable) to many architecture
-- Caching support for fast operational resumption
+- Multi-threading [supported](https://github.com/zgornel/Garamond.jl/tree/cc-multithreading)
+- Portable (and statically compilable) to many architectures
 
 ## Coming Soon:
 - Billion-scale search
 - Real-time indexing
+- Caching support through serialization for fast operational resumption
