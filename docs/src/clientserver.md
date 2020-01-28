@@ -5,7 +5,7 @@ Garamond is designed as a [client-server architecture](http://catb.org/~esr/writ
 !!! note
 
     - The clients do not depend on the Garamond package and are very lightweight.
-    - The prefered way of communicating with the server is through a REST API using HTTP clients such as [curl](https://curl.haxx.se/), etc.
+    - The prefered way of communicating with the server is through the [REST API](@ref rest-api-specification) using HTTP clients such as [curl](https://curl.haxx.se/), etc.
 
 In the root directory of the package the search server utility and two thin clients can be found:
 - **gars** - starts the search server. The operations performed by the search engine server at this point are indexing data according to a given configuration and serving requests coming from connections to sockets or HTTP ports.
@@ -164,3 +164,92 @@ will send a request to the server. The content of the request is a JSON file con
 
 
 ## [REST API](@id rest-api-specification)
+
+The REST API exposes the search engine's functionality through HTTP requests. These can be either
+`GET` requests (for simple functionality) or `POST` requests, in which the body of the message contains
+a correctly formatted [JSON](https://en.wikipedia.org/wiki/JSON) string.
+
+### Endpoints
+
+Assuming a search server listening at `<ip>:<port>`, the exposed API endpoints are:
+
+| operation | HTTP request type |   URI   | description |
+| :---      | :---:             | :---    | :---        |
+| Search    | `POST`            |`http://<ip>:<port>/api/search` | Searches for a given input in the indexed data |
+| Recommend | `POST`            |`http://<ip>:<port>/api/recommend` | Returns a list of similar entities to one specified, using a specified recommender |
+| Rank      | `POST`            |`http://<ip>:<port>/api/rank`   | Ranks a given list of ids using a specified ranker |
+| Environment-related | `POST`  |`http://<ip>:<port>/api/envop` | Saves, loads or re-indexes a full search environment (data + searchers) |
+| Kill      | `GET`             |`http://<ip>:<port>/api/kill` | Kills the  operation|
+| Get configuration | `GET`     |`http://<ip>:<port>/api/read-configs` | Returns the data configuration of the engine |
+
+### Request body format
+
+The specific functionality of the engine operations i.e. search, ranking is set through parameters passed in the HTTP request body.
+The underlying format of the request body is JSON, of the form:
+```
+{
+    "<key>":<value>,
+ }
+```
+
+The following tables detail the key names, types and default values for each operation supported by the engine.
+
+!!! note
+    
+    The default values present in the tables below are found in [https://github.com/zgornel/Garamond.jl/blob/master/src/config/defaults.jl](https://github.com/zgornel/Garamond.jl/blob/master/src/config/defaults.jl)
+
+- **Search**
+
+| key             | required |  type  | default | description |
+| :---            |  :---:   | :---:  |  :---:  | :---        |
+| `query`         |    ✓     | String |    -    | The input query.|
+| `input_parser`  |    ✓     | String |    -    | Input parser to use. Available: `"noop_input_parser"` (no specific parsing) and `"base_input_parser"` (constructs data filters and queries).|
+| `return_fields` |    ✓     | List of strings |    -    | A list with the names of the database columns to be returned.|
+| `search_method` |    -     | String |`DEFAULT_SEARCH_METHOD`| Default search method. Only used by `"search_recommender"`.|
+| `searchable_filters` |    -     | List of strings |`<empty list>`| A list of field names whose values will be inserted in the search query if the fields are used for filtering in the query.|
+| `max_matches`        |    -     | Integer |`DEFAULT_MAX_MATCHES`  | The maximum number of search results to generate internally from each searcher. Note that still `response_size` recommendations are returned.|
+| `response_size`      |    -     | Integer |`DEFAULT_RESPONSE_SIZE`| The maximum number of results to return in the response.|
+| `max_suggestions`    |    -     | Integer |`DEFAULT_MAX_SUGGESTIONS`| The maximum number of suggestions to return for each mismatched keyword of the query.|
+| `custom_weights`     |    -     | Dictionary |`DEFAULT_CUSTOM_WEIGHTS`| A dictionary where the keys are strings with searcher ids and the values are weights of the result scores to be used in result aggregation (if the case). In this way, the importance of search results from different searchers can be tuned.|
+| `ranker`             |    -     | String  |`DEFAULT_RANKER_NAME`| The name of the ranker. Available: `"noop_ranker"` (no ranking).|
+
+- **Recommend**
+
+| key                  | required |  type  | default | description |
+| :---                 |  :---:   | :---:  |  :---:  | :---        |
+| `recommender`        |    ✓     | String |    -    | The name of the recommender to use. Available: `"noop_recommender"` (no recommendation) and `"search_recommender"` (search-based recommender).|
+| `recommend_id`       |    ✓     | String |    -    | The id of the record for which recommendations (similar items) are sought.|
+| `recommend_id_key`   |    ✓     | String |    -    | The database name of the column holding the recommend id.|
+| `input_parser`       |    ✓     | String |    -    | Input parser to use. Available: `"noop_input_parser"` (no specific parsing) and `"base_input_parser"` (constructs data filters and queries). The `"base_input_parser"` has to be used with `"search_recommender"`.|
+| `filter_fields`      |    ✓     | List of strings |    -    | Contains the names of the fields that will be used by the recommender. Only used in `"search_recommender"`.|
+| `return_fields`      |    ✓     | List of strings |    -    | A list with the names of the database columns to be returned.|
+| `search_method`      |    -     | String |`DEFAULT_SEARCH_METHOD`| Default search method. Only used by `"search_recommender"`.|
+| `searchable_filters` |    -     | List of strings |`<empty list>`| A list of field names whose values will be inserted in the search query sent to the searchers, if the field names appear also in `filter_fields`. This guarantees a better match between results returned by querying the database (filtering) and the indexed data (search).|
+| `max_matches`        |    -     | Integer |`DEFAULT_MAX_MATCHES`  | The maximum number of recommendations to generate internally. Note that still `response_size` recommendations are returned.|
+| `response_size`      |    -     | Integer |`DEFAULT_RESPONSE_SIZE`| The maximum number of results to return in the response.|
+| `ranker`             |    -     | String  |`DEFAULT_RANKER_NAME`| The name of the ranker. Available: `"noop_ranker"` (no ranking).|
+
+- **Rank**
+
+| key             | required |  type   | default | description |
+| :---            |  :---:   | :---:   |  :---:  | :---        |
+| `ranker`        |    ✓     | String  |    -    | The name of the ranker. Available: `"noop_ranker"` (no ranking).|
+| `rank_ids`      |    ✓     | List of strings |    -    | The ids to be ranked.|
+| `rank_id_key`   |    ✓     | String  |    -    | The database name of the column holding the ids to be ranked.|
+| `return_fields` |    ✓     | List of strings |    -    | A list with the names of the database columns to be returned.|
+| `response_size` |    -     | Integer |`DEFAULT_RESPONSE_SIZE`| The maximum number of results to return in the response.|
+
+- **Environment-related**
+
+| key            | required |  type  | default | description |
+| :---           |  :---:   | :---:  |  :---:  | :---        |
+| `cmd`          |    ✓     | String |    -    | The operation being performed. Available: `"load"`, `"save"` and `"reindex"`.|
+| `cmd_argument` |    ✓     | String |    -    | Argument of the operation. For `"load"` and `"save"` it should be a filepath, for `"reindex"`, the searcher id or `*`.|
+
+- **Kill**
+
+No parameters needed.
+
+- **Get configuration**
+
+No parameters needed.
