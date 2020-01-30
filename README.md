@@ -1,9 +1,10 @@
 ![Alt text](https://github.com/zgornel/Garamond.jl/blob/master/docs/src/assets/logo.png)
 
-A small, fast and flexible semantic search engine, written in Julia. Batteries not included.
+A small, flexible neural and data search engine, written in Julia. Batteries not included.
 
 [![License](http://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat)](LICENSE.md) 
 [![Build Status (master)](https://travis-ci.com/zgornel/Garamond.jl.svg?token=8HcgFtAjpxwpdXiu8Fon&branch=master)](https://travis-ci.com/zgornel/Garamond.jl)
+[![Coverage Status](https://coveralls.io/repos/github/zgornel/Garamond.jl/badge.svg?branch=master)](https://coveralls.io/github/zgornel/Garamond.jl?branch=master)
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://zgornel.github.io/Garamond.jl/stable)
 [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://zgornel.github.io/Garamond.jl/dev)
 
@@ -30,7 +31,7 @@ This code has an MIT license.
 
 [Semantic search on Wikipedia](https://en.wikipedia.org/wiki/Semantic_search)
 
-[Semantic word embeddings](http://www.offconvex.org/2015/12/12/word-embeddings-1/)
+[Word embeddings](http://www.offconvex.org/2015/12/12/word-embeddings-1/)
 
 
 ## Acknowledgements
