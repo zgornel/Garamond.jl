@@ -5,7 +5,7 @@ Garamond is designed as a [client-server architecture](http://catb.org/~esr/writ
 !!! note
 
     - The clients do not depend on the Garamond package and are very lightweight.
-    - The prefered way of communicating with the server is through the [REST API](@ref rest-api-specification) using HTTP clients such as [curl](https://curl.haxx.se/), etc.
+    - The preferred way of communicating with the server is through the [REST API](@ref rest-api-specification) using HTTP clients such as [curl](https://curl.haxx.se/), etc.
 
 In the root directory of the package the search server utility and two thin clients can be found:
 - **gars** - starts the search server. The operations performed by the search engine server at this point are indexing data according to a given configuration and serving requests coming from connections to sockets or HTTP ports.
@@ -182,6 +182,11 @@ Assuming a search server listening at `<ip>:<port>`, the exposed API endpoints a
 | Kill      | `GET`             |`http://<ip>:<port>/api/kill` | Kills the  operation|
 | Get configuration | `GET`     |`http://<ip>:<port>/api/read-configs` | Returns the data configuration of the engine |
 
+### HTTP status codes
+ - `HTTP 200` returned when the request is correct
+ - `HTTP 400` returned when the request is malformed
+ - `HTTP 501` returned for a wrong URI
+
 ### Request body format
 
 The specific functionality of the engine operations i.e. search, ranking is set through parameters passed in the HTTP request body.
@@ -253,3 +258,19 @@ No parameters needed.
 - **Get configuration**
 
 No parameters needed.
+
+### Response format
+
+If the search, recommendation and ranking requests are successful a HTTP response with status code 200 is received. The body of the HTTP response message is a JSON string representing the actual results of the operation.
+Its keys and values are detailed below:
+
+| key                     |  type  | description |
+| :---                    | :---:  | :---        |
+| `n_searchers`           | Integer | The total number of searchers.|
+| `n_searchers_w_results` | Integer | The total number of searchers that returned data.|
+| `suggestions`           | Dictionary | A dictionary containing for each searcher, a list of suggestions for each missing token.|
+| `elapsed_time`          | Float | The time elapsed in executing the request, except for the building of results.|
+| `results`               | Dictionary | A dictionary containing for each searcher a list of dictionaries, each of the latter containing individual result data. For filtering operations, a random id is generated to which the list of results is associated.|
+| `n_total_results`       | Integer | The total number of results returned by the engine.|
+
+For more information on how the internal [engine result structure](https://github.com/zgornel/Garamond.jl/blob/master/src/search/results.jl) is used to construct the JSON output, consult the [`build_response`](https://github.com/zgornel/Garamond.jl/blob/master/src/server/search.jl) function.
