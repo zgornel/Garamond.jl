@@ -1,5 +1,5 @@
 """
-    search_server(data_config_path, io_port, search_server_ready)
+    search_server(data_config_path, io_port, search_server_ready; cache_path=nothing)
 
 Search server for Garamond. It is a finite-state-machine that
 when called, creates the searchers i.e. search objects using the
@@ -9,10 +9,10 @@ in order to asynchronously handle outside requests.
 After the searchers are loaded, the search server sends a notification
 using `search_server_ready` to any listening I/O servers.
 """
-function search_server(data_config_path, io_port, search_server_ready)
+function search_server(data_config_path, io_port, search_server_ready; cache_path=nothing)
 
     # Build search environment
-    env = build_search_env(data_config_path)
+    env = build_search_env(data_config_path; cache_path=cache_path)
 
     # Start the search environment operator
     up_in_channel = Channel{String}(0)          # input: dictionary with keys the command and its argument
@@ -21,7 +21,7 @@ function search_server(data_config_path, io_port, search_server_ready)
     @async env_operator(env, channels)
 
     # Notify waiting I/O servers
-    @info "Searchers loaded. Notifying I/O servers..."
+    @info "• Notifying I/O servers..."
     notify(search_server_ready, true)
 
     # Start search server
