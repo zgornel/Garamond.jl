@@ -18,7 +18,7 @@ function search_server(data_config_path, io_port, search_server_ready; cache_pat
     up_in_channel = Channel{String}(0)          # input: dictionary with keys the command and its argument
     up_out_channel = Channel{typeof(env)}(0)    # output: updated environment
     channels = (up_in_channel, up_out_channel)
-    @async env_operator(env, channels)
+    Threads.@spawn env_operator(env, channels)
 
     # Notify waiting I/O servers
     @info "• Notifying I/O servers..."
