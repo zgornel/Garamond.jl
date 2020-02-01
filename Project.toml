@@ -37,7 +37,7 @@ Unicode = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
 Word2Vec = "c64b6f0f-98cd-51d1-af78-58ae84944834"
 
 [compat]
-julia = "1"
+julia = "1.3"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"

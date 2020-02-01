@@ -20,6 +20,9 @@ function get_server_commandline_arguments(args::Vector{String})
         "--data-config", "-d"
             help = "data configuration file"
             arg_type = String
+        "--env-cache", "-c"
+            help = "search environment cache file"
+            arg_type = String
         "--log-level"
             help = "logging level"
             default = "info"
@@ -107,10 +110,11 @@ Base.@ccallable function julia_main(ARGS::Vector{String})::Cint
         io_port = 9000
     end
 
-    # Check data path
+    # Check data path and cache
     data_config_path = args["data-config"]
-    if isempty(data_config_path)
-        @warn "Missing data configuration file. Use -d option to specify. Exiting..."
+    env_cache_path = args["env-cache"]
+    if data_config_path === nothing && env_cache_path === nothing
+        @warn "Specify a data configuration or cache file using the -d or -c options. Exiting..."
         return 0
     end
 
@@ -121,7 +125,7 @@ Base.@ccallable function julia_main(ARGS::Vector{String})::Cint
     http_port != nothing && @async rest_server(http_port, io_port, sserver_ready, ipaddr=http_ip)
 
     # Start Search server
-    Garamond.search_server(data_config_path, io_port, sserver_ready)
+    Garamond.search_server(data_config_path, io_port, sserver_ready; cache_path=env_cache_path)
     return 0
 end
 
