@@ -13,25 +13,25 @@ end
 
 
 """
-    build_search_env(config_path; cache_path=nothing)
+    build_search_env(env_config; cache_path=nothing)
 
-Creates a search environment using the information provided by `config_path`.
+Creates a search environment using the information provided by the
+environment configuration `env_config`. A cache filepath can be
+specified by `cache_path` in which case the function will attempt to
+load it first.
 """
-function build_search_env(config_path; cache_path=nothing)
-     # Cache has priority over config
+function build_search_env(env_config; cache_path=nothing)
+    # Cache has priority over config
     if cache_path != nothing
         try
             env = deserialize(cache_path)
             @info "• Environment successfully loaded (deserialized) from $cache_path."
             return env
         catch e
-            @warn "Could not load (deserialize) environment from $cache_path.\n$e\nBuilding from $config_path..."
+            @warn "Could not load (deserialize) environment from $cache_path.\n$e"
         end
     end
     try
-        # Parse configuration
-        env_config = parse_configuration(config_path)
-
         # Load data
         dbdata = env_config.data_loader()
         db_check_id_key(dbdata, env_config.id_key)
@@ -42,13 +42,23 @@ function build_search_env(config_path; cache_path=nothing)
 
         # Build search environment
         env = SearchEnv(dbdata, env_config.id_key, srchers, env_config.config_path)
-        @info "• Environment successfully built using config $config_path."
+        @info "• Environment successfully built using config $(env_config.config_path)."
         return env
     catch e
-        @warn "Could not build environment from $config_path.\n$e\nExiting..."
+        @warn "Could not build environment from $(env_config.config_path).\n$e\nExiting..."
         exit()
     end
 end
+
+
+"""
+    build_search_env(config_path; cache_path=nothing)
+
+Creates a search environment using the information provided by the
+configuration file `config_path`.
+"""
+build_search_env(config_path::AbstractString; cache_path=nothing) =
+    build_search_env(parse_configuration(config_path); cache_path=cache_path)
 
 
 """
