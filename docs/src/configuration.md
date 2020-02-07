@@ -10,8 +10,10 @@ The configuration options of the Garamond search engine can be logically split i
 
 ## Data configuration
 
-This section will be added at a latter time.
+!!! warning "Missing data configuration options"
 
+    For a developers view on the usage of the data configuration options, check the sample [configuration files](https://github.com/zgornel/Garamond.jl/tree/master/test/configs) and the [data configuration parser](https://github.com/zgornel/Garamond.jl/blob/master/src/searchable/config_parser.jl).
+    It is important to note that some of these options may change quite frequently as the engine is under heavy development w.r.t. the data API.
 
 ## Engine configuration
 

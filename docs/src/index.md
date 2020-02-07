@@ -2,6 +2,10 @@
 CurrentModule=Garamond
 ```
 
+!!! warning "Work in progress!"
+
+    The engine is currently under heavy development and the documentation may be slightly out of date. As the API stabilizes, both the content and scope of the present documentation will increase. For any inquiries, bugs or feature requests, be sure to contact the developers or [file an issue](https://github.com/zgornel/Garamond.jl/issues/new).
+
 # Introduction
 
 Garamond is a small, flexible neural and data search engine. It can be used both as a Julia package i.e. search functionality available through API method calls or as a standalone search server i.e. search functionality accessible through clients that communicate with the server.
@@ -26,17 +30,22 @@ downloads the `master` branch of the repository and adds `Garamond` to the curre
 - In-memory analytical data-store based on [JuliaDB](https://juliadb.org)
 - Millon-scale indexing using [hnsw](https://arxiv.org/abs/1603.09320)
 - Complex query search patterns supported
-- Run-time support for custom loaders, recommenders and rankers
+- Pluggable support for custom parsers, loaders, recommenders and rankers
+- Run-time batch re-indexing
 - HTTP(REST)/Web-socket and UNIX socket connectivity
 - Wordvectors support: [Word2Vec](https://en.wikipedia.org/wiki/Word2vec), [ConceptnetNumberbatch](https://github.com/commonsense/conceptnet-numberbatch), [GloVe](https://nlp.stanford.edu/projects/glove/)
 - Classic search based on [term frequency](https://en.wikipedia.org/wiki/Tf%E2%80%93idf#Term_frequency_2), [tf-idf](https://en.wikipedia.org/wiki/Tf%E2%80%93idf#Term_frequency%E2%80%93Inverse_document_frequency), [bm25](https://en.wikipedia.org/wiki/Okapi_BM25)
-- Compressed vector support for low-memory footprint
+- Compressed vector support for low-memory footprint using [array quantization](https://github.com/zgornel/QuantizedArrays.jl)
 - Suggestion support using [BK Trees](https://en.wikipedia.org/wiki/BK-tree)
-- Many state-of-the-art document and sentence embedding methods
+- Many state-of-the-art neural document and sentence embedding methods
 - Multi-threading [supported](https://github.com/zgornel/Garamond.jl/tree/cc-multithreading)
+- Caching mechanisms for fast resume
 - Portable (and statically compilable) to many architectures
 
-## Coming Soon:
-- Billion-scale search
-- Real-time indexing
-- Caching support through serialization for fast operational resumption
+## Coming Soon
+- Billion-scale search through [IVFADC](https://github.com/JuliaNeighbors/IVFADC.jl)
+- Run-time indexing
+
+## Longer term plans
+- Image/Video/Audio i.e. generic search
+- Peer-to-peer / distributed operations support
