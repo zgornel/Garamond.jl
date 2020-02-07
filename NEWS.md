@@ -1,6 +1,6 @@
 ## Garamond Release Notes
 
-v0.2.0 (not public)
+v0.2.0-dev
 ------
  - JuliaDB data support
  - Data filtering
