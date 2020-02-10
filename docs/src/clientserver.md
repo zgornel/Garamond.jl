@@ -1,6 +1,6 @@
 # Search server, clients and REST APIs
 
-Garamond is designed as a [client-server architecture](http://catb.org/~esr/writings/taoup/html/ch11s06.html#id2958899) in which the server receives requests, performs the search, recommendation or ranking operations and returns the response i.e. results back to the client.
+Garamond is designed as a [client-server architecture](http://catb.org/~esr/writings/taoup/html/ch11s06.html#id2958899) in which the server receives requests, performs the search, recommendation or ranking operations and returns a response containing the search results back to the client.
 
 !!! note
 
@@ -8,13 +8,13 @@ Garamond is designed as a [client-server architecture](http://catb.org/~esr/writ
     - The preferred way of communicating with the server is through the [REST API](@ref rest-api-specification) using HTTP clients such as [curl](https://curl.haxx.se/), etc.
 
 In the root directory of the package the search server utility and two thin clients can be found:
-- **gars** - starts the search server. The operations performed by the search engine server at this point are indexing data according to a given configuration and serving requests coming from connections to sockets or HTTP ports.
-- **garc** - command line client supporting Unix socket communication. Through it, a single search can be performed and many of the search request parameters can be specified. It supports printing search results in a human-readable way.
-- **garw** - web client supporting Web socket communication (experimental and feature limited). The basic principle is that it starts a HTTP server which serves a page at a given HTTP port. If the web page is not specified, a default one is generated internally and served. The user connects with a web browser of choice at the local address and port (i.e. `127.0.0.1`) and performs the search queries from the page. It naturally supports multiple queries however, the parameters of the search cannot be changed.
+- `gars` - starts the search server. The operations performed by the search engine server at this point are indexing data according to a given configuration and serving requests coming from connections to sockets or HTTP ports.
+- `garc` - command line client supporting Unix socket communication. Through it, a single search can be performed and many of the search request parameters can be specified. It supports printing search results in a human-readable way.
+- `garw` - web client supporting Web socket communication (experimental and feature limited). The basic principle is that it starts a HTTP server which serves a page at a given HTTP port. If the web page is not specified, a default one is generated internally and served. The user connects with a web browser of choice at the local address and port (i.e. `127.0.0.1`) and performs the search queries from the page. It naturally supports multiple queries however, the parameters of the search cannot be changed.
 
 
 ## Server
-The search server listens on an ip and socket for incoming requests. Once one is received, it is processed and the response sent back to same socket. Looking at the `gars` command line help
+The search server listens on an ip and/or socket for incoming requests. Once one is received, it is processed and the response sent back to same socket. Looking at the `gars` command line help
 ```
 $ ./gars --help
 Activating environment at `~/projects/Garamond.jl/Project.toml`
@@ -47,6 +47,7 @@ optional arguments:
   -h, --help            show this help message and exit
 ```
 starting the server becomes quite straightforward.
+
 For example, to start the server listening to a web socket at port 9100 and to a UNIX socket at `/tmp/some/socket`:
 ```
 $ ./gars -d ./search_data_config.json -u /tmp/some/socket -w 9100 --log-level info
@@ -71,10 +72,12 @@ $ ./garc --help
 usage: garc [--log-level LOG-LEVEL] [-u UNIX-SOCKET]
             [--return-fields [RETURN-FIELDS...]] [--pretty]
             [--max-matches MAX-MATCHES]
+            [--response-size RESPONSE-SIZE]
             [--search-method SEARCH-METHOD]
             [--max-suggestions MAX-SUGGESTIONS] [--id-key ID-KEY] [-k]
-            [--update-searcher UPDATE-SEARCHER] [--update-all]
-            [--rank] [-h] [query]
+            [--env-operation ENV-OPERATION ENV-OPERATION]
+            [--ranker RANKER] [--input-parser INPUT-PARSER] [-h]
+            [query]
 
 positional arguments:
   query                 the search query (default: "")
@@ -89,8 +92,11 @@ optional arguments:
                         List of fields to return (ignores wrong names)
   --pretty              output is a pretty print of the results
   --max-matches MAX-MATCHES
-                        maximum results to return (type: Int64,
-                        default: 10)
+                        maximum number of results for internal
+                        neighbor searches (type: Int64, default: 10)
+  --response-size RESPONSE-SIZE
+                        maximum number of results to return (type:
+                        Int64, default: 10)
   --search-method SEARCH-METHOD
                         type of match done during search (type:
                         Symbol, default: :exact)
@@ -101,10 +107,14 @@ optional arguments:
   --id-key ID-KEY       The linear ID key (default:
                         "garamond_linear_id")
   -k, --kill            Kill the search engine server
-  --update-searcher UPDATE-SEARCHER
-                        Update a searcher (default: "")
-  --update-all          Update all searchers
-  --rank                Use ranker (if any)
+  --env-operation ENV-OPERATION ENV-OPERATION
+                        Environment operation
+  --ranker RANKER       The ranker to use; avalilable: noop_ranker
+                        (default: "noop_ranker")
+  --input-parser INPUT-PARSER
+                        The input parser to use; available:
+                        noop_input_parser, base_input_parser (default:
+                        "noop_input_parser")
   -h, --help            show this help message and exit
 ```
 

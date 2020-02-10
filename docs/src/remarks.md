@@ -1,4 +1,4 @@
-# Notes
+# Remarks
 
 ## Multi-threading
 If one chooses to use multi-threading i.e. through the `Threads.@threads`, `Threads.@spawn`  macros for example, export the following: `OPENBLAS_NUM_THREADS=1` and `JULIA_NUM_THREADS=<n>` where `n` is the number of threads desired.

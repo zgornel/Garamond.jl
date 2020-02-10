@@ -9,9 +9,9 @@ Garamond executables and libraries can be built by running the `build/make.jl` s
  - build the executables and libraries for `gars`, `garc` and `garw`.
  - place the output in the `build/bin` directory.
 
-!!! note
+!!! tip
 
-    The script will remove the contents of the `build/bin` directory, removing any previous compilation output.
+    The script will remove the contents of the `build/bin` directory, removing any previous compilation output. Make sure the binaries are backed up before re-running the process.
 
 At the end of the compilation process, the `build/bin` directory will contain:
 ```
