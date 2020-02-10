@@ -19,7 +19,7 @@ makedocs(
         "Configuration" => "configuration.md",
         "Client/Server" => "clientserver.md",
         "Building" => "build.md",
-        "Notes" => "notes.md",
+        "Remarks" => "remarks.md",
         "API Reference" => "api.md",
     ]
 )

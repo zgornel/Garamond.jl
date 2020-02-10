@@ -8,7 +8,7 @@ CurrentModule=Garamond
 
 # Introduction
 
-Garamond is a small, flexible neural and data search engine. It can be used both as a Julia package i.e. search functionality available through API method calls or as a standalone search server i.e. search functionality accessible through clients that communicate with the server.
+Garamond is a small, flexible neural and data search engine. It can be used both as a Julia package, with search functionality available through API method calls or as a standalone search server, with search functionality accessible through clients that communicate with the server.
 
 Internally, the engine's architecture is that of an ensemble of searchers, with an analytical database as data backend. Each searcher has its own characteristics i.e. ways of embedding documents, searching through the vectors and the search results from all searchers can be combined in a variety of ways. The engine supports runtime loading and use of custom data loaders, recommendation engines and result rankers.
 
@@ -34,17 +34,18 @@ downloads the `master` branch of the repository and adds `Garamond` to the curre
 - Run-time batch re-indexing
 - HTTP(REST)/Web-socket and UNIX socket connectivity
 - Wordvectors support: [Word2Vec](https://en.wikipedia.org/wiki/Word2vec), [ConceptnetNumberbatch](https://github.com/commonsense/conceptnet-numberbatch), [GloVe](https://nlp.stanford.edu/projects/glove/)
-- Classic search based on [term frequency](https://en.wikipedia.org/wiki/Tf%E2%80%93idf#Term_frequency_2), [tf-idf](https://en.wikipedia.org/wiki/Tf%E2%80%93idf#Term_frequency%E2%80%93Inverse_document_frequency), [bm25](https://en.wikipedia.org/wiki/Okapi_BM25)
 - Compressed vector support for low-memory footprint using [array quantization](https://github.com/zgornel/QuantizedArrays.jl)
+- Classic search based on [term frequency](https://en.wikipedia.org/wiki/Tf%E2%80%93idf#Term_frequency_2), [tf-idf](https://en.wikipedia.org/wiki/Tf%E2%80%93idf#Term_frequency%E2%80%93Inverse_document_frequency), [bm25](https://en.wikipedia.org/wiki/Okapi_BM25)
 - Suggestion support using [BK Trees](https://en.wikipedia.org/wiki/BK-tree)
 - Many state-of-the-art neural document and sentence embedding methods
 - Multi-threading [supported](https://github.com/zgornel/Garamond.jl/tree/cc-multithreading)
 - Caching mechanisms for fast resume
-- Portable (and statically compilable) to many architectures
+- Portable and statically compilable to many architectures
 
 ## Coming Soon
 - Billion-scale search through [IVFADC](https://github.com/JuliaNeighbors/IVFADC.jl)
 - Run-time indexing
+- Architectural improvements i.e. pool of embedders
 
 ## Longer term plans
 - Image/Video/Audio i.e. generic search
