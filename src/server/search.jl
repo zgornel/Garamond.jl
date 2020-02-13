@@ -148,8 +148,8 @@ function build_response(dbdata,
                                      colnames(dbdata)))
     for result in results
         dict_vector = []
-        nresults = min(request.response_size, length(result.query_matches))
-        scores, indices = unzip(result.query_matches; n=nresults, ndims=2)
+        offset = (request.response_page - 1) * request.response_size
+        scores, indices = unzip(result.query_matches; n=request.response_size, offset=offset, ndims=2)
         dataresult = sort(rows(filter(in(indices), dbdata, select=id_key), return_fields),
                           by=row->getproperty(row, id_key))
         for (entry, score) in sort(collect(zip(dataresult, scores[sortperm(indices)])),

@@ -85,6 +85,10 @@ function get_unix_socket_client_arguments(args::Vector{String})
             help = "maximum number of results to return"
             arg_type = Int
             default = 10
+        "--response-page"
+            help = "index of page with results to return"
+            arg_type = Int
+            default = 1
         "--search-method"
             help = "type of match done during search"
             arg_type = Symbol
@@ -131,6 +135,7 @@ function construct_json_request(args)
                    "custom_weights" =>Dict(),
                    "request_id_key" => args["id-key"],
                    "response_size" => args["response-size"],
+                   "response_page" => args["response-page"],
                    "ranker" => args["ranker"],
                    "input_parser" => args["input-parser"],
                    "recommender" => "noop_recommender",

@@ -224,6 +224,7 @@ The following tables detail the key names, types and default values for each ope
 | `searchable_filters` |    -     | List of strings |`<empty list>`| A list of field names whose values will be inserted in the search query if the fields are used for filtering in the query.|
 | `max_matches`        |    -     | Integer |`DEFAULT_MAX_MATCHES`  | The maximum number of search results to generate internally from each searcher. Note that still `response_size` recommendations are returned.|
 | `response_size`      |    -     | Integer |`DEFAULT_RESPONSE_SIZE`| The maximum number of results to return in the response.|
+| `response_page`      |    -     | Integer |`DEFAULT_RESPONSE_PAGE`| Which page of `response_size` results to return in the response.|
 | `max_suggestions`    |    -     | Integer |`DEFAULT_MAX_SUGGESTIONS`| The maximum number of suggestions to return for each mismatched keyword of the query.|
 | `custom_weights`     |    -     | Dictionary |`DEFAULT_CUSTOM_WEIGHTS`| A dictionary where the keys are strings with searcher ids and the values are weights of the result scores to be used in result aggregation (if the case). In this way, the importance of search results from different searchers can be tuned.|
 | `ranker`             |    -     | String  |`DEFAULT_RANKER_NAME`| The name of the ranker. Available: `"noop_ranker"` (no ranking).|
@@ -242,6 +243,7 @@ The following tables detail the key names, types and default values for each ope
 | `searchable_filters` |    -     | List of strings |`<empty list>`| A list of field names whose values will be inserted in the search query sent to the searchers, if the field names appear also in `filter_fields`. This guarantees a better match between results returned by querying the database (filtering) and the indexed data (search).|
 | `max_matches`        |    -     | Integer |`DEFAULT_MAX_MATCHES`  | The maximum number of recommendations to generate internally. Note that still `response_size` recommendations are returned.|
 | `response_size`      |    -     | Integer |`DEFAULT_RESPONSE_SIZE`| The maximum number of results to return in the response.|
+| `response_page`      |    -     | Integer |`DEFAULT_RESPONSE_PAGE`| Which page of `response_size` results to return in the response.|
 | `ranker`             |    -     | String  |`DEFAULT_RANKER_NAME`| The name of the ranker. Available: `"noop_ranker"` (no ranking).|
 
 - **Rank**
@@ -253,6 +255,7 @@ The following tables detail the key names, types and default values for each ope
 | `rank_id_key`   |    ✓     | String  |    -    | The database name of the column holding the ids to be ranked.|
 | `return_fields` |    ✓     | List of strings |    -    | A list with the names of the database columns to be returned.|
 | `response_size` |    -     | Integer |`DEFAULT_RESPONSE_SIZE`| The maximum number of results to return in the response.|
+| `response_page` |    -     | Integer |`DEFAULT_RESPONSE_PAGE`| Which page of `response_size` results to return in the response.|
 
 - **Environment-related**
 
