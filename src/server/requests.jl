@@ -11,6 +11,8 @@ mutable struct InternalRequest
     return_fields::Vector{Symbol}
     custom_weights::Dict{Symbol,Float64}
     request_id_key::Symbol
+    sort_fields::Vector{Symbol}
+    sort_reverse::Bool
     response_size::Int
     response_page::Int
     input_parser::Symbol
@@ -28,6 +30,8 @@ InternalRequest(;operation=:uninitialized_request,
                 return_fields=Symbol[],
                 custom_weights=DEFAULT_CUSTOM_WEIGHTS,
                 request_id_key=Symbol(""),
+                sort_fields=DEFAULT_SORT_FIELDS,
+                sort_reverse=DEFAULT_SORT_REVERSE,
                 response_size=DEFAULT_RESPONSE_SIZE,
                 response_page=DEFAULT_RESPONSE_PAGE,
                 input_parser=DEFAULT_INPUT_PARSER_NAME,
@@ -42,6 +46,8 @@ InternalRequest(;operation=:uninitialized_request,
                     return_fields,
                     custom_weights,
                     request_id_key,
+                    sort_fields,
+                    sort_reverse,
                     response_size,
                     response_page,
                     input_parser,

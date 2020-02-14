@@ -74,6 +74,13 @@ function get_unix_socket_client_arguments(args::Vector{String})
         "--return-fields"
             help = "List of fields to return (ignores wrong names)"
             nargs = '*'
+        "--sort-fields"
+            help = "List of fields to sort by when filtering (ignores wrong names)"
+            nargs = '*'
+        "--sort-reverse"
+            help = "Reverse the filter sort order"
+            arg_type = Bool
+            default = false
         "--pretty"
             help = "output is a pretty print of the results"
             action = :store_true
@@ -132,6 +139,8 @@ function construct_json_request(args)
                    "max_suggestions" => args["max-suggestions"],
                    "search_method" => args["search-method"],
                    "return_fields" => args["return-fields"],
+                   "sort_fields" => args["sort-fields"],
+                   "sort_reverse" => args["sort-reverse"],
                    "custom_weights" =>Dict(),
                    "request_id_key" => args["id-key"],
                    "response_size" => args["response-size"],

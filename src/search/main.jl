@@ -18,6 +18,8 @@ function search(env::SearchEnv, request; exclude=nothing)
         idxs_filt = indexfilter(env.dbdata,
                                 parsedinput.filter;
                                 id_key=env.id_key,
+                                sort_keys=request.sort_fields,
+                                sort_reverse=request.sort_reverse,
                                 exclude=exclude)
         result = build_result_from_ids(env.dbdata,
                                        idxs_filt,
@@ -40,6 +42,8 @@ function search(env::SearchEnv, request; exclude=nothing)
         idxs_filt = indexfilter(env.dbdata,
                                 parsedinput.filter;
                                 id_key=env.id_key,
+                                sort_keys=request.sort_fields,
+                                sort_reverse=request.sort_reverse,
                                 exclude=exclude)
 
         # Filter out ids that are not present in the the filtered ids
