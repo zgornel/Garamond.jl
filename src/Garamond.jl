@@ -56,7 +56,7 @@ module Garamond
     # Import section (extendable methods)
     import Base: size, length, show, keys, values, push!,
                  delete!, getindex, names, convert, lowercase,
-                 occursin, isempty, parse
+                 occursin, isempty, parse, sort
     import StringAnalysis: id
     import Word2Vec: WordVectors
     import HNSW: knn_search
@@ -66,6 +66,7 @@ module Garamond
         search,
         recommend,
         rank,
+        indexfilter,
         build_search_env,
         parse_configuration,
         parse_input,
