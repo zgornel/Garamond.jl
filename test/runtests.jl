@@ -7,9 +7,11 @@ using EmbeddingsAnalysis
 using Garamond
 #using JSON
 
-# TODO(Corneliu): Complete testing framework redo
+# TODO(Corneliu): Add more tests
 include("data/datagenerator.jl")
+include("configs/configgenerator.jl")
 include("input_parsers.jl")
 include("db.jl")
+include("indexfilter.jl")
 
 end

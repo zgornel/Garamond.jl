@@ -26,8 +26,12 @@ The main configuration of the engine pertains to data loading, parsing and index
 
 ```@repl_index
 using Logging, JSON, JuliaDB, Garamond
-path = joinpath(@__DIR__, "..", "..", "test", "configs", "sample_config_1.json")
-cfg = parse_configuration(path);  # create engine configuration
+include(joinpath(@__DIR__, "..", "..", "test", "configs", "configgenerator.jl"))
+cfg = mktemp() do path, io  # write and parse config file on-the-fly
+    write(io, generate_sample_config_1())
+    flush(io)
+    parse_configuration(path)
+end
 ```
 
 The configuration contains the data loader (a closure that only needs to be called with no argument to load the data), the path of the configuration file, the primary id key of the data (which needs to be a [JuliaDB](https://juliadb.org) data type) and a list of configuration objects for the individual searchers of the engine.

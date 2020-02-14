@@ -41,8 +41,6 @@ const DEFAULT_CACHE_DIRECTORY = nothing
 const DEFAULT_CACHE_COMPRESSION = "none"
 
 # Query parsing
-# TODO(Corneliu): Decide wether/which is to be made configurable
-# in the searcher configuration
 const DEFAULT_QUERY_PARSING_SEPARATOR=":"
 const DEFAULT_QUERY_GENERATION_FIELDS=Symbol[]
 
@@ -57,16 +55,18 @@ const DEFAULT_INPUT_PARSER_NAME = :noop_input_parser
 #################
 # SEARCH ENGINE #
 #################
-# TODO(corneliu): Check here if any of them can also be data configuration options
-#  i.e. max matches, edit distance, document type
-
-# FILE Configuration: These defaults can be overwritten in .garamondrc.jl
-const DEFAULT_PDFTOTEXT_PROGRAM = "/usr/bin/pdftotext"  # program to convert PDFs to text
-const DEFAULT_MAX_EDIT_DISTANCE = 2  # maximum edit distance for which to return suggestions
+# TODO(Corneliu): Check here if any of them can also be data configuration options
+#                 i.e. max matches, edit distance, document type
 const DEFAULT_MAX_MATCHES = 1  # maximum number of matches that can be retrned
 const DEFAULT_RESPONSE_SIZE = DEFAULT_MAX_MATCHES  # maximum number of matches that are returned for a request
+const DEFAULT_RESPONSE_PAGE = 1  # which response page i.e. batch of response_size results to display
+const DEFAULT_SORT_FIELDS = Symbol[]
+const DEFAULT_SORT_REVERSE = false
 const DEFAULT_MAX_SUGGESTIONS = 0  # maximum number of overall suggestions
 const DEFAULT_CUSTOM_WEIGHTS = Dict{Symbol, Float64}()  # default custom searcher weights
+const DEFAULT_PDFTOTEXT_PROGRAM = "/usr/bin/pdftotext"  # program to convert PDFs to text
+const DEFAULT_MAX_EDIT_DISTANCE = 2  # maximum edit distance for which to return suggestions
+
 # DYNAMIC Configuration: These defaults can be through run-time options of the
 #                        Garamond CLI client/server utilities
 const DEFAULT_LOG_LEVEL = Logging.Info

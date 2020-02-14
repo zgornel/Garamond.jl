@@ -27,4 +27,8 @@ safe_symbol_eval(input_symbol, default_symbol) = begin
 end
 
 
-unzip(it; n=length(it), ndims=1) = map(i->getindex(getindex.(it, i), 1:n), 1:ndims)
+unzip(it; n=length(it), offset=0, ndims=1) = begin
+    from = offset+1
+    to = min(length(it), from+n-1)
+    map(i->getindex(getindex.(it, i), from:to), 1:ndims)
+end

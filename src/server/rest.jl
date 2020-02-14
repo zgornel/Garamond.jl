@@ -28,10 +28,13 @@ HTTP Message body specification for the search, recommend, ranking and environme
           "query" : <the query to be performed, a string>,
           "input_parser": <the input parser to use; available: 'noop_input_parser', 'base_input_parser'>
           "return_fields" : <a list of string names for the fields to be returned>,
+          "sort_fields" : <OPTIONAL, a list of string names for the fields to sort by when filtering. Sort precedence is given by list order>,
+          "sort_reverse" : <OPTIONAL, whether to reverse the sorting i.e. largest number/letter first>,
           "search_method" : <OPTIONAL, a string defining the type of classic search method>,
           "searchable_filters" : <OPTIONAL, a list of fields whose values will also be part of search if used for filtering>
           "max_matches" : <OPTIONAL, an integer defining the maximum number of results for search>,
           "response_size" : <OPTIONAL, an integer defining the maximum number of results to be actually returned>,
+          "response_page" : <OPTIONAL, an integer that specifies which page of 'response_size' results to return>,
           "max_suggestions" : <OPTIONAL, an integer defining the maximum number of suggestions / mismatches keyword>,
           "custom_weights" : <OPTIONAL, a dictionary where the keys are strings with searcher ids and values
                               the weights of the searchers in the result aggregation>
@@ -46,10 +49,13 @@ HTTP Message body specification for the search, recommend, ranking and environme
           "input_parser": <the input parser to use; available: 'noop_input_parser', 'base_input_parser'>
           "filter_fields" : <a list of string name fields containing the fields that will be used by the recommender>,
           "return_fields" : <a list of string names for the fields to be returned>,
+          "sort_fields" : <OPTIONAL, a list of string names for the fields to sort by when filtering. Sort precedence is given by list order>,
+          "sort_reverse" : <OPTIONAL, whether to reverse the sorting i.e. largest number/letter first>,
           "search_method" : <OPTIONAL, a string defining the type of classic search method>,
-          "searchable_filters" : <OPTIONAL, a list of fields whose values will form a search query if used in filter_fields>
+          "searchable_filters" : <OPTIONAL, a list of fields whose values will form a search query if used in filter_fields>,
           "max_matches" : <OPTIONAL, an integer defining the maximum number of results for recommendations>,
           "response_size" : <OPTIONAL, an integer defining the maximum number of results to be actually returned>,
+          "response_page" : <OPTIONAL, an integer that specifies which page of 'response_size' results to return>,
           "max_suggestions" : <OPTIONAL, an integer defining the maximum number of suggestions / mismatches keyword>,
           "custom_weights" : <OPTIONAL, a dictionary where the keys are strings with searcher ids and values
                               the weights of the searchers in the result aggregation>
@@ -62,7 +68,8 @@ HTTP Message body specification for the search, recommend, ranking and environme
             "rank_ids": <list of ids to rank>,
             "rank_id_key": <the db name of the column holding the id values>,
             "return_fields" : <a list of string names for the fields to be returned>,
-            "response_size" : <OPTIONAL, an integer defining the maximum number of results to be actually returned>
+            "response_size" : <OPTIONAL, an integer defining the maximum number of results to be actually returned>,
+            "response_page" : <OPTIONAL, an integer that specifies which page of 'response_size' results to return>
          }
 =#
 
@@ -163,10 +170,13 @@ search_req_handler(req::HTTP.Request) = begin
                 query = parameters["query"],  # if missing, throws
                 input_parser = Symbol(parameters["input_parser"]),  # if missing, throws
                 return_fields = Symbol.(parameters["return_fields"]),  # if missing, throws
+                sort_fields = Symbol.(get(parameters, "sort_fields", DEFAULT_SORT_FIELDS)),
+                sort_reverse = get(parameters, "sort_reverse", DEFAULT_SORT_REVERSE),
                 search_method = Symbol(get(parameters, "search_method", DEFAULT_SEARCH_METHOD)),
                 searchable_filters = Symbol.(get(parameters, "searchable_filters", String[])),
                 max_matches = get(parameters, "max_matches", DEFAULT_MAX_MATCHES),
                 response_size = get(parameters, "response_size", DEFAULT_RESPONSE_SIZE),
+                response_page = get(parameters, "response_page", DEFAULT_RESPONSE_PAGE),
                 max_suggestions = get(parameters, "max_suggestions", DEFAULT_MAX_SUGGESTIONS),
                 custom_weights = get(parameters, "custom_weights", DEFAULT_CUSTOM_WEIGHTS),
                 ranker = Symbol(get(parameters, "ranker", DEFAULT_RANKER_NAME)))
@@ -183,10 +193,13 @@ recommend_req_handler(req::HTTP.Request) = begin
                 query = _query,
                 input_parser = Symbol(parameters["input_parser"]),  # if missing, throws
                 return_fields = Symbol.(parameters["return_fields"]),  # if missing, throws
+                sort_fields = Symbol.(get(parameters, "sort_fields", DEFAULT_SORT_FIELDS)),
+                sort_reverse = get(parameters, "sort_reverse", DEFAULT_SORT_REVERSE),
                 search_method = Symbol(get(parameters, "search_method", DEFAULT_SEARCH_METHOD)),
                 searchable_filters = Symbol.(get(parameters, "searchable_filters", String[])),
                 max_matches = get(parameters, "max_matches", DEFAULT_MAX_MATCHES),
                 response_size = get(parameters, "response_size", DEFAULT_RESPONSE_SIZE),
+                response_page = get(parameters, "response_page", DEFAULT_RESPONSE_PAGE),
                 max_suggestions = get(parameters, "max_suggestions", DEFAULT_MAX_SUGGESTIONS),
                 custom_weights = get(parameters, "custom_weights", DEFAULT_CUSTOM_WEIGHTS),
                 ranker = Symbol(get(parameters, "ranker", DEFAULT_RANKER_NAME)))
@@ -202,7 +215,8 @@ rank_req_handler(req::HTTP.Request) = begin
                 query = join(_all_ids, " "),
                 request_id_key = Symbol.(parameters["rank_id_key"]),   # if missing, throws
                 return_fields = Symbol.(parameters["return_fields"]),  # if missing, throws
-                response_size = get(parameters, "response_size", length(_all_ids)))
+                response_size = get(parameters, "response_size", length(_all_ids)),
+                response_page = get(parameters, "response_page", DEFAULT_RESPONSE_PAGE))
 end
 
 
