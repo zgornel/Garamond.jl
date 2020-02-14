@@ -1,6 +1,3 @@
-using Garamond
-using JuliaDB
-
 T = Float32
 _pkey = :z
 tbl = table((x=rand(T, 10), y=rand(T, 10), z=collect(Int, 1:10)), pkey=_pkey)

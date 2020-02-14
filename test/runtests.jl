@@ -9,8 +9,9 @@ using Garamond
 
 # TODO(Corneliu): Add more tests
 include("data/datagenerator.jl")
-include("config/config_generator.jl")
+include("configs/configgenerator.jl")
 include("input_parsers.jl")
 include("db.jl")
+include("indexfilter.jl")
 
 end
