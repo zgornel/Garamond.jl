@@ -2,9 +2,9 @@
 
 [[Adapt]]
 deps = ["LinearAlgebra"]
-git-tree-sha1 = "82dab828020b872fa9efd3abec1152b075bc7cbf"
+git-tree-sha1 = "c88cfc7f9c1f9f8633cddf0b56e86302b70f64c5"
 uuid = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
-version = "1.0.0"
+version = "1.0.1"
 
 [[ArgParse]]
 deps = ["Compat", "Test", "TextWrap"]
@@ -64,9 +64,9 @@ version = "0.5.1"
 
 [[CMake]]
 deps = ["BinDeps"]
-git-tree-sha1 = "c67a8689dc5444adc5eb2be7d837100340ecba11"
+git-tree-sha1 = "50a8b41d2c562fccd9ab841085fc7d1e2706da82"
 uuid = "631607c0-34d2-5d66-819e-eb0f9aa2061a"
-version = "1.1.2"
+version = "1.2.0"
 
 [[CMakeWrapper]]
 deps = ["BinDeps", "CMake", "Libdl", "Parameters", "Test"]
@@ -206,9 +206,9 @@ version = "0.8.8"
 
 [[IndexedTables]]
 deps = ["DataAPI", "DataValues", "Distributed", "IteratorInterfaceExtensions", "OnlineStatsBase", "PooledArrays", "SparseArrays", "Statistics", "StructArrays", "TableTraits", "TableTraitsUtils", "Tables", "WeakRefStrings"]
-git-tree-sha1 = "57635c168763748fedd8282587a85cbd58d7ec9a"
+git-tree-sha1 = "e9f2acacf26559770829169b610455d5685bc180"
 uuid = "6deec6e2-d858-57c5-ab9b-e6ca5bd20e43"
-version = "0.12.4"
+version = "0.12.5"
 
 [[Inflate]]
 deps = ["Pkg", "Printf", "Random", "Test"]
@@ -284,9 +284,9 @@ version = "0.5.1"
 
 [[MacroTools]]
 deps = ["DataStructures", "Markdown", "Random"]
-git-tree-sha1 = "e2fc7a55bb2224e203bbd8b59f72b91323233458"
+git-tree-sha1 = "07ee65e03e28ca88bc9a338a3726ae0c3efaa94b"
 uuid = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
-version = "0.5.3"
+version = "0.5.4"
 
 [[Markdown]]
 deps = ["Base64"]
@@ -332,9 +332,9 @@ version = "1.0.0"
 
 [[OnlineStats]]
 deps = ["Dates", "LearnBase", "LinearAlgebra", "LossFunctions", "OnlineStatsBase", "OrderedCollections", "PenaltyFunctions", "Random", "RecipesBase", "Reexport", "Statistics", "StatsBase", "SweepOperator"]
-git-tree-sha1 = "d7caf945b59e36917bbd4203dc98bdd23c78b92f"
+git-tree-sha1 = "a558f6ef79e0191308b7fab4a04426f5cb4374cf"
 uuid = "a15396b6-48d5-5d58-9928-6d29437db91e"
-version = "1.0.2"
+version = "1.0.3"
 
 [[OnlineStatsBase]]
 deps = ["Dates", "LearnBase", "LinearAlgebra", "OrderedCollections", "Statistics", "StatsBase"]
@@ -362,9 +362,9 @@ version = "0.12.0"
 
 [[Parsers]]
 deps = ["Dates", "Test"]
-git-tree-sha1 = "0139ba59ce9bc680e2925aec5b7db79065d60556"
+git-tree-sha1 = "d112c19ccca00924d5d3a38b11ae2b4b268dda39"
 uuid = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
-version = "0.3.10"
+version = "0.3.11"
 
 [[PenaltyFunctions]]
 deps = ["InteractiveUtils", "LearnBase", "LinearAlgebra", "RecipesBase", "Reexport", "Test"]
@@ -378,9 +378,9 @@ uuid = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 
 [[Polynomials]]
 deps = ["LinearAlgebra", "RecipesBase"]
-git-tree-sha1 = "ae71c2329790af97b7682b11241b3609e4d48626"
+git-tree-sha1 = "f7c0c07e82798aef542d60a6e6e85e39f4590750"
 uuid = "f27b6e38-b328-58d1-80ce-0feddd5e7a45"
-version = "0.6.0"
+version = "0.5.3"
 
 [[PooledArrays]]
 deps = ["DataAPI"]
@@ -423,9 +423,9 @@ deps = ["Serialization"]
 uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
 [[RecipesBase]]
-git-tree-sha1 = "7bdce29bc9b2f5660a6e5e64d64d91ec941f6aa2"
+git-tree-sha1 = "b4ed4a7f988ea2340017916f7c9e5d7560b52cae"
 uuid = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
-version = "0.7.0"
+version = "0.8.0"
 
 [[Reexport]]
 deps = ["Pkg"]
@@ -435,9 +435,9 @@ version = "0.2.0"
 
 [[Requires]]
 deps = ["UUIDs"]
-git-tree-sha1 = "999513b7dea8ac17359ed50ae8ea089e4464e35e"
+git-tree-sha1 = "d37400976e98018ee840e0ca4f9d20baa231dc6b"
 uuid = "ae029012-a4dd-5104-9daa-d747884805df"
-version = "1.0.0"
+version = "1.0.1"
 
 [[SHA]]
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
@@ -498,9 +498,9 @@ version = "0.3.9"
 
 [[StringDistances]]
 deps = ["Distances"]
-git-tree-sha1 = "668756a4cfcdf7ba93412b5f229ea80b5af20b6f"
+git-tree-sha1 = "52f1ab33589e088ae483d1cd2277e9c1b58c7fb3"
 uuid = "88034a9c-02f8-509d-84a9-84ec65e18404"
-version = "0.5.2"
+version = "0.6.2"
 
 [[StructArrays]]
 deps = ["PooledArrays", "Tables", "WeakRefStrings"]
@@ -587,6 +587,6 @@ version = "0.5.0"
 
 [[WordTokenizers]]
 deps = ["HTML_Entities", "StrTables", "Unicode"]
-git-tree-sha1 = "983ca717c4ec786d0458ebcbe395a1a50b3a1897"
+git-tree-sha1 = "d25cc32340c3dfdbefe8caaddc7363888c1a7214"
 uuid = "796a5d58-b03d-544a-977e-18100b691f6e"
-version = "0.5.3"
+version = "0.5.4"

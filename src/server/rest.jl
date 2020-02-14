@@ -28,7 +28,7 @@ HTTP Message body specification for the search, recommend, ranking and environme
           "query" : <the query to be performed, a string>,
           "input_parser": <the input parser to use; available: 'noop_input_parser', 'base_input_parser'>
           "return_fields" : <a list of string names for the fields to be returned>,
-          "sort_fields" : <OPTIONAL, a list of string names for the fields on which sorting is done. Sort precedence is given by list order>,
+          "sort_fields" : <OPTIONAL, a list of string names for the fields to sort by when filtering. Sort precedence is given by list order>,
           "sort_reverse" : <OPTIONAL, whether to reverse the sorting i.e. largest number/letter first>,
           "search_method" : <OPTIONAL, a string defining the type of classic search method>,
           "searchable_filters" : <OPTIONAL, a list of fields whose values will also be part of search if used for filtering>
@@ -49,7 +49,7 @@ HTTP Message body specification for the search, recommend, ranking and environme
           "input_parser": <the input parser to use; available: 'noop_input_parser', 'base_input_parser'>
           "filter_fields" : <a list of string name fields containing the fields that will be used by the recommender>,
           "return_fields" : <a list of string names for the fields to be returned>,
-          "sort_fields" : <OPTIONAL, a list of string names for the fields on which sorting is done. Sort precedence is given by list order>,
+          "sort_fields" : <OPTIONAL, a list of string names for the fields to sort by when filtering. Sort precedence is given by list order>,
           "sort_reverse" : <OPTIONAL, whether to reverse the sorting i.e. largest number/letter first>,
           "search_method" : <OPTIONAL, a string defining the type of classic search method>,
           "searchable_filters" : <OPTIONAL, a list of fields whose values will form a search query if used in filter_fields>,

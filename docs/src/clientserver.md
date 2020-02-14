@@ -220,6 +220,8 @@ The following tables detail the key names, types and default values for each ope
 | `query`         |    ✓     | String |    -    | The input query.|
 | `input_parser`  |    ✓     | String |    -    | Input parser to use. Available: `"noop_input_parser"` (no specific parsing) and `"base_input_parser"` (constructs data filters and queries).|
 | `return_fields` |    ✓     | List of strings |    -    | A list with the names of the database columns to be returned.|
+| `sort_fields`   |    -     | List of strings |`DEFAULT_SORT_FIELDS`| A list with the names for the fields to sort by when filtering. Sort precedence is given by list order.|
+| `sort_reverse`  |    -     | Boolean |`DEFAULT_SORT_REVERSE` | Flag specifying whether to reverse the sorting i.e. largest number/letter first.|
 | `search_method` |    -     | String |`DEFAULT_SEARCH_METHOD`| Default search method. Only used by `"search_recommender"`.|
 | `searchable_filters` |    -     | List of strings |`<empty list>`| A list of field names whose values will be inserted in the search query if the fields are used for filtering in the query.|
 | `max_matches`        |    -     | Integer |`DEFAULT_MAX_MATCHES`  | The maximum number of search results to generate internally from each searcher. Note that still `response_size` recommendations are returned.|
@@ -239,6 +241,8 @@ The following tables detail the key names, types and default values for each ope
 | `input_parser`       |    ✓     | String |    -    | Input parser to use. Available: `"noop_input_parser"` (no specific parsing) and `"base_input_parser"` (constructs data filters and queries). The `"base_input_parser"` has to be used with `"search_recommender"`.|
 | `filter_fields`      |    ✓     | List of strings |    -    | Contains the names of the fields that will be used by the recommender. Only used in `"search_recommender"`.|
 | `return_fields`      |    ✓     | List of strings |    -    | A list with the names of the database columns to be returned.|
+| `sort_fields`        |    -     | List of strings |`DEFAULT_SORT_FIELDS`| A list with the names for the fields to sort by when filtering. Sort precedence is given by list order.|
+| `sort_reverse`       |    -     | Boolean |`DEFAULT_SORT_REVERSE` | Flag specifying whether to reverse the sorting i.e. largest number/letter first.|
 | `search_method`      |    -     | String |`DEFAULT_SEARCH_METHOD`| Default search method. Only used by `"search_recommender"`.|
 | `searchable_filters` |    -     | List of strings |`<empty list>`| A list of field names whose values will be inserted in the search query sent to the searchers, if the field names appear also in `filter_fields`. This guarantees a better match between results returned by querying the database (filtering) and the indexed data (search).|
 | `max_matches`        |    -     | Integer |`DEFAULT_MAX_MATCHES`  | The maximum number of recommendations to generate internally. Note that still `response_size` recommendations are returned.|
