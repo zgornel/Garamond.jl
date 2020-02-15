@@ -26,3 +26,12 @@ Returns the number of points indexed in `index`.
 function length(index::AbstractIndex)
     throw(ErrorException("`length` is not implemented for $(typeof(index)) indexes."))
 end
+
+
+#TODO(Corneliu) **cc-indexing** - Add IVFADC support
+#TODO(Corneliu) **cc-indexing** - add method prototypes
+#TODO(Corneliu) **cc-indexing** - add IndexSearchException exception (thrown whenver cannot search the index)
+#TODO(Corneliu) **cc-indexing** - add IndexModificationException exception (thrown whenver one cannot operate with the index)
+#TODO(Corneliu) **cc-indexing** - consider removing the KDTree structure - if not, throw exceptions around
+#TODO(Corneliu) **cc-indexing** - find way to put more indexing parameters in searcher configs i.e. .garamondrc?
+#                                 DEFAULT_METRIC, DEFAULT_HNSW_<several>
