@@ -46,6 +46,7 @@ module Garamond
     using EmbeddingsAnalysis
     using HNSW
     using NearestNeighbors
+    using IVFADC
     using Distances
     using LightGraphs: Graph, pagerank
     using JSON
