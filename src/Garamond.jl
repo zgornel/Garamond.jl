@@ -150,6 +150,7 @@ module Garamond
     include("index/brutetree.jl")
     include("index/kdtree.jl")
     include("index/hnsw.jl")
+    include("index/ivfadc.jl")
 
     include("searchable/config_parser.jl")
     include("searchable/searcher.jl")

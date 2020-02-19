@@ -1,5 +1,5 @@
 """
-Naive index type for storing text embeddings. It is a wrapper
+Naive index type for storing vectors. It is a wrapper
 around a vector of embeddings and performs brute search using
 the cosine similarity between vectors.
 """
@@ -16,7 +16,8 @@ end
 function knn_search(index::NaiveIndex{E},
                     point::AbstractVector,
                     k::Int,
-                    keep::Vector{Int}=collect(1:length(index))
+                    keep::Vector{Int}=collect(1:length(index));
+                    kwargs...
                    ) where {E<:AbstractFloat}
     # Turn sparse vectors into dense ones
     __densify(v::AbstractVector) = v

@@ -1,3 +1,13 @@
+# Exceptions
+struct IndexOperationException <: Exception
+    op::String
+    type::String
+end
+
+Base.showerror(io::IO, e::IndexOperationException) =
+    print(io, "Failed call `$(e.op)` on `$(e.type)` index.")
+
+
 # Abstract types
 abstract type AbstractIndex end
 
@@ -13,8 +23,9 @@ present in `keep` are returned.
 function knn_search(index::AbstractIndex,
                     point::AbstractVector,
                     k::Integer,
-                    keep::AbstractVector)
-    throw(ErrorException("`search` is not implemented for $(typeof(index)) indexes."))
+                    keep::AbstractVector;
+                    kwargs...)
+    throw(IndexOperationException("knn_search", string(typeof(index))))
 end
 
 
@@ -24,14 +35,27 @@ end
 Returns the number of points indexed in `index`.
 """
 function length(index::AbstractIndex)
-    throw(ErrorException("`length` is not implemented for $(typeof(index)) indexes."))
+    throw(IndexOperationException("length", string(typeof(index))))
 end
 
 
-#TODO(Corneliu) **cc-indexing** - Add IVFADC support
-#TODO(Corneliu) **cc-indexing** - add method prototypes
-#TODO(Corneliu) **cc-indexing** - add IndexSearchException exception (thrown whenver cannot search the index)
-#TODO(Corneliu) **cc-indexing** - add IndexModificationException exception (thrown whenver one cannot operate with the index)
-#TODO(Corneliu) **cc-indexing** - consider removing the KDTree structure - if not, throw exceptions around
-#TODO(Corneliu) **cc-indexing** - find way to put more indexing parameters in searcher configs i.e. .garamondrc?
-#                                 DEFAULT_METRIC, DEFAULT_HNSW_<several>
+# pop!, popfirst!, push!, pushfirst!
+function pop!(index::AbstractIndex)
+    throw(IndexOperationException("pop!", string(typeof(index))))
+end
+
+function popfirst!(index::AbstractIndex)
+    throw(IndexOperationException("popfirst!", string(typeof(index))))
+end
+
+function push!(index::AbstractIndex)
+    throw(IndexOperationException("push!", string(typeof(index))))
+end
+
+function pushfirst!(index::AbstractIndex)
+    throw(IndexOperationException("pushfirst!", string(typeof(index))))
+end
+
+function delete_from_index!(index::AbstractIndex, points)
+    throw(IndexOperationException("delete_from_index!", string(typeof(index))))
+end

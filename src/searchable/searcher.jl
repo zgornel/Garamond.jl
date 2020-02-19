@@ -117,6 +117,7 @@ function __get_search_index_type(config::SearchConfig)
     search_index == :brutetree && return BruteTreeIndex
     search_index == :kdtree && return KDTreeIndex
     search_index == :hnsw && return HNSWIndex
+    search_index == :ivfadc && return IVFIndex
 end
 
 
