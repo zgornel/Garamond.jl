@@ -13,7 +13,7 @@ julia&gt; cfg = mktemp() do path, io  # write and parse config file on-the-fly
 `-enabled = true
   vectors = bm25, Float32
   search_index = naive
-], config_path = &quot;/tmp/jl_qUDxpV&quot;)</code></pre><p>The configuration contains the data loader (a closure that only needs to be called with no argument to load the data), the path of the configuration file, the primary id key of the data (which needs to be a <a href="https://juliadb.org">JuliaDB</a> data type) and a list of configuration objects for the individual searchers of the engine.</p><pre><code class="language-julia-repl">julia&gt; for field in fieldnames(typeof(cfg))
+], config_path = &quot;/tmp/jl_BmSSQL&quot;)</code></pre><p>The configuration contains the data loader (a closure that only needs to be called with no argument to load the data), the path of the configuration file, the primary id key of the data (which needs to be a <a href="https://juliadb.org">JuliaDB</a> data type) and a list of configuration objects for the individual searchers of the engine.</p><pre><code class="language-julia-repl">julia&gt; for field in fieldnames(typeof(cfg))
            println(&quot;$field=$(getfield(cfg, field))&quot;)
        end
 data_loader=#104
@@ -23,13 +23,13 @@ searcher_configs=SearchConfig[SearchConfig for id=&quot;searcher_1&quot; (aggreg
   vectors = bm25, Float32
   search_index = naive
 ]
-config_path=/tmp/jl_qUDxpV</code></pre><h2><a class="nav-anchor" id="The-search-environment-1" href="#The-search-environment-1">The search environment</a></h2><p>Building the search environment out of the configuration is straightforward. The environment holds the in-memory data in the form of an <code>IndexedTable</code> or <code>NDSparse</code> object, the searchers as well as other information such as primary db key and configuration paths. </p><pre><code class="language-julia-repl">julia&gt; env = build_search_env(cfg)
-[ Info: • Environment successfully built using config /tmp/jl_qUDxpV.
+config_path=/tmp/jl_BmSSQL</code></pre><h2><a class="nav-anchor" id="The-search-environment-1" href="#The-search-environment-1">The search environment</a></h2><p>Building the search environment out of the configuration is straightforward. The environment holds the in-memory data in the form of an <code>IndexedTable</code> or <code>NDSparse</code> object, the searchers as well as other information such as primary db key and configuration paths. </p><pre><code class="language-julia-repl">julia&gt; env = build_search_env(cfg)
+[ Info: • Environment successfully built using config /tmp/jl_BmSSQL.
 SearchEnv with:
 `-dbdata = Table with 100 rows, 7 columns
   id_key = id
   searchers = 1
-  config_path = /tmp/jl_qUDxpV</code></pre><h2><a class="nav-anchor" id="Engine-operations-1" href="#Engine-operations-1">Engine operations</a></h2><p>The internal API is designed to be straightforward and uniform in the way it is called. First, one has to build a request which fully describes the operation to be performed and subsequently, call the operation desired. For example, to perform a search, one request would be:</p><pre><code class="language-julia-repl">julia&gt; request = Garamond.InternalRequest(operation=:search,
+  config_path = /tmp/jl_BmSSQL</code></pre><h2><a class="nav-anchor" id="Engine-operations-1" href="#Engine-operations-1">Engine operations</a></h2><p>The internal API is designed to be straightforward and uniform in the way it is called. First, one has to build a request which fully describes the operation to be performed and subsequently, call the operation desired. For example, to perform a search, one request would be:</p><pre><code class="language-julia-repl">julia&gt; request = Garamond.InternalRequest(operation=:search,
                                           query=&quot;Q&quot;,
                                           search_method=:exact,
                                           max_matches=10,
@@ -44,17 +44,17 @@ InternalRequest: OPERATION=:search | QUERY=&quot;Q&quot; | MAX_MATCHES=10 | SEAR
 1-element Array{SearchResult{Float32},1}:
  Search results for id=&quot;searcher_1&quot;:  10 hits, 1 query terms, 0 suggestions.</code></pre><h2><a class="nav-anchor" id="Results-and-responses-1" href="#Results-and-responses-1">Results and responses</a></h2><p>Once results are available, these can be printed</p><pre><code class="language-julia-repl">julia&gt; print_search_results(env.dbdata, ranked; id_key=:id, fields=[:id, :RandString])
 [id=&quot;searcher_1&quot;] 10 search results:
-  0.8670083 ~ 46 - q
-  0.78056604 ~ 12 - Q
-  0.7185193 ~ 19 - ACIZbigQ
-  0.6826464 ~ 95 - 59BXbgW
-  0.6793355 ~ 47 - Dg9IPURDQS
-  0.6738791 ~ 69 - N
-  0.67293465 ~ 37 - QkAaKSc
-  0.6708145 ~ 74 - yDKOBR
-  0.6690837 ~ 85 - JTE
-  0.6676223 ~ 41 - 5uIaajeh</code></pre><p>or a JSON response created are sent elsewhere</p><pre><code class="language-julia-repl">julia&gt; response = Garamond.build_response(env.dbdata, request, ranked, id_key=env.id_key)
-&quot;{\&quot;n_searchers\&quot;:1,\&quot;n_searchers_w_results\&quot;:1,\&quot;suggestions\&quot;:{\&quot;d\&quot;:{}},\&quot;elapsed_time\&quot;:-1.0,\&quot;results\&quot;:{\&quot;searcher_1\&quot;:[{\&quot;id\&quot;:46,\&quot;RandString\&quot;:\&quot;q\&quot;,\&quot;score\&quot;:0.8670083,\&quot;StringField\&quot;:\&quot;A B C D E\&quot;},{\&quot;id\&quot;:12,\&quot;RandString\&quot;:\&quot;Q\&quot;,\&quot;score\&quot;:0.78056604,\&quot;StringField\&quot;:\&quot;\&quot;},{\&quot;id\&quot;:19,\&quot;RandString\&quot;:\&quot;ACIZbigQ\&quot;,\&quot;score\&quot;:0.7185193,\&quot;StringField\&quot;:\&quot;A B C D E\&quot;},{\&quot;id\&quot;:95,\&quot;RandString\&quot;:\&quot;59BXbgW\&quot;,\&quot;score\&quot;:0.6826464,\&quot;StringField\&quot;:\&quot;A B C D E\&quot;},{\&quot;id\&quot;:47,\&quot;RandString\&quot;:\&quot;Dg9IPURDQS\&quot;,\&quot;score\&quot;:0.6793355,\&quot;StringField\&quot;:\&quot;A\&quot;}]},\&quot;n_total_results\&quot;:10}&quot;</code></pre><p>To verify the response, it can be parsed and displayed:</p><pre><code class="language-julia-repl">julia&gt; parsed_response = JSON.parse(response)
+  0.7940358 ~ 46 - q
+  0.7667506 ~ 12 - Q
+  0.75074804 ~ 16 - gc
+  0.72167516 ~ 2 - JbPBZ05
+  0.7178948 ~ 18 - LcWAnh8lL8
+  0.71777076 ~ 83 - su5Mr
+  0.7144313 ~ 40 - 55Q0
+  0.7123415 ~ 100 - sMPS8X0n
+  0.71190643 ~ 50 - WKPQ0kR
+  0.7074361 ~ 31 - 5asvKGX</code></pre><p>or a JSON response created are sent elsewhere</p><pre><code class="language-julia-repl">julia&gt; response = Garamond.build_response(env.dbdata, request, ranked, id_key=env.id_key)
+&quot;{\&quot;n_searchers\&quot;:1,\&quot;n_searchers_w_results\&quot;:1,\&quot;suggestions\&quot;:{\&quot;d\&quot;:{}},\&quot;elapsed_time\&quot;:-1.0,\&quot;results\&quot;:{\&quot;searcher_1\&quot;:[{\&quot;id\&quot;:46,\&quot;RandString\&quot;:\&quot;q\&quot;,\&quot;score\&quot;:0.7940358,\&quot;StringField\&quot;:\&quot;A B C D E\&quot;},{\&quot;id\&quot;:12,\&quot;RandString\&quot;:\&quot;Q\&quot;,\&quot;score\&quot;:0.7667506,\&quot;StringField\&quot;:\&quot;\&quot;},{\&quot;id\&quot;:16,\&quot;RandString\&quot;:\&quot;gc\&quot;,\&quot;score\&quot;:0.75074804,\&quot;StringField\&quot;:\&quot;A B C D E\&quot;},{\&quot;id\&quot;:2,\&quot;RandString\&quot;:\&quot;JbPBZ05\&quot;,\&quot;score\&quot;:0.72167516,\&quot;StringField\&quot;:\&quot;A B C D E\&quot;},{\&quot;id\&quot;:18,\&quot;RandString\&quot;:\&quot;LcWAnh8lL8\&quot;,\&quot;score\&quot;:0.7178948,\&quot;StringField\&quot;:\&quot;A B C D E\&quot;}]},\&quot;n_total_results\&quot;:10}&quot;</code></pre><p>To verify the response, it can be parsed and displayed:</p><pre><code class="language-julia-repl">julia&gt; parsed_response = JSON.parse(response)
 Dict{String,Any} with 6 entries:
   &quot;n_searchers&quot;           =&gt; 1
   &quot;n_searchers_w_results&quot; =&gt; 1
@@ -65,8 +65,8 @@ Dict{String,Any} with 6 entries:
 
 julia&gt; parsed_response[&quot;results&quot;][collect(keys(parsed_response[&quot;results&quot;]))[1]]
 5-element Array{Any,1}:
- Dict{String,Any}(&quot;score&quot; =&gt; 0.8670083,&quot;StringField&quot; =&gt; &quot;A B C D E&quot;,&quot;id&quot; =&gt; 46,&quot;RandString&quot; =&gt; &quot;q&quot;)
- Dict{String,Any}(&quot;score&quot; =&gt; 0.78056604,&quot;StringField&quot; =&gt; &quot;&quot;,&quot;id&quot; =&gt; 12,&quot;RandString&quot; =&gt; &quot;Q&quot;)
- Dict{String,Any}(&quot;score&quot; =&gt; 0.7185193,&quot;StringField&quot; =&gt; &quot;A B C D E&quot;,&quot;id&quot; =&gt; 19,&quot;RandString&quot; =&gt; &quot;ACIZbigQ&quot;)
- Dict{String,Any}(&quot;score&quot; =&gt; 0.6826464,&quot;StringField&quot; =&gt; &quot;A B C D E&quot;,&quot;id&quot; =&gt; 95,&quot;RandString&quot; =&gt; &quot;59BXbgW&quot;)
- Dict{String,Any}(&quot;score&quot; =&gt; 0.6793355,&quot;StringField&quot; =&gt; &quot;A&quot;,&quot;id&quot; =&gt; 47,&quot;RandString&quot; =&gt; &quot;Dg9IPURDQS&quot;)</code></pre><footer><hr/><a class="previous" href="../"><span class="direction">Previous</span><span class="title">Introduction</span></a><a class="next" href="../configuration/"><span class="direction">Next</span><span class="title">Configuration</span></a></footer></article></body></html>
+ Dict{String,Any}(&quot;score&quot; =&gt; 0.7940358,&quot;StringField&quot; =&gt; &quot;A B C D E&quot;,&quot;id&quot; =&gt; 46,&quot;RandString&quot; =&gt; &quot;q&quot;)
+ Dict{String,Any}(&quot;score&quot; =&gt; 0.7667506,&quot;StringField&quot; =&gt; &quot;&quot;,&quot;id&quot; =&gt; 12,&quot;RandString&quot; =&gt; &quot;Q&quot;)
+ Dict{String,Any}(&quot;score&quot; =&gt; 0.75074804,&quot;StringField&quot; =&gt; &quot;A B C D E&quot;,&quot;id&quot; =&gt; 16,&quot;RandString&quot; =&gt; &quot;gc&quot;)
+ Dict{String,Any}(&quot;score&quot; =&gt; 0.72167516,&quot;StringField&quot; =&gt; &quot;A B C D E&quot;,&quot;id&quot; =&gt; 2,&quot;RandString&quot; =&gt; &quot;JbPBZ05&quot;)
+ Dict{String,Any}(&quot;score&quot; =&gt; 0.7178948,&quot;StringField&quot; =&gt; &quot;A B C D E&quot;,&quot;id&quot; =&gt; 18,&quot;RandString&quot; =&gt; &quot;LcWAnh8lL8&quot;)</code></pre><footer><hr/><a class="previous" href="../"><span class="direction">Previous</span><span class="title">Introduction</span></a><a class="next" href="../configuration/"><span class="direction">Next</span><span class="title">Configuration</span></a></footer></article></body></html>
