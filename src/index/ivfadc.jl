@@ -15,23 +15,10 @@ struct IVFIndex{U,I,Dc,Dr,T,Q} <: AbstractIndex
     index::IVFADCIndex{U,I,Dc,Dr,T,Q}
 end
 
-#TODO(Corneliu) Add support for other indexing parameters
-    # IVFADCIndex(data::Matrix{T};
-    #             kc::Int=DEFAULT_COARSE_K,
-    #             k::Int=DEFAULT_QUANTIZATION_K,
-    #             m::Int=DEFAULT_QUANTIZATION_M,
-    #             coarse_quantizer::Symbol=DEFAULT_COARSE_QUANTIZER,
-    #             coarse_distance::Distances.PreMetric=DEFAULT_COARSE_DISTANCE,
-    #             quantization_distance::Distances.PreMetric=DEFAULT_QUANTIZATION_DISTANCE,
-    #             quantization_method::Symbol=DEFAULT_QUANTIZATION_METHOD,
-    #             coarse_maxiter::Int=DEFAULT_COARSE_MAXITER,
-    #             quantization_maxiter::Int=DEFAULT_QUANTIZATION_MAXITER,
-    #             index_type::Type{I}=UInt32
-    #
-IVFIndex(data::AbstractMatrix) = IVFIndex(IVFADCIndex(data))
+IVFIndex(data::AbstractMatrix; kwargs...) = IVFIndex(IVFADCIndex(data; kwargs...))
 
-IVFIndex(data::SparseMatrixCSC{T,I}) where {T<:AbstractFloat, I<:Integer} =
-    IVFIndex(IVFADCIndex(Matrix{T}(data)))
+IVFIndex(data::SparseMatrixCSC{T,I}; kwargs...) where {T<:AbstractFloat, I<:Integer} =
+    IVFIndex(IVFADCIndex(Matrix{T}(data); kwargs...))
 
 
 # Nearest neighbor search method
