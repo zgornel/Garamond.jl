@@ -1,5 +1,5 @@
 """
-BruteTree index type for storing text embeddings. It is a wrapper
+BruteTree index type for storing vectors. It is a wrapper
 around a `BruteTree` NN structure and performs brute search using
 a distance-based similarity between vectors.
 """
@@ -17,7 +17,8 @@ BruteTreeIndex(data::SparseMatrixCSC{T,I}) where {T<:AbstractFloat, I<:Integer} 
 function knn_search(index::BruteTreeIndex{A,D},
                     point::AbstractVector,
                     k::Int,
-                    keep::Vector{Int}=collect(1:length(index))
+                    keep::Vector{Int}=collect(1:length(index));
+                    kwargs...
                    ) where {A<:AbstractArray, D<:Metric}
     # Uses Euclidean distance by default
     _k = min(k, length(keep))

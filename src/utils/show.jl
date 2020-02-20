@@ -95,6 +95,8 @@ show(io::IO, srcher::Searcher{T,E,I}) where {T,E,I} = begin
         _index_type = "KDTree index"
     elseif I <: HNSWIndex
         _index_type = "HNSW index"
+    elseif I <: IVFIndex
+        _index_type = "IVFADC index"
     else
         _index_type = "<Unknown index>"
     end

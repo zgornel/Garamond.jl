@@ -230,7 +230,7 @@ function parse_configuration(filename::AbstractString)
                 sconfig.vectors_eltype= DEFAULT_VECTORS_ELTYPE
             end
             # search_index
-            if !(sconfig.search_index in [:naive, :brutetree, :kdtree, :hnsw])
+            if !(sconfig.search_index in [:naive, :brutetree, :kdtree, :hnsw, :ivfadc])
                 @warn "$(sconfig.id) Defaulting search_index=$DEFAULT_SEARCH_INDEX."
                 sconfig.search_index = DEFAULT_SEARCH_INDEX
             end

@@ -20,7 +20,6 @@
 #
 module Garamond
 
-    # Using section
     using Unicode
     using Random
     using Logging
@@ -46,6 +45,7 @@ module Garamond
     using EmbeddingsAnalysis
     using HNSW
     using NearestNeighbors
+    using IVFADC
     using Distances
     using LightGraphs: Graph, pagerank
     using JSON
@@ -53,28 +53,35 @@ module Garamond
     using TSVD
     using JuliaDB
 
-    # Import section (extendable methods)
-    import Base: size, length, show, keys, values, push!,
+    import Base: size, length, show, keys, values,
+                 push!, pop!, pushfirst!, popfirst!,
                  delete!, getindex, names, convert, lowercase,
                  occursin, isempty, parse, sort
     import StringAnalysis: id
     import Word2Vec: WordVectors
     import HNSW: knn_search
 
-    # Exports
     export
         search,
         recommend,
         rank,
         indexfilter,
+
         build_search_env,
         parse_configuration,
         parse_input,
+
         AbstractEmbedder,
+
         AbstractIndex,
+        NaiveIndex, BruteTreeIndex,
+        KDTreeIndex,
+        HNSWIndex, IVFIndex,
+
         Searcher,
         SearchConfig,
         SearchResult,
+
         id,
         description,
         isenabled, enable!, disable!,
@@ -125,7 +132,6 @@ module Garamond
         end
     end
 
-    # Include section
     include("data/db.jl")
     include("data/text.jl")
     include("data/parse_and_eval.jl")
@@ -149,6 +155,7 @@ module Garamond
     include("index/brutetree.jl")
     include("index/kdtree.jl")
     include("index/hnsw.jl")
+    include("index/ivfadc.jl")
 
     include("searchable/config_parser.jl")
     include("searchable/searcher.jl")

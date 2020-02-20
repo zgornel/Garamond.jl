@@ -9,3 +9,7 @@ docs/build/
 benchmarks/
 scripts/
 old/
+src/data/loaders/custom
+src/input/custom
+src/search/rankers/custom
+src/search/recommenders/custom
