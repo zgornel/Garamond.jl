@@ -36,7 +36,6 @@ mutable struct SearchConfig
     vectors::Symbol                 # how document vectors are calculated i.e. :count, :tf, :tfidf, :bm25, :word2vec, :glove, :conceptnet, :compressed
     vectors_transform::Symbol       # what transform to apply to the vectors i.e. :lsa, :rp, :none
     vectors_dimension::Int          # desired dimensionality after transform (ignored for word2vec approaches)
-    vectors_eltype::Symbol          # type of the document vector elements
     search_index::Symbol            # type of the search index i.e. :naive, :kdtree, :hnsw
     embeddings_path::Union{Nothing, String}  # path to the embeddings file
     embeddings_kind::Symbol         # Type of the embedding file for Word2Vec, GloVe i.e. :text, :binary
@@ -75,7 +74,6 @@ SearchConfig(;
           vectors=DEFAULT_VECTORS,
           vectors_transform=DEFAULT_VECTORS_TRANSFORM,
           vectors_dimension=DEFAULT_VECTORS_DIMENSION,
-          vectors_eltype=DEFAULT_VECTORS_ELTYPE,
           search_index=DEFAULT_SEARCH_INDEX,
           embeddings_path=nothing,
           embeddings_kind=DEFAULT_EMBEDDINGS_KIND,
@@ -97,7 +95,7 @@ SearchConfig(;
     SearchConfig(id, id_aggregation, description, enabled,
                  indexable_fields,
                  language, stem_words, ngram_complexity,
-                 vectors, vectors_transform, vectors_dimension, vectors_eltype,
+                 vectors, vectors_transform, vectors_dimension,
                  search_index, embeddings_path, embeddings_kind, doc2vec_method,
                  glove_vocabulary, oov_policy, heuristic,
                  text_strip_flags, query_strip_flags,
@@ -120,7 +118,7 @@ function parse_configuration(filename::AbstractString)
     # Read config (this should fail if config not found)
     local config, dict_configs,
           data_loader_name, data_loader_arguments, data_loader_kwarguments,
-          id_key, id_environment
+          id_key, id_environment, vectors_eltype
     fullpathconfig = abspath(expanduser(filename))
     try
         # Parse configuration file
@@ -139,6 +137,15 @@ function parse_configuration(filename::AbstractString)
 
         # Create an environment id
         id_environment = make_id(StringId, get(config, "id", nothing))
+
+        # Get vectors eltype
+        vectors_eltype = try
+            eval(Symbol(get(config, "vectors_eltype")))
+        catch e
+            @debug "Wrong or missing vectors eltype.\n$e\nDefaulting vectors_eltype=$DEFAULT_VECTORS_ELTYPE."
+            DEFAULT_VECTORS_ELTYPE
+        end
+
     catch e
         @error "Could not parse configuration in $fullpathconfig ($e). Exiting..."
         exit(-1)
@@ -180,7 +187,6 @@ function parse_configuration(filename::AbstractString)
             sconfig.vectors = Symbol(get(dconfig, "vectors", DEFAULT_VECTORS))
             sconfig.vectors_transform = Symbol(get(dconfig, "vectors_transform", DEFAULT_VECTORS_TRANSFORM))
             sconfig.vectors_dimension = Int(get(dconfig, "vectors_dimension", DEFAULT_VECTORS_DIMENSION))
-            sconfig.vectors_eltype = Symbol(get(dconfig, "vectors_eltype", DEFAULT_VECTORS_ELTYPE))
             sconfig.search_index = Symbol(get(dconfig, "search_index", DEFAULT_SEARCH_INDEX))
             sconfig.embeddings_path = postprocess_path(get(dconfig, "embeddings_path", nothing))
             sconfig.embeddings_kind = Symbol(get(dconfig, "embeddings_kind", DEFAULT_EMBEDDINGS_KIND))
@@ -223,11 +229,6 @@ function parse_configuration(filename::AbstractString)
                 @warn "$(sconfig.id) Defaulting vectors=$DEFAULT_VECTORS."
                 sconfig.vectors = DEFAULT_VECTORS  # bm25
                 classic_search_approach = true
-            end
-            # vectors_eltype
-            if !(sconfig.vectors_eltype in [:Float16, :Float32, :Float64])
-                @warn "$(sconfig.id) Defaulting vectors_eltype=$DEFAULT_VECTORS_ELTYPE."
-                sconfig.vectors_eltype= DEFAULT_VECTORS_ELTYPE
             end
             # search_index
             if !(sconfig.search_index in [:naive, :brutetree, :kdtree, :hnsw, :ivfadc])
@@ -338,6 +339,7 @@ function parse_configuration(filename::AbstractString)
 
     return (data_loader=data_loader,
             id_key=id_key,
+            vectors_eltype=vectors_eltype,
             searcher_configs=searcher_configs,
             config_path=fullpathconfig)
 end

@@ -48,7 +48,10 @@ getindex(srchers::AbstractVector{Searcher}, an_id::String) = getindex(srchers, S
 
 Creates a Searcher from a searcher configuration `config::SearchConfig`.
 """
-function build_searcher(dbdata, config; id_key=DEFAULT_DB_ID_KEY)
+function build_searcher(dbdata,
+                        config;
+                        id_key=DEFAULT_DB_ID_KEY,
+                        vectors_eltype=DEFAULT_VECTORS_ELTYPE)
 
     raw_document_iterator = (dbentry2text(dbentry, config.indexable_fields)
                              for dbentry in db_sorted_row_iterator(dbdata;
@@ -63,7 +66,7 @@ function build_searcher(dbdata, config; id_key=DEFAULT_DB_ID_KEY)
     crps = __build_corpus(prepared_documents, language, config.ngram_complexity)
 
     # Get embedder
-    embedder = __build_embedder(crps, config)
+    embedder = __build_embedder(crps, config; vectors_eltype=vectors_eltype)
 
     # Calculate embeddings for each document
     embedded_documents = __embed_all_documents(embedder, prepared_documents,
@@ -144,18 +147,15 @@ end
 
 # TODO(Corneliu) Separate embeddings as well from searchers
 # i.e. data, embeddings and indexes are separate an re-use each other
-function __build_embedder(crps, config)
-    # Construct element type
-    T = eval(config.vectors_eltype)
-
+function __build_embedder(crps, config; vectors_eltype=vectors_eltype)
     if config.vectors in [:word2vec, :glove, :conceptnet, :compressed]
-        embedder = __build_embedder(crps, T, config.vectors, config.embeddings_path,
+        embedder = __build_embedder(crps, vectors_eltype, config.vectors, config.embeddings_path,
                                     config.embeddings_kind, config.doc2vec_method,
                                     config.glove_vocabulary, config.sif_alpha,
                                     config.borep_dimension, config.borep_pooling_function,
                                     config.disc_ngram)
     elseif config.vectors in [:count, :tf, :tfidf, :bm25]
-        embedder = __build_embedder(crps, T, config.ngram_complexity,
+        embedder = __build_embedder(crps, vectors_eltype, config.ngram_complexity,
                                     config.vectors, config.vectors_transform,
                                     config.vectors_dimension,
                                     config.bm25_kappa, config.bm25_beta)

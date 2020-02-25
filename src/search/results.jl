@@ -21,7 +21,7 @@ function build_result_from_ids(dbdata,
                                idvals_key,
                                result_id;
                                id_key=Garamond.DEFAULT_DB_ID_KEY,
-                               score_eltype=eval(DEFAULT_VECTORS_ELTYPE),
+                               score_eltype=DEFAULT_VECTORS_ELTYPE,
                                default_score=one(score_eltype),
                                max_matches=length(idvals),
                                linear_scoring=false)

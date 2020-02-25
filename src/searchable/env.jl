@@ -2,12 +2,10 @@
     Search environment object. It contains all the data, searchers
     and additional structures needed by the engine to function.
 """
-mutable struct SearchEnv
-    #TODO(Corneliu) Make search environment parametric with respect to
-    #               the type of Float being used
+struct SearchEnv{T}
     dbdata        #::Union{AbstractNDSparse, AbstractIndexedTable}
     id_key        #::Symbol
-    searchers     #::Vector{<:Searcher}
+    searchers::Vector{<:Searcher{T}}     #::Vector{<:Searcher}
     config_path   #::String
 end
 
@@ -37,7 +35,10 @@ function build_search_env(env_config; cache_path=nothing)
         db_check_id_key(dbdata, env_config.id_key)
 
         # Build searchers
-        srchers = [build_searcher(dbdata, srcher_config; id_key=env_config.id_key)
+        srchers = [build_searcher(dbdata,
+                                  srcher_config;
+                                  id_key=env_config.id_key,
+                                  vectors_eltype=env_config.vectors_eltype)
                    for srcher_config in env_config.searcher_configs]
 
         # Build search environment

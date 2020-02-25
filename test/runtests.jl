@@ -15,5 +15,6 @@ include("input_parsers.jl")
 include("db.jl")
 include("index.jl")
 include("indexfilter.jl")
+include("config_parser.jl")
 
 end

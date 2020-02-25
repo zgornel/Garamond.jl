@@ -16,6 +16,7 @@ function generate_sample_config_1()
         "data_loader_name": "juliadb_loader",
         "data_loader_arguments": ["$(generate_data_path())"],
         "id_key": "id",
+        "vectors_eltype": "Float32",
         "searchers": [
             {
                 "id": "searcher_1",
@@ -28,7 +29,6 @@ function generate_sample_config_1()
                 "vectors": "bm25",
                 "vectors_transform": "rp",
                 "vectors_dimension": 50,
-                "vectors_eltype": "Float32",
                 "search_index": "naive",
                 "oov_policy" : "large_vector",
                 "score_alpha": 0.4,
@@ -45,6 +45,7 @@ function generate_sample_config_2()
         "data_loader_name": "juliadb_loader",
         "data_loader_arguments": ["$(generate_data_path())"],
         "id_key": "id",
+        "vectors_eltype": "Float32",
         "searchers": [
             {
                 "id": "searcher_1",
@@ -57,7 +58,6 @@ function generate_sample_config_2()
                 "vectors": "bm25",
                 "vectors_transform": "rp",
                 "vectors_dimension": 50,
-                "vectors_eltype": "Float32",
                 "search_index": "naive",
                 "oov_policy" : "large_vector",
                 "score_alpha": 0.4,
@@ -73,7 +73,6 @@ function generate_sample_config_2()
                 "language": "english",
                 "vectors": "word2vec",
                 "vectors_transform": "none",
-                "vectors_eltype": "Float32",
                 "search_index": "naive",
                 "embeddings_path": "$(generate_embeddings_path())",
                 "embeddings_kind": "binary",

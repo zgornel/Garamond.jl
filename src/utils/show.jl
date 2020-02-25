@@ -17,9 +17,7 @@ Base.show(io::IO, sconfig::SearchConfig) = begin
         end
     end
     printstyled(io, "  vectors = ")
-    printstyled(io, "$(sconfig.vectors)$_tf", bold=true)
-    printstyled(io, ", ")
-    printstyled(io, "$(sconfig.vectors_eltype)\n", bold=true)
+    printstyled(io, "$(sconfig.vectors)$_tf\n", bold=true)
     printstyled(io, "  search_index = ")
     printstyled(io, "$(sconfig.search_index)\n", bold=true)
     if sconfig.embeddings_path != nothing
@@ -128,8 +126,8 @@ end
 
 
 # SearchEnv
-Base.show(io::IO, env::SearchEnv) = begin
-    print(io, "SearchEnv with:\n")
+Base.show(io::IO, env::SearchEnv{T}) where {T} = begin
+    print(io, "SearchEnv{$T} with:\n")
     printstyled(io, "`-dbdata = ")
     buf = IOBuffer();
     print(buf, env.dbdata);
