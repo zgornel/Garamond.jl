@@ -44,3 +44,18 @@ end
 
 # Length method
 length(index::IVFIndex) = length(index.index)
+
+
+# push!, pushfirst!, pop!, popfirst!, delete_from_index!
+Base.push!(index::IVFIndex, point) = push!(index.index, point)
+
+Base.pushfirst!(index::IVFIndex, point) = pushfirst!(index.index, point)
+
+Base.pop!(index::IVFIndex) = pop!(index.index)
+
+Base.popfirst!(index::IVFIndex) = popfirst!(index.index)
+
+delete_from_index!(index::IVFIndex, pos) = begin
+    IVFADC.delete_from_index!(index.index, pos)
+    nothing
+end

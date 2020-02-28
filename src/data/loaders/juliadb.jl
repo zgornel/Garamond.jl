@@ -1,3 +1,3 @@
-function juliadb_loader(files; opts...)
-    loadtable(files; opts...)
+function juliadb_loader(data; ingest=false, kwargs...)
+    loadtable(data; kwargs...)  # Returnes either a NDSparse or IndexedTable
 end

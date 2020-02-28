@@ -118,7 +118,7 @@ function parse_configuration(filename::AbstractString)
     # Read config (this should fail if config not found)
     local config, dict_configs,
           data_loader_name, data_loader_arguments, data_loader_kwarguments,
-          id_key, id_environment, vectors_eltype
+          data_streamer_name, id_key, id_environment, vectors_eltype
     fullpathconfig = abspath(expanduser(filename))
     try
         # Parse configuration file
@@ -127,12 +127,16 @@ function parse_configuration(filename::AbstractString)
         # Read separately individual searcher configurations
         dict_configs = config["searchers"]
 
-        # Create data loader
+        # Parse data loader name and arguments, keyword arguments
         data_loader_name = Symbol(get(config, "data_loader_name", DEFAULT_DATA_LOADER_NAME))
         data_loader_arguments = get(config, "data_loader_arguments", [])
         data_loader_kwarguments = Dict{Symbol, Any}(Symbol(k) => v for (k,v) in
                                        get(config, "data_loader_kwarguments", Dict{String,Any}()))
-        # Create data loader symbol
+
+        # Parse data streamer name
+        data_streamer_name = Symbol(get(config, "data_streamer_name", DEFAULT_DATA_STREAMER_NAME))
+
+        # Read primary db key
         id_key = Symbol(get(config, "id_key", DEFAULT_DB_ID_KEY))
 
         # Create an environment id
@@ -140,7 +144,7 @@ function parse_configuration(filename::AbstractString)
 
         # Get vectors eltype
         vectors_eltype = try
-            eval(Symbol(get(config, "vectors_eltype")))
+            eval(Symbol(config["vectors_eltype"]))
         catch e
             @debug "Wrong or missing vectors eltype.\n$e\nDefaulting vectors_eltype=$DEFAULT_VECTORS_ELTYPE."
             DEFAULT_VECTORS_ELTYPE
@@ -155,6 +159,9 @@ function parse_configuration(filename::AbstractString)
     data_loader_function = eval(data_loader_name)
     data_loader_closure(args...;kwargs...) = () -> data_loader_function(args...;kwargs...)
     data_loader = data_loader_closure(data_loader_arguments...; pairs(data_loader_kwarguments)...)
+
+    # Construct data loader
+    data_streamer = eval(data_streamer_name)
 
     # Create search configurations
     n = length(dict_configs)
@@ -338,6 +345,7 @@ function parse_configuration(filename::AbstractString)
     end
 
     return (data_loader=data_loader,
+            data_streamer=data_streamer,
             id_key=id_key,
             vectors_eltype=vectors_eltype,
             searcher_configs=searcher_configs,

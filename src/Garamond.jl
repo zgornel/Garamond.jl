@@ -54,7 +54,6 @@ module Garamond
     using JuliaDB
 
     import Base: size, length, show, keys, values,
-                 push!, pop!, pushfirst!, popfirst!,
                  delete!, getindex, names, convert, lowercase,
                  occursin, isempty, parse, sort
     import StringAnalysis: id
@@ -74,9 +73,11 @@ module Garamond
         AbstractEmbedder,
 
         AbstractIndex,
-        NaiveIndex, BruteTreeIndex,
+        NaiveIndex,
+        BruteTreeIndex,
         KDTreeIndex,
-        HNSWIndex, IVFIndex,
+        HNSWIndex,
+        IVFIndex,
 
         Searcher,
         SearchConfig,
@@ -100,11 +101,13 @@ module Garamond
     =#
     function __init__()
         CUSTOM_LOADERS_SUBDIR = "data/loaders/custom"
+        CUSTOM_STREAMERS_SUBDIR = "data/streamers/custom"
         CUSTOM_RANKERS_SUBDIR = "search/rankers/custom"
         CUSTOM_RECOMMENDERS_SUBDIR = "search/recommenders/custom"
         CUSTOM_INPUT_SUBDIR = "input/custom"
 
         __include_subdirectory(CUSTOM_LOADERS_SUBDIR, printer="Loaders (custom)")
+        __include_subdirectory(CUSTOM_STREAMERS_SUBDIR, printer="Streamers (custom)")
         __include_subdirectory(CUSTOM_RANKERS_SUBDIR, printer="Rankers (custom)")
         __include_subdirectory(CUSTOM_RECOMMENDERS_SUBDIR, printer="Recommenders (custom)")
         __include_subdirectory(CUSTOM_INPUT_SUBDIR, printer="Input processors (custom)")
@@ -113,7 +116,7 @@ module Garamond
     function __include_subdirectory(subpath; printer="Including")
         fullpath = joinpath(@__DIR__, subpath)
         if isdir(fullpath)
-            included_files = []
+            included_files = String[]
             for file in readdir(fullpath)
                 local filepath
                 try
@@ -137,6 +140,9 @@ module Garamond
     include("data/parse_and_eval.jl")
     include("data/loaders/noop.jl")
     include("data/loaders/juliadb.jl")
+
+    include("data/streamers/noop.jl")
+    include("data/streamers/identity.jl")
 
     include("config/defaults.jl")
     include("config/engine.jl")

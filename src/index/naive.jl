@@ -39,3 +39,18 @@ end
 
 # Length method
 length(index::NaiveIndex) = length(index.data)
+
+
+# push!, pushfirst!, pop!, popfirst!, delete_from_index!
+Base.push!(index::NaiveIndex, point) = push!(index.data, point)
+
+Base.pushfirst!(index::NaiveIndex, point) = pushfirst!(index.data, point)
+
+Base.pop!(index::NaiveIndex) = pop!(index.data)
+
+Base.popfirst!(index::NaiveIndex) = popfirst!(index.data)
+
+delete_from_index!(index::NaiveIndex, pos) = begin
+    deleteat!(index.data, pos)
+    nothing
+end

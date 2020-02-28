@@ -206,9 +206,9 @@ version = "0.8.8"
 
 [[IVFADC]]
 deps = ["Clustering", "DataStructures", "Distances", "HNSW", "QuantizedArrays"]
-git-tree-sha1 = "dea090959d6e08236b22a719728f93cb76ee49f6"
+git-tree-sha1 = "0841a3db176d677039e2e306f7d763c507091260"
 uuid = "c28a5fd4-166f-4f83-b04d-195ccdb4ae51"
-version = "0.1.0"
+version = "0.1.1"
 
 [[IndexedTables]]
 deps = ["DataAPI", "DataValues", "Distributed", "IteratorInterfaceExtensions", "OnlineStatsBase", "PooledArrays", "SparseArrays", "Statistics", "StructArrays", "TableTraits", "TableTraitsUtils", "Tables", "WeakRefStrings"]
@@ -384,9 +384,9 @@ uuid = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 
 [[Polynomials]]
 deps = ["LinearAlgebra", "RecipesBase"]
-git-tree-sha1 = "f7c0c07e82798aef542d60a6e6e85e39f4590750"
+git-tree-sha1 = "1185511cac8ab9d0b658b663eae34fe9a95d4332"
 uuid = "f27b6e38-b328-58d1-80ce-0feddd5e7a45"
-version = "0.5.3"
+version = "0.6.1"
 
 [[PooledArrays]]
 deps = ["DataAPI"]
@@ -410,9 +410,9 @@ version = "1.2.0"
 
 [[Quadmath]]
 deps = ["Printf", "Random", "Requires"]
-git-tree-sha1 = "5cbc75c9cd5edc72111681f0b30c0a6b1128c582"
+git-tree-sha1 = "cd993c45147a8432bf24358f14bf2cfd4aeb14df"
 uuid = "be4d8f0f-7fa4-5f49-b795-2f01399ab2dd"
-version = "0.5.3"
+version = "0.5.4"
 
 [[QuantizedArrays]]
 deps = ["Clustering", "Distances", "InteractiveUtils", "LinearAlgebra", "StatsBase"]
@@ -540,9 +540,9 @@ version = "1.0.1"
 
 [[Tables]]
 deps = ["DataAPI", "DataValueInterfaces", "IteratorInterfaceExtensions", "LinearAlgebra", "TableTraits", "Test"]
-git-tree-sha1 = "22eea0f6619df63954b9404c8d47cd42c5d529f9"
+git-tree-sha1 = "a54b8ce702aa863eced47bade03123d4dca0db84"
 uuid = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
-version = "1.0.1"
+version = "1.0.2"
 
 [[Test]]
 deps = ["Distributed", "InteractiveUtils", "Logging", "Random"]

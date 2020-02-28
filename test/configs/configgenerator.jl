@@ -15,6 +15,7 @@ function generate_sample_config_1()
 	{
         "data_loader_name": "juliadb_loader",
         "data_loader_arguments": ["$(generate_data_path())"],
+        "data_streamer_name": "identity_streamer",
         "id_key": "id",
         "vectors_eltype": "Float32",
         "searchers": [
@@ -44,6 +45,7 @@ function generate_sample_config_2()
     {
         "data_loader_name": "juliadb_loader",
         "data_loader_arguments": ["$(generate_data_path())"],
+        "data_streamer_name": "identity_streamer",
         "id_key": "id",
         "vectors_eltype": "Float32",
         "searchers": [

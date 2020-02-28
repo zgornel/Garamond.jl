@@ -90,7 +90,7 @@ function db_check_entry_for_pushing(dbdata, entry, id_key, expected_value)
         getproperty(entry, id_key) != expected_value &&
             throw(ErrorException("$id_key==$expected_value condition not fulfilled"))
         field_problem = false
-        entry_fields = map(eltype, entry)
+        entry_fields = map(typeof, entry)
         dbdata_fields = map(eltype, columns(dbdata))
         for field in colnames(dbdata)
             if !hasproperty(entry_fields, field) || (getproperty(entry_fields, field) != getproperty(dbdata_fields, field))
