@@ -118,7 +118,7 @@ function parse_configuration(filename::AbstractString)
     # Read config (this should fail if config not found)
     local config, dict_configs,
           data_loader_name, data_loader_arguments, data_loader_kwarguments,
-          data_streamer_name, id_key, id_environment, vectors_eltype
+          data_sampler_name, id_key, id_environment, vectors_eltype
     fullpathconfig = abspath(expanduser(filename))
     try
         # Parse configuration file
@@ -133,8 +133,8 @@ function parse_configuration(filename::AbstractString)
         data_loader_kwarguments = Dict{Symbol, Any}(Symbol(k) => v for (k,v) in
                                        get(config, "data_loader_kwarguments", Dict{String,Any}()))
 
-        # Parse data streamer name
-        data_streamer_name = Symbol(get(config, "data_streamer_name", DEFAULT_DATA_STREAMER_NAME))
+        # Parse data sampler name
+        data_sampler_name = Symbol(get(config, "data_sampler_name", DEFAULT_DATA_SAMPLER_NAME))
 
         # Read primary db key
         id_key = Symbol(get(config, "id_key", DEFAULT_DB_ID_KEY))
@@ -161,7 +161,7 @@ function parse_configuration(filename::AbstractString)
     data_loader = data_loader_closure(data_loader_arguments...; pairs(data_loader_kwarguments)...)
 
     # Construct data loader
-    data_streamer = eval(data_streamer_name)
+    data_sampler = eval(data_sampler_name)
 
     # Create search configurations
     n = length(dict_configs)
@@ -345,7 +345,7 @@ function parse_configuration(filename::AbstractString)
     end
 
     return (data_loader=data_loader,
-            data_streamer=data_streamer,
+            data_sampler=data_sampler,
             id_key=id_key,
             vectors_eltype=vectors_eltype,
             searcher_configs=searcher_configs,

@@ -4,7 +4,7 @@
 """
 struct SearchEnv{T}
     dbdata        #::Union{AbstractNDSparse, AbstractIndexedTable}
-    streamer
+    sampler
     id_key        #::Symbol
     searchers::Vector{<:Searcher{T}}     #::Vector{<:Searcher}
     config_path   #::String
@@ -49,7 +49,7 @@ function build_search_env(env_config; cache_path=nothing)
                    for srcher_config in env_config.searcher_configs]
 
         # Build search environment
-        env = SearchEnv(dbdata, env_config.data_streamer, env_config.id_key, srchers, env_config.config_path)
+        env = SearchEnv(dbdata, env_config.data_sampler, env_config.id_key, srchers, env_config.config_path)
         @info "• Environment successfully built using config $(env_config.config_path)."
         return env
     catch e
@@ -109,7 +109,7 @@ function pushinner!(env::SearchEnv{T}, rawdata, position::Symbol) where {T}
 
     safe_indexes_method_assert(index_operation, env, AbstractVector{T})
 
-    entry = env.streamer(rawdata)
+    entry = env.sampler(rawdata)
     try
         map(env.searchers) do srcher
             srcher_operation(srcher, entry)

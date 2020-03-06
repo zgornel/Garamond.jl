@@ -101,16 +101,16 @@ module Garamond
     =#
     function __init__()
         CUSTOM_LOADERS_SUBDIR = "data/loaders/custom"
-        CUSTOM_STREAMERS_SUBDIR = "data/streamers/custom"
+        CUSTOM_SAMPLERS_SUBDIR = "data/samplers/custom"
         CUSTOM_RANKERS_SUBDIR = "search/rankers/custom"
         CUSTOM_RECOMMENDERS_SUBDIR = "search/recommenders/custom"
         CUSTOM_INPUT_SUBDIR = "input/custom"
 
         __include_subdirectory(CUSTOM_LOADERS_SUBDIR, printer="Loaders (custom)")
-        __include_subdirectory(CUSTOM_STREAMERS_SUBDIR, printer="Streamers (custom)")
+        __include_subdirectory(CUSTOM_SAMPLERS_SUBDIR, printer="Samplers (custom)")
         __include_subdirectory(CUSTOM_RANKERS_SUBDIR, printer="Rankers (custom)")
         __include_subdirectory(CUSTOM_RECOMMENDERS_SUBDIR, printer="Recommenders (custom)")
-        __include_subdirectory(CUSTOM_INPUT_SUBDIR, printer="Input processors (custom)")
+        __include_subdirectory(CUSTOM_INPUT_SUBDIR, printer="Parsers (custom)")
     end
 
     function __include_subdirectory(subpath; printer="Including")
@@ -141,8 +141,8 @@ module Garamond
     include("data/loaders/noop.jl")
     include("data/loaders/juliadb.jl")
 
-    include("data/streamers/noop.jl")
-    include("data/streamers/identity.jl")
+    include("data/samplers/noop.jl")
+    include("data/samplers/identity.jl")
 
     include("config/defaults.jl")
     include("config/engine.jl")
