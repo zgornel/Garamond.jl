@@ -3,7 +3,7 @@ _pkey = :z
 tbl = table((x=rand(T, 10), y=rand(T, 10), z=collect(Int, 1:10)), pkey=_pkey)
 nds = ndsparse(deepcopy(tbl))
 
-@testset "DB: id_key checks, push/pop primitives" begin
+@testset "DB: id_key checks, push!/pop! primitives" begin
     # db_create_schema
     @test sort(Garamond.db_create_schema(tbl), by=x->x.column)  ==
           sort(Garamond.db_create_schema(nds), by=x->x.column)  ==

@@ -8,7 +8,7 @@ const CONFIGS = [:generate_sample_config_1,
 		   end
     @test cfg isa NamedTuple
 
-    ALL_PROPS = (:data_loader, :id_key, :vectors_eltype, :searcher_configs, :config_path)
+    ALL_PROPS = (:data_loader, :data_streamer, :id_key, :vectors_eltype, :searcher_configs, :config_path)
     for p in propertynames(cfg)
         @test p in ALL_PROPS
     end

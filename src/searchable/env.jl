@@ -93,17 +93,21 @@ Pushes to the first position to a search environment i.e. to the db and all inde
 Base.pushfirst!(env::SearchEnv, rawdata) = pushinner!(env, rawdata, :first)
 
 
+function safe_indexes_method_assert(method, env::SearchEnv{T}, args...) where {T}
+    if !all(hasmethod(method, Tuple{typeof(srcher.index), args...}) for srcher in env.searchers)
+        @warn "Pushing to environment failed: not all indexes suport method $method."
+        return nothing
+    end
+end
+
+
 # Inner method used for pushing
-function pushinner!(env::SearchEnv, rawdata, position::Symbol)
+function pushinner!(env::SearchEnv{T}, rawdata, position::Symbol) where {T}
     index_operation = ifelse(position === :first, pushfirst!, push!)
     srcher_operation = ifelse(position === :first, pushfirst!, push!)
     db_operation = ifelse(position === :first, db_pushfirst!, db_push!)
 
-    #if !all(hasmethod(index_operation, Tuple{typeof(srcher.index), AbstractVector{T}})
-    #        for srcher in env.searchers)
-    #    @warn "Pushing to environment failed: not all indexes suport a push!(::AbstractVector{$T})."
-    #    return nothing
-    #end
+    safe_indexes_method_assert(index_operation, env, AbstractVector{T})
 
     entry = env.streamer(rawdata)
     try
@@ -136,8 +140,12 @@ Base.popfirst!(env::SearchEnv) = popinner!(env, :first)
 
 # Inner method used for pushing
 function popinner!(env::SearchEnv{T}, position::Symbol) where {T}
+    index_operation = ifelse(position === :first, popfirst!, pop!)
     srcher_operation = ifelse(position === :first, popfirst!, pop!)
     db_operation = ifelse(position === :first, db_popfirst!, db_pop!)
+
+    safe_indexes_method_assert(index_operation, env)
+
     popped = try
         map(env.searchers) do srcher
             srcher_operation(srcher)
@@ -155,6 +163,8 @@ end
 Deletes from a search environment the db and index elements with linear indices found in `pos`.
 """
 Base.deleteat!(env::SearchEnv, pos) = begin
+    safe_indexes_method_assert(deleteat!, env, typeof(pos))
+
     try
         map(env.searchers) do srcher
             deleteat!(srcher, pos)
