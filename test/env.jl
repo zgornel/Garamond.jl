@@ -6,7 +6,7 @@
             flush(io)
             parse_configuration(path)
         end
-        @test build_search_env(cfg) isa Garamond.SearchEnv
+        @test build_search_env(cfg) isa SearchEnv
     end
 end
 
@@ -31,9 +31,9 @@ make_entry(;id=1) = (id=id,
             env = build_search_env(cfg)
             initial_length = length(env.dbdata)
             index_length(x) = length(x.index)
-            get_vec_type(env::Garamond.SearchEnv{T}) where {T} = T
+            get_vec_type(env::SearchEnv{T}) where {T} = T
 
-            @test env isa Garamond.SearchEnv
+            @test env isa SearchEnv
             if index_type in [:naive, :brutetree, :ivfadc]  # push!/pop! supported
                 # push!
                 ientry = make_entry(id=initial_length+1)

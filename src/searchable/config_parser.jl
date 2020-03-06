@@ -238,7 +238,7 @@ function parse_configuration(filename::AbstractString)
                 classic_search_approach = true
             end
             # search_index
-            if !(sconfig.search_index in [:naive, :brutetree, :kdtree, :hnsw, :ivfadc])
+            if !(sconfig.search_index in [:naive, :brutetree, :kdtree, :hnsw, :ivfadc, :noop])
                 @warn "$(sconfig.id) Defaulting search_index=$DEFAULT_SEARCH_INDEX."
                 sconfig.search_index = DEFAULT_SEARCH_INDEX
             end

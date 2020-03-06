@@ -163,7 +163,8 @@ const SUPPORTED_INDEXES = Dict(
     :brutetree => BruteTreeIndex,
     :kdtree => KDTreeIndex,
     :hnsw => HNSWIndex,
-    :ivfadc => d->IVFIndex(d; kc=4, k=2, m=1) #TODO(Corneliu) Fix this hijacking (https://github.com/zgornel/Garamond.jl/issues/22)
+    :ivfadc => d->IVFIndex(d; kc=4, k=2, m=1), #TODO(Corneliu) Fix this hijacking (https://github.com/zgornel/Garamond.jl/issues/22)
+    :noop => NoopIndex
    )
 
 

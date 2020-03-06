@@ -95,6 +95,8 @@ show(io::IO, srcher::Searcher{T,E,I}) where {T,E,I} = begin
         _index_type = "HNSW index"
     elseif I <: IVFIndex
         _index_type = "IVFADC index"
+    elseif I <: NoopIndex
+        _index_type = "Noop index"
     else
         _index_type = "<Unknown index>"
     end

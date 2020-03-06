@@ -78,7 +78,9 @@ module Garamond
         KDTreeIndex,
         HNSWIndex,
         IVFIndex,
+        NoopIndex,
 
+        SearchEnv,
         Searcher,
         SearchConfig,
         SearchResult,
@@ -162,6 +164,7 @@ module Garamond
     include("index/kdtree.jl")
     include("index/hnsw.jl")
     include("index/ivfadc.jl")
+    include("index/noop.jl")
 
     include("searchable/config_parser.jl")
     include("searchable/searcher.jl")

@@ -1,4 +1,5 @@
-@testset "Index: $IndexType" for IndexType in [NaiveIndex, BruteTreeIndex, KDTreeIndex, HNSWIndex, IVFIndex]
+@testset "Index: $IndexType" for IndexType in [NaiveIndex, BruteTreeIndex,
+                                    KDTreeIndex, HNSWIndex, IVFIndex, NoopIndex]
     T = eltype(1.0)
     data = T[0 0 0 5 5 5; 0 1 2 10 11 12]
     spdata = sparse(data)
@@ -15,9 +16,14 @@
     end
     @test index isa IndexType
     idxs, scores = Garamond.knn_search(index, point, 10; w=4)
-    @test idxs isa Vector{Int} && all(i in idxs for i in 1:true_length)
+    @test idxs isa Vector{Int}
     @test scores isa Vector{T}
-
+    if IndexType != NoopIndex
+        @test all(i in idxs for i in 1:true_length)
+    else
+        @test isempty(idxs)
+        @test isempty(scores)
+    end
     @test length(index) == length(spindex) == true_length
 
     # Test push!, pop! interface
@@ -51,7 +57,28 @@
         # delete_from_index!
         @test Garamond.delete_from_index!(index, [idx]) === nothing
         @test length(index) == true_length - 1
-    else
+    elseif IndexType == NoopIndex
+        # push!
+        @test try push!(index, point); true; catch; false; end
+        @test length(index) == true_length  # nothing pushed
+
+        # pop!
+        @test pop!(index) === nothing
+        @test length(index) == true_length
+
+        # pushfirst!
+        @test try pushfirst!(index, point); true; catch; false; end
+        @test length(index) == true_length  # nothing pushed
+
+        # popfirst!
+        @test popfirst!(index) === nothing
+        @test length(index) == true_length
+
+        # delete_from_index!
+        @test Garamond.delete_from_index!(index, [idx]) === nothing
+        @test length(index) == true_length
+
+    elseif IndexType in [KDTreeIndex, HNSWIndex]
         @test_throws MethodError push!(idx, point)
         @test_throws MethodError pushfirst!(idx, point)
         @test_throws MethodError pop!(idx)
