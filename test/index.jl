@@ -5,25 +5,34 @@
     true_length = size(data, 2)
 
     if IndexType === IVFIndex
-        _idxfunc = d->IVFIndex(d; kc=4, k=2, m=1)
-        idx = _idxfunc(data)
-        spidx = _idxfunc(spdata)
+        _indexfunc = d->IVFIndex(d; kc=4, k=2, m=1)
+        index = _indexfunc(data)
+        spindex = _indexfunc(spdata)
     else
-        idx = IndexType(data)
-        spidx = IndexType(data)
+        index = IndexType(data)
+        spindex = IndexType(data)
     end
-    @test idx isa IndexType
-    idxs, scores = Garamond.knn_search(idx, point, 10; w=4)
+    @test index isa IndexType
+    idxs, scores = Garamond.knn_search(index, point, 10; w=4)
     @test idxs isa Vector{Int} && all(i in idxs for i in 1:true_length)
     @test scores isa Vector{eltype(data)}
 
-    @test length(idx) == length(spidx) == true_length
+    @test length(index) == length(spindex) == true_length
 
-    # Test not implemented interface
-    @test_throws Garamond.IndexOperationException pop!(idx)
-    @test_throws Garamond.IndexOperationException push!(idx)
-    @test_throws Garamond.IndexOperationException pushfirst!(idx)
-    @test_throws Garamond.IndexOperationException popfirst!(idx)
-    @test_throws Garamond.IndexOperationException Garamond.delete_from_index!(idx, [1,2])
-
+    # Test push!, pop! interface
+    idx = 1
+    point = data[:, idx]
+    if IndexType in [NaiveIndex, BruteTreeIndex, IVFIndex]
+        @test push!(index, point) === nothing && length(index) == true_length+1
+        @test pop!(index) == point && length(index) == true_length
+        @test pushfirst!(index, point) === nothing && length(index) == true_length+1
+        @test popfirst!(index) == point && length(index) == true_length
+        @test Garamond.delete_from_index!(index, [idx]) === nothing && length(index) == true_length-1
+    else
+        @test_throws MethodError push!(idx, point)
+        @test_throws MethodError pushfirst!(idx, point)
+        @test_throws MethodError pop!(idx)
+        @test_throws MethodError popfirst!(idx)
+        @test_throws MethodError Garamond.delete_from_index!(idx, [1,2])
+    end
 end
