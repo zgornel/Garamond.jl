@@ -37,7 +37,7 @@ Base.push!(srcher::Searcher, entry) = pushinner!(srcher, entry, :last)
 Base.pushfirst!(srcher::Searcher, entry) = pushinner!(srcher, entry, :first)
 
 pushinner!(srcher::Searcher, entry, position::Symbol) = begin
-    prepared_document = __prepare_document(entry, srcher.config)
+    prepared_document = entry2document(entry, srcher.config)
     embedded_document = document2vec(srcher.embedder,
                                      prepared_document,
                                      srcher.config.oov_policy;
@@ -79,7 +79,7 @@ function build_searcher(dbdata,
     language = get(STR_TO_LANG, config.language, DEFAULT_LANGUAGE)()
 
     # Pre-process documents
-    prepared_documents = [__prepare_document(dbentry, config; flags=flags, language=language)
+    prepared_documents = [entry2document(dbentry, config; flags=flags, language=language)
                           for dbentry in db_sorted_row_iterator(dbdata; id_key=id_key, rev=false)]
 
     # Build corpus
@@ -89,10 +89,14 @@ function build_searcher(dbdata,
     embedder = __build_embedder(crps, config; vectors_eltype=vectors_eltype)
 
     # Calculate embeddings for each document
-    embedded_documents = __embed_all_documents(embedder, config, prepared_documents, vectors_eltype)
+    embedded_documents = documents2mat(embedder,
+                                       prepared_documents,
+                                       config.oov_policy;
+                                       vectors_eltype=vectors_eltype,
+                                       ngram_complexity=config.ngram_complexity)
 
     # Get search index type
-    IndexType = __get_search_index_type(config)
+    IndexType = SUPPORTED_INDEXES[config.search_index]
 
     # Build search index
     srchindex = IndexType(embedded_documents)
@@ -108,30 +112,34 @@ function build_searcher(dbdata,
 end
 
 
-__prepare_document(entry, config; flags=nothing, language=nothing) = begin
+entry2document(entry, config; flags=nothing, language=nothing) = begin
     flags === nothing && (flags=config.text_strip_flags | (config.stem_words ? stem_words : 0x0))
     language === nothing && (language=get(STR_TO_LANG, config.language, DEFAULT_LANGUAGE)())
     return prepare.(dbentry2text(entry, config.indexable_fields), flags; language=language)
 end
 
 
-__preallocate(::AbstractSparseArray, T, dims) = spzeros(T, dims...)
+Base.zeros(::AbstractSparseArray, T, dims) = spzeros(T, dims...)
 
-__preallocate(::AbstractArray, T, dims) = zeros(T, dims...)
+Base.zeros(::AbstractArray, T, dims) = zeros(T, dims...)
 
 
-function __embed_all_documents(embedder, config, documents, vectors_eltype)
-    embedded_documents = __preallocate(document2vec(embedder,
-                                                    rand(documents),
-                                                    config.oov_policy;
-                                                    ngram_complexity=config.ngram_complexity)[1],
-                                       vectors_eltype,
-                                       (dimensionality(embedder), length(documents)))
+function documents2mat(embedder,
+                       documents,
+                       oov_policy;
+                       vectors_eltype=DEFAULT_VECTORS_ELTYPE,
+                       ngram_complexity=DEFAULT_NGRAM_COMPLEXITY)
+    # embed random document
+    random_embedding = document2vec(embedder, rand(documents), oov_policy;
+                                    ngram_complexity=ngram_complexity)[1]
+    # pre-allocate
+    embedded_documents = zeros(random_embedding,
+                               vectors_eltype,
+                               (dimensionality(embedder), length(documents)))
+    # embed all
     for i in eachindex(documents)
-        embedded_documents[:,i] = document2vec(embedder,
-                                               documents[i],
-                                               config.oov_policy;
-                                               ngram_complexity=config.ngram_complexity)[1]
+        embedded_documents[:,i] = document2vec(embedder, documents[i], oov_policy;
+                                               ngram_complexity=ngram_complexity)[1]
     end
     return embedded_documents
 end
@@ -149,17 +157,13 @@ function __get_bktree(heuristic, crps)
 end
 
 
-
-
-function __get_search_index_type(config::SearchConfig)
-    # Get search index types
-    search_index = config.search_index
-    search_index == :naive && return NaiveIndex
-    search_index == :brutetree && return BruteTreeIndex
-    search_index == :kdtree && return KDTreeIndex
-    search_index == :hnsw && return HNSWIndex
-    search_index == :ivfadc && return IVFIndex
-end
+# Supported indexes name to type mapping
+const SUPPORTED_INDEXES = Dict(
+    :naive => NaiveIndex,
+    :brutetree => BruteTreeIndex,
+    :kdtree => KDTreeIndex,
+    :hnsw => HNSWIndex,
+    :ivfadc => IVFIndex)
 
 
 function __build_corpus(documents::Vector{Vector{String}},
