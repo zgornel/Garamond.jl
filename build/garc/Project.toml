@@ -1,0 +1,4 @@
+name = "garc"
+uuid = "24b91db2-76cd-4d2b-a5dc-3a2aa5018a08"
+authors = ["Corneliu Cofaru <cornel@oxoaresearch.com>"]
+version = "0.1.0"

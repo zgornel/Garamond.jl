@@ -1,12 +1,8 @@
-#!/usr/bin/env julia
-
-#########################################
-# Garamond script for server operations #
-#########################################
-module GaramondServer
+module gars  # The Garamond server
 
 using Pkg
-Pkg.activate(@__DIR__)
+project_root_path = "/" * joinpath(split(@__FILE__, "/")[1:end-4]...)
+Pkg.activate(project_root_path)
 using Garamond
 using Sockets
 using Logging
@@ -67,7 +63,17 @@ end
 ########################
 # Main module function #
 ########################
-Base.@ccallable function julia_main(ARGS::Vector{String})::Cint
+function julia_main()::Cint
+    try
+        real_main()
+    catch
+        Base.invokelatest(Base.display_error, Base.catch_stack())
+        return 1
+    end
+    return 0
+end
+
+function real_main()
     @info "~ GARAMOND ~ $(Garamond.printable_version())\n"
 
     # Parse command line arguments
@@ -133,6 +139,8 @@ end
 ################################
 # Start main Garamond function #
 ################################
-julia_main(ARGS)
+if abspath(PROGRAM_FILE) == @__FILE__
+    real_main()
+end
 
-end # GaramondServer
+end  # module
