@@ -36,3 +36,15 @@ Returns the number of points indexed in `index`.
 function length(index::AbstractIndex)
     throw(IndexOperationException("length", string(typeof(index))))
 end
+
+
+### Utility function for indexes
+"""
+    densify(array)
+
+Transforms sparse arrays into dense ones.
+"""
+densify(m::AbstractMatrix) = m
+densify(m::AbstractSparseMatrix{T,I}) where {T,I} = Matrix{T}(m)
+densify(v::AbstractVector) = v
+densify(v::AbstractSparseVector{T,I}) where {T,I} = Vector{T}(v)

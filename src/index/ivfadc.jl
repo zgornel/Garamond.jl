@@ -15,10 +15,7 @@ struct IVFIndex{U,I,Dc,Dr,T,Q} <: AbstractIndex
     index::IVFADCIndex{U,I,Dc,Dr,T,Q}
 end
 
-IVFIndex(data::AbstractMatrix; kwargs...) = IVFIndex(IVFADCIndex(data; kwargs...))
-
-IVFIndex(data::SparseMatrixCSC{T,I}; kwargs...) where {T<:AbstractFloat, I<:Integer} =
-    IVFIndex(IVFADCIndex(Matrix{T}(data); kwargs...))
+IVFIndex(data, args...; kwargs...) = IVFIndex(IVFADCIndex(densify(data); kwargs...))  # args are ignored
 
 
 # Nearest neighbor search method

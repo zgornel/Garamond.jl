@@ -6,7 +6,7 @@ struct NoopIndex{E} <: Garamond.AbstractIndex
     length::Int
 end
 
-NoopIndex(data::AbstractMatrix{E}) where {E<:AbstractFloat} = NoopIndex{E}(size(data,2))
+NoopIndex(data, args...; kwargs...) = NoopIndex{eltype(data)}(size(data,2))
 
 
 # Nearest neighbor search method

@@ -7,10 +7,7 @@ struct BruteTreeIndex{A,D} <: AbstractIndex
     tree::BruteTree{A,D}  # Array, Distance and Element types
 end
 
-BruteTreeIndex(data::AbstractMatrix) = BruteTreeIndex(BruteTree(data))
-
-BruteTreeIndex(data::SparseMatrixCSC{T,I}) where {T<:AbstractFloat, I<:Integer} =
-    BruteTreeIndex(Matrix{T}(data))
+BruteTreeIndex(data, args...; kwargs...) = BruteTreeIndex(BruteTree(densify(data), args...; kwargs...))
 
 
 # Nearest neighbor search method
