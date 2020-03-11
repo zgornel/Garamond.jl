@@ -14,6 +14,8 @@ struct DTVEmbedder{S,T} <: AbstractEmbedder{S,T}
     model::DTVModel{S,T}
 end
 
+DTVEmbedder(model; kwargs...) = DTVEmbedder(model)
+
 
 # Document to vector embedding function
 function document2vec(embedder::DTVEmbedder{S,T},

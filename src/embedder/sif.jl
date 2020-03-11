@@ -12,6 +12,12 @@ struct SIFEmbedder{S,T} <: WordVectorsEmbedder{S,T}
     alpha::Float64
 end
 
+SIFEmbedder(embeddings::EmbeddingsLibrary{S,T};
+            lexicon=OrderedDict{S, Int}(),
+            alpha=DEFAULT_SIF_ALPHA,
+            kwargs...) =
+    SIFEmbedder(embeddings, lexicon, alpha)
+
 
 # Dimensionality function
 function dimensionality(embedder::SIFEmbedder)
@@ -24,29 +30,28 @@ function sentences2vec(embedder::SIFEmbedder,
                        document_embedding::Vector{Matrix{T}};
                        embedded_words::Vector{Vector{S}}=[String[]],
                        kwargs...) where {S,T}
-    if isempty(document_embedding)
-        return zeros(T, dimensionality(embedder), 0)
-    else
-        return __smooth_inverse_frequency(document_embedding,
-                    embedder.lexicon, embedded_words, embedder.alpha,
-                    dimensionality(embedder))
-    end
+    isempty(document_embedding) && return zeros(T, dimensionality(embedder), 0)
+    sif(document_embedding,
+        embedder.lexicon,
+        embedded_words,
+        embedder.alpha,
+        dimensionality(embedder))
 end
 
 
 """
-    __smooth_inverse_frequency(document_embedding, lexicon, embedded_words, alpha=DEFAULT_SIF_ALPHA)
+    sif(document_embedding, lexicon, embedded_words, alpha, dim)
 
 Implementation of sentence embedding principled on subtracting the paragraph vector i.e.
 principal vector of a sentence from the sentence's word embeddings.
 """
 #TODO(Corneliu): Make the calculation of `alpha` automatic using some heuristic
-function __smooth_inverse_frequency(document_embedding::Vector{Matrix{T}},
-                                    lexicon::OrderedDict{String, Int},
-                                    embedded_words::Vector{Vector{S}},
-                                    alpha::Float64,
-                                    dim::Int
-                                   ) where {T<:AbstractFloat, S<:AbstractString}
+function sif(document_embedding::Vector{Matrix{T}},
+             lexicon::OrderedDict{String, Int},
+             embedded_words::Vector{Vector{S}},
+             alpha::Float64,
+             dim::Int
+            ) where {T<:AbstractFloat, S<:AbstractString}
     L = sum(values(lexicon))
     n = length(document_embedding)  # number of sentences in document
     X = zeros(T, dim, n)  # new document embedding

@@ -14,7 +14,8 @@ end
 
 function CPMeanEmbedder(embeddings::EmbeddingsLibrary{S,T};
                         powers::Vector{T}=T[-Inf, 0.0, 1.0, Inf],
-                        znorm::Bool=true
+                        znorm::Bool=true,
+                        kwargs...
                       ) where {T<:AbstractFloat, S<:AbstractString}
     return CPMeanEmbedder(embeddings, powers, znorm)
 end
