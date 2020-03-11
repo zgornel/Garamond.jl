@@ -15,7 +15,7 @@ end
 SIFEmbedder(embeddings::EmbeddingsLibrary{S,T};
             lexicon=OrderedDict{S, Int}(),
             alpha=DEFAULT_SIF_ALPHA,
-            kwargs...) =
+            kwargs...) where {S,T} =
     SIFEmbedder(embeddings, lexicon, alpha)
 
 
