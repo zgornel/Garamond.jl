@@ -4,8 +4,8 @@
 """
 struct SearchEnv{T}
     dbdata        #::Union{AbstractNDSparse, AbstractIndexedTable}
-    sampler
     id_key        #::Symbol
+    sampler
     searchers::Vector{<:Searcher{T}}     #::Vector{<:Searcher}
     config_path   #::String
 end
@@ -49,7 +49,7 @@ function build_search_env(env_config; cache_path=nothing)
                    for srcher_config in env_config.searcher_configs]
 
         # Build search environment
-        env = SearchEnv(dbdata, env_config.data_sampler, env_config.id_key, srchers, env_config.config_path)
+        env = SearchEnv(dbdata, env_config.id_key, env_config.data_sampler, srchers, env_config.config_path)
         @info "• Environment successfully built using config $(env_config.config_path)."
         return env
     catch e
