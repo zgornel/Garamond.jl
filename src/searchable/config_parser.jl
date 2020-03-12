@@ -37,11 +37,14 @@ mutable struct SearchConfig
     vectors_transform::Symbol       # what transform to apply to the vectors i.e. :lsa, :rp, :none
     vectors_dimension::Int          # desired dimensionality after transform (ignored for word2vec approaches)
     search_index::Symbol            # type of the search index i.e. :naive, :kdtree, :hnsw
+    search_index_args::Vector{Any}
+    search_index_kwargs::Dict{Symbol, Any}
     embeddings_path::Union{Nothing, String}  # path to the embeddings file
     embeddings_kind::Symbol         # Type of the embedding file for Word2Vec, GloVe i.e. :text, :binary
     doc2vec_method::Symbol          # How to arrive at a single embedding from multiple i.e. :boe, :sif etc.
     glove_vocabulary::Union{Nothing, String}  # Path to a GloVe-generated vocabulary file (only for binary embeddings)
     oov_policy::Symbol              # what to do with non-embeddable documents i.e. :none, :large_vector
+    embedder_kwargs::Dict{Symbol, Any}
 
     # other
     heuristic::Union{Nothing, Symbol} # search heuristic for suggesting mispelled words (nothing means no recommendations)
@@ -75,11 +78,14 @@ SearchConfig(;
           vectors_transform=DEFAULT_VECTORS_TRANSFORM,
           vectors_dimension=DEFAULT_VECTORS_DIMENSION,
           search_index=DEFAULT_SEARCH_INDEX,
+          search_index_args=[],
+          search_index_kwargs=Dict{Symbol,Any}(),
           embeddings_path=nothing,
           embeddings_kind=DEFAULT_EMBEDDINGS_KIND,
           doc2vec_method=DEFAULT_DOC2VEC_METHOD,
           glove_vocabulary=nothing,
           oov_policy=DEFAULT_OOV_POLICY,
+          embedder_kwargs=Dict{Symbol,Any}(),
           heuristic=DEFAULT_HEURISTIC,
           text_strip_flags=DEFAULT_TEXT_STRIP_FLAGS,
           query_strip_flags=DEFAULT_QUERY_STRIP_FLAGS,
@@ -96,8 +102,9 @@ SearchConfig(;
                  indexable_fields,
                  language, stem_words, ngram_complexity,
                  vectors, vectors_transform, vectors_dimension,
-                 search_index, embeddings_path, embeddings_kind, doc2vec_method,
-                 glove_vocabulary, oov_policy, heuristic,
+                 search_index, search_index_args, search_index_kwargs,
+                 embeddings_path, embeddings_kind, doc2vec_method,
+                 glove_vocabulary, oov_policy, embedder_kwargs, heuristic,
                  text_strip_flags, query_strip_flags,
                  bm25_kappa, bm25_beta, sif_alpha,
                  borep_dimension, borep_pooling_function,
@@ -195,11 +202,22 @@ function parse_configuration(filename::AbstractString)
             sconfig.vectors_transform = Symbol(get(dconfig, "vectors_transform", DEFAULT_VECTORS_TRANSFORM))
             sconfig.vectors_dimension = Int(get(dconfig, "vectors_dimension", DEFAULT_VECTORS_DIMENSION))
             sconfig.search_index = Symbol(get(dconfig, "search_index", DEFAULT_SEARCH_INDEX))
+            sconfig.search_index_args = get(dconfig, "search_index_args", [])
+            sconfig.search_index_kwargs = try
+                Dict(Symbol(k)=>v for (k,v) in get(dconfig, "search_index_kwargs", Dict{Symbol, Any}()))
+            catch
+                Dict{Symbol,Any}()
+            end
             sconfig.embeddings_path = postprocess_path(get(dconfig, "embeddings_path", nothing))
             sconfig.embeddings_kind = Symbol(get(dconfig, "embeddings_kind", DEFAULT_EMBEDDINGS_KIND))
             sconfig.doc2vec_method = Symbol(get(dconfig, "doc2vec_method", DEFAULT_DOC2VEC_METHOD))
             sconfig.glove_vocabulary = get(dconfig, "glove_vocabulary", nothing)
             sconfig.oov_policy = Symbol(get(dconfig, "oov_policy", DEFAULT_OOV_POLICY))
+            sconfig.embedder_kwargs = try
+                Dict(Symbol(k)=>v for (k,v) in get(dconfig, "embedder_kwargs", Dict{Symbol, Any}()))
+            catch
+                Dict{Symbol,Any}()
+            end
             if haskey(dconfig, "heuristic")
                 sconfig.heuristic = Symbol(dconfig["heuristic"])
             else
@@ -241,6 +259,16 @@ function parse_configuration(filename::AbstractString)
             if !(sconfig.search_index in [:naive, :brutetree, :kdtree, :hnsw, :ivfadc, :noop])
                 @warn "$(sconfig.id) Defaulting search_index=$DEFAULT_SEARCH_INDEX."
                 sconfig.search_index = DEFAULT_SEARCH_INDEX
+            end
+            # search_index_args
+            if !(typeof(sconfig.search_index_args) <: AbstractVector)
+                @warn "$(sconfig.id) Defaulting search_index_args=[]."
+                sconfig.search_index_args=[]
+            end
+            # search_index_kwargs
+            if !(typeof(sconfig.search_index_kwargs) <: Dict{Symbol})
+                @warn "$(sconfig.id) Defaulting search_index_kwargs=Dict{Symbol,Any}()."
+                sconfig.search_index_kwargs=Dict{Symbol,Any}()
             end
             # Classic search specific options
             if classic_search_approach
@@ -308,6 +336,11 @@ function parse_configuration(filename::AbstractString)
             if !(sconfig.oov_policy in [:none, :large_vector])
                 @warn "$(sconfig.id) Defaulting oov_policy=$DEFAULT_OOV_POLICY."
                 sconfig.oov_policy = DEFAULT_OOV_POLICY
+            end
+            # embedder_kwargs
+            if !(typeof(sconfig.embedder_kwargs) <: Dict{Symbol})
+                @warn "$(sconfig.id) Defaulting embedder_kwargs=Dict{Symbol,Any}()."
+                sconfig.embedder_kwargs=Dict{Symbol,Any}()
             end
             # heuristic
             if !(typeof(sconfig.heuristic) <: Nothing) && !(sconfig.heuristic in keys(HEURISTIC_TO_DISTANCE))
