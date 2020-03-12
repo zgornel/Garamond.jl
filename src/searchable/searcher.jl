@@ -178,13 +178,13 @@ function build_corpus(documents::Vector{Vector{String}},
     language_type = typeof(language)
     @assert language_type in SUPPORTED_LANGUAGES "Language $language_type is not supported"
 
-    documents = Vector{StringDocument{String}}()
+    _documents = Vector{StringDocument{String}}()
     for sentences in documents
         doc = StringDocument(join(sentences, " "))
         StringAnalysis.language!(doc, language)
-        push!(documents, doc)
+        push!(_documents, doc)
     end
-    crps = Corpus(documents)
+    crps = Corpus(_documents)
 
     # Update lexicon, inverse index
     update_lexicon!(crps, ngram_complexity)
@@ -206,33 +206,25 @@ end
 
 function build_dtv_embedder(crps, config; vectors_eltype=DEFAULT_VECTORS_ELTYPE)
     # Initialize dtm
-    dtm = DocumentTermMatrix{vectors_eltype}(
-            crps, ngram_complexity=config.ngram_complexity)
-    local model
-    if config.vectors_transform == :none
-        model = RPModel(dtm,
-                        k=0,
-                        stats=config.vectors,
-                        ngram_complexity=config.ngram_complexity,
-                        κ=config.bm25_kappa,
-                        β=config.bm25_beta)
-    elseif config.vectors_transform == :rp
-        model = RPModel(dtm,
-                        k=config.vectors_dimension,
-                        stats=config.vectors,
-                        ngram_complexity=config.ngram_complexity,
-                        κ=config.bm25_kappa,
-                        β=config.bm25_beta)
-    elseif config.vectors_transform == :lsa
-        model = LSAModel(dtm,
-                         k=config.vectors_dimension,
-                         ngram_complexity=config.ngram_complexity,
-                         stats=config.vectors,
-                         κ=config.bm25_kappa,
-                         β=config.bm25_beta)
-    end
-    return DTVEmbedder(model)
+    dtm = DocumentTermMatrix{vectors_eltype}(crps, ngram_complexity=config.ngram_complexity)
+    mtype = RPModel
+    k = 0
+    config.vectors_transform === :none && true  # do nothing, mtype and k are initialized
+    config.vectors_transform === :rp && (k=config.vectors_dimension)  # modify k
+    config.vectors_transform === :lsa && (mtype=LSAModel, k=config.vectors_dimension)
+    return DTVEmbedder(mtype,
+                       dtm;
+                       # kwargs defaults from Garamond (override StringAnalysis defaults)
+                       κ=DEFAULT_BM25_KAPPA,
+                       β=DEFAULT_BM25_BETA,
+                       # kwargs from config (overwritten by one below)
+                       config.embedder_kwargs...,
+                       # specific kwargs from config (have highest priority)
+                       k=k,
+                       stats=config.vectors,
+                       ngram_complexity=config.ngram_complexity)
 end
+
 
 function build_wv_embedder(crps, config; vectors_eltype=DEFAULT_VECTORS_ELTYPE)
     # Read word embeddings
@@ -262,16 +254,23 @@ function build_wv_embedder(crps, config; vectors_eltype=DEFAULT_VECTORS_ELTYPE)
 
     # Construct embedder based on document2vec method
     config.doc2vec_method === :boe &&
-        return BOEEmbedder(embeddings; config.embedder_kwargs...)
+        return BOEEmbedder(embeddings;
+                           config.embedder_kwargs...)
     config.doc2vec_method === :sif &&
-        return SIFEmbedder(embeddings; config.embedder_kwargs...,
-                           lexicon=create_lexicon(crps, 1), alpha=config.sif_alpha)
+        return SIFEmbedder(embeddings;
+                           config.embedder_kwargs...,
+                           lexicon=create_lexicon(crps, 1),
+                           alpha=config.sif_alpha)
     config.doc2vec_method === :borep &&
-        return BOREPEmbedder(embeddings; config.embedder_kwargs...,
+        return BOREPEmbedder(embeddings;
+                             config.embedder_kwargs...,
                              dim=config.borep_dimension,
                              pooling_function=config.borep_pooling_function)
     config.doc2vec_method === :cpmean &&
-        return CPMeanEmbedder(embeddings; config.embedder_kwargs...)
+        return CPMeanEmbedder(embeddings;
+                              config.embedder_kwargs...)
     config.doc2vec_method === :disc &&
-        return DisCEmbedder(embeddings; config.embedder_kwargs..., n=config.disc_ngram)
+        return DisCEmbedder(embeddings;
+                            config.embedder_kwargs...,
+                            n=config.disc_ngram)
 end

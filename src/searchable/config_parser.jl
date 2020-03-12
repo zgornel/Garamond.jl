@@ -54,8 +54,6 @@ mutable struct SearchConfig
     query_strip_flags::UInt32       # How to strip queries before searching
 
     # parameters for embedding, scoring
-    bm25_kappa::Int                 # κ parameter for BM25 (employed in BM25 only)
-    bm25_beta::Float64              # β parameter for BM25 (employed in BM25 only)
     sif_alpha::Float64              # smooth inverse frequency α parameter (for 'sif' doc2vec method only)
     borep_dimension::Int            # output dimension for BOREP embedder
     borep_pooling_function::Symbol  # pooling function for the BOREP embedder
@@ -89,8 +87,6 @@ SearchConfig(;
           heuristic=DEFAULT_HEURISTIC,
           text_strip_flags=DEFAULT_TEXT_STRIP_FLAGS,
           query_strip_flags=DEFAULT_QUERY_STRIP_FLAGS,
-          bm25_kappa=DEFAULT_BM25_KAPPA,
-          bm25_beta=DEFAULT_BM25_BETA,
           sif_alpha=DEFAULT_SIF_ALPHA,
           borep_dimension=DEFAULT_BOREP_DIMENSION,
           borep_pooling_function=DEFAULT_BOREP_POOLING_FUNCTION,
@@ -106,8 +102,7 @@ SearchConfig(;
                  embeddings_path, embeddings_kind, doc2vec_method,
                  glove_vocabulary, oov_policy, embedder_kwargs, heuristic,
                  text_strip_flags, query_strip_flags,
-                 bm25_kappa, bm25_beta, sif_alpha,
-                 borep_dimension, borep_pooling_function,
+                 sif_alpha, borep_dimension, borep_pooling_function,
                  disc_ngram, score_alpha, score_weight)
 
 
@@ -225,8 +220,6 @@ function parse_configuration(filename::AbstractString)
             end
             sconfig.text_strip_flags = UInt32(get(dconfig, "text_strip_flags", DEFAULT_TEXT_STRIP_FLAGS))
             sconfig.query_strip_flags = UInt32(get(dconfig, "query_strip_flags", DEFAULT_QUERY_STRIP_FLAGS))
-            sconfig.bm25_kappa = Int(get(dconfig, "bm25_kappa", DEFAULT_BM25_KAPPA))
-            sconfig.bm25_beta = Float64(get(dconfig, "bm25_beta", DEFAULT_BM25_BETA))
             sconfig.sif_alpha = Float64(get(dconfig, "sif_alpha", DEFAULT_SIF_ALPHA))
             sconfig.borep_dimension = Int(get(dconfig, "borep_dimension", DEFAULT_BOREP_DIMENSION))
             sconfig.borep_pooling_function = Symbol(get(dconfig, "borep_pooling_function", DEFAULT_BOREP_POOLING_FUNCTION))
