@@ -15,10 +15,7 @@ struct IVFIndex{U,I,Dc,Dr,T,Q} <: AbstractIndex
     index::IVFADCIndex{U,I,Dc,Dr,T,Q}
 end
 
-IVFIndex(data::AbstractMatrix; kwargs...) = IVFIndex(IVFADCIndex(data; kwargs...))
-
-IVFIndex(data::SparseMatrixCSC{T,I}; kwargs...) where {T<:AbstractFloat, I<:Integer} =
-    IVFIndex(IVFADCIndex(Matrix{T}(data); kwargs...))
+IVFIndex(data, args...; kwargs...) = IVFIndex(IVFADCIndex(densify(data); kwargs...))  # args are ignored
 
 
 # Nearest neighbor search method
@@ -44,3 +41,18 @@ end
 
 # Length method
 length(index::IVFIndex) = length(index.index)
+
+
+# push!, pushfirst!, pop!, popfirst!, delete_from_index!
+Base.push!(index::IVFIndex, point) = push!(index.index, densify(point))
+
+Base.pushfirst!(index::IVFIndex, point) = pushfirst!(index.index, densify(point))
+
+Base.pop!(index::IVFIndex) = pop!(index.index)
+
+Base.popfirst!(index::IVFIndex) = popfirst!(index.index)
+
+delete_from_index!(index::IVFIndex, pos) = begin
+    IVFADC.delete_from_index!(index.index, pos)
+    nothing
+end

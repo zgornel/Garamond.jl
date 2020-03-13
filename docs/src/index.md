@@ -27,11 +27,13 @@ downloads the `master` branch of the repository and adds `Garamond` to the curre
 
 # Features at a glance
 
-- In-memory analytical data-store based on [JuliaDB](https://juliadb.org)
+- In-memory analytical db based on [JuliaDB](https://juliadb.org)
 - Millon-scale indexing using [hnsw](https://arxiv.org/abs/1603.09320)
+- Billion-scale search through [IVFADC](https://github.com/JuliaNeighbors/IVFADC.jl)
+- Run-time realtime indexing
+- Run-time batch re-indexing
 - Complex query search patterns supported
 - Pluggable support for custom parsers, loaders, recommenders and rankers
-- Run-time batch re-indexing
 - HTTP(REST)/Web-socket and UNIX socket connectivity
 - Wordvectors support: [Word2Vec](https://en.wikipedia.org/wiki/Word2vec), [ConceptnetNumberbatch](https://github.com/commonsense/conceptnet-numberbatch), [GloVe](https://nlp.stanford.edu/projects/glove/)
 - Compressed vector support for low-memory footprint using [array quantization](https://github.com/zgornel/QuantizedArrays.jl)
@@ -43,9 +45,7 @@ downloads the `master` branch of the repository and adds `Garamond` to the curre
 - Portable and statically compilable to many architectures
 
 ## Coming Soon
-- Billion-scale search through [IVFADC](https://github.com/JuliaNeighbors/IVFADC.jl)
-- Run-time indexing
-- Architectural improvements i.e. pool of embedders
+- Pool of embedders - searchers can re-use embedders, each searcher can have different input and data embedders
 
 ## Longer term plans
 - Image/Video/Audio i.e. generic search

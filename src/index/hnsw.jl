@@ -14,15 +14,14 @@ struct HNSWIndex{I,E,A,D} <: AbstractIndex
     tree::HierarchicalNSW{I,E,A,D}
 end
 
-HNSWIndex(data::AbstractMatrix{T}) where T<:AbstractFloat = begin
-    _data = __build_hnsw_data(data)
-    hnsw = HierarchicalNSW(_data; efConstruction=100, M=16, ef=50)
-    add_to_graph!(hnsw)
-    return HNSWIndex(hnsw)
-end
-
-__build_hnsw_data(data::AbstractMatrix) = [Vector(data[:,i]) for i in 1:size(data,2)]
-__build_hnsw_data(data::Matrix) = [data[:,i] for i in 1:size(data,2)]
+HNSWIndex(data, args...; kwargs...) =
+    HNSWIndex(
+        add_to_graph!(
+            HierarchicalNSW(
+                [densify(collect(c)) for c in eachcol(data)];
+                kwargs...)
+           )
+       )  # args are ignored
 
 
 # Nearest neighbor search method

@@ -8,10 +8,7 @@ struct KDTreeIndex{A,D} <: AbstractIndex
     tree::KDTree{A,D}
 end
 
-KDTreeIndex(data::AbstractMatrix) = KDTreeIndex(KDTree(data))
-
-KDTreeIndex(data::SparseMatrixCSC{T,I}) where {T<:AbstractFloat, I<:Integer} =
-    KDTreeIndex(Matrix{T}(data))
+KDTreeIndex(data, args...; kwargs...) = KDTreeIndex(KDTree(densify(data), args...; kwargs...))
 
 
 # Nearest neighbor search method

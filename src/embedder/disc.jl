@@ -13,7 +13,8 @@ struct DisCEmbedder{S,T} <: WordVectorsEmbedder{S,T}
 end
 
 function DisCEmbedder(embeddings::EmbeddingsLibrary{S,T};
-                      n::Int=DEFAULT_DISC_NGRAM
+                      n::Int=DEFAULT_DISC_NGRAM,
+                      kwargs...
                      ) where {T<:AbstractFloat, S<:AbstractString}
     return DisCEmbedder(embeddings, n)
 end

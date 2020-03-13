@@ -49,7 +49,7 @@ function env_operator(env, channels)
                         new_searchers[i] = env.searchers[i]
                     end
                 end
-                _env = SearchEnv(_dbdata, env_config.id_key, new_searchers, env_config.config_path)
+                _env = SearchEnv(_dbdata, env_config.id_key, env.sampler, new_searchers, env_config.config_path)
                 @info "• Updated $cnt searcher(s) in the environment."
             catch
                 @warn "Could not update environment (searchers=$cmd_argument)."

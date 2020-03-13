@@ -16,6 +16,7 @@ function BOREPEmbedder(embeddings::EmbeddingsLibrary{S,T};
                        dim::Int=DEFAULT_BOREP_DIMENSION,
                        pooling_function::Symbol=DEFAULT_BOREP_POOLING_FUNCTION,
                        initialization::Symbol=:heuristic,
+                       kwargs...
                       ) where {T<:AbstractFloat, S<:AbstractString}
     # Check initialization option and generate random matrix
     d = size(embeddings)[1]  # number of vector components

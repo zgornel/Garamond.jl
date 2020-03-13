@@ -1,16 +1,15 @@
 # Exceptions
 struct IndexOperationException <: Exception
     op::String
-    type::String
+    itype::String
 end
 
 Base.showerror(io::IO, e::IndexOperationException) =
-    print(io, "Failed call `$(e.op)` on `$(e.type)` index.")
+    print(io, "Failed call `$(e.op)` on `$(e.itype)` index.")
 
 
 # Abstract types
 abstract type AbstractIndex end
-
 
 """
     knn_search(index, point, k, keep)
@@ -39,23 +38,13 @@ function length(index::AbstractIndex)
 end
 
 
-# pop!, popfirst!, push!, pushfirst!
-function pop!(index::AbstractIndex)
-    throw(IndexOperationException("pop!", string(typeof(index))))
-end
+### Utility function for indexes
+"""
+    densify(array)
 
-function popfirst!(index::AbstractIndex)
-    throw(IndexOperationException("popfirst!", string(typeof(index))))
-end
-
-function push!(index::AbstractIndex)
-    throw(IndexOperationException("push!", string(typeof(index))))
-end
-
-function pushfirst!(index::AbstractIndex)
-    throw(IndexOperationException("pushfirst!", string(typeof(index))))
-end
-
-function delete_from_index!(index::AbstractIndex, points)
-    throw(IndexOperationException("delete_from_index!", string(typeof(index))))
-end
+Transforms sparse arrays into dense ones.
+"""
+densify(m::AbstractMatrix) = m
+densify(m::AbstractSparseMatrix{T,I}) where {T,I} = Matrix{T}(m)
+densify(v::AbstractVector) = v
+densify(v::AbstractSparseVector{T,I}) where {T,I} = Vector{T}(v)

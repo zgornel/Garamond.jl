@@ -7,9 +7,8 @@ struct NaiveIndex{E, A<:Vector{<:AbstractVector{E}}} <: Garamond.AbstractIndex
     data::A
 end
 
-NaiveIndex(data::AbstractMatrix{E}) where E<:AbstractFloat = begin
-    NaiveIndex([data[:,i] for i in 1:size(data,2)])
-end
+NaiveIndex(data, args...; kwargs...) =
+    NaiveIndex([densify(collect(c)) for c in eachcol(data)])  # args, kwargs are ignored
 
 
 # Nearest neighbor search method
@@ -19,14 +18,10 @@ function knn_search(index::NaiveIndex{E},
                     keep::Vector{Int}=collect(1:length(index));
                     kwargs...
                    ) where {E<:AbstractFloat}
-    # Turn sparse vectors into dense ones
-    __densify(v::AbstractVector) = v
-    __densify(v::AbstractSparseVector) = Vector(v)
-
     n = length(keep)
     _k = min(n, k)
     scores = zeros(E, n)
-    _point = __densify(point)'
+    _point = densify(point)'
     # Cosine similarity
     @inbounds for i in eachindex(keep)
         scores[i] = _point * index.data[i]
@@ -39,3 +34,18 @@ end
 
 # Length method
 length(index::NaiveIndex) = length(index.data)
+
+
+# push!, pushfirst!, pop!, popfirst!, delete_from_index!
+Base.push!(index::NaiveIndex, point) = push!(index.data, point)
+
+Base.pushfirst!(index::NaiveIndex, point) = pushfirst!(index.data, point)
+
+Base.pop!(index::NaiveIndex) = pop!(index.data)
+
+Base.popfirst!(index::NaiveIndex) = popfirst!(index.data)
+
+delete_from_index!(index::NaiveIndex, pos) = begin
+    deleteat!(index.data, pos)
+    nothing
+end

@@ -10,7 +10,7 @@ const DEFAULT_STEM_WORDS = false  # whether to stem words or not
 const DEFAULT_VECTORS = :bm25  # can be :count, :tf, :tfidf, :bm25, :word2vec, :glove or :conceptnet
 const DEFAULT_VECTORS_TRANSFORM = :none  # can be :none, :lsa or :rp
 const DEFAULT_VECTORS_DIMENSION = 1  # can be any positive Int
-const DEFAULT_VECTORS_ELTYPE = :Float32
+const DEFAULT_VECTORS_ELTYPE = Float32
 const DEFAULT_SEARCH_INDEX = :hnsw  # can be :naive, :brutetree, :kdtree or :hnsw
 const DEFAULT_EMBEDDINGS_KIND = :binary  # can be :binary or :text
 const DEFAULT_DOC2VEC_METHOD = :boe  # can be :boe, :sif, :borep or :cpmean
@@ -47,6 +47,7 @@ const DEFAULT_QUERY_GENERATION_FIELDS=Symbol[]
 # SearchEnv-related options
 const DEFAULT_DB_ID_KEY = :garamond_linear_id
 const DEFAULT_DATA_LOADER_NAME = :noop_loader
+const DEFAULT_DATA_SAMPLER_NAME = :noop_sampler
 const DEFAULT_RANKER_NAME = :noop_ranker
 const DEFAULT_RECOMMENDER_NAME = :noop_recommender
 const DEFAULT_INPUT_PARSER_NAME = :noop_input_parser
@@ -63,7 +64,7 @@ const DEFAULT_RESPONSE_PAGE = 1  # which response page i.e. batch of response_si
 const DEFAULT_SORT_FIELDS = Symbol[]
 const DEFAULT_SORT_REVERSE = false
 const DEFAULT_MAX_SUGGESTIONS = 0  # maximum number of overall suggestions
-const DEFAULT_CUSTOM_WEIGHTS = Dict{Symbol, Float64}()  # default custom searcher weights
+const DEFAULT_CUSTOM_WEIGHTS = Dict{Symbol,Any}()  # default custom searcher weights
 const DEFAULT_PDFTOTEXT_PROGRAM = "/usr/bin/pdftotext"  # program to convert PDFs to text
 const DEFAULT_MAX_EDIT_DISTANCE = 2  # maximum edit distance for which to return suggestions
 

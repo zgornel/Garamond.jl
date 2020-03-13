@@ -2,13 +2,18 @@
     Search environment object. It contains all the data, searchers
     and additional structures needed by the engine to function.
 """
-mutable struct SearchEnv
-    #TODO(Corneliu) Make search environment parametric with respect to
-    #               the type of Float being used
+struct SearchEnv{T}
     dbdata        #::Union{AbstractNDSparse, AbstractIndexedTable}
     id_key        #::Symbol
-    searchers     #::Vector{<:Searcher}
+    sampler
+    searchers::Vector{<:Searcher{T}}     #::Vector{<:Searcher}
     config_path   #::String
+end
+
+
+# Exceptions
+struct SearchEnvConsistencyException <: Exception
+    msg::String
 end
 
 
@@ -37,11 +42,14 @@ function build_search_env(env_config; cache_path=nothing)
         db_check_id_key(dbdata, env_config.id_key)
 
         # Build searchers
-        srchers = [build_searcher(dbdata, srcher_config; id_key=env_config.id_key)
+        srchers = [build_searcher(dbdata,
+                                  srcher_config;
+                                  id_key=env_config.id_key,
+                                  vectors_eltype=env_config.vectors_eltype)
                    for srcher_config in env_config.searcher_configs]
 
         # Build search environment
-        env = SearchEnv(dbdata, env_config.id_key, srchers, env_config.config_path)
+        env = SearchEnv(dbdata, env_config.id_key, env_config.data_sampler, srchers, env_config.config_path)
         @info "• Environment successfully built using config $(env_config.config_path)."
         return env
     catch e
@@ -67,3 +75,108 @@ build_search_env(config_path::AbstractString; cache_path=nothing) =
 Strips searchers from `env`.
 """
 build_data_env(env::SearchEnv) = (dbdata=env.dbdata, id_key=env.id_key, config_path=env.config_path)
+
+
+"""
+    push!(env::SearchEnv, rawdata)
+
+Pushes to a search environment i.e. to the db and all indexes.
+"""
+Base.push!(env::SearchEnv, rawdata) = pushinner!(env, rawdata, :last)
+
+
+"""
+    pushfirst!(env::SearchEnv, rawdata)
+
+Pushes to the first position to a search environment i.e. to the db and all indexes.
+"""
+Base.pushfirst!(env::SearchEnv, rawdata) = pushinner!(env, rawdata, :first)
+
+
+function safe_indexes_method_assert(method, env::SearchEnv{T}, args...) where {T}
+    if !all(hasmethod(method, Tuple{typeof(srcher.index), args...}) for srcher in env.searchers)
+        @warn "Environment modification failed: not all indexes suport method $method."
+        return false
+    end
+    return true
+end
+
+
+# Inner method used for pushing
+function pushinner!(env::SearchEnv{T}, rawdata, position::Symbol) where {T}
+    index_operation = ifelse(position === :first, pushfirst!, push!)
+    srcher_operation = ifelse(position === :first, pushfirst!, push!)
+    db_operation = ifelse(position === :first, db_pushfirst!, db_push!)
+
+    !safe_indexes_method_assert(index_operation, env, AbstractVector{T}) &&
+        return nothing
+
+    entry = env.sampler(rawdata)
+    try
+        map(env.searchers) do srcher
+            srcher_operation(srcher, entry)
+        end
+    catch e
+        throw(SearchEnvConsistencyException("$e"))
+    end
+    db_operation(env.dbdata, entry; id_key=env.id_key)
+    return nothing
+end
+
+
+"""
+    pop!(env::SearchEnv)
+
+Pops last point from a search environment. Returns last db row and associated indexed vector.
+"""
+Base.pop!(env::SearchEnv) = popinner!(env, :last)
+
+
+"""
+    popfirst!(env::SearchEnv)
+
+Pops first point from a search environment. Returns first db row and associated indexed vector.
+"""
+Base.popfirst!(env::SearchEnv) = popinner!(env, :first)
+
+
+# Inner method used for pushing
+function popinner!(env::SearchEnv{T}, position::Symbol) where {T}
+    index_operation = ifelse(position === :first, popfirst!, pop!)
+    srcher_operation = ifelse(position === :first, popfirst!, pop!)
+    db_operation = ifelse(position === :first, db_popfirst!, db_pop!)
+
+    !safe_indexes_method_assert(index_operation, env) &&
+        return nothing
+
+    popped = try
+        map(env.searchers) do srcher
+            srcher_operation(srcher)
+        end
+    catch e
+        throw(SearchEnvConsistencyException("$e"))
+    end
+    return db_operation(env.dbdata), popped
+end
+
+
+"""
+    deleteat!(env::SearchEnv, pos)
+
+Deletes from a search environment the db and index elements with linear indices found in `pos`.
+"""
+Base.deleteat!(env::SearchEnv, pos) = begin
+    index_operation = delete_from_index!
+    !safe_indexes_method_assert(index_operation, env, AbstractVector{Int}) &&
+        return nothing
+
+    try
+        map(env.searchers) do srcher
+            deleteat!(srcher, pos)
+        end
+    catch e
+        throw(SearchEnvConsistencyException("$e"))
+    end
+    db_deleteat!(env.dbdata, pos)
+    return nothing
+end

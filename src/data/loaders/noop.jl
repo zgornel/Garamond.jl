@@ -1,4 +1,4 @@
 function noop_loader(args...; kwargs...)
-    @info "Noop data loader: exiting gracefully (nothing to do)..."
+    @warn "Noop data loader, exiting gracefully..."
     exit()
 end

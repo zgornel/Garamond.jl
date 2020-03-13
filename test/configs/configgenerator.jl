@@ -15,7 +15,9 @@ function generate_sample_config_1()
 	{
         "data_loader_name": "juliadb_loader",
         "data_loader_arguments": ["$(generate_data_path())"],
+        "data_sampler_name": "identity_sampler",
         "id_key": "id",
+        "vectors_eltype": "Float32",
         "searchers": [
             {
                 "id": "searcher_1",
@@ -28,7 +30,6 @@ function generate_sample_config_1()
                 "vectors": "bm25",
                 "vectors_transform": "rp",
                 "vectors_dimension": 50,
-                "vectors_eltype": "Float32",
                 "search_index": "naive",
                 "oov_policy" : "large_vector",
                 "score_alpha": 0.4,
@@ -44,7 +45,9 @@ function generate_sample_config_2()
     {
         "data_loader_name": "juliadb_loader",
         "data_loader_arguments": ["$(generate_data_path())"],
+        "data_sampler_name": "identity_sampler",
         "id_key": "id",
+        "vectors_eltype": "Float32",
         "searchers": [
             {
                 "id": "searcher_1",
@@ -57,7 +60,6 @@ function generate_sample_config_2()
                 "vectors": "bm25",
                 "vectors_transform": "rp",
                 "vectors_dimension": 50,
-                "vectors_eltype": "Float32",
                 "search_index": "naive",
                 "oov_policy" : "large_vector",
                 "score_alpha": 0.4,
@@ -73,11 +75,13 @@ function generate_sample_config_2()
                 "language": "english",
                 "vectors": "word2vec",
                 "vectors_transform": "none",
-                "vectors_eltype": "Float32",
-                "search_index": "naive",
+                "search_index": "ivfadc",
+                "search_index_arguments": [],
+                "search_index_kwarguments": {"kc":4, "m":4},
                 "embeddings_path": "$(generate_embeddings_path())",
                 "embeddings_kind": "binary",
                 "doc2vec_method": "boe",
+                "embedder_kwarguments": {},
                 "oov_policy" : "large_vector",
                 "score_alpha": 0.4,
                 "score_weight": 0.8

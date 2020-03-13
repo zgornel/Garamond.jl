@@ -5,6 +5,8 @@ struct BOEEmbedder{S,T} <: WordVectorsEmbedder{S,T}
     embeddings::EmbeddingsLibrary{S,T}
 end
 
+BOEEmbedder(embeddings; kwargs...) = BOEEmbedder(embeddings)
+
 
 # Dimensionality function
 function dimensionality(embedder::BOEEmbedder)

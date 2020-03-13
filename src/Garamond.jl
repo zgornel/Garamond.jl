@@ -54,7 +54,6 @@ module Garamond
     using JuliaDB
 
     import Base: size, length, show, keys, values,
-                 push!, pop!, pushfirst!, popfirst!,
                  delete!, getindex, names, convert, lowercase,
                  occursin, isempty, parse, sort
     import StringAnalysis: id
@@ -74,12 +73,15 @@ module Garamond
         AbstractEmbedder,
 
         AbstractIndex,
-        NaiveIndex, BruteTreeIndex,
+        NaiveIndex,
+        BruteTreeIndex,
         KDTreeIndex,
-        HNSWIndex, IVFIndex,
+        HNSWIndex,
+        IVFIndex,
+        NoopIndex,
 
+        SearchEnv,
         Searcher,
-        SearchConfig,
         SearchResult,
 
         id,
@@ -100,20 +102,22 @@ module Garamond
     =#
     function __init__()
         CUSTOM_LOADERS_SUBDIR = "data/loaders/custom"
+        CUSTOM_SAMPLERS_SUBDIR = "data/samplers/custom"
         CUSTOM_RANKERS_SUBDIR = "search/rankers/custom"
         CUSTOM_RECOMMENDERS_SUBDIR = "search/recommenders/custom"
         CUSTOM_INPUT_SUBDIR = "input/custom"
 
         __include_subdirectory(CUSTOM_LOADERS_SUBDIR, printer="Loaders (custom)")
+        __include_subdirectory(CUSTOM_SAMPLERS_SUBDIR, printer="Samplers (custom)")
         __include_subdirectory(CUSTOM_RANKERS_SUBDIR, printer="Rankers (custom)")
         __include_subdirectory(CUSTOM_RECOMMENDERS_SUBDIR, printer="Recommenders (custom)")
-        __include_subdirectory(CUSTOM_INPUT_SUBDIR, printer="Input processors (custom)")
+        __include_subdirectory(CUSTOM_INPUT_SUBDIR, printer="Parsers (custom)")
     end
 
     function __include_subdirectory(subpath; printer="Including")
         fullpath = joinpath(@__DIR__, subpath)
         if isdir(fullpath)
-            included_files = []
+            included_files = String[]
             for file in readdir(fullpath)
                 local filepath
                 try
@@ -138,6 +142,9 @@ module Garamond
     include("data/loaders/noop.jl")
     include("data/loaders/juliadb.jl")
 
+    include("data/samplers/noop.jl")
+    include("data/samplers/identity.jl")
+
     include("config/defaults.jl")
     include("config/engine.jl")
 
@@ -156,6 +163,7 @@ module Garamond
     include("index/kdtree.jl")
     include("index/hnsw.jl")
     include("index/ivfadc.jl")
+    include("index/noop.jl")
 
     include("searchable/config_parser.jl")
     include("searchable/searcher.jl")
