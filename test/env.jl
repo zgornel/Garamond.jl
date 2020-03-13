@@ -16,16 +16,23 @@ make_entry(;id=1) = (id=id,
                      StringField="a", StringField2="b",
                      RandFloat=0.0, RandString="c")
 
-
 @testset "Environment: push!/pop! primitives" begin
+    nt_change_key(nt, key, val) = begin
+        props = propertynames(nt)
+        idxkey = findall(isequal(key), props)[1]  # it is certain, always one
+        vals = [v for v in nt];
+        vals[idxkey] = val
+        return NamedTuple{props, Tuple{(typeof(v) for v in vals)...}}(Tuple(vals))
+    end
+
     cfg = mktemp() do path, io
         write(io, generate_sample_config_2())
         flush(io)
         parse_configuration(path)
     end
     for index_type in [:naive, :brutetree, :kdtree, :hnsw, :ivfadc]
-        for sc in cfg.searcher_configs
-            sc.search_index = index_type
+        for i in eachindex(cfg.searcher_configs)
+            cfg.searcher_configs[i] = nt_change_key(cfg.searcher_configs[i], :search_index, index_type)
         end
         try
             env = build_search_env(cfg)

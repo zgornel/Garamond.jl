@@ -8,9 +8,58 @@ const CONFIGS = [:generate_sample_config_1,
 		   end
     @test cfg isa NamedTuple
 
-    ALL_PROPS = (:data_loader, :data_sampler, :id_key, :vectors_eltype, :searcher_configs, :config_path)
-    for p in propertynames(cfg)
-        @test p in ALL_PROPS
+    function test_nt_props(nt, validator)
+        propnames = propertynames(cfg)
+        @assert isempty(symdiff(keys(validator), propnames))
+        for (pname, ptype) in validator
+            @assert pname in propnames
+            @assert getproperty(nt, pname) isa ptype
+        end
+        true
     end
 
+    ENVCONFIG_PROPS = Dict(:data_loader => Function,
+                         :data_sampler => Function,
+                         :id_key => Symbol,
+                         :vectors_eltype => Type,
+                         :searcher_configs => Vector{NamedTuple},
+                         :config_path => String)
+    @test test_nt_props(cfg, ENVCONFIG_PROPS)
+
+    SEARCHERCOFNIG_PROPS = Dict(:id => Garamond.StringId,
+                                :id_aggregation => Garamond.StringId,
+                                :description => Symbol,
+                                :enabled => Bool,
+                                :indexable_fields => Vector{Symbol},
+                                :language => String,
+                                :stem_words => Bool,
+                                :ngram_complexity => Int,
+                                :vectors => Symbol,
+                                :vectors_transform => Symbol,
+                                :vectors_dimension => Int,
+                                :search_index => Symbolm
+                                :search_index_arguments => Vector{Any},
+                                :search_index_kwarguments => Dict{Symbol, Any},
+                                :embeddings_path => String,
+                                :embeddings_kind => Symbol,
+                                :doc2vec_method => Symbol,
+                                :glove_vocabulary => Union{Nothing, String},
+                                :oov_policy => Symbol,
+                                :embedder_kwarguments => Dict{Symbol, Any},
+                                :heuristic => Union{Nothing, Symbol},
+                                :text_strip_flags => UInt32,
+                                :query_strip_flags => UInt32,,
+                                :sif_alpha => cfg.vectors_eltype,
+                                :borep_dimension => Int,
+                                :borep_pooling_function => Symbol,
+                                :disc_ngram => Int,
+                                :score_alpha => cfg.vectors_eltype,
+                                :score_weight => cfg.vectors_eltype)
+
+
+
+                               )
+    for sc in cfg.searcher_configs
+        @test test_nt_props(sc, SEARCHERCONFIG_PROPS)
+    end
 end
