@@ -95,9 +95,10 @@ Base.pushfirst!(env::SearchEnv, rawdata) = pushinner!(env, rawdata, :first)
 
 function safe_indexes_method_assert(method, env::SearchEnv{T}, args...) where {T}
     if !all(hasmethod(method, Tuple{typeof(srcher.index), args...}) for srcher in env.searchers)
-        @warn "Pushing to environment failed: not all indexes suport method $method."
-        return nothing
+        @warn "Environment modification failed: not all indexes suport method $method."
+        return false
     end
+    return true
 end
 
 
@@ -107,7 +108,8 @@ function pushinner!(env::SearchEnv{T}, rawdata, position::Symbol) where {T}
     srcher_operation = ifelse(position === :first, pushfirst!, push!)
     db_operation = ifelse(position === :first, db_pushfirst!, db_push!)
 
-    safe_indexes_method_assert(index_operation, env, AbstractVector{T})
+    !safe_indexes_method_assert(index_operation, env, AbstractVector{T}) &&
+        return nothing
 
     entry = env.sampler(rawdata)
     try
@@ -144,7 +146,8 @@ function popinner!(env::SearchEnv{T}, position::Symbol) where {T}
     srcher_operation = ifelse(position === :first, popfirst!, pop!)
     db_operation = ifelse(position === :first, db_popfirst!, db_pop!)
 
-    safe_indexes_method_assert(index_operation, env)
+    !safe_indexes_method_assert(index_operation, env) &&
+        return nothing
 
     popped = try
         map(env.searchers) do srcher
@@ -163,7 +166,9 @@ end
 Deletes from a search environment the db and index elements with linear indices found in `pos`.
 """
 Base.deleteat!(env::SearchEnv, pos) = begin
-    safe_indexes_method_assert(deleteat!, env, typeof(pos))
+    index_operation = delete_from_index!
+    !safe_indexes_method_assert(index_operation, env, AbstractVector{Int}) &&
+        return nothing
 
     try
         map(env.searchers) do srcher

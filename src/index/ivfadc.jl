@@ -44,9 +44,9 @@ length(index::IVFIndex) = length(index.index)
 
 
 # push!, pushfirst!, pop!, popfirst!, delete_from_index!
-Base.push!(index::IVFIndex, point) = push!(index.index, point)
+Base.push!(index::IVFIndex, point) = push!(index.index, densify(point))
 
-Base.pushfirst!(index::IVFIndex, point) = pushfirst!(index.index, point)
+Base.pushfirst!(index::IVFIndex, point) = pushfirst!(index.index, densify(point))
 
 Base.pop!(index::IVFIndex) = pop!(index.index)
 

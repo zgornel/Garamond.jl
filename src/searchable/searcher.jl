@@ -161,7 +161,7 @@ end
 
 # Supported indexes name to type mapping
 function build_indexer(index, args, kwargs)
-    default_hnsw_kwarguments = (:efconstruction=>100, :M=>16, :ef=>50)  # to ensure it works well
+    default_hnsw_kwarguments = (:efConstruction=>100, :M=>16, :ef=>50)  # to ensure it works well
     default_ivfadc_kwarguments = (:kc=>2, :k=>2, :m=>1)  # to ensure it works at all
     index === :naive && return d->NaiveIndex(d, args...; kwargs...)
     index === :brutetree && return d->BruteTreeIndex(d, args...; kwargs...)
