@@ -2,31 +2,6 @@
 show(io::IO, id::StringId) = print(io, "id=\"$(id.value)\"")
 
 
-# SearchConfig
-Base.show(io::IO, sconfig::SearchConfig) = begin
-    printstyled(io, "SearchConfig for $(sconfig.id) "*
-                "(aggregation $(sconfig.id_aggregation))\n")
-    printstyled(io, "`-enabled = ")
-    printstyled(io, "$(sconfig.enabled)\n", bold=true)
-    _tf = ""
-    if sconfig.vectors in [:count, :tf, :tfidf, :b25]
-        if sconfig.vectors_transform == :lsa
-            _tf = " + LSA"
-        elseif sconfig.vectors_transform == :rp
-            _tf = " + random projection"
-        end
-    end
-    printstyled(io, "  vectors = ")
-    printstyled(io, "$(sconfig.vectors)$_tf\n", bold=true)
-    printstyled(io, "  search_index = ")
-    printstyled(io, "$(sconfig.search_index)\n", bold=true)
-    if sconfig.embeddings_path != nothing
-        printstyled(io, "  embeddings_path = ")
-        printstyled(io, "\"$(sconfig.embeddings_path)\"\n", bold=true)
-    end
-end
-
-
 # Searcher
 show(io::IO, srcher::Searcher{T,E,I}) where {T,E,I} = begin
     _status = ifelse(isenabled(srcher), "enabled", "disabled")
@@ -138,8 +113,11 @@ Base.show(io::IO, env::SearchEnv{T}) where {T} = begin
     printstyled(io, "$(dbstr)\n", bold=true)
     printstyled(io, "  id_key = ")
     printstyled(io, "$(env.id_key)\n", bold=true)
-    printstyled(io, "  searchers = ")
-    printstyled(io, "$(length(env.searchers))\n", bold=true)
+    printstyled(io, "  sampler = ")
+    printstyled(io, "$(repr(env.sampler))\n", bold=true)
+    printstyled(io, "  searchers = [\n")
+    printstyled(io, "$(join(map(o->"    "*repr(o), env.searchers), "\n"))\n", bold=true)
+    printstyled(io, "  ]\n")
     printstyled(io, "  config_path = ")
     printstyled(io, "$(env.config_path)", bold=true)
 end

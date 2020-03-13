@@ -6,7 +6,7 @@ mutable struct Searcher{T<:AbstractFloat,
                         E<:AbstractEmbedder{String, T},
                         I<:AbstractIndex}
     data::Ref
-    config::SearchConfig                        # most of what is not actual data
+    config::NamedTuple
     embedder::E                                 # needed to embed query
     index::I                                    # indexed search data
     search_trees::BKTree{String}                # suggestion structure
@@ -69,7 +69,7 @@ getindex(srchers::AbstractVector{Searcher}, an_id::String) = getindex(srchers, S
 """
     build_searcher(dbdata, config)
 
-Creates a Searcher from a searcher configuration `config::SearchConfig`.
+Creates a Searcher from a searcher configuration.
 """
 function build_searcher(dbdata,
                         config;
@@ -96,7 +96,7 @@ function build_searcher(dbdata,
                              ngram_complexity=config.ngram_complexity)
 
     # Build search index
-    indexer= build_indexer(config.search_index, config.search_index_args, config.search_index_kwargs)
+    indexer= build_indexer(config.search_index, config.search_index_arguments, config.search_index_kwarguments)
     srchindex = indexer(embedded)
 
     # Build search tree (for suggestions)
@@ -161,13 +161,13 @@ end
 
 # Supported indexes name to type mapping
 function build_indexer(index, args, kwargs)
-    default_hnsw_kwargs = (:efconstruction=>100, :M=>16, :ef=>50)  # to ensure it works well
-    default_ivfadc_kwargs = (:kc=>2, :k=>2, :m=>1)  # to ensure it works at all
+    default_hnsw_kwarguments = (:efconstruction=>100, :M=>16, :ef=>50)  # to ensure it works well
+    default_ivfadc_kwarguments = (:kc=>2, :k=>2, :m=>1)  # to ensure it works at all
     index === :naive && return d->NaiveIndex(d, args...; kwargs...)
     index === :brutetree && return d->BruteTreeIndex(d, args...; kwargs...)
     index === :kdtree && return d->KDTreeIndex(d, args...; kwargs...)
-    index === :hnsw && return d->HNSWIndex(d, args...; default_hnsw_kwargs..., kwargs...)
-    index === :ivfadc && return d->IVFIndex(d, args...; default_ivfadc_kwargs..., kwargs...)
+    index === :hnsw && return d->HNSWIndex(d, args...; default_hnsw_kwarguments..., kwargs...)
+    index === :ivfadc && return d->IVFIndex(d, args...; default_ivfadc_kwarguments..., kwargs...)
     index === :noop && return d->NoopIndex(d, args...; kwargs...)
 end
 
@@ -218,7 +218,7 @@ function build_dtv_embedder(crps, config; vectors_eltype=DEFAULT_VECTORS_ELTYPE)
                        κ=DEFAULT_BM25_KAPPA,
                        β=DEFAULT_BM25_BETA,
                        # kwargs from config (overwritten by one below)
-                       config.embedder_kwargs...,
+                       config.embedder_kwarguments...,
                        # specific kwargs from config (have highest priority)
                        k=k,
                        stats=config.vectors,
@@ -255,22 +255,22 @@ function build_wv_embedder(crps, config; vectors_eltype=DEFAULT_VECTORS_ELTYPE)
     # Construct embedder based on document2vec method
     config.doc2vec_method === :boe &&
         return BOEEmbedder(embeddings;
-                           config.embedder_kwargs...)
+                           config.embedder_kwarguments...)
     config.doc2vec_method === :sif &&
         return SIFEmbedder(embeddings;
-                           config.embedder_kwargs...,
+                           config.embedder_kwarguments...,
                            lexicon=create_lexicon(crps, 1),
                            alpha=config.sif_alpha)
     config.doc2vec_method === :borep &&
         return BOREPEmbedder(embeddings;
-                             config.embedder_kwargs...,
+                             config.embedder_kwarguments...,
                              dim=config.borep_dimension,
                              pooling_function=config.borep_pooling_function)
     config.doc2vec_method === :cpmean &&
         return CPMeanEmbedder(embeddings;
-                              config.embedder_kwargs...)
+                              config.embedder_kwarguments...)
     config.doc2vec_method === :disc &&
         return DisCEmbedder(embeddings;
-                            config.embedder_kwargs...,
+                            config.embedder_kwarguments...,
                             n=config.disc_ngram)
 end

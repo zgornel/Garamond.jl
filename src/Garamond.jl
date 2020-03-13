@@ -82,7 +82,6 @@ module Garamond
 
         SearchEnv,
         Searcher,
-        SearchConfig,
         SearchResult,
 
         id,
