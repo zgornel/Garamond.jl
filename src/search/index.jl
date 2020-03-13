@@ -16,15 +16,15 @@ a `Vector{SearchResult}`.
   * `max_matches::Int` is the maximum number of search results to return
   * `max_suggestions::Int` is the maximum number of suggestions to return for
      each missing needle
-  * `custom_weights::Dict{Symbol, Float64}` are custom weights for each
+  * `custom_weights::Dict{Symbol, Float}` are custom weights for each
      searcher's results used in result aggregation
 """
 function search(srchers::Vector{<:Searcher{T}},
                 query;
-                search_method::Symbol=DEFAULT_SEARCH_METHOD,
-                max_matches::Int=MAX_MATCHES,
-                max_suggestions::Int=MAX_SUGGESTIONS,
-                custom_weights::Dict{Symbol, Float64}=DEFAULT_CUSTOM_WEIGHTS
+                search_method=DEFAULT_SEARCH_METHOD,
+                max_matches=MAX_MATCHES,
+                max_suggestions=MAX_SUGGESTIONS,
+                custom_weights=DEFAULT_CUSTOM_WEIGHTS
                ) where T<:AbstractFloat
     # Checks
     @assert search_method in [:exact, :regex]
@@ -134,7 +134,7 @@ function search(srcher::Searcher{T,E,I},
                            max_suggestions=max_suggestions)
     end
     return SearchResult(id(srcher), query_matches, needle_matches,
-                        suggestions, T(srcher.config.score_weight))
+                        suggestions, srcher.config.score_weight)
 end
 
 
@@ -192,12 +192,11 @@ end
 #   - map distances [0, Inf) --> [1, 0)
 #TODO(Corneliu) Analylically/empirically adapt alpha do vector dimensionality
 function score_transform!(x::AbstractVector{T};
-                          alpha::Float64=DEFAULT_SCORE_ALPHA,
-                          normalize::Bool=false) where T<:AbstractFloat
+                          alpha::T=T(DEFAULT_SCORE_ALPHA),
+                          normalize=false) where {T<:AbstractFloat}
     n = length(x)
-    α = T(alpha)
     @inbounds @simd for i in 1:n
-        x[i] = 1 - tanh(α * x[i])
+        x[i] = 1 - tanh(alpha * x[i])
     end
     if normalize
         # Forces the scores to spread in the whole

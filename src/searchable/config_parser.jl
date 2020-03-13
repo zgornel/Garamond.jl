@@ -53,12 +53,12 @@ that acts as a search environment configuration.
     heuristic::Union{Nothing, Symbol} # search heuristic for suggesting mispelled words (nothing means no recommendations)
     text_strip_flags::UInt32        # How to strip text data before indexing
     query_strip_flags::UInt32       # How to strip queries before searching
-    sif_alpha::Float64              # smooth inverse frequency α parameter (for 'sif' doc2vec method only)
+    sif_alpha::Float                # smooth inverse frequency α parameter (for 'sif' doc2vec method only)
     borep_dimension::Int            # output dimension for BOREP embedder
     borep_pooling_function::Symbol  # pooling function for the BOREP embedder
     disc_ngram::Int                 # DisC embedder ngram parameter
-    score_alpha::Float64            # score alpha (parameter for the scoring function)
-    score_weight::Float64           # weight of scores of searcher (used in result aggregation)
+    score_alpha::Float              # score alpha (parameter for the scoring function)
+    score_weight::Float             # weight of scores of searcher (used in result aggregation)
 """
 function parse_configuration(filename::AbstractString)
 
@@ -125,7 +125,7 @@ function parse_configuration(filename::AbstractString)
             _vectors_transform = Symbol(get(dconfig, "vectors_transform", DEFAULT_VECTORS_TRANSFORM))
             _vectors_dimension = Int(get(dconfig, "vectors_dimension", DEFAULT_VECTORS_DIMENSION))
             _search_index = Symbol(get(dconfig, "search_index", DEFAULT_SEARCH_INDEX))
-            _search_index_arguments = get(dconfig, "search_index_arguments", [])
+            _search_index_arguments = Vector{Any}(get(dconfig, "search_index_arguments", []))
             _search_index_kwarguments = try
                 Dict{Symbol, Any}(Symbol(k)=>v for (k,v) in get(dconfig, "search_index_kwarguments", Dict{String, Any}()))
             catch
@@ -144,12 +144,12 @@ function parse_configuration(filename::AbstractString)
             _heuristic = haskey(dconfig, "heuristic") ? Symbol(dconfig["heuristic"]) : _heuristic = DEFAULT_HEURISTIC
             _text_strip_flags = UInt32(get(dconfig, "text_strip_flags", DEFAULT_TEXT_STRIP_FLAGS))
             _query_strip_flags = UInt32(get(dconfig, "query_strip_flags", DEFAULT_QUERY_STRIP_FLAGS))
-            _sif_alpha = Float64(get(dconfig, "sif_alpha", DEFAULT_SIF_ALPHA))
+            _sif_alpha = vectors_eltype(get(dconfig, "sif_alpha", DEFAULT_SIF_ALPHA))
             _borep_dimension = Int(get(dconfig, "borep_dimension", DEFAULT_BOREP_DIMENSION))
             _borep_pooling_function = Symbol(get(dconfig, "borep_pooling_function", DEFAULT_BOREP_POOLING_FUNCTION))
             _disc_ngram = Int(get(dconfig, "disc_ngram", DEFAULT_DISC_NGRAM))
-            _score_alpha = Float64(get(dconfig, "score_alpha", DEFAULT_SCORE_ALPHA))
-            _score_weight = Float64(get(dconfig, "score_weight", 1.0))
+            _score_alpha = vectors_eltype(get(dconfig, "score_alpha", DEFAULT_SCORE_ALPHA))
+            _score_weight = vectors_eltype(get(dconfig, "score_weight", 1.0))
 
             # Checks of the configuration parameter values;
             # language

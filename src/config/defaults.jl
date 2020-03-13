@@ -64,7 +64,7 @@ const DEFAULT_RESPONSE_PAGE = 1  # which response page i.e. batch of response_si
 const DEFAULT_SORT_FIELDS = Symbol[]
 const DEFAULT_SORT_REVERSE = false
 const DEFAULT_MAX_SUGGESTIONS = 0  # maximum number of overall suggestions
-const DEFAULT_CUSTOM_WEIGHTS = Dict{Symbol, Float64}()  # default custom searcher weights
+const DEFAULT_CUSTOM_WEIGHTS = Dict{Symbol,Any}()  # default custom searcher weights
 const DEFAULT_PDFTOTEXT_PROGRAM = "/usr/bin/pdftotext"  # program to convert PDFs to text
 const DEFAULT_MAX_EDIT_DISTANCE = 2  # maximum edit distance for which to return suggestions
 

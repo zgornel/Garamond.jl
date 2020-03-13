@@ -9,14 +9,14 @@ using word vectors.
 struct SIFEmbedder{S,T} <: WordVectorsEmbedder{S,T}
     embeddings::EmbeddingsLibrary{S,T}
     lexicon::OrderedDict{S, Int}
-    alpha::Float64
+    alpha::T
 end
 
 SIFEmbedder(embeddings::EmbeddingsLibrary{S,T};
             lexicon=OrderedDict{S, Int}(),
             alpha=DEFAULT_SIF_ALPHA,
             kwargs...) where {S,T} =
-    SIFEmbedder(embeddings, lexicon, alpha)
+    SIFEmbedder(embeddings, lexicon, T(alpha))
 
 
 # Dimensionality function
@@ -49,19 +49,18 @@ principal vector of a sentence from the sentence's word embeddings.
 function sif(document_embedding::Vector{Matrix{T}},
              lexicon::OrderedDict{String, Int},
              embedded_words::Vector{Vector{S}},
-             alpha::Float64,
+             alpha::T,
              dim::Int
             ) where {T<:AbstractFloat, S<:AbstractString}
     L = sum(values(lexicon))
     n = length(document_embedding)  # number of sentences in document
     X = zeros(T, dim, n)  # new document embedding
-    α = T(alpha)
     # Loop over sentences
     for (i, s) in enumerate(document_embedding)
         p = [get(lexicon, word, eps(T))/L for word in embedded_words[i]]
         W = size(s,2)  # no. of words
         @inbounds for w in 1:W
-            X[:,i] += 1/(length(s)) * (α/(α+p[w]) .* s[:,w])
+            X[:,i] += 1/(length(s)) * (alpha/(alpha+p[w]) .* s[:,w])
         end
     end
     local u::Vector{T}

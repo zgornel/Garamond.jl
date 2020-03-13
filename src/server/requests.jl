@@ -9,7 +9,7 @@ mutable struct InternalRequest
     searchable_filters::Vector{Symbol}
     max_suggestions::Int
     return_fields::Vector{Symbol}
-    custom_weights::Dict{Symbol,Float64}
+    custom_weights::Dict{Symbol}
     request_id_key::Symbol
     sort_fields::Vector{Symbol}
     sort_reverse::Bool
