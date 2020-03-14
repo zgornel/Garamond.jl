@@ -3,7 +3,7 @@
 #############################################
 # Garamond script for TCP client operations #
 #############################################
-module GaramondWebClient
+module garw
 
 using Logging
 using Sockets
@@ -11,39 +11,21 @@ using ArgParse
 using HTTP
 
 
-# Function that parses Garamond's web-socket client arguments
-function get_web_socket_client_arguments(args::Vector{String})
-	s = ArgParseSettings()
-	@add_arg_table s begin
-        "--log-level"
-            help = "logging level"
-            default = "warn"
-        "--web-socket-port", "-w"
-            help = "WEB socket data communication port"
-            arg_type = UInt16
-            default = UInt16(0)
-        "--web-socket-ip"
-            help = "WEB socket data communication IP"
-            default = "127.0.0.1"
-        "--http-port", "-p"
-            help = "HTTP port for the http server"
-            arg_type = Int
-            default = 8888
-        "--web-page"
-            help = "Search web page to serve"
-            arg_type = String
-        "--return-fields"
-            help = "List of fields to return (ignores wrong names)"
-            nargs = '*'
-	end
-	return parse_args(args,s)
+########################
+# Main module function #
+########################
+function julia_main()::Cint
+    try
+        real_main()
+    catch
+        Base.invokelatest(Base.display_error, Base.catch_stack())
+        return 1
+    end
+    return 0
 end
 
 
-########################
-# Main client function #
-########################
-Base.@ccallable function julia_main(ARGS::Vector{String})::Cint
+function real_main()
     # Parse command line arguments
     args = get_web_socket_client_arguments(ARGS)
 
@@ -90,7 +72,45 @@ Base.@ccallable function julia_main(ARGS::Vector{String})::Cint
 end
 
 
+################################
+# Start main Garamond function #
+################################
+if abspath(PROGRAM_FILE) == @__FILE__
+    real_main()
+end
+
+
+# Function that parses Garamond's web-socket client arguments
+function get_web_socket_client_arguments(args::Vector{String})
+	s = ArgParseSettings()
+	@add_arg_table! s begin
+        "--log-level"
+            help = "logging level"
+            default = "warn"
+        "--web-socket-port", "-w"
+            help = "WEB socket data communication port"
+            arg_type = UInt16
+            default = UInt16(0)
+        "--web-socket-ip"
+            help = "WEB socket data communication IP"
+            default = "127.0.0.1"
+        "--http-port", "-p"
+            help = "HTTP port for the http server"
+            arg_type = Int
+            default = 8888
+        "--web-page"
+            help = "Search web page to serve"
+            arg_type = String
+        "--return-fields"
+            help = "List of fields to return (ignores wrong names)"
+            nargs = '*'
+	end
+	return parse_args(args,s)
+end
+
+
 stringvec(vv) = "[" * join(map(v->"\"" * string(v) * "\"", vv), ",") * "]"
+
 
 # Function that returns the default webpage
 function _default_webpage(ws_ip::String, ws_port::UInt16; fields=[])
@@ -253,10 +273,4 @@ function _default_webpage(ws_ip::String, ws_port::UInt16; fields=[])
     </html>"
 end
 
-
-##############
-# Run client #
-##############
-julia_main(ARGS)
-
-end  # GaramondWebClient
+end  # module

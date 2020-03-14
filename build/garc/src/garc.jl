@@ -3,7 +3,8 @@
 #############################################
 # Garamond script for CLI client operations #
 #############################################
-module GaramondCLIClient
+
+module garc  # The Garamond client
 
 using Sockets
 using ArgParse
@@ -12,9 +13,20 @@ using JSON
 
 
 ########################
-# Main client function #
+# Main module function #
 ########################
-Base.@ccallable function julia_main(ARGS::Vector{String})::Cint
+function julia_main()::Cint
+    try
+        real_main()
+    catch
+        Base.invokelatest(Base.display_error, Base.catch_stack())
+        return 1
+    end
+    return 0
+end
+
+
+function real_main()
     # Parse command line arguments
     args = get_unix_socket_client_arguments(ARGS)
 
@@ -49,6 +61,14 @@ Base.@ccallable function julia_main(ARGS::Vector{String})::Cint
 end
 
 
+##############
+# Run client #
+##############
+if abspath(PROGRAM_FILE) == @__FILE__
+    real_main()
+end
+
+
 # Support for parsing to Symbol for the ArgParse package
 import ArgParse: parse_item
 function ArgParse.parse_item(::Type{Symbol}, x::AbstractString)
@@ -59,7 +79,7 @@ end
 # Function that parses Garamond's unix-socket client arguments
 function get_unix_socket_client_arguments(args::Vector{String})
 	s = ArgParseSettings()
-	@add_arg_table s begin
+	@add_arg_table! s begin
         "query"
             help = "the search query"
             arg_type = String
@@ -220,10 +240,4 @@ function iosearch(connection, request, pretty=false)
     return nothing
 end
 
-
-##############
-# Run client #
-##############
-julia_main(ARGS)
-
-end  # GaramondCLIClient
+end  # module

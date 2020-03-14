@@ -2,3 +2,9 @@ name = "garw"
 uuid = "99c8ab3b-a390-4535-b544-689256e4e463"
 authors = ["Corneliu Cofaru <cornel@oxoaresearch.com>"]
 version = "0.1.0"
+
+[deps]
+ArgParse = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"
+HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
+Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
+Sockets = "6462fe0b-24de-5631-8697-dd941f90decc"
