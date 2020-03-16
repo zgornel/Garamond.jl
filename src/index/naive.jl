@@ -8,7 +8,7 @@ struct NaiveIndex{E, A<:Vector{<:AbstractVector{E}}} <: Garamond.AbstractIndex
 end
 
 NaiveIndex(data, args...; kwargs...) =
-    NaiveIndex([densify(collect(c)) for c in eachcol(data)])  # args, kwargs are ignored
+    NaiveIndex([data[:, i] for i in 1:size(data, 2)])  # args, kwargs are ignored
 
 
 # Nearest neighbor search method

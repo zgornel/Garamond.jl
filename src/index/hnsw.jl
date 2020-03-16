@@ -18,7 +18,7 @@ HNSWIndex(data, args...; kwargs...) =
     HNSWIndex(
         add_to_graph!(
             HierarchicalNSW(
-                [densify(collect(c)) for c in eachcol(data)];
+                [densify(data[:, i]) for i in 1:size(data, 2)];
                 kwargs...)
            )
        )  # args are ignored
