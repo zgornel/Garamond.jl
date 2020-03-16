@@ -15,6 +15,57 @@ using Logging
 using ArgParse
 
 
+# Function that parses Garamond's server arguments
+function get_server_commandline_arguments(args::Vector{String})
+	s = ArgParseSettings()
+	@add_arg_table! s begin
+        "--data-config", "-d"
+            help = "data configuration file"
+            arg_type = String
+        "--env-cache", "-c"
+            help = "search environment cache file"
+            arg_type = String
+        "--log-level"
+            help = "logging level"
+            default = "info"
+        "--log", "-l"
+            help = "logging stream"
+            default = "stdout"
+        "--unix-socket", "-u"
+            help = "UNIX socket for data communication"
+            arg_type = String
+        "--web-socket-port", "-w"
+            help = "WEB socket data communication port"
+            arg_type = UInt16
+        "--web-socket-ip"
+            help = "WEB socket data communication IP"
+            default = "127.0.0.1"
+        "--http-port", "-p"
+            help = "HTTP port for REST services"
+            arg_type = Int
+        "--http-ip"
+            help = "HTTP IP for REST services"
+            default = "0.0.0.0"
+        "--search-server-port", "-i"
+            help = "Internal TCP port for the search server"
+            arg_type = Int
+            default = 9_000
+	end
+	return parse_args(args,s)
+end
+
+
+# Tests whether an ip is valid
+function isvalidip(ip::AbstractString)
+    try
+        IPv4(ip), IPv6(ip)
+        return true
+    catch
+        return false
+    end
+end
+
+
 ########################
 # Main module function #
 ########################
@@ -98,57 +149,5 @@ end
 if abspath(PROGRAM_FILE) == @__FILE__
     real_main()
 end
-
-
-# Function that parses Garamond's server arguments
-function get_server_commandline_arguments(args::Vector{String})
-	s = ArgParseSettings()
-	@add_arg_table! s begin
-        "--data-config", "-d"
-            help = "data configuration file"
-            arg_type = String
-        "--env-cache", "-c"
-            help = "search environment cache file"
-            arg_type = String
-        "--log-level"
-            help = "logging level"
-            default = "info"
-        "--log", "-l"
-            help = "logging stream"
-            default = "stdout"
-        "--unix-socket", "-u"
-            help = "UNIX socket for data communication"
-            arg_type = String
-        "--web-socket-port", "-w"
-            help = "WEB socket data communication port"
-            arg_type = UInt16
-        "--web-socket-ip"
-            help = "WEB socket data communication IP"
-            default = "127.0.0.1"
-        "--http-port", "-p"
-            help = "HTTP port for REST services"
-            arg_type = Int
-        "--http-ip"
-            help = "HTTP IP for REST services"
-            default = "0.0.0.0"
-        "--search-server-port", "-i"
-            help = "Internal TCP port for the search server"
-            arg_type = Int
-            default = 9_000
-	end
-	return parse_args(args,s)
-end
-
-
-# Tests whether an ip is valid
-function isvalidip(ip::AbstractString)
-    try
-        IPv4(ip), IPv6(ip)
-        return true
-    catch
-        return false
-    end
-end
-
 
 end  # module

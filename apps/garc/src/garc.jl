@@ -12,63 +12,6 @@ using Logging
 using JSON
 
 
-########################
-# Main module function #
-########################
-function julia_main()::Cint
-    try
-        real_main()
-    catch
-        Base.invokelatest(Base.display_error, Base.catch_stack())
-        return 1
-    end
-    return 0
-end
-
-
-function real_main()
-    # Parse command line arguments
-    args = get_unix_socket_client_arguments(ARGS)
-
-    # Logging
-    log_levels = Dict("debug" => Logging.Debug,
-                      "info" => Logging.Info,
-                      "warning" => Logging.Warn,
-                      "error" => Logging.Error)
-    logger = ConsoleLogger(stdout,
-                get(log_levels, lowercase(args["log-level"]), Logging.Info))
-    global_logger(logger)
-
-    # Start client
-    @debug "~ GARAMOND~ (unix-socket client)"
-    unixsocket = args["unix-socket"]
-    if issocket(unixsocket)
-        conn = connect(unixsocket)
-        if isempty(args["query"]) && !args["kill"]
-            @warn "Empty query, nothing to search. Exiting..."
-        else
-            # Construct Garamond request
-            request = construct_json_request(args)
-            # Search
-            iosearch(conn, request, args["pretty"])
-        end
-        # Close connection and exit
-        close(conn)
-    else
-        @warn "$unixsocket is not a proper UNIX socket. Exiting..."
-    end
-    return 0
-end
-
-
-##############
-# Run client #
-##############
-if abspath(PROGRAM_FILE) == @__FILE__
-    real_main()
-end
-
-
 # Support for parsing to Symbol for the ArgParse package
 import ArgParse: parse_item
 function ArgParse.parse_item(::Type{Symbol}, x::AbstractString)
@@ -238,6 +181,63 @@ function iosearch(connection, request, pretty=false)
         println(stdout, data)
     end
     return nothing
+end
+
+
+########################
+# Main module function #
+########################
+function julia_main()::Cint
+    try
+        real_main()
+    catch
+        Base.invokelatest(Base.display_error, Base.catch_stack())
+        return 1
+    end
+    return 0
+end
+
+
+function real_main()
+    # Parse command line arguments
+    args = get_unix_socket_client_arguments(ARGS)
+
+    # Logging
+    log_levels = Dict("debug" => Logging.Debug,
+                      "info" => Logging.Info,
+                      "warning" => Logging.Warn,
+                      "error" => Logging.Error)
+    logger = ConsoleLogger(stdout,
+                get(log_levels, lowercase(args["log-level"]), Logging.Info))
+    global_logger(logger)
+
+    # Start client
+    @debug "~ GARAMOND~ (unix-socket client)"
+    unixsocket = args["unix-socket"]
+    if issocket(unixsocket)
+        conn = connect(unixsocket)
+        if isempty(args["query"]) && !args["kill"]
+            @warn "Empty query, nothing to search. Exiting..."
+        else
+            # Construct Garamond request
+            request = construct_json_request(args)
+            # Search
+            iosearch(conn, request, args["pretty"])
+        end
+        # Close connection and exit
+        close(conn)
+    else
+        @warn "$unixsocket is not a proper UNIX socket. Exiting..."
+    end
+    return 0
+end
+
+
+##############
+# Run client #
+##############
+if abspath(PROGRAM_FILE) == @__FILE__
+    real_main()
 end
 
 end  # module
