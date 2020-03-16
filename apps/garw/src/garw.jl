@@ -3,7 +3,7 @@
 #############################################
 # Garamond script for TCP client operations #
 #############################################
-module GaramondWebClient
+module garw
 
 using Logging
 using Sockets
@@ -14,7 +14,7 @@ using HTTP
 # Function that parses Garamond's web-socket client arguments
 function get_web_socket_client_arguments(args::Vector{String})
 	s = ArgParseSettings()
-	@add_arg_table s begin
+	@add_arg_table! s begin
         "--log-level"
             help = "logging level"
             default = "warn"
@@ -40,57 +40,8 @@ function get_web_socket_client_arguments(args::Vector{String})
 end
 
 
-########################
-# Main client function #
-########################
-Base.@ccallable function julia_main(ARGS::Vector{String})::Cint
-    # Parse command line arguments
-    args = get_web_socket_client_arguments(ARGS)
-
-    # Logging
-    log_levels = Dict("debug" => Logging.Debug,
-                      "info" => Logging.Info,
-                      "warning" => Logging.Warn,
-                      "error" => Logging.Error)
-    logger = ConsoleLogger(stdout,
-                get(log_levels, lowercase(args["log-level"]), Logging.Info))
-    global_logger(logger)
-
-    # Start client
-    @info "~ GARAMOND ~ (web-socket client)"
-    ws_ip = args["web-socket-ip"]
-    ws_port = args["web-socket-port"]
-    return_fields = args["return-fields"]
-
-    if ws_port > 0
-        # Get web page
-        webpage_file = args["web-page"]
-        if webpage_file != nothing && isfile(webpage_file)
-            webpage = read(webpage_file, String)
-        else
-            webpage = _default_webpage(ws_ip, ws_port; fields=return_fields)
-        end
-
-        # Start HTTP server
-        http_port = args["http-port"]
-        _handler(request::HTTP.Request) = begin
-            try
-                return HTTP.Response(200, webpage)
-            catch e
-                return HTTP.Response(404, "Error: $e")
-            end
-        end
-        http_ip = Sockets.localhost
-        @info "Serving page on $http_ip:$http_port"
-        HTTP.serve(_handler, http_ip, http_port, readtimeout=0)
-    else
-        @warn "Wrong web-socket port value $ws_port (default is 0). Exiting..."
-    end
-    return 0
-end
-
-
 stringvec(vv) = "[" * join(map(v->"\"" * string(v) * "\"", vv), ",") * "]"
+
 
 # Function that returns the default webpage
 function _default_webpage(ws_ip::String, ws_port::UInt16; fields=[])
@@ -254,9 +205,72 @@ function _default_webpage(ws_ip::String, ws_port::UInt16; fields=[])
 end
 
 
-##############
-# Run client #
-##############
-julia_main(ARGS)
+########################
+# Main module function #
+########################
+function julia_main()::Cint
+    try
+        real_main()
+    catch
+        Base.invokelatest(Base.display_error, Base.catch_stack())
+        return 1
+    end
+    return 0
+end
 
-end  # GaramondWebClient
+
+function real_main()
+    # Parse command line arguments
+    args = get_web_socket_client_arguments(ARGS)
+
+    # Logging
+    log_levels = Dict("debug" => Logging.Debug,
+                      "info" => Logging.Info,
+                      "warning" => Logging.Warn,
+                      "error" => Logging.Error)
+    logger = ConsoleLogger(stdout,
+                get(log_levels, lowercase(args["log-level"]), Logging.Info))
+    global_logger(logger)
+
+    # Start client
+    @info "~ GARAMOND ~ (web-socket client)"
+    ws_ip = args["web-socket-ip"]
+    ws_port = args["web-socket-port"]
+    return_fields = args["return-fields"]
+
+    if ws_port > 0
+        # Get web page
+        webpage_file = args["web-page"]
+        if webpage_file != nothing && isfile(webpage_file)
+            webpage = read(webpage_file, String)
+        else
+            webpage = _default_webpage(ws_ip, ws_port; fields=return_fields)
+        end
+
+        # Start HTTP server
+        http_port = args["http-port"]
+        _handler(request::HTTP.Request) = begin
+            try
+                return HTTP.Response(200, webpage)
+            catch e
+                return HTTP.Response(404, "Error: $e")
+            end
+        end
+        http_ip = Sockets.localhost
+        @info "Serving page on $http_ip:$http_port"
+        HTTP.serve(_handler, http_ip, http_port, readtimeout=0)
+    else
+        @warn "Wrong web-socket port value $ws_port (default is 0). Exiting..."
+    end
+    return 0
+end
+
+
+################################
+# Start main Garamond function #
+################################
+if abspath(PROGRAM_FILE) == @__FILE__
+    real_main()
+end
+
+end  # module

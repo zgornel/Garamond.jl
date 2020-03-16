@@ -1,0 +1,10 @@
+name = "garc"
+uuid = "24b91db2-76cd-4d2b-a5dc-3a2aa5018a08"
+authors = ["Corneliu Cofaru <cornel@oxoaresearch.com>"]
+version = "0.1.0"
+
+[deps]
+ArgParse = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"
+JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
+Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
+Sockets = "6462fe0b-24de-5631-8697-dd941f90decc"
