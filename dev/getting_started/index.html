@@ -9,7 +9,7 @@ julia&gt; cfg = mktemp() do path, io  # write and parse config file on-the-fly
            flush(io)
            parse_configuration(path)
        end
-(data_loader = Garamond.var&quot;#118#125&quot;{Array{Any,1},Dict{Symbol,Any},typeof(Garamond.juliadb_loader)}(Any[&quot;/home/travis/build/zgornel/Garamond.jl/test/data/generated_data_100_samples.csv&quot;], Dict{Symbol,Any}(), Garamond.juliadb_loader), data_sampler = Garamond.identity_sampler, id_key = :id, vectors_eltype = Float32, searcher_configs = Any[(id = id=&quot;searcher_1&quot;, id_aggregation = id=&quot;aggid&quot;, description = &quot;A searcher using BM25+RP embeddings and naive indexing&quot;, enabled = true, indexable_fields = Symbol[:RandString, :StringField, :StringField2, :IntField], language = &quot;english&quot;, stem_words = false, ngram_complexity = 1, vectors = :bm25, vectors_transform = :rp, vectors_dimension = 50, search_index = :naive, search_index_arguments = Any[], search_index_kwarguments = Dict{Symbol,Any}(), embeddings_path = nothing, embeddings_kind = :binary, doc2vec_method = :boe, glove_vocabulary = nothing, oov_policy = :large_vector, embedder_kwarguments = Dict{Symbol,Any}(), heuristic = nothing, text_strip_flags = 0x00700607, query_strip_flags = 0x00700607, sif_alpha = 0.01f0, borep_dimension = 1024, borep_pooling_function = :sum, disc_ngram = 2, score_alpha = 0.4f0, score_weight = 0.8f0)], config_path = &quot;/tmp/jl_aqrCjt&quot;)</code></pre><p>The configuration contains the data loader (a closure that only needs to be called with no argument to load the data), the path of the configuration file, the primary id key of the data (which needs to be a <a href="https://juliadb.org">JuliaDB</a> data type) and a list of configuration objects for the individual searchers of the engine.</p><pre><code class="language-julia-repl">julia&gt; for field in fieldnames(typeof(cfg))
+(data_loader = Garamond.var&quot;#118#125&quot;{Array{Any,1},Dict{Symbol,Any},typeof(Garamond.juliadb_loader)}(Any[&quot;/home/travis/build/zgornel/Garamond.jl/test/data/generated_data_100_samples.csv&quot;], Dict{Symbol,Any}(), Garamond.juliadb_loader), data_sampler = Garamond.identity_sampler, id_key = :id, vectors_eltype = Float32, searcher_configs = Any[(id = id=&quot;searcher_1&quot;, id_aggregation = id=&quot;aggid&quot;, description = &quot;A searcher using BM25+RP embeddings and naive indexing&quot;, enabled = true, indexable_fields = Symbol[:RandString, :StringField, :StringField2, :IntField], language = &quot;english&quot;, stem_words = false, ngram_complexity = 1, vectors = :bm25, vectors_transform = :rp, vectors_dimension = 50, search_index = :naive, search_index_arguments = Any[], search_index_kwarguments = Dict{Symbol,Any}(), embeddings_path = nothing, embeddings_kind = :binary, doc2vec_method = :boe, glove_vocabulary = nothing, oov_policy = :large_vector, embedder_kwarguments = Dict{Symbol,Any}(), heuristic = nothing, text_strip_flags = 0x00700607, query_strip_flags = 0x00700607, sif_alpha = 0.01f0, borep_dimension = 1024, borep_pooling_function = :sum, disc_ngram = 2, score_alpha = 0.4f0, score_weight = 0.8f0)], config_path = &quot;/tmp/jl_jsMqiE&quot;)</code></pre><p>The configuration contains the data loader (a closure that only needs to be called with no argument to load the data), the path of the configuration file, the primary id key of the data (which needs to be a <a href="https://juliadb.org">JuliaDB</a> data type) and a list of configuration objects for the individual searchers of the engine.</p><pre><code class="language-julia-repl">julia&gt; for field in fieldnames(typeof(cfg))
            println(&quot;$field=$(getfield(cfg, field))&quot;)
        end
 data_loader=#118
@@ -17,8 +17,8 @@ data_sampler=identity_sampler
 id_key=id
 vectors_eltype=Float32
 searcher_configs=Any[(id = id=&quot;searcher_1&quot;, id_aggregation = id=&quot;aggid&quot;, description = &quot;A searcher using BM25+RP embeddings and naive indexing&quot;, enabled = true, indexable_fields = Symbol[:RandString, :StringField, :StringField2, :IntField], language = &quot;english&quot;, stem_words = false, ngram_complexity = 1, vectors = :bm25, vectors_transform = :rp, vectors_dimension = 50, search_index = :naive, search_index_arguments = Any[], search_index_kwarguments = Dict{Symbol,Any}(), embeddings_path = nothing, embeddings_kind = :binary, doc2vec_method = :boe, glove_vocabulary = nothing, oov_policy = :large_vector, embedder_kwarguments = Dict{Symbol,Any}(), heuristic = nothing, text_strip_flags = 0x00700607, query_strip_flags = 0x00700607, sif_alpha = 0.01f0, borep_dimension = 1024, borep_pooling_function = :sum, disc_ngram = 2, score_alpha = 0.4f0, score_weight = 0.8f0)]
-config_path=/tmp/jl_aqrCjt</code></pre><h2><a class="nav-anchor" id="The-search-environment-1" href="#The-search-environment-1">The search environment</a></h2><p>Building the search environment out of the configuration is straightforward. The environment holds the in-memory data in the form of an <code>IndexedTable</code> or <code>NDSparse</code> object, the searchers as well as other information such as primary db key and configuration paths. </p><pre><code class="language-julia-repl">julia&gt; env = build_search_env(cfg)
-[ Info: • Environment successfully built using config /tmp/jl_aqrCjt.
+config_path=/tmp/jl_jsMqiE</code></pre><h2><a class="nav-anchor" id="The-search-environment-1" href="#The-search-environment-1">The search environment</a></h2><p>Building the search environment out of the configuration is straightforward. The environment holds the in-memory data in the form of an <code>IndexedTable</code> or <code>NDSparse</code> object, the searchers as well as other information such as primary db key and configuration paths. </p><pre><code class="language-julia-repl">julia&gt; env = build_search_env(cfg)
+[ Info: • Environment successfully built using config /tmp/jl_jsMqiE.
 SearchEnv{Float32} with:
 `-dbdata = Table with 100 rows, 7 columns
   id_key = id
@@ -26,7 +26,7 @@ SearchEnv{Float32} with:
   searchers = [
     [enabled] Searcher id=&quot;searcher_1&quot;/id=&quot;aggid&quot;, DTV(bm25)(243)/RP(50), Naive index, 100 Float32 embedded documents
   ]
-  config_path = /tmp/jl_aqrCjt</code></pre><h2><a class="nav-anchor" id="Engine-operations-1" href="#Engine-operations-1">Engine operations</a></h2><p>The internal API is designed to be straightforward and uniform in the way it is called. First, one has to build a request which fully describes the operation to be performed and subsequently, call the operation desired. For example, to perform a search, one request would be:</p><pre><code class="language-julia-repl">julia&gt; request = Garamond.InternalRequest(operation=:search,
+  config_path = /tmp/jl_jsMqiE</code></pre><h2><a class="nav-anchor" id="Engine-operations-1" href="#Engine-operations-1">Engine operations</a></h2><p>The internal API is designed to be straightforward and uniform in the way it is called. First, one has to build a request which fully describes the operation to be performed and subsequently, call the operation desired. For example, to perform a search, one request would be:</p><pre><code class="language-julia-repl">julia&gt; request = Garamond.InternalRequest(operation=:search,
                                           query=&quot;Q&quot;,
                                           search_method=:exact,
                                           max_matches=10,
@@ -41,17 +41,17 @@ InternalRequest: OPERATION=:search | QUERY=&quot;Q&quot; | MAX_MATCHES=10 | SEAR
 1-element Array{SearchResult{Float32},1}:
  Search results for id=&quot;searcher_1&quot;:  10 hits, 1 query terms, 0 suggestions.</code></pre><h2><a class="nav-anchor" id="Results-and-responses-1" href="#Results-and-responses-1">Results and responses</a></h2><p>Once results are available, these can be printed</p><pre><code class="language-julia-repl">julia&gt; print_search_results(env.dbdata, ranked; id_key=:id, fields=[:id, :RandString])
 [id=&quot;searcher_1&quot;] 10 search results:
-  0.903735 ~ 12 - Q
-  0.88906187 ~ 46 - q
-  0.71644104 ~ 60 - ODkB
-  0.7015781 ~ 74 - yDKOBR
-  0.70146525 ~ 91 - qTsv
-  0.7007844 ~ 24 - A
-  0.6952753 ~ 47 - Dg9IPURDQS
-  0.69335353 ~ 90 - T2FfByNwB
-  0.6821474 ~ 8 - hz6Uwo1RF
-  0.67479587 ~ 33 - Mcz6eoHBn</code></pre><p>or a JSON response created are sent elsewhere</p><pre><code class="language-julia-repl">julia&gt; response = Garamond.build_response(env.dbdata, request, ranked, id_key=env.id_key)
-&quot;{\&quot;n_searchers\&quot;:1,\&quot;n_searchers_w_results\&quot;:1,\&quot;suggestions\&quot;:{\&quot;d\&quot;:{}},\&quot;elapsed_time\&quot;:-1.0,\&quot;results\&quot;:{\&quot;searcher_1\&quot;:[{\&quot;id\&quot;:12,\&quot;RandString\&quot;:\&quot;Q\&quot;,\&quot;score\&quot;:0.903735,\&quot;StringField\&quot;:\&quot;\&quot;},{\&quot;id\&quot;:46,\&quot;RandString\&quot;:\&quot;q\&quot;,\&quot;score\&quot;:0.88906187,\&quot;StringField\&quot;:\&quot;A B C D E\&quot;},{\&quot;id\&quot;:60,\&quot;RandString\&quot;:\&quot;ODkB\&quot;,\&quot;score\&quot;:0.71644104,\&quot;StringField\&quot;:\&quot;A B\&quot;},{\&quot;id\&quot;:74,\&quot;RandString\&quot;:\&quot;yDKOBR\&quot;,\&quot;score\&quot;:0.7015781,\&quot;StringField\&quot;:\&quot;A B\&quot;},{\&quot;id\&quot;:91,\&quot;RandString\&quot;:\&quot;qTsv\&quot;,\&quot;score\&quot;:0.70146525,\&quot;StringField\&quot;:\&quot;A B\&quot;}]},\&quot;n_total_results\&quot;:10}&quot;</code></pre><p>To verify the response, it can be parsed and displayed:</p><pre><code class="language-julia-repl">julia&gt; parsed_response = JSON.parse(response)
+  0.8869778 ~ 12 - Q
+  0.842556 ~ 46 - q
+  0.7413416 ~ 22 - piXz
+  0.7267249 ~ 96 - uGMvrSY
+  0.6943369 ~ 85 - JTE
+  0.6829351 ~ 89 - o
+  0.6803274 ~ 36 - r
+  0.67822385 ~ 17 - nMVWG8
+  0.67632246 ~ 33 - Mcz6eoHBn
+  0.6682278 ~ 45 - peMR</code></pre><p>or a JSON response created are sent elsewhere</p><pre><code class="language-julia-repl">julia&gt; response = Garamond.build_response(env.dbdata, request, ranked, id_key=env.id_key)
+&quot;{\&quot;n_searchers\&quot;:1,\&quot;n_searchers_w_results\&quot;:1,\&quot;suggestions\&quot;:{\&quot;d\&quot;:{}},\&quot;elapsed_time\&quot;:-1.0,\&quot;results\&quot;:{\&quot;searcher_1\&quot;:[{\&quot;id\&quot;:12,\&quot;RandString\&quot;:\&quot;Q\&quot;,\&quot;score\&quot;:0.8869778,\&quot;StringField\&quot;:\&quot;\&quot;},{\&quot;id\&quot;:46,\&quot;RandString\&quot;:\&quot;q\&quot;,\&quot;score\&quot;:0.842556,\&quot;StringField\&quot;:\&quot;A B C D E\&quot;},{\&quot;id\&quot;:22,\&quot;RandString\&quot;:\&quot;piXz\&quot;,\&quot;score\&quot;:0.7413416,\&quot;StringField\&quot;:\&quot;A B C D\&quot;},{\&quot;id\&quot;:96,\&quot;RandString\&quot;:\&quot;uGMvrSY\&quot;,\&quot;score\&quot;:0.7267249,\&quot;StringField\&quot;:\&quot;A B C D E\&quot;},{\&quot;id\&quot;:85,\&quot;RandString\&quot;:\&quot;JTE\&quot;,\&quot;score\&quot;:0.6943369,\&quot;StringField\&quot;:\&quot;A B C D E\&quot;}]},\&quot;n_total_results\&quot;:10}&quot;</code></pre><p>To verify the response, it can be parsed and displayed:</p><pre><code class="language-julia-repl">julia&gt; parsed_response = JSON.parse(response)
 Dict{String,Any} with 6 entries:
   &quot;n_searchers&quot;           =&gt; 1
   &quot;n_searchers_w_results&quot; =&gt; 1
@@ -62,8 +62,8 @@ Dict{String,Any} with 6 entries:
 
 julia&gt; parsed_response[&quot;results&quot;][collect(keys(parsed_response[&quot;results&quot;]))[1]]
 5-element Array{Any,1}:
- Dict{String,Any}(&quot;score&quot; =&gt; 0.903735,&quot;StringField&quot; =&gt; &quot;&quot;,&quot;id&quot; =&gt; 12,&quot;RandString&quot; =&gt; &quot;Q&quot;)
- Dict{String,Any}(&quot;score&quot; =&gt; 0.88906187,&quot;StringField&quot; =&gt; &quot;A B C D E&quot;,&quot;id&quot; =&gt; 46,&quot;RandString&quot; =&gt; &quot;q&quot;)
- Dict{String,Any}(&quot;score&quot; =&gt; 0.71644104,&quot;StringField&quot; =&gt; &quot;A B&quot;,&quot;id&quot; =&gt; 60,&quot;RandString&quot; =&gt; &quot;ODkB&quot;)
- Dict{String,Any}(&quot;score&quot; =&gt; 0.7015781,&quot;StringField&quot; =&gt; &quot;A B&quot;,&quot;id&quot; =&gt; 74,&quot;RandString&quot; =&gt; &quot;yDKOBR&quot;)
- Dict{String,Any}(&quot;score&quot; =&gt; 0.70146525,&quot;StringField&quot; =&gt; &quot;A B&quot;,&quot;id&quot; =&gt; 91,&quot;RandString&quot; =&gt; &quot;qTsv&quot;)</code></pre><footer><hr/><a class="previous" href="../"><span class="direction">Previous</span><span class="title">Introduction</span></a><a class="next" href="../configuration/"><span class="direction">Next</span><span class="title">Configuration</span></a></footer></article></body></html>
+ Dict{String,Any}(&quot;score&quot; =&gt; 0.8869778,&quot;StringField&quot; =&gt; &quot;&quot;,&quot;id&quot; =&gt; 12,&quot;RandString&quot; =&gt; &quot;Q&quot;)
+ Dict{String,Any}(&quot;score&quot; =&gt; 0.842556,&quot;StringField&quot; =&gt; &quot;A B C D E&quot;,&quot;id&quot; =&gt; 46,&quot;RandString&quot; =&gt; &quot;q&quot;)
+ Dict{String,Any}(&quot;score&quot; =&gt; 0.7413416,&quot;StringField&quot; =&gt; &quot;A B C D&quot;,&quot;id&quot; =&gt; 22,&quot;RandString&quot; =&gt; &quot;piXz&quot;)
+ Dict{String,Any}(&quot;score&quot; =&gt; 0.7267249,&quot;StringField&quot; =&gt; &quot;A B C D E&quot;,&quot;id&quot; =&gt; 96,&quot;RandString&quot; =&gt; &quot;uGMvrSY&quot;)
+ Dict{String,Any}(&quot;score&quot; =&gt; 0.6943369,&quot;StringField&quot; =&gt; &quot;A B C D E&quot;,&quot;id&quot; =&gt; 85,&quot;RandString&quot; =&gt; &quot;JTE&quot;)</code></pre><footer><hr/><a class="previous" href="../"><span class="direction">Previous</span><span class="title">Introduction</span></a><a class="next" href="../configuration/"><span class="direction">Next</span><span class="title">Configuration</span></a></footer></article></body></html>
