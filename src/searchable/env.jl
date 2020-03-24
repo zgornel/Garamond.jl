@@ -6,7 +6,8 @@ struct SearchEnv{T}
     dbdata        #::Union{AbstractNDSparse, AbstractIndexedTable}
     id_key        #::Symbol
     sampler
-    searchers::Vector{<:Searcher{T}}     #::Vector{<:Searcher}
+    # TODO(cc-embedderspool): add embedders
+    searchers::Vector{<:Searcher{T}}
     config_path   #::String
 end
 
@@ -41,8 +42,11 @@ function build_search_env(env_config; cache_path=nothing)
         dbdata = env_config.data_loader()
         db_check_id_key(dbdata, env_config.id_key)
 
+        # TODO(cc-embedderspool): build embedders, pass to build_searcher below
+
         # Build searchers
         srchers = [build_searcher(dbdata,
+                                  # TODO(cc-embedderspool): use embedders
                                   srcher_config;
                                   id_key=env_config.id_key,
                                   vectors_eltype=env_config.vectors_eltype)

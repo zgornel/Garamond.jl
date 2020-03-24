@@ -28,8 +28,8 @@ end
                            :config_path => String)
     @test test_nt_props(cfg, ENVCONFIG_PROPS)
 
-    SEARCHERCONFIG_PROPS = Dict(:id => Garamond.StringId,
-                                :id_aggregation => Garamond.StringId,
+    SEARCHERCONFIG_PROPS = Dict(:id => String,
+                                :id_aggregation => String,
                                 :description => String,
                                 :enabled => Bool,
                                 :indexable_fields => Vector{Symbol},

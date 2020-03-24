@@ -38,17 +38,20 @@ function env_operator(env, channels)
                 _dbdata = env_config.data_loader()
                 db_check_id_key(_dbdata, env_config.id_key)
 
+                #TODO(cc-embedderpool): build embedders
                 # Selectively reload
                 new_searchers = similar(env.searchers)  # initialize
                 cnt = 0
                 for i in eachindex(env.searchers)
-                    if cmd_argument == "*" || isequal(id(env.searchers[i]), StringId(cmd_argument))
+                    if cmd_argument == "*" || isequal(id(env.searchers[i]), cmd_argument)
+                        #TODO(cc-embedderpool): fix signature
                         new_searchers[i] = build_searcher(_dbdata, env_config.searcher_configs[i])
                         cnt+= 1
                     else
                         new_searchers[i] = env.searchers[i]
                     end
                 end
+                #TODO(cc-embedderpool): fix signature
                 _env = SearchEnv(_dbdata, env_config.id_key, env.sampler, new_searchers, env_config.config_path)
                 @info "• Updated $cnt searcher(s) in the environment."
             catch

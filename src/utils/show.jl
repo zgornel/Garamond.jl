@@ -1,7 +1,3 @@
-# StringID
-show(io::IO, id::StringId) = print(io, "id=\"$(id.value)\"")
-
-
 # Searcher
 show(io::IO, srcher::Searcher{T,E,I}) where {T,E,I} = begin
     _status = ifelse(isenabled(srcher), "enabled", "disabled")

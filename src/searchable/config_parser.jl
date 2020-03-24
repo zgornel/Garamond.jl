@@ -1,18 +1,10 @@
-"""
-String ID object.
-"""
-struct StringId
-    value::String
-end
-
-# Utils
-random_hash_string() = string(hash(rand()), base=16)
-random_string_id() = StringId(random_hash_string())
+random_string_id() = string(hash(rand()), base=16)
 
 # Construct IDs
-make_id(::Type{StringId}, value::T) where T<:AbstractString = StringId(String(value))
-make_id(::Type{StringId}, value::T) where T<:Number = StringId(string(value))
-make_id(::Type{StringId}, value::T) where T<:Nothing = random_string_id()
+make_id(value::AbstractString) = String(value)
+make_id(value::Number) = string(value)
+make_id(::Nothing) = random_string_id()
+make_id() = random_string_id()
 
 
 """
@@ -22,44 +14,53 @@ Parses a data configuration file (JSON format) and returns a `NamedTuple`
 that acts as a search environment configuration.
 
 • Search environment options reference
-    data_loader::Function           # 0 argument function that when called loads the data i.e. `dbdata`
-    data_sampler::Function          # function that takes as input raw data and outputs a `dbdata` row
-    id_key::Symbol                  # the name of the primary integer key in `dbdata`
-    vectors_eltype::Type            # the type of the vectors, scores etc. has to be `<:AbstractFloat`
-    searcher_configs::Vector{NamedTuple}  # the searcher configs (see reference below)
-    config_path::String             # the path to the config
+    `data_loader::Function`             # 0 argument function that when called loads the data i.e. `dbdata`
+    `data_sampler::Function`            # function that takes as input raw data and outputs a `dbdata` row
+    `id_key::Symbol`                    # the name of the primary integer key in `dbdata`
+    `vectors_eltype::Type`              # the type of the vectors, scores etc. has to be `<:AbstractFloat`
+    `searcher_configs::Vector{NamedTuple}`  # vector of searcher configs (see reference below)
+    `embedder_configs::Vector{NamedTuple}`  # vector of embedder configs (see reference below)
+    `config_path::String`               # the path to the config
 
-• Searcher options reference
-    id::StringId                    # searcher id
-    id_aggregation::StringId        # aggregation id
-    description::String             # description of the searcher
-    enabled::Bool                   # whether to use the searcher in search or not
-    indexable_fields::Vector{Symbol}
-    language::String                # the index-level language
-    stem_words::Bool                # whether to stem data or not
-    ngram_complexity::Int           # ngram complexity (i.e. max number of tokes for an n-gram)
-    vectors::Symbol                 # how document vectors are calculated i.e. :count, :tf, :tfidf, :bm25, :word2vec, :glove, :conceptnet, :compressed
-    vectors_transform::Symbol       # what transform to apply to the vectors i.e. :lsa, :rp, :none
-    vectors_dimension::Int          # desired dimensionality after transform (ignored for word2vec approaches)
-    search_index::Symbol            # type of the search index i.e. :naive, :kdtree, :hnsw
-    search_index_arguments::Vector{Any}
-    search_index_kwarguments::Dict{Symbol, Any}
-    embeddings_path::Union{Nothing, String}  # path to the embeddings file
-    embeddings_kind::Symbol         # Type of the embedding file for Word2Vec, GloVe i.e. :text, :binary
-    doc2vec_method::Symbol          # How to arrive at a single embedding from multiple i.e. :boe, :sif etc.
-    glove_vocabulary::Union{Nothing, String}  # Path to a GloVe-generated vocabulary file (only for binary embeddings)
-    oov_policy::Symbol              # what to do with non-embeddable documents i.e. :none, :large_vector
-    embedder_kwarguments::Dict{Symbol, Any}
-    heuristic::Union{Nothing, Symbol} # search heuristic for suggesting mispelled words (nothing means no recommendations)
-    text_strip_flags::UInt32        # How to strip text data before indexing
-    query_strip_flags::UInt32       # How to strip queries before searching
-    sif_alpha::Float                # smooth inverse frequency α parameter (for 'sif' doc2vec method only)
-    borep_dimension::Int            # output dimension for BOREP embedder
-    borep_pooling_function::Symbol  # pooling function for the BOREP embedder
-    disc_ngram::Int                 # DisC embedder ngram parameter
-    score_alpha::Float              # score alpha (parameter for the scoring function)
-    score_weight::Float             # weight of scores of searcher (used in result aggregation)
+• Embedder config fields reference
+    `id::String`
+    `description::String`
+    `indexable_fields::Union{Nothing, Vector{Symbol}}`  # which fields to index
+    `language::String`                  # the embedder-level language
+    `stem_words::Bool`                  # whether to stem words
+    `ngram_complexity::Int`             # ngram complexity (i.e. max number of tokes for an n-gram)
+    `vectors::Symbol`                   # wordvectors calculation/source i.e. :count, :tf, :tfidf, :bm25, :word2vec, :glove, :conceptnet, :compressed
+    `vectors_transform::Symbol`         # transform to apply to the vectors i.e. :lsa, :rp, :none
+    `vectors_dimension::Int`            # desired dimensionality after transform (ignored for word2vec approaches)
+    `embeddings_path::Union{Nothing, String}`  # path to the embeddings file
+    `embeddings_kind::Symbol`           # Type of the embedding file for Word2Vec, GloVe i.e. :text, :binary
+    `doc2vec_method::Symbol`            # How to arrive at a single embedding from multiple i.e. :boe, :sif etc.
+    `glove_vocabulary::Union{Nothing, String}`  # Path to a GloVe-generated vocabulary file (only for binary embeddings)
+    `oov_policy::Symbol`                # what to do with non-embeddable documents i.e. :none, :large_vector
+    `embedder_kwarguments::Dict{Symbol, Any}`  # explicit specification of embedder keyword arguments
+    `text_strip_flags::UInt32`          # How to strip text data before indexing
+    `sif_alpha::Float`                  # smooth inverse frequency α parameter (for 'sif' doc2vec method only)
+    `borep_dimension::Int`              # output dimension for BOREP embedder
+    `borep_pooling_function::Symbol`    # pooling function for the BOREP embedder
+    `disc_ngram::Int`                   # DisC embedder ngram parameter
+
+• Searcher config fields reference
+    `id::String`                        # searcher id
+    `id_aggregation::String`            # aggregation id
+    `description::String`               # description of the searcher
+    `enabled::Bool`                     # whether to use the searcher in search or not
+    `search_index::Symbol`              # type of the search index i.e. :naive, :kdtree, :hnsw
+    `search_index_arguments::Vector{Any}`
+    `search_index_kwarguments::Dict{Symbol, Any}`
+    `input_embedder::String`            # id of the input/query embedder
+    `data_embedder::String`             # id of the data/document embedder
+    `heuristic::Union{Nothing, Symbol}` # search heuristic for suggesting mispelled words (nothing means no recommendations)
+    `score_alpha::Float`                # score alpha (parameter for the scoring function)
+    `score_weight::Float`               # weight of scores of searcher (used in result aggregation)
 """
+###########
+# TODO(cc-embedderspool): Construct embedders pool configuration
+###########
 function parse_configuration(filename::AbstractString)
 
     # Read config (this should fail if config not found)
@@ -89,7 +90,7 @@ function parse_configuration(filename::AbstractString)
     id_key = Symbol(get(config, "id_key", DEFAULT_DB_ID_KEY))
 
     # Create an environment id
-    id_environment = make_id(StringId, get(config, "id", nothing))
+    id_environment = make_id(get(config, "id", nothing))
 
     # Vectors element type
     vectors_eltype = try
@@ -99,21 +100,28 @@ function parse_configuration(filename::AbstractString)
         DEFAULT_VECTORS_ELTYPE
     end
 
+    # Embedder configs
+    parsed_embedder_configs = config["embedders"]
+    # TODO(cc-embedderspool): Implement this:
+    #  - enforce presence of id
+    #  - enforce id uniqueness
+    #  - ensure all checks
+
     # Searcher configs
     parsed_searcher_configs = config["searchers"]
     searcher_configs = []
-    MUST_HAVE_KEYS = ["vectors"]
 
     for (i, dconfig) in enumerate(parsed_searcher_configs)
-        if !all(map(key->haskey(dconfig, key), MUST_HAVE_KEYS))
-            @warn "Missing keys from $MUST_HAVE_KEYS in configuration $i. Ignoring..."*
-            continue
-        end
+        # TODO(cc-embedderspool): Check for embedder id first
+        ###if !all(map(key->haskey(dconfig, key), MUST_HAVE_KEYS))
+        ###    @warn "Missing keys from $MUST_HAVE_KEYS in configuration $i. Ignoring..."*
+        ###    continue
+        ###end
         # Get searcher parameter values (assigning default values when the case)
         try
-            _id = make_id(StringId, get(dconfig, "id", nothing))
+            _id = make_id(get(dconfig, "id", nothing))
             _id_aggregation = haskey(dconfig, "id_aggregation") ?
-                                make_id(StringId, dconfig["id_aggregation"]) :
+                                make_id(dconfig["id_aggregation"]) :
                                 id_environment
             _description = get(dconfig, "description", "")
             _enabled = get(dconfig, "enabled", true)
@@ -306,7 +314,7 @@ function parse_configuration(filename::AbstractString)
                   configuration errors. Exiting..."""
         exit(-1)
     else
-        all_ids = Vector{StringId}()
+        all_ids = String[]
         for config in searcher_configs
             if config.id in all_ids          # check id uniqueness
                 @error """Multiple occurences of $(config.id) detected. Data id's

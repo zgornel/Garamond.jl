@@ -24,7 +24,7 @@ function search(env::SearchEnv, request; exclude=nothing)
         result = build_result_from_ids(env.dbdata,
                                        idxs_filt,
                                        env.id_key,
-                                       make_id(StringId, nothing);
+                                       make_id();
                                        id_key=env.id_key,
                                        max_matches=request.max_matches)
         results = [result]

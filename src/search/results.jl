@@ -2,7 +2,7 @@
 Object that stores the search results from a single searcher.
 """
 struct SearchResult{T<:AbstractFloat}
-    id::StringId
+    id::String
     query_matches::Vector{Tuple{T, Int}}  # vector of (score, idx)
     needle_matches::Vector{String}
     suggestions::MultiDict{String, Tuple{T, String}} # needle => tuples of (score,partial match)
@@ -52,7 +52,7 @@ aggregation id's are merged together into a new search result that
 replaces the individual searcher ones.
 """
 function aggregate!(results::Vector{S},
-                    aggregation_ids::Vector{StringId};
+                    aggregation_ids::Vector{String};
                     method=RESULT_AGGREGATION_STRATEGY,
                     max_matches=MAX_MATCHES,
                     max_suggestions=MAX_SUGGESTIONS,
@@ -75,7 +75,7 @@ function aggregate!(results::Vector{S},
             target_results = results[positions]
             # aggregate
             qm = [result.query_matches for result in target_results]
-            weights = [result.score_weight * T(get(custom_weights, Symbol(result.id.value), 1.0))
+            weights = [result.score_weight * T(get(custom_weights, Symbol(result.id), 1.0))
                        for result in target_results]
             merged_query_matches = __aggregate(qm, weights; method=method, max_matches=max_matches)
             # Create SearchResult object

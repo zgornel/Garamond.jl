@@ -97,25 +97,24 @@ function search(srcher::Searcher{T,E,I},
                 max_matches::Int=MAX_MATCHES,
                 max_suggestions::Int=MAX_SUGGESTIONS
                ) where {T<:AbstractFloat, E, I<:AbstractIndex}
-    # Initializations
-    isregex = (search_method == :regex)
-    n = length(srcher.index)  # number of embedded documents
-    language = get(STR_TO_LANG, srcher.config.language, DEFAULT_LANGUAGE)()
-    flags = srcher.config.query_strip_flags
-    oov_policy = srcher.config.oov_policy
-    ngram_complexity = srcher.config.ngram_complexity
 
-    # Prepare and embed query
-    needles = query_preparation(query, flags, language)
+    # TODO(cc-embedderspool): Move operations to embedder
+    ### language = get(STR_TO_LANG, srcher.config.language, DEFAULT_LANGUAGE)()
+    ### flags = srcher.config.query_strip_flags
+    ### oov_policy = srcher.config.oov_policy
+    ### ngram_complexity = srcher.config.ngram_complexity
+
+    ### # Prepare and embed query
+    ### needles = query_preparation(query, flags, language)
     query_embedding, query_is_embedded = document2vec(srcher.embedder,
                                             needles, oov_policy,
                                             ngram_complexity=ngram_complexity,
-                                            isregex=isregex)
+                                            isregex=(search_method===:regex))
     # Search (if document vector is not zero)
     scores, idxs = T[], Int[]
     if query_is_embedded
         ### Search
-        k = min(n, max_matches)
+        k = min(length(srcher.index), max_matches)
         idxs, scores = knn_search(srcher.index, query_embedding, k)
         ###
         score_transform!(scores, alpha=srcher.config.score_alpha)
@@ -123,6 +122,7 @@ function search(srcher::Searcher{T,E,I},
     query_matches = collect(zip(scores, idxs))
 
     # Find matching and missing needles
+    # TODO(cc-embedderspool): Fix signature
     needle_matches, missing_needles = __found_missing_needles(srcher.embedder, needles)
 
     # Get suggestions

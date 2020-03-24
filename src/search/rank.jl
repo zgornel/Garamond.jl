@@ -35,7 +35,7 @@ The arguments above should be enough to implement any ranker.
 # Corresponds to ouside rank request
 # (IDs specified explicitly in request)
 function rank(env::SearchEnv, request, ::Nothing)
-    result_id = make_id(StringId, nothing)
+    result_id = make_id()
     # Extract IDss to be ranked
     ids = strip.(split(request.query))
     unranked_idxs = db_select_idxs_from_values(env.dbdata,

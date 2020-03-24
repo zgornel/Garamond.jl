@@ -2,12 +2,14 @@
     Search object. It contains all the indexed data and related
 configuration that allows for searches to be performed.
 """
+# TODO(cc-embedderspool): Reconsider type-parameterization for embedder
 mutable struct Searcher{T<:AbstractFloat,
                         E<:AbstractEmbedder{String, T},
                         I<:AbstractIndex}
     data::Ref
     config::NamedTuple
-    embedder::E                                 # needed to embed query
+    input_embedder::Ref{E}                      # embeds queries
+    data_embedder::Ref{E}                       # embeds data
     index::I                                    # indexed search data
     search_trees::BKTree{String}                # suggestion structure
 end
@@ -38,7 +40,7 @@ Base.pushfirst!(srcher::Searcher, entry) = pushinner!(srcher, entry, :first)
 
 pushinner!(srcher::Searcher, entry, position::Symbol) = begin
     document = entry2document(entry, srcher.config)
-    embedded = document2vec(srcher.embedder,
+    embedded = document2vec(srcher.data_embedder[],
                             document,
                             srcher.config.oov_policy;
                             ngram_complexity=srcher.config.ngram_complexity)[1]
@@ -55,15 +57,13 @@ Base.deleteat!(srcher::Searcher, pos) = delete_from_index!(srcher.index, pos)
 
 
 # Indexing for vectors of searchers
-function getindex(srchers::AbstractVector{Searcher}, an_id::StringId)
+function getindex(srchers::AbstractVector{Searcher}, an_id::String)
     idxs = Int[]
     for (i, srcher) in enumerate(srchers)
         isequal(id(srcher), an_id) && push!(idxs, i)
     end
     return srchers[idxs]
 end
-
-getindex(srchers::AbstractVector{Searcher}, an_id::String) = getindex(srchers, StringId(an_id))
 
 
 """
@@ -73,20 +73,23 @@ Creates a Searcher from a searcher configuration.
 """
 function build_searcher(dbdata,
                         config;
+                        # TODO(cc-embedderspool): Provide embedders as input argument
                         id_key=DEFAULT_DB_ID_KEY,
                         vectors_eltype=DEFAULT_VECTORS_ELTYPE)
-    flags = config.text_strip_flags | (config.stem_words ? stem_words : 0x0)
-    language = get(STR_TO_LANG, config.language, DEFAULT_LANGUAGE)()
 
-    # Pre-process documents
-    documents = [entry2document(dbentry, config; flags=flags, language=language)
-                          for dbentry in db_sorted_row_iterator(dbdata; id_key=id_key, rev=false)]
+    # TODO(cc-embedderspool): Move to separate function
+        ### flags = config.text_strip_flags | (config.stem_words ? stem_words : 0x0)
+        ### language = get(STR_TO_LANG, config.language, DEFAULT_LANGUAGE)()
 
-    # Build corpus
-    crps = build_corpus(documents, language, config.ngram_complexity)
+        ### # Pre-process documents
+        ### documents = [entry2document(dbentry, config; flags=flags, language=language)
+        ###                       for dbentry in db_sorted_row_iterator(dbdata; id_key=id_key, rev=false)]
 
-    # Get embedder
-    embedder = build_embedder(crps, config; vectors_eltype=vectors_eltype)
+        ### # Build corpus
+        ### crps = build_corpus(documents, language, config.ngram_complexity)
+
+        ### # Get embedder
+        ### embedder = build_embedder(crps, config; vectors_eltype=vectors_eltype)
 
     # Calculate embeddings for each document
     embedded = documents2mat(embedder,
@@ -103,6 +106,7 @@ function build_searcher(dbdata,
     srchtree = build_bktree(config.heuristic, crps)
 
     # Build searcher
+    # TODO(cc-embedderspool): Fix signature
     srcher = Searcher(Ref(dbdata), config, embedder, srchindex, srchtree)
 
     @debug "* Loaded: $srcher."
@@ -193,8 +197,7 @@ function build_corpus(documents::Vector{Vector{String}},
 end
 
 
-# TODO(Corneliu) Separate embeddings as well from searchers
-# i.e. data, embeddings and indexes are separate an re-use each other
+# TODO(cc-embedderspool): Fix , move to
 function build_embedder(crps, config; vectors_eltype=vectors_eltype)
     if config.vectors in [:word2vec, :glove, :conceptnet, :compressed]
         return build_wv_embedder(crps, config; vectors_eltype=vectors_eltype)
@@ -204,6 +207,7 @@ function build_embedder(crps, config; vectors_eltype=vectors_eltype)
 end
 
 
+# TODO(cc-embedderspool): Fix
 function build_dtv_embedder(crps, config; vectors_eltype=DEFAULT_VECTORS_ELTYPE)
     # Initialize dtm
     dtm = DocumentTermMatrix{vectors_eltype}(crps, ngram_complexity=config.ngram_complexity)
@@ -226,6 +230,7 @@ function build_dtv_embedder(crps, config; vectors_eltype=DEFAULT_VECTORS_ELTYPE)
 end
 
 
+# TODO(cc-embedderspool): Fix
 function build_wv_embedder(crps, config; vectors_eltype=DEFAULT_VECTORS_ELTYPE)
     # Read word embeddings
     local embeddings
