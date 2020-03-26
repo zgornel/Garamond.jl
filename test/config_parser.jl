@@ -50,7 +50,6 @@ end
                                 :embedder_kwarguments => Dict{Symbol, Any},
                                 :heuristic => Union{Nothing, Symbol},
                                 :text_strip_flags => UInt32,
-                                :query_strip_flags => UInt32,
                                 :sif_alpha => cfg.vectors_eltype,
                                 :borep_dimension => Int,
                                 :borep_pooling_function => Symbol,

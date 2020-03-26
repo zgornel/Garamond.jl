@@ -57,8 +57,8 @@ function build_search_env(env_config; cache_path=nothing)
         @info "• Environment successfully built using config $(env_config.config_path)."
         return env
     catch e
-        @warn "Could not build environment from $(env_config.config_path).\n$e\nExiting..."
-        exit()
+        @warn "Could not build environment from $(env_config.config_path).\n$e"
+        return nothing
     end
 end
 
@@ -71,6 +71,9 @@ configuration file `config_path`.
 """
 build_search_env(config_path::AbstractString; cache_path=nothing) =
     build_search_env(parse_configuration(config_path); cache_path=cache_path)
+
+
+build_search_env(::Nothing; cache_path=nothing) = nothing
 
 
 """

@@ -18,6 +18,19 @@ function generate_sample_config_1()
         "data_sampler_name": "identity_sampler",
         "id_key": "id",
         "vectors_eltype": "Float32",
+        "embedders": [
+            {
+                "id": "embedder_1",
+                "description": "BM25+RP embedder",
+                "embedable_fields": ["RandString", "StringField", "StringField2", "IntField"],
+                "stem_words": false,
+                "language": "english",
+                "vectors": "bm25",
+                "vectors_transform": "rp",
+                "vectors_dimension": 50,
+                "oov_policy" : "large_vector"
+            }
+        ],
         "searchers": [
             {
                 "id": "searcher_1",
@@ -25,13 +38,8 @@ function generate_sample_config_1()
                 "description": "A searcher using BM25+RP embeddings and naive indexing",
                 "enabled": true,
                 "indexable_fields": ["RandString", "StringField", "StringField2", "IntField"],
-                "stem_words": false,
-                "language": "english",
-                "vectors": "bm25",
-                "vectors_transform": "rp",
-                "vectors_dimension": 50,
+                "data_embedder": "embedder_1",
                 "search_index": "naive",
-                "oov_policy" : "large_vector",
                 "score_alpha": 0.4,
                 "score_weight": 0.8
             }
@@ -48,6 +56,32 @@ function generate_sample_config_2()
         "data_sampler_name": "identity_sampler",
         "id_key": "id",
         "vectors_eltype": "Float32",
+        "embedders": [
+            {
+                "id": "embedder_1",
+                "description": "BM25+RP embedder",
+                "embedable_fields": ["RandString", "StringField", "StringField2", "IntField"],
+                "stem_words": false,
+                "language": "english",
+                "vectors": "bm25",
+                "vectors_transform": "rp",
+                "vectors_dimension": 50,
+                "oov_policy" : "large_vector"
+            },
+            {
+                "id": "embedder_2",
+                "description": "Word2Vec BOE embedder",
+                "stem_words": false,
+                "language": "english",
+                "vectors": "word2vec",
+                "vectors_transform": "none",
+                "embeddings_path": "$(generate_embeddings_path())",
+                "embeddings_kind": "binary",
+                "doc2vec_method": "boe",
+                "embedder_kwarguments": {},
+                "oov_policy" : "large_vector"
+            }
+        ],
         "searchers": [
             {
                 "id": "searcher_1",
@@ -55,13 +89,8 @@ function generate_sample_config_2()
                 "description": "A searcher using BM25+RP embeddings and naive indexing",
                 "enabled": true,
                 "indexable_fields": ["RandString", "StringField", "StringField2", "IntField"],
-                "stem_words": false,
-                "language": "english",
-                "vectors": "bm25",
-                "vectors_transform": "rp",
-                "vectors_dimension": 50,
+                "data_embedder": "embedder_1",
                 "search_index": "naive",
-                "oov_policy" : "large_vector",
                 "score_alpha": 0.4,
                 "score_weight": 0.8
             },
@@ -71,18 +100,10 @@ function generate_sample_config_2()
                 "description": "A searcher using Word2Vec embeddings and naive indexing",
                 "enabled": true,
                 "indexable_fields": ["StringField2"],
-                "stem_words": false,
-                "language": "english",
-                "vectors": "word2vec",
-                "vectors_transform": "none",
+                "data_embedder": "embedder_2",
                 "search_index": "ivfadc",
                 "search_index_arguments": [],
                 "search_index_kwarguments": {"kc":4, "m":4},
-                "embeddings_path": "$(generate_embeddings_path())",
-                "embeddings_kind": "binary",
-                "doc2vec_method": "boe",
-                "embedder_kwarguments": {},
-                "oov_policy" : "large_vector",
                 "score_alpha": 0.4,
                 "score_weight": 0.8
             }
