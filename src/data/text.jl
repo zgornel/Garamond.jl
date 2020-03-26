@@ -53,12 +53,9 @@ function summarize(sentences::Vector{S};
                    flags::UInt32=DEFAULT_SUMMARIZATION_STRIP_FLAGS
                   ) where S<:AbstractString
     # Get document term matrix
-    s = StringDocument{String}.(sentences)
-    c = Corpus(s)
-    StringAnalysis.prepare!(c, flags)
-    filter!(doc->occursin(r"[a-zA-Z0-9]",text(doc)), documents(c))
-    update_lexicon!(c)
-    t = dtm(DocumentTermMatrix{Float32}(c))
+    s = prepare.(sentences, flags)
+    filter!(d->occursin(r"[a-zA-Z0-9]", d), s)
+    t = dtm(DocumentTermMatrix{Float32}(s))
     tf_idf!(t)
     # Page rank
     α = 0.85  # damping factor

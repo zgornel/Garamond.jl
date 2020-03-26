@@ -85,11 +85,8 @@ function build_searcher(dbdata,
         ### documents = [entry2document(dbentry, config; flags=flags, language=language)
         ###                       for dbentry in db_sorted_row_iterator(dbdata; id_key=id_key, rev=false)]
 
-        ### # Build corpus
-        ### crps = build_corpus(documents, language, config.ngram_complexity)
-
         ### # Get embedder
-        ### embedder = build_embedder(crps, config; vectors_eltype=vectors_eltype)
+        ### embedder = build_embedder(documents, config; vectors_eltype=vectors_eltype)
 
     # Calculate embeddings for each document
     embedded = documents2mat(embedder,
@@ -103,7 +100,7 @@ function build_searcher(dbdata,
     srchindex = indexer(embedded)
 
     # Build search tree (for suggestions)
-    srchtree = build_bktree(config.heuristic, crps)
+    srchtree = build_bktree(config.heuristic, documents)
 
     # Build searcher
     # TODO(cc-embedderspool): Fix signature
@@ -151,8 +148,9 @@ function documents2mat(embedder,
 end
 
 
-function build_bktree(heuristic, crps)
-    lexicon = create_lexicon(crps, 1)
+function build_bktree(heuristic, documents)
+    _documents = [join(sentences, " ") for sentences in documents]  # merge sentences
+    lexicon = create_lexicon(_documents, 1)
     if heuristic != nothing
         distance = get(HEURISTIC_TO_DISTANCE, heuristic, DEFAULT_DISTANCE)
         fdist = (x,y) -> evaluate(distance, x, y)
@@ -176,41 +174,21 @@ function build_indexer(index, args, kwargs)
 end
 
 
-function build_corpus(documents::Vector{Vector{String}},
-                      language::Languages.Language,
-                      ngram_complexity::Int)
-    language_type = typeof(language)
-    @assert language_type in SUPPORTED_LANGUAGES "Language $language_type is not supported"
-
-    _documents = Vector{StringDocument{String}}()
-    for sentences in documents
-        doc = StringDocument(join(sentences, " "))
-        StringAnalysis.language!(doc, language)
-        push!(_documents, doc)
-    end
-    crps = Corpus(_documents)
-
-    # Update lexicon, inverse index
-    update_lexicon!(crps, ngram_complexity)
-    update_inverse_index!(crps, ngram_complexity)
-    return crps
-end
-
-
 # TODO(cc-embedderspool): Fix , move to
-function build_embedder(crps, config; vectors_eltype=vectors_eltype)
+function build_embedder(documents, config; vectors_eltype=vectors_eltype)
+    _documents = [join(sentences, " ") for sentences in documents]  # merge sentences
     if config.vectors in [:word2vec, :glove, :conceptnet, :compressed]
-        return build_wv_embedder(crps, config; vectors_eltype=vectors_eltype)
+        return build_wv_embedder(_documents, config; vectors_eltype=vectors_eltype)
     elseif config.vectors in [:count, :tf, :tfidf, :bm25]
-        return build_dtv_embedder(crps, config; vectors_eltype=vectors_eltype)
+        return build_dtv_embedder(_documents, config; vectors_eltype=vectors_eltype)
     end
 end
 
 
 # TODO(cc-embedderspool): Fix
-function build_dtv_embedder(crps, config; vectors_eltype=DEFAULT_VECTORS_ELTYPE)
+function build_dtv_embedder(documents, config; vectors_eltype=DEFAULT_VECTORS_ELTYPE)
     # Initialize dtm
-    dtm = DocumentTermMatrix{vectors_eltype}(crps, ngram_complexity=config.ngram_complexity)
+    dtm = DocumentTermMatrix{vectors_eltype}(documents, ngram_complexity=config.ngram_complexity)
     mtype = RPModel
     k = 0
     config.vectors_transform === :none && true  # do nothing, mtype and k are initialized
@@ -231,7 +209,7 @@ end
 
 
 # TODO(cc-embedderspool): Fix
-function build_wv_embedder(crps, config; vectors_eltype=DEFAULT_VECTORS_ELTYPE)
+function build_wv_embedder(documents, config; vectors_eltype=DEFAULT_VECTORS_ELTYPE)
     # Read word embeddings
     local embeddings
     if config.vectors == :conceptnet
@@ -264,7 +242,7 @@ function build_wv_embedder(crps, config; vectors_eltype=DEFAULT_VECTORS_ELTYPE)
     config.doc2vec_method === :sif &&
         return SIFEmbedder(embeddings;
                            config.embedder_kwarguments...,
-                           lexicon=create_lexicon(crps, 1),
+                           lexicon=create_lexicon(documents, 1),
                            alpha=config.sif_alpha)
     config.doc2vec_method === :borep &&
         return BOREPEmbedder(embeddings;
