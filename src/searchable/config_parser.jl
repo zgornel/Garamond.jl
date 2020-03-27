@@ -35,9 +35,9 @@ that acts as a search environment configuration.
     `embeddings_kind::Symbol`           # Type of the embedding file for Word2Vec, GloVe i.e. :text, :binary
     `doc2vec_method::Symbol`            # How to arrive at a single embedding from multiple i.e. :boe, :sif etc.
     `glove_vocabulary::Union{Nothing, String}`  # Path to a GloVe-generated vocabulary file (only for binary embeddings)
-    `oov_policy::Symbol`                # what to do with non-embedable documents i.e. :none, :large_vector
+    `oov_policy::Symbol`                # what to do with non-embeddable documents i.e. :none, :large_vector
     `embedder_kwarguments::Dict{Symbol, Any}`  # explicit specification of embedder keyword arguments
-    `embedable_fields::Union{Nothing, Vector{Symbol}}`  # which fields to use for training the embedder
+    `embeddable_fields::Union{Nothing, Vector{Symbol}}`  # which fields to use for training the embedder
     `text_strip_flags::UInt32`          # How to strip text data before indexing
     `sif_alpha::Float`                  # smooth inverse frequency α parameter (for 'sif' doc2vec method only)
     `borep_dimension::Int`              # output dimension for BOREP embedder
@@ -124,7 +124,9 @@ function parse_configuration(filename::AbstractString)
             catch
                 Dict{Symbol,Any}()
             end
-            _embedable_fields = haskey(embcfg, "embedable_fields") ? Symbol.(embcfg["embedable_fields"]) : DEFAULT_EMBEDABLE_FIELDS
+            _embeddable_fields = haskey(embcfg, "embeddable_fields") ?
+                                    Symbol.(embcfg["embeddable_fields"]) :
+                                    DEFAULT_EMBEDDABLE_FIELDS
             _text_strip_flags = UInt32(get(embcfg, "text_strip_flags", DEFAULT_TEXT_STRIP_FLAGS))
             _sif_alpha = vectors_eltype(get(embcfg, "sif_alpha", DEFAULT_SIF_ALPHA))
             _borep_dimension = Int(get(embcfg, "borep_dimension", DEFAULT_BOREP_DIMENSION))
@@ -236,7 +238,7 @@ function parse_configuration(filename::AbstractString)
                      glove_vocabulary=_glove_vocabulary,
                      oov_policy=_oov_policy,
                      embedder_kwarguments=_embedder_kwarguments,
-                     embedable_fields=_embedable_fields,
+                     embeddable_fields=_embeddable_fields,
                      text_strip_flags=_text_strip_flags,
                      sif_alpha=_sif_alpha,
                      borep_dimension=_borep_dimension,
@@ -263,10 +265,14 @@ function parse_configuration(filename::AbstractString)
             catch
                 Dict{Symbol,Any}()
             end
-            _indexable_fields = haskey(srchercfg, "indexable_fields") ? Symbol.(srchercfg["indexable_fields"]) : DEFAULT_INDEXABLE_FIELDS
+            _indexable_fields = haskey(srchercfg, "indexable_fields") ?
+                                    Symbol.(srchercfg["indexable_fields"]) :
+                                    DEFAULT_INDEXABLE_FIELDS
             _data_embedder = make_id(get(srchercfg, "data_embedder", nothing))
             _input_embedder = make_id(get(srchercfg, "input_embedder", _data_embedder))  # defaults to the data embedder
-            _heuristic = haskey(srchercfg, "heuristic") ? Symbol(srchercfg["heuristic"]) : DEFAULT_HEURISTIC
+            _heuristic = haskey(srchercfg, "heuristic") ?
+                            Symbol(srchercfg["heuristic"]) :
+                            DEFAULT_HEURISTIC
             _score_alpha = vectors_eltype(get(srchercfg, "score_alpha", DEFAULT_SCORE_ALPHA))
             _score_weight = vectors_eltype(get(srchercfg, "score_weight", 1.0))
 

@@ -33,6 +33,7 @@ downloads the `master` branch of the repository and adds `Garamond` to the curre
 - Run-time realtime indexing
 - Run-time batch re-indexing
 - Complex query search patterns supported
+- Data embedders are a shared resource - each searcher can have different input and data embedders
 - Pluggable support for custom parsers, loaders, recommenders and rankers
 - HTTP(REST)/Web-socket and UNIX socket connectivity
 - Wordvectors support: [Word2Vec](https://en.wikipedia.org/wiki/Word2vec), [ConceptnetNumberbatch](https://github.com/commonsense/conceptnet-numberbatch), [GloVe](https://nlp.stanford.edu/projects/glove/)
@@ -44,9 +45,7 @@ downloads the `master` branch of the repository and adds `Garamond` to the curre
 - Caching mechanisms for fast resume
 - Portable and statically compilable to many architectures
 
-## Coming Soon
-- Pool of embedders - searchers can re-use embedders, each searcher can have different input and data embedders
 
 ## Longer term plans
-- Image/Video/Audio i.e. generic search
+- Extend search to Images, Videos and Audio i.e. generic search
 - Peer-to-peer / distributed operations support

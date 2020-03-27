@@ -22,7 +22,7 @@ function generate_sample_config_1()
             {
                 "id": "embedder_1",
                 "description": "BM25+RP embedder",
-                "embedable_fields": ["RandString", "StringField", "StringField2", "IntField"],
+                "embeddable_fields": ["RandString", "StringField", "StringField2", "IntField"],
                 "stem_words": false,
                 "language": "english",
                 "vectors": "bm25",
@@ -60,7 +60,7 @@ function generate_sample_config_2()
             {
                 "id": "embedder_1",
                 "description": "BM25+RP embedder",
-                "embedable_fields": ["RandString", "StringField", "StringField2", "IntField"],
+                "embeddable_fields": ["RandString", "StringField", "StringField2", "IntField"],
                 "stem_words": false,
                 "language": "english",
                 "vectors": "bm25",

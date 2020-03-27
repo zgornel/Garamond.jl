@@ -7,16 +7,19 @@ document embedding using word vectors.
      view of unsupervised text embeddings, bag-on-n-grams
      and LSTMs"](https://openreview.net/pdf?id=B1e5ef-C-)
 """
-struct DisCEmbedder{S,T} <: WordVectorsEmbedder{S,T}
-    embeddings::EmbeddingsLibrary{S,T}
+struct DisCEmbedder{T,S} <: WordVectorsEmbedder{T,S}
+    embeddings::EmbeddingsLibrary{T,S}
     n::Int
+    config::NamedTuple
 end
 
-function DisCEmbedder(embeddings::EmbeddingsLibrary{S,T};
-                      n::Int=DEFAULT_DISC_NGRAM,
+
+function DisCEmbedder(embeddings::EmbeddingsLibrary{T,S},
+                      config;
+                      n=DEFAULT_DISC_NGRAM,
                       kwargs...
                      ) where {T<:AbstractFloat, S<:AbstractString}
-    return DisCEmbedder(embeddings, n)
+    return DisCEmbedder(embeddings, n, config)
 end
 
 
@@ -30,7 +33,7 @@ end
 # Sentence embedding function - returns a `embedder.dim`×1 matrix
 function sentences2vec(embedder::DisCEmbedder,
                        document_embedding::Vector{Matrix{T}};
-                       kwargs...) where {S,T}
+                       kwargs...) where {T,S}
     if isempty(document_embedding)
         return zeros(T, dimensionality(embedder), 0)
     else

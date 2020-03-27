@@ -1,10 +1,10 @@
-abstract type WordVectorsEmbedder{S,T} <: AbstractEmbedder{S,T} end
+abstract type WordVectorsEmbedder{T,S} <: AbstractEmbedder{T,S} end
 
 
 """
 Constant that represents embeddings libraries used in text embedding.
 """
-const EmbeddingsLibrary{S,T} = Union{
+const EmbeddingsLibrary{T,S} = Union{
     ConceptNet{<:Languages.Language,S,T},
     Word2Vec.WordVectors{S,T,<:Integer},
     Glowe.WordVectors{S,T,<:Integer},
@@ -25,10 +25,10 @@ these (depending on the type of `embedder`).
   * `document::Vector{String}` the document to be embedded,
      where each vector element corresponds to a sentence
 """
-function document2vec(embedder::WordVectorsEmbedder{S,T},
-                      document::Vector{String};
-                      kwargs...  # for the unused arguments
-                     ) where {S,T}
+function __document2vec(embedder::WordVectorsEmbedder{T,S},
+                        document::Vector{String};
+                        kwargs...  # for the unused arguments
+                       ) where {T,S}
     # Initializations
     n = length(document)
     m = size(embedder.embeddings)[1]  # number of vector components
@@ -62,16 +62,15 @@ function document2vec(embedder::WordVectorsEmbedder{S,T},
     return squash(sntembs)
 end
 
-function document2vec(embedder::WordVectorsEmbedder{S,T},
-                      document::Vector{String},
-                      oov_policy::Symbol;
+function document2vec(embedder::WordVectorsEmbedder{T,S},
+                      document::Vector{String};
                       kwargs...  # for the unused arguments
-                     ) where {S,T}
+                     ) where {T,S}
     # An embedded document is a zero vector only if it was not properly embedded
-    embedded_document = document2vec(embedder, document; kwargs...)
+    embedded_document = __document2vec(embedder, document; kwargs...)
     is_embedded = !iszero(embedded_document)
     # Check for OOV (out-of-vocabulary) policy
-    if oov_policy == :large_vector && !is_embedded
+    if embedder.config.oov_policy == :large_vector && !is_embedded
         embedded_document .= T(DEFAULT_OOV_VAL)
     end
     return embedded_document, is_embedded

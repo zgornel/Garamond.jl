@@ -5,9 +5,9 @@
 struct SearchEnv{T}
     dbdata        #::Union{AbstractNDSparse, AbstractIndexedTable}
     id_key        #::Symbol
-    sampler
-    # TODO(cc-embedderspool): add embedders
-    searchers::Vector{<:Searcher{T}}
+    sampler       #::Function
+    embedders::Vector{<:AbstractEmbedder{T}}
+    searchers::Vector{<:AbstractSearcher{T}}
     config_path   #::String
 end
 
@@ -38,22 +38,32 @@ function build_search_env(env_config; cache_path=nothing)
         end
     end
     try
-        # Load data
+        # Load data and check primary id
         dbdata = env_config.data_loader()
         db_check_id_key(dbdata, env_config.id_key)
 
-        # TODO(cc-embedderspool): build embedders, pass to build_searcher below
+        # Build embedders
+        embedders = [build_embedder(dbdata,
+                                    embdr_config;
+                                    vectors_eltype=env_config.vectors_eltype,
+                                    id_key=env_config.id_key)
+                     for embdr_config in env_config.embedder_configs]
 
         # Build searchers
-        srchers = [build_searcher(dbdata,
-                                  # TODO(cc-embedderspool): use embedders
-                                  srcher_config;
-                                  id_key=env_config.id_key,
-                                  vectors_eltype=env_config.vectors_eltype)
-                   for srcher_config in env_config.searcher_configs]
+        searchers = [build_searcher(dbdata,
+                                    embedders,
+                                    srcher_config;
+                                    id_key=env_config.id_key)
+                     for srcher_config in env_config.searcher_configs]
 
         # Build search environment
-        env = SearchEnv(dbdata, env_config.id_key, env_config.data_sampler, srchers, env_config.config_path)
+        env = SearchEnv(dbdata,
+                        env_config.id_key,
+                        env_config.data_sampler,
+                        embedders,
+                        searchers,
+                        env_config.config_path)
+
         @info "• Environment successfully built using config $(env_config.config_path)."
         return env
     catch e

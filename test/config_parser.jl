@@ -28,6 +28,7 @@ end
                            :config_path => String)
     @test test_nt_props(cfg, ENVCONFIG_PROPS)
 
+    #TODO(cc-embedderpool) Fix, add embedder config options
     SEARCHERCONFIG_PROPS = Dict(:id => String,
                                 :id_aggregation => String,
                                 :description => String,

@@ -84,7 +84,7 @@ const HEURISTIC_TO_DISTANCE = Dict(  # heuristic to distance object mapping
 const DEFAULT_DISTANCE = HEURISTIC_TO_DISTANCE[:jaro]  # default distance
 const DEFAULT_PARSER_CONFIG = nothing
 const DEFAULT_INDEXABLE_FIELDS = nothing
-const DEFAULT_EMBEDABLE_FIELDS = nothing
+const DEFAULT_EMBEDDABLE_FIELDS = nothing
 # Dictionaries for String <=>Languages.Language / Languages.Languages <=> String
 # conversion
 const STR_TO_LANG = Dict("english"=>Languages.English,

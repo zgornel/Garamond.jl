@@ -26,6 +26,9 @@ dbentry2text(dbentry, fields) = begin
     return concatenated
 end
 
+dbentry2text(dbentry, ::Nothing) = dbentry2text(dbentry, Symbol[])
+
+
 field2text(nt, prop) = begin
     if hasproperty(nt, prop)
         return make_a_string(getproperty(nt, prop))

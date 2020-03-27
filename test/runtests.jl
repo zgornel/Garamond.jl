@@ -17,6 +17,7 @@ with_logger(test_logger) do
     include("input_parsers.jl")
     include("db.jl")
     include("index.jl")
+    include("embedder.jl")
     include("env.jl")
     include("indexfilter.jl")
     include("config_parser.jl")

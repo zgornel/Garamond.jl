@@ -6,18 +6,21 @@ document embedding using word vectors.
   * [Rücklé et al. 2018 "Concatenated power mean word embeddings
      as universal cross-lingual sentence representations"](https://arxiv.org/abs/1803.01400a)
 """
-struct CPMeanEmbedder{S,T} <: WordVectorsEmbedder{S,T}
-    embeddings::EmbeddingsLibrary{S,T}
+struct CPMeanEmbedder{T,S} <: WordVectorsEmbedder{T,S}
+    embeddings::EmbeddingsLibrary{T,S}
     powers::Vector{T}
     znorm::Bool
+    config::NamedTuple
 end
 
-function CPMeanEmbedder(embeddings::EmbeddingsLibrary{S,T};
+
+function CPMeanEmbedder(embeddings::EmbeddingsLibrary{T,S},
+                        config;
                         powers::Vector{T}=T[-Inf, 0.0, 1.0, Inf],
                         znorm::Bool=true,
                         kwargs...
                       ) where {T<:AbstractFloat, S<:AbstractString}
-    return CPMeanEmbedder(embeddings, powers, znorm)
+    return CPMeanEmbedder(embeddings, powers, znorm, config)
 end
 
 
@@ -32,7 +35,7 @@ end
 # Sentence embedding function - returns a `embedder.dim`×1 matrix
 function sentences2vec(embedder::CPMeanEmbedder,
                        document_embedding::Vector{Matrix{T}};
-                       kwargs...) where {S,T}
+                       kwargs...) where {T,S}
     if isempty(document_embedding)
         return zeros(T, dimensionality(embedder), 0)
     else

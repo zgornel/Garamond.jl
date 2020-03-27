@@ -128,11 +128,11 @@ function __aggregate(query_matches::Vector{Vector{Tuple{T,Int}}},
 
     # Merge results
     final_scores::Vector{T} = zeros(T, m)
-    (method == :minimum) && (final_scores = minimum(scores, dims=2)[:,1])
-    (method == :maximum) && (final_scores = maximum(scores, dims=2)[:,1])
-    (method == :median) && (final_scores = median(scores, dims=2)[:,1])
-    (method == :product) && (final_scores = prod(scores, dims=2)[:,1])
-    (method == :mean) && (final_scores = mean(scores, dims=2)[:,1])
+    (method == :minimum) && (final_scores = firstcol(minimum(scores, dims=2)))
+    (method == :maximum) && (final_scores = firstcol(maximum(scores, dims=2)))
+    (method == :median) && (final_scores = firstcol(median(scores, dims=2)))
+    (method == :product) && (final_scores = firstcol(prod(scores, dims=2)))
+    (method == :mean) && (final_scores = firstcol(mean(scores, dims=2)))
 
     # Sort and trim result list: intersect sorted score indices by the
     # indices with scores larger than 0 and then trim (the result of the

@@ -71,6 +71,8 @@ module Garamond
         parse_input,
 
         AbstractEmbedder,
+        embed,
+        embed!,
 
         AbstractIndex,
         NaiveIndex,
@@ -81,6 +83,7 @@ module Garamond
         NoopIndex,
 
         SearchEnv,
+        AbstractSearcher,
         Searcher,
         SearchResult,
 
@@ -171,7 +174,6 @@ module Garamond
     include("searchable/env_operations.jl")
 
     include("input/text_parsers.jl")
-    include("input/text_processing.jl")
 
     include("search/index.jl")
     include("search/filter.jl")

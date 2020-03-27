@@ -19,13 +19,13 @@ a `Vector{SearchResult}`.
   * `custom_weights::Dict{Symbol, Float}` are custom weights for each
      searcher's results used in result aggregation
 """
-function search(srchers::Vector{<:Searcher{T}},
+function search(srchers::Vector{<:AbstractSearcher{T}},
                 query;
                 search_method=DEFAULT_SEARCH_METHOD,
                 max_matches=MAX_MATCHES,
                 max_suggestions=MAX_SUGGESTIONS,
                 custom_weights=DEFAULT_CUSTOM_WEIGHTS
-               ) where T<:AbstractFloat
+               ) where {T<:AbstractFloat}
     # Checks
     @assert search_method in [:exact, :regex]
     @assert max_matches >= 0
@@ -97,33 +97,24 @@ function search(srcher::Searcher{T,E,I},
                 max_matches::Int=MAX_MATCHES,
                 max_suggestions::Int=MAX_SUGGESTIONS
                ) where {T<:AbstractFloat, E, I<:AbstractIndex}
-
-    # TODO(cc-embedderspool): Move operations to embedder
-    ### language = get(STR_TO_LANG, srcher.config.language, DEFAULT_LANGUAGE)()
-    ### flags = srcher.config.query_strip_flags
-    ### oov_policy = srcher.config.oov_policy
-    ### ngram_complexity = srcher.config.ngram_complexity
-
     ### # Prepare and embed query
-    ### needles = query_preparation(query, flags, language)
-    query_embedding, query_is_embedded = document2vec(srcher.embedder,
-                                            needles, oov_policy,
-                                            ngram_complexity=ngram_complexity,
-                                            isregex=(search_method===:regex))
+    needles = prepare_query(query)
+    embeddedq, is_embedded = embed(srcher.input_embedder[],
+                                   [needles];
+                                   isregex=(search_method===:regex))
     # Search (if document vector is not zero)
     scores, idxs = T[], Int[]
-    if query_is_embedded
+    if first(is_embedded)
         ### Search
         k = min(length(srcher.index), max_matches)
-        idxs, scores = knn_search(srcher.index, query_embedding, k)
+        idxs, scores = knn_search(srcher.index, firstcol(embeddedq), k)
         ###
         score_transform!(scores, alpha=srcher.config.score_alpha)
     end
     query_matches = collect(zip(scores, idxs))
 
     # Find matching and missing needles
-    # TODO(cc-embedderspool): Fix signature
-    needle_matches, missing_needles = __found_missing_needles(srcher.embedder, needles)
+    needle_matches, missing_needles = __found_missing_needles(srcher.input_embedder[], needles)
 
     # Get suggestions
     suggestions = MultiDict{String, Tuple{T, String}}()
@@ -208,3 +199,15 @@ function score_transform!(x::AbstractVector{T};
         return x
     end
 end
+
+
+"""
+    prepare_query(query)
+
+Prepares the query for search.
+"""
+prepare_query(query::AbstractString) = String.(tokenize(query, method=DEFAULT_TOKENIZER))
+
+prepare_query(needles::Vector{String}) = needles
+
+prepare_query(query) = throw(ArgumentError("Query pre-processing requires `String` or Vector{String} inputs."))

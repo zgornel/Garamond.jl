@@ -6,15 +6,17 @@ document embedding using word vectors.
   * [Wieting, Kiela ICLR 2019, "No training required: Exploring random encoders
      for sentence classification"](https://arxiv.org/abs/1901.10444)
 """
-struct BOREPEmbedder{S,T} <: WordVectorsEmbedder{S,T}
-    embeddings::EmbeddingsLibrary{S,T}
+struct BOREPEmbedder{T,S} <: WordVectorsEmbedder{T,S}
+    embeddings::EmbeddingsLibrary{T,S}
     R::Matrix{T}
     fpool::Function
+    config::NamedTuple
 end
 
-function BOREPEmbedder(embeddings::EmbeddingsLibrary{S,T};
-                       dim::Int=DEFAULT_BOREP_DIMENSION,
-                       pooling_function::Symbol=DEFAULT_BOREP_POOLING_FUNCTION,
+function BOREPEmbedder(embeddings::EmbeddingsLibrary{T,S},
+                       config;
+                       dim=DEFAULT_BOREP_DIMENSION,
+                       pooling_function=DEFAULT_BOREP_POOLING_FUNCTION,
                        initialization::Symbol=:heuristic,
                        kwargs...
                       ) where {T<:AbstractFloat, S<:AbstractString}
@@ -35,7 +37,7 @@ function BOREPEmbedder(embeddings::EmbeddingsLibrary{S,T};
         fpool = x->vec(maximum(x, dims=2))
     end
 
-    return BOREPEmbedder(embeddings, R, fpool)
+    return BOREPEmbedder(embeddings, R, fpool, config)
 end
 
 # Dimensionality function
@@ -49,7 +51,7 @@ end
 # Sentence embedding function
 function sentences2vec(embedder::BOREPEmbedder,
                        document_embedding::Vector{Matrix{T}};
-                       kwargs...) where {S,T}
+                       kwargs...) where {T,S}
     n = length(document_embedding)
     X = zeros(T, dimensionality(embedder), n)
     @inbounds @simd for i in 1:n
