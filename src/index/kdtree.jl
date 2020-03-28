@@ -1,4 +1,3 @@
-#TODO(Corneliu) **cc-indexing** - consider removing the KDTree structure - if not, throw exceptions around
 """
 K-D Tree index type for storing vectors. It is a wrapper
 around a `KDTree` NN structure and performs a more efficient
