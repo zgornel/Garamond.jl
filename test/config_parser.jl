@@ -25,36 +25,45 @@ end
                            :id_key => Symbol,
                            :vectors_eltype => Type,
                            :searcher_configs => Vector,
+                           :embedder_configs => Vector,
                            :config_path => String)
     @test test_nt_props(cfg, ENVCONFIG_PROPS)
 
-    #TODO(cc-embedderpool) Fix, add embedder config options
+    EMBEDDERSCONFIG_PROPS = Dict(:id =>String,
+                                 :description => String,
+                                 :language => String,
+                                 :stem_words => Bool,
+                                 :ngram_complexity => Int,
+                                 :vectors => Symbol,
+                                 :vectors_transform => Symbol,
+                                 :vectors_dimension => Int,
+                                 :embeddings_path => Union{Nothing, String},
+                                 :embeddings_kind => Symbol,
+                                 :doc2vec_method => Symbol,
+                                 :glove_vocabulary => Union{Nothing, String},
+                                 :oov_policy => Symbol,
+                                 :embedder_kwarguments => Dict{Symbol, Any},
+                                 :embeddable_fields => Union{Nothing, Vector{Symbol}},
+                                 :text_strip_flags => UInt32,
+                                 :sif_alpha => cfg.vectors_eltype,
+                                 :borep_dimension => Int,
+                                 :borep_pooling_function => Symbol,
+                                 :disc_ngram => Int)
+    for ec in cfg.embedder_configs
+        @test test_nt_props(ec, EMBEDDERSCONFIG_PROPS)
+    end
+
     SEARCHERCONFIG_PROPS = Dict(:id => String,
                                 :id_aggregation => String,
                                 :description => String,
                                 :enabled => Bool,
                                 :indexable_fields => Vector{Symbol},
-                                :language => String,
-                                :stem_words => Bool,
-                                :ngram_complexity => Int,
-                                :vectors => Symbol,
-                                :vectors_transform => Symbol,
-                                :vectors_dimension => Int,
+                                :data_embedder => String,
+                                :input_embedder => String,
                                 :search_index => Symbol,
                                 :search_index_arguments => Vector{Any},
                                 :search_index_kwarguments => Dict{Symbol, Any},
-                                :embeddings_path => Union{Nothing, String},
-                                :embeddings_kind => Symbol,
-                                :doc2vec_method => Symbol,
-                                :glove_vocabulary => Union{Nothing, String},
-                                :oov_policy => Symbol,
-                                :embedder_kwarguments => Dict{Symbol, Any},
                                 :heuristic => Union{Nothing, Symbol},
-                                :text_strip_flags => UInt32,
-                                :sif_alpha => cfg.vectors_eltype,
-                                :borep_dimension => Int,
-                                :borep_pooling_function => Symbol,
-                                :disc_ngram => Int,
                                 :score_alpha => cfg.vectors_eltype,
                                 :score_weight => cfg.vectors_eltype)
     for sc in cfg.searcher_configs
