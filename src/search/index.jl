@@ -19,13 +19,13 @@ a `Vector{SearchResult}`.
   * `custom_weights::Dict{Symbol, Float}` are custom weights for each
      searcher's results used in result aggregation
 """
-function search(srchers::Vector{<:Searcher{T}},
+function search(srchers::Vector{<:AbstractSearcher{T}},
                 query;
                 search_method=DEFAULT_SEARCH_METHOD,
                 max_matches=MAX_MATCHES,
                 max_suggestions=MAX_SUGGESTIONS,
                 custom_weights=DEFAULT_CUSTOM_WEIGHTS
-               ) where T<:AbstractFloat
+               ) where {T<:AbstractFloat}
     # Checks
     @assert search_method in [:exact, :regex]
     @assert max_matches >= 0
@@ -60,7 +60,7 @@ function search(srchers::Vector{<:Searcher{T}},
                             max_suggestions=max_suggestions)
     end
     # Aggregate results
-    ids_agg = [srcher.config.id_aggregation for srcher in srchers if isenabled(srcher)]
+    ids_agg = String[srcher.config.id_aggregation for srcher in srchers if isenabled(srcher)]
     aggregate!(results,
                ids_agg,
                method=RESULT_AGGREGATION_STRATEGY,
@@ -97,40 +97,32 @@ function search(srcher::Searcher{T,E,I},
                 max_matches::Int=MAX_MATCHES,
                 max_suggestions::Int=MAX_SUGGESTIONS
                ) where {T<:AbstractFloat, E, I<:AbstractIndex}
-    # Initializations
-    isregex = (search_method == :regex)
-    n = length(srcher.index)  # number of embedded documents
-    language = get(STR_TO_LANG, srcher.config.language, DEFAULT_LANGUAGE)()
-    flags = srcher.config.query_strip_flags
-    oov_policy = srcher.config.oov_policy
-    ngram_complexity = srcher.config.ngram_complexity
+    # Make an entry i.e.e NamedTuple out of the query
+    qentry = (query=query2string(query),)  # query treated as single sentence
+    qfields = [:query]
+    isregex = search_method === :regex
+    qembedding, status = embed(srcher.input_embedder[], [qentry]; fields=qfields, isregex=isregex)
 
-    # Prepare and embed query
-    needles = query_preparation(query, flags, language)
-    query_embedding, query_is_embedded = document2vec(srcher.embedder,
-                                            needles, oov_policy,
-                                            ngram_complexity=ngram_complexity,
-                                            isregex=isregex)
     # Search (if document vector is not zero)
     scores, idxs = T[], Int[]
-    if query_is_embedded
-        ### Search
-        k = min(n, max_matches)
-        idxs, scores = knn_search(srcher.index, query_embedding, k)
-        ###
+    if first(status)
+        idxs, scores = knn_search(srcher.index,
+                                  firstcol(qembedding),
+                                  min(length(srcher.index), max_matches))  # k
         score_transform!(scores, alpha=srcher.config.score_alpha)
     end
     query_matches = collect(zip(scores, idxs))
 
     # Find matching and missing needles
-    needle_matches, missing_needles = __found_missing_needles(srcher.embedder, needles)
+    needles = query2vector(query)
+    needle_matches, missed_needles = missing_needles(srcher.input_embedder[], needles)
 
     # Get suggestions
     suggestions = MultiDict{String, Tuple{T, String}}()
-    if max_suggestions > 0 && !isempty(missing_needles)
+    if max_suggestions > 0 && !isempty(missed_needles)
         suggestion_search!(suggestions,
                            srcher.search_trees,
-                           missing_needles,
+                           missed_needles,
                            max_suggestions=max_suggestions)
     end
     return SearchResult(id(srcher), query_matches, needle_matches,
@@ -141,20 +133,20 @@ end
 """
 Returns found and missing needles using an embedder
 """
-__found_missing_needles
+missing_needles
 
-__found_missing_needles(embedder::WordVectorsEmbedder, needles) = (String[], String[])
+missing_needles(embedder::WordVectorsEmbedder, needles) = (String[], String[])
 
-__found_missing_needles(embedder::DTVEmbedder, needles) =
-    __found_missing_needles(embedder.model, needles)
+missing_needles(embedder::DTVEmbedder, needles) =
+    missing_needles(embedder.model, needles)
 
-__found_missing_needles(model::StringAnalysis.RPModel, needles) = begin
+missing_needles(model::StringAnalysis.RPModel, needles) = begin
     needle_matches = [needle for needle in needles if in(needle, model.vocab)]
-    missing_needles = setdiff(needles, needle_matches)
-    return needle_matches, missing_needles
+    missed_needles = setdiff(needles, needle_matches)
+    return needle_matches, missed_needles
 end
 
-__found_missing_needles(model::StringAnalysis.LSAModel, needles) = (String[], String[])
+missing_needles(model::StringAnalysis.LSAModel, needles) = (String[], String[])
 
 
 """
@@ -208,3 +200,17 @@ function score_transform!(x::AbstractVector{T};
         return x
     end
 end
+
+
+# Useful functions
+query2string(query::AbstractString) = String(query)
+
+query2string(query::Vector{String}) = join(query, " ")
+
+query2string(query) = throw(ArgumentError("query2string requires `String` or Vector{String} inputs."))
+
+query2vector(query::Vector{String}) = query
+
+query2vector(query::AbstractString) = String.(tokenize(query, method=DEFAULT_TOKENIZER))
+
+query2vector(query) = throw(ArgumentError("query2vector requires `String` or Vector{String} inputs."))

@@ -42,14 +42,22 @@ function env_operator(env, channels)
                 new_searchers = similar(env.searchers)  # initialize
                 cnt = 0
                 for i in eachindex(env.searchers)
-                    if cmd_argument == "*" || isequal(id(env.searchers[i]), StringId(cmd_argument))
-                        new_searchers[i] = build_searcher(_dbdata, env_config.searcher_configs[i])
+                    if cmd_argument == "*" || isequal(id(env.searchers[i]), cmd_argument)
+                        new_searchers[i] = build_searcher(_dbdata,
+                                                          env.embedders,
+                                                          env_config.searcher_configs[i];
+                                                          id_key=env_config.id_key)
                         cnt+= 1
                     else
                         new_searchers[i] = env.searchers[i]
                     end
                 end
-                _env = SearchEnv(_dbdata, env_config.id_key, env.sampler, new_searchers, env_config.config_path)
+                _env = SearchEnv(_dbdata,
+                                 env_config.id_key,
+                                 env.sampler,
+                                 env.embedders,
+                                 new_searchers,
+                                 env_config.config_path)
                 @info "• Updated $cnt searcher(s) in the environment."
             catch
                 @warn "Could not update environment (searchers=$cmd_argument)."

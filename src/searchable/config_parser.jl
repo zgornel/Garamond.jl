@@ -1,18 +1,10 @@
-"""
-String ID object.
-"""
-struct StringId
-    value::String
-end
-
-# Utils
-random_hash_string() = string(hash(rand()), base=16)
-random_string_id() = StringId(random_hash_string())
+random_string_id() = string(hash(rand()), base=16)
 
 # Construct IDs
-make_id(::Type{StringId}, value::T) where T<:AbstractString = StringId(String(value))
-make_id(::Type{StringId}, value::T) where T<:Number = StringId(string(value))
-make_id(::Type{StringId}, value::T) where T<:Nothing = random_string_id()
+make_id(value::AbstractString) = String(value)
+make_id(value::Number) = string(value)
+make_id(::Nothing) = random_string_id()
+make_id() = random_string_id()
 
 
 """
@@ -22,43 +14,50 @@ Parses a data configuration file (JSON format) and returns a `NamedTuple`
 that acts as a search environment configuration.
 
 • Search environment options reference
-    data_loader::Function           # 0 argument function that when called loads the data i.e. `dbdata`
-    data_sampler::Function          # function that takes as input raw data and outputs a `dbdata` row
-    id_key::Symbol                  # the name of the primary integer key in `dbdata`
-    vectors_eltype::Type            # the type of the vectors, scores etc. has to be `<:AbstractFloat`
-    searcher_configs::Vector{NamedTuple}  # the searcher configs (see reference below)
-    config_path::String             # the path to the config
+    `data_loader::Function`             # 0 argument function that when called loads the data i.e. `dbdata`
+    `data_sampler::Function`            # function that takes as input raw data and outputs a `dbdata` row
+    `id_key::Symbol`                    # the name of the primary integer key in `dbdata`
+    `vectors_eltype::Type`              # the type of the vectors, scores etc. has to be `<:AbstractFloat`
+    `searcher_configs::Vector{NamedTuple}`  # vector of searcher configs (see reference below)
+    `embedder_configs::Vector{NamedTuple}`  # vector of embedder configs (see reference below)
+    `config_path::String`               # the path to the config
 
-• Searcher options reference
-    id::StringId                    # searcher id
-    id_aggregation::StringId        # aggregation id
-    description::String             # description of the searcher
-    enabled::Bool                   # whether to use the searcher in search or not
-    indexable_fields::Vector{Symbol}
-    language::String                # the index-level language
-    stem_words::Bool                # whether to stem data or not
-    ngram_complexity::Int           # ngram complexity (i.e. max number of tokes for an n-gram)
-    vectors::Symbol                 # how document vectors are calculated i.e. :count, :tf, :tfidf, :bm25, :word2vec, :glove, :conceptnet, :compressed
-    vectors_transform::Symbol       # what transform to apply to the vectors i.e. :lsa, :rp, :none
-    vectors_dimension::Int          # desired dimensionality after transform (ignored for word2vec approaches)
-    search_index::Symbol            # type of the search index i.e. :naive, :kdtree, :hnsw
-    search_index_arguments::Vector{Any}
-    search_index_kwarguments::Dict{Symbol, Any}
-    embeddings_path::Union{Nothing, String}  # path to the embeddings file
-    embeddings_kind::Symbol         # Type of the embedding file for Word2Vec, GloVe i.e. :text, :binary
-    doc2vec_method::Symbol          # How to arrive at a single embedding from multiple i.e. :boe, :sif etc.
-    glove_vocabulary::Union{Nothing, String}  # Path to a GloVe-generated vocabulary file (only for binary embeddings)
-    oov_policy::Symbol              # what to do with non-embeddable documents i.e. :none, :large_vector
-    embedder_kwarguments::Dict{Symbol, Any}
-    heuristic::Union{Nothing, Symbol} # search heuristic for suggesting mispelled words (nothing means no recommendations)
-    text_strip_flags::UInt32        # How to strip text data before indexing
-    query_strip_flags::UInt32       # How to strip queries before searching
-    sif_alpha::Float                # smooth inverse frequency α parameter (for 'sif' doc2vec method only)
-    borep_dimension::Int            # output dimension for BOREP embedder
-    borep_pooling_function::Symbol  # pooling function for the BOREP embedder
-    disc_ngram::Int                 # DisC embedder ngram parameter
-    score_alpha::Float              # score alpha (parameter for the scoring function)
-    score_weight::Float             # weight of scores of searcher (used in result aggregation)
+• Embedder config fields reference
+    `id::String`
+    `description::String`
+    `language::String`                  # the embedder-level language
+    `stem_words::Bool`                  # whether to stem words
+    `ngram_complexity::Int`             # ngram complexity (i.e. max number of tokes for an n-gram)
+    `vectors::Symbol`                   # wordvectors calculation/source i.e. :count, :tf, :tfidf, :bm25, :word2vec, :glove, :conceptnet, :compressed
+    `vectors_transform::Symbol`         # transform to apply to the vectors i.e. :lsa, :rp, :none
+    `vectors_dimension::Int`            # desired dimensionality after transform (ignored for word2vec approaches)
+    `embeddings_path::Union{Nothing, String}`  # path to the embeddings file
+    `embeddings_kind::Symbol`           # Type of the embedding file for Word2Vec, GloVe i.e. :text, :binary
+    `doc2vec_method::Symbol`            # How to arrive at a single embedding from multiple i.e. :boe, :sif etc.
+    `glove_vocabulary::Union{Nothing, String}`  # Path to a GloVe-generated vocabulary file (only for binary embeddings)
+    `oov_policy::Symbol`                # what to do with non-embeddable documents i.e. :none, :large_vector
+    `embedder_kwarguments::Dict{Symbol, Any}`  # explicit specification of embedder keyword arguments
+    `embeddable_fields::Union{Nothing, Vector{Symbol}}`  # which fields to use for training the embedder
+    `text_strip_flags::UInt32`          # How to strip text data before indexing
+    `sif_alpha::Float`                  # smooth inverse frequency α parameter (for 'sif' doc2vec method only)
+    `borep_dimension::Int`              # output dimension for BOREP embedder
+    `borep_pooling_function::Symbol`    # pooling function for the BOREP embedder
+    `disc_ngram::Int`                   # DisC embedder ngram parameter
+
+• Searcher config fields reference
+    `id::String`                        # searcher id
+    `id_aggregation::String`            # aggregation id
+    `description::String`               # description of the searcher
+    `enabled::Vector{Bool}`             # whether to use the searcher in search or not
+    `search_index::Symbol`              # type of the search index i.e. :naive, :kdtree, :hnsw
+    `search_index_arguments::Vector{Any}`
+    `search_index_kwarguments::Dict{Symbol, Any}`
+    `indexable_fields::Union{Nothing, Vector{Symbol}}`  # which fields to index
+    `data_embedder::String`             # id of the data/document embedder
+    `input_embedder::String`            # id of the input/query embedder
+    `heuristic::Union{Nothing, Symbol}` # search heuristic for suggesting mispelled words (nothing means no recommendations)
+    `score_alpha::Float`                # score alpha (parameter for the scoring function)
+    `score_weight::Float`               # weight of scores of searcher (used in result aggregation)
 """
 function parse_configuration(filename::AbstractString)
 
@@ -69,8 +68,8 @@ function parse_configuration(filename::AbstractString)
     config = try
         JSON.parse(open(fid->read(fid, String), config_path))
     catch e
-        @error "Could not parse configuration in $config_path ($e). Exiting..."
-        exit(-1)
+        @warn "Could not parse configuration in $config_path\n$e"
+        return nothing
     end
 
     # Data loader
@@ -89,7 +88,7 @@ function parse_configuration(filename::AbstractString)
     id_key = Symbol(get(config, "id_key", DEFAULT_DB_ID_KEY))
 
     # Create an environment id
-    id_environment = make_id(StringId, get(config, "id", nothing))
+    id_environment = make_id(get(config, "id", nothing))
 
     # Vectors element type
     vectors_eltype = try
@@ -99,57 +98,40 @@ function parse_configuration(filename::AbstractString)
         DEFAULT_VECTORS_ELTYPE
     end
 
-    # Searcher configs
-    parsed_searcher_configs = config["searchers"]
-    searcher_configs = []
-    MUST_HAVE_KEYS = ["vectors"]
+    # Define _id here (to work in catch)
+    local _id
 
-    for (i, dconfig) in enumerate(parsed_searcher_configs)
-        if !all(map(key->haskey(dconfig, key), MUST_HAVE_KEYS))
-            @warn "Missing keys from $MUST_HAVE_KEYS in configuration $i. Ignoring..."*
-            continue
-        end
-        # Get searcher parameter values (assigning default values when the case)
+    # Embedder configs
+    parsed_embedder_configs = config["embedders"]
+    embedder_configs = []
+    for (i, embcfg) in enumerate(parsed_embedder_configs)
         try
-            _id = make_id(StringId, get(dconfig, "id", nothing))
-            _id_aggregation = haskey(dconfig, "id_aggregation") ?
-                                make_id(StringId, dconfig["id_aggregation"]) :
-                                id_environment
-            _description = get(dconfig, "description", "")
-            _enabled = get(dconfig, "enabled", true)
-            _indexable_fields = Symbol.(get(dconfig, "indexable_fields", DEFAULT_INDEXABLE_FIELDS))
-            _language = lowercase(get(dconfig, "language", DEFAULT_LANGUAGE_STR))
-            _stem_words = Bool(get(dconfig, "stem_words", DEFAULT_STEM_WORDS))
-            _ngram_complexity = Int(get(dconfig, "ngram_complexity", DEFAULT_NGRAM_COMPLEXITY))
-            _vectors = Symbol(get(dconfig, "vectors", DEFAULT_VECTORS))
-            _vectors_transform = Symbol(get(dconfig, "vectors_transform", DEFAULT_VECTORS_TRANSFORM))
-            _vectors_dimension = Int(get(dconfig, "vectors_dimension", DEFAULT_VECTORS_DIMENSION))
-            _search_index = Symbol(get(dconfig, "search_index", DEFAULT_SEARCH_INDEX))
-            _search_index_arguments = Vector{Any}(get(dconfig, "search_index_arguments", []))
-            _search_index_kwarguments = try
-                Dict{Symbol, Any}(Symbol(k)=>v for (k,v) in get(dconfig, "search_index_kwarguments", Dict{String, Any}()))
-            catch
-                Dict{Symbol,Any}()
-            end
-            _embeddings_path = postprocess_path(get(dconfig, "embeddings_path", nothing))
-            _embeddings_kind = Symbol(get(dconfig, "embeddings_kind", DEFAULT_EMBEDDINGS_KIND))
-            _doc2vec_method = Symbol(get(dconfig, "doc2vec_method", DEFAULT_DOC2VEC_METHOD))
-            _glove_vocabulary = get(dconfig, "glove_vocabulary", nothing)
-            _oov_policy = Symbol(get(dconfig, "oov_policy", DEFAULT_OOV_POLICY))
+            _id = make_id(get(embcfg, "id", nothing))
+            _description = get(embcfg, "description", "")
+            _language = lowercase(get(embcfg, "language", DEFAULT_LANGUAGE_STR))
+            _stem_words = Bool(get(embcfg, "stem_words", DEFAULT_STEM_WORDS))
+            _ngram_complexity = Int(get(embcfg, "ngram_complexity", DEFAULT_NGRAM_COMPLEXITY))
+            _vectors = Symbol(get(embcfg, "vectors", DEFAULT_VECTORS))
+            _vectors_transform = Symbol(get(embcfg, "vectors_transform", DEFAULT_VECTORS_TRANSFORM))
+            _vectors_dimension = Int(get(embcfg, "vectors_dimension", DEFAULT_VECTORS_DIMENSION))
+            _embeddings_path = postprocess_path(get(embcfg, "embeddings_path", nothing))
+            _embeddings_kind = Symbol(get(embcfg, "embeddings_kind", DEFAULT_EMBEDDINGS_KIND))
+            _doc2vec_method = Symbol(get(embcfg, "doc2vec_method", DEFAULT_DOC2VEC_METHOD))
+            _glove_vocabulary = get(embcfg, "glove_vocabulary", nothing)
+            _oov_policy = Symbol(get(embcfg, "oov_policy", DEFAULT_OOV_POLICY))
             _embedder_kwarguments = try
-                Dict{Symbol, Any}(Symbol(k)=>v for (k,v) in get(dconfig, "embedder_kwarguments", Dict{String, Any}()))
+                Dict{Symbol, Any}(Symbol(k)=>v for (k,v) in get(embcfg, "embedder_kwarguments", Dict{String, Any}()))
             catch
                 Dict{Symbol,Any}()
             end
-            _heuristic = haskey(dconfig, "heuristic") ? Symbol(dconfig["heuristic"]) : _heuristic = DEFAULT_HEURISTIC
-            _text_strip_flags = UInt32(get(dconfig, "text_strip_flags", DEFAULT_TEXT_STRIP_FLAGS))
-            _query_strip_flags = UInt32(get(dconfig, "query_strip_flags", DEFAULT_QUERY_STRIP_FLAGS))
-            _sif_alpha = vectors_eltype(get(dconfig, "sif_alpha", DEFAULT_SIF_ALPHA))
-            _borep_dimension = Int(get(dconfig, "borep_dimension", DEFAULT_BOREP_DIMENSION))
-            _borep_pooling_function = Symbol(get(dconfig, "borep_pooling_function", DEFAULT_BOREP_POOLING_FUNCTION))
-            _disc_ngram = Int(get(dconfig, "disc_ngram", DEFAULT_DISC_NGRAM))
-            _score_alpha = vectors_eltype(get(dconfig, "score_alpha", DEFAULT_SCORE_ALPHA))
-            _score_weight = vectors_eltype(get(dconfig, "score_weight", 1.0))
+            _embeddable_fields = haskey(embcfg, "embeddable_fields") ?
+                                    Symbol.(embcfg["embeddable_fields"]) :
+                                    DEFAULT_EMBEDDABLE_FIELDS
+            _text_strip_flags = UInt32(get(embcfg, "text_strip_flags", DEFAULT_TEXT_STRIP_FLAGS))
+            _sif_alpha = vectors_eltype(get(embcfg, "sif_alpha", DEFAULT_SIF_ALPHA))
+            _borep_dimension = Int(get(embcfg, "borep_dimension", DEFAULT_BOREP_DIMENSION))
+            _borep_pooling_function = Symbol(get(embcfg, "borep_pooling_function", DEFAULT_BOREP_POOLING_FUNCTION))
+            _disc_ngram = Int(get(embcfg, "disc_ngram", DEFAULT_DISC_NGRAM))
 
             # Checks of the configuration parameter values;
             # language
@@ -172,22 +154,6 @@ function parse_configuration(filename::AbstractString)
                 _vectors = DEFAULT_VECTORS  # bm25
                 classic_search_approach = true
             end
-            # search_index
-            if !(_search_index in [:naive, :brutetree, :kdtree, :hnsw, :ivfadc, :noop])
-                @warn "$(_id) Defaulting search_index=$DEFAULT_SEARCH_INDEX."
-                _search_index = DEFAULT_SEARCH_INDEX
-            end
-            # search_index_arguments
-            if !(typeof(_search_index_arguments) <: AbstractVector)
-                @warn "$(_id) Defaulting search_index_arguments=[]."
-                _search_index_arguments=[]
-            end
-            # search_index_kwarguments
-            if !(typeof(_search_index_kwarguments) <: Dict{Symbol})
-                @warn "$(_id) Defaulting search_index_kwarguments=Dict{Symbol,Any}()."
-                _search_index_kwarguments=Dict{Symbol,Any}()
-            end
-            # Classic search specific options
             if classic_search_approach
                 # vectors_transform
                 if !(_vectors_transform in [:none, :lsa, :rp])
@@ -256,6 +222,76 @@ function parse_configuration(filename::AbstractString)
                 @warn "$(_id) Defaulting embedder_kwarguments=Dict{Symbol,Any}()."
                 _embedder_kwarguments=Dict{Symbol,Any}()
             end
+
+            push!(embedder_configs,
+                    (id=_id,
+                     description=_description,
+                     language=_language,
+                     stem_words=_stem_words,
+                     ngram_complexity=_ngram_complexity,
+                     vectors=_vectors,
+                     vectors_transform=_vectors_transform,
+                     vectors_dimension=_vectors_dimension,
+                     embeddings_path=_embeddings_path,
+                     embeddings_kind=_embeddings_kind,
+                     doc2vec_method=_doc2vec_method,
+                     glove_vocabulary=_glove_vocabulary,
+                     oov_policy=_oov_policy,
+                     embedder_kwarguments=_embedder_kwarguments,
+                     embeddable_fields=_embeddable_fields,
+                     text_strip_flags=_text_strip_flags,
+                     sif_alpha=_sif_alpha,
+                     borep_dimension=_borep_dimension,
+                     borep_pooling_function=_borep_pooling_function,
+                     disc_ngram=_disc_ngram))
+        catch e
+            @warn "Parsing error for embedder $(_id). Will ignore embedder.\n$(e)"
+        end
+    end
+
+    # Searcher configs
+    parsed_searcher_configs = config["searchers"]
+    searcher_configs = []
+    for (i, srchercfg) in enumerate(parsed_searcher_configs)
+        try
+            _id = make_id(get(srchercfg, "id", nothing))
+            _id_aggregation = haskey(srchercfg, "id_aggregation") ? make_id(srchercfg["id_aggregation"]) : id_environment
+            _description = get(srchercfg, "description", "")
+            _enabled = [get(srchercfg, "enabled", true)]
+            _search_index = Symbol(get(srchercfg, "search_index", DEFAULT_SEARCH_INDEX))
+            _search_index_arguments = Vector{Any}(get(srchercfg, "search_index_arguments", []))
+            _search_index_kwarguments = try
+                Dict{Symbol, Any}(Symbol(k)=>v for (k,v) in get(srchercfg, "search_index_kwarguments", Dict{String, Any}()))
+            catch
+                Dict{Symbol,Any}()
+            end
+            _indexable_fields = haskey(srchercfg, "indexable_fields") ?
+                                    Symbol.(srchercfg["indexable_fields"]) :
+                                    DEFAULT_INDEXABLE_FIELDS
+            _data_embedder = make_id(get(srchercfg, "data_embedder", nothing))
+            _input_embedder = make_id(get(srchercfg, "input_embedder", _data_embedder))  # defaults to the data embedder
+            _heuristic = haskey(srchercfg, "heuristic") ?
+                            Symbol(srchercfg["heuristic"]) :
+                            DEFAULT_HEURISTIC
+            _score_alpha = vectors_eltype(get(srchercfg, "score_alpha", DEFAULT_SCORE_ALPHA))
+            _score_weight = vectors_eltype(get(srchercfg, "score_weight", 1.0))
+
+            # Checks of the configuration parameter values;
+            # search_index
+            if !(_search_index in [:naive, :brutetree, :kdtree, :hnsw, :ivfadc, :noop])
+                @warn "$(_id) Defaulting search_index=$DEFAULT_SEARCH_INDEX."
+                _search_index = DEFAULT_SEARCH_INDEX
+            end
+            # search_index_arguments
+            if !(typeof(_search_index_arguments) <: AbstractVector)
+                @warn "$(_id) Defaulting search_index_arguments=[]."
+                _search_index_arguments=[]
+            end
+            # search_index_kwarguments
+            if !(typeof(_search_index_kwarguments) <: Dict{Symbol})
+                @warn "$(_id) Defaulting search_index_kwarguments=Dict{Symbol,Any}()."
+                _search_index_kwarguments=Dict{Symbol,Any}()
+            end
             # heuristic
             if !(typeof(_heuristic) <: Nothing) && !(_heuristic in keys(HEURISTIC_TO_DISTANCE))
                 @warn "$(_id) Defaulting heuristic=$DEFAULT_HEURISTIC."
@@ -267,55 +303,50 @@ function parse_configuration(filename::AbstractString)
                      id_aggregation=_id_aggregation,
                      description=_description,
                      enabled=_enabled,
-                     indexable_fields=_indexable_fields,
-                     language=_language,
-                     stem_words=_stem_words,
-                     ngram_complexity=_ngram_complexity,
-                     vectors=_vectors,
-                     vectors_transform=_vectors_transform,
-                     vectors_dimension=_vectors_dimension,
                      search_index=_search_index,
                      search_index_arguments=_search_index_arguments,
                      search_index_kwarguments=_search_index_kwarguments,
-                     embeddings_path=_embeddings_path,
-                     embeddings_kind=_embeddings_kind,
-                     doc2vec_method=_doc2vec_method,
-                     glove_vocabulary=_glove_vocabulary,
-                     oov_policy=_oov_policy,
-                     embedder_kwarguments=_embedder_kwarguments,
+                     indexable_fields=_indexable_fields,
+                     data_embedder=_data_embedder,
+                     input_embedder=_input_embedder,
                      heuristic=_heuristic,
-                     text_strip_flags=_text_strip_flags,
-                     query_strip_flags=_query_strip_flags,
-                     sif_alpha=_sif_alpha,
-                     borep_dimension=_borep_dimension,
-                     borep_pooling_function=_borep_pooling_function,
-                     disc_ngram=_disc_ngram,
                      score_alpha=_score_alpha,
                      score_weight=_score_weight))
 
         catch e
-            @warn """$(_id) Could not correctly parse configuration in $(config_path).\n$(e)
-                     Ignoring search configuration..."""
+            @warn "Parsing error for searcher $(_id). Will ignore searcher.\n$(e)"
         end
     end
 
     # Last checks
     if isempty(searcher_configs)
-        @error """The search configuration does not contain searchable entities.
-                  Please review $config_path, add entries or fix the
-                  configuration errors. Exiting..."""
-        exit(-1)
+        @warn "No searcher configurations parsed!"
+        return nothing
+    elseif isempty(embedder_configs)
+        @warn "No embedder configurations parsed!"
+        return nothing
     else
-        all_ids = Vector{StringId}()
-        for config in searcher_configs
-            if config.id in all_ids          # check id uniqueness
-                @error """Multiple occurences of $(config.id) detected. Data id's
-                          have to be unique. Please correct the error in $config_path.
-                          Exiting..."""
-                exit(-1)
-            else
-                push!(all_ids, config.id)
-            end
+        # Check uniquenes (searcher ids)
+        srcher_ids = map(c->c.id, searcher_configs)
+        if srcher_ids != unique(srcher_ids)
+            @warn "Searcher ids are not unique!"
+            return nothing
+        end
+
+        # Check uniquenes (embedder ids)
+        embedder_ids = map(c->c.id, embedder_configs)
+        if embedder_ids != unique(embedder_ids)
+            @warn "Embedder ids are not unique!"
+            return nothing
+        end
+
+        # Check that all searcher embedders are defined
+        used_embedder_ids = unique(vcat(map(c->c.data_embedder, searcher_configs),
+                                         map(c->c.input_embedder, searcher_configs)))
+        unk_embedders = setdiff(used_embedder_ids, embedder_ids)
+        if any(unk_embedders)
+            @warn "Embedders: $(unk_embedders) are unknown!"
+            return nothing
         end
     end
 
@@ -324,6 +355,7 @@ function parse_configuration(filename::AbstractString)
             id_key=id_key,
             vectors_eltype=vectors_eltype,
             searcher_configs=searcher_configs,
+            embedder_configs=embedder_configs,
             config_path=config_path)
 end
 

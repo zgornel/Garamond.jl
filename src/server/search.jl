@@ -158,7 +158,7 @@ function build_response(dbdata,
             push!(dict_entry, :score => score)
             push!(dict_vector, dict_entry)
         end
-        push!(response_results, result.id.value => dict_vector)
+        push!(response_results, result.id => dict_vector)
     end
     response = Dict("elapsed_time"=>elapsed_time,
                     "results" => response_results,

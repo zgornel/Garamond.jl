@@ -12,6 +12,7 @@ Garamond is a small, flexible neural and data search engine. It can be used both
 
 Internally, the engine's architecture is that of an ensemble of searchers, with an analytical database as data backend. Each searcher has its own characteristics i.e. ways of embedding documents, searching through the vectors and the search results from all searchers can be combined in a variety of ways. The engine supports runtime loading and use of custom data loaders, recommendation engines and result rankers.
 
+
 ## Installation
 
 The `Garamond` repository can be downloaded through git:
@@ -25,14 +26,19 @@ add https://github.com/zgornel/Garamond.jl#master
 downloads the `master` branch of the repository and adds `Garamond` to the current active environment.
 
 
-# Features at a glance
+## Architecture
+![Architecture](https://github.com/zgornel/Garamond.jl/blob/master/docs/src/assets/schematic.png)
+
+
+## Main features
 
 - In-memory analytical db based on [JuliaDB](https://juliadb.org)
 - Millon-scale indexing using [hnsw](https://arxiv.org/abs/1603.09320)
 - Billion-scale search through [IVFADC](https://github.com/JuliaNeighbors/IVFADC.jl)
-- Run-time realtime indexing
-- Run-time batch re-indexing
+- Online indexing i.e. fast push/pop to/from index and db
+- Runtime batch re-indexing i.e. reindex while operating
 - Complex query search patterns supported
+- Data embedders are a shared resource - each searcher can have different input and data embedders
 - Pluggable support for custom parsers, loaders, recommenders and rankers
 - HTTP(REST)/Web-socket and UNIX socket connectivity
 - Wordvectors support: [Word2Vec](https://en.wikipedia.org/wiki/Word2vec), [ConceptnetNumberbatch](https://github.com/commonsense/conceptnet-numberbatch), [GloVe](https://nlp.stanford.edu/projects/glove/)
@@ -44,9 +50,7 @@ downloads the `master` branch of the repository and adds `Garamond` to the curre
 - Caching mechanisms for fast resume
 - Portable and statically compilable to many architectures
 
-## Coming Soon
-- Pool of embedders - searchers can re-use embedders, each searcher can have different input and data embedders
 
 ## Longer term plans
-- Image/Video/Audio i.e. generic search
+- Extend search to Images, Videos and Audio i.e. generic search
 - Peer-to-peer / distributed operations support

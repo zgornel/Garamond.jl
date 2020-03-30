@@ -71,6 +71,8 @@ module Garamond
         parse_input,
 
         AbstractEmbedder,
+        embed,
+        embed!,
 
         AbstractIndex,
         NaiveIndex,
@@ -81,6 +83,7 @@ module Garamond
         NoopIndex,
 
         SearchEnv,
+        AbstractSearcher,
         Searcher,
         SearchResult,
 
@@ -148,7 +151,7 @@ module Garamond
     include("config/defaults.jl")
     include("config/engine.jl")
 
-    include("embedder/abstractembedder.jl")
+    include("embedder/interface.jl")
     include("embedder/wordvectors.jl")
     include("embedder/boe.jl")
     include("embedder/sif.jl")
@@ -157,7 +160,7 @@ module Garamond
     include("embedder/disc.jl")
     include("embedder/dtv.jl")
 
-    include("index/abstractindex.jl")
+    include("index/interface.jl")
     include("index/naive.jl")
     include("index/brutetree.jl")
     include("index/kdtree.jl")
@@ -171,7 +174,6 @@ module Garamond
     include("searchable/env_operations.jl")
 
     include("input/text_parsers.jl")
-    include("input/text_processing.jl")
 
     include("search/index.jl")
     include("search/filter.jl")

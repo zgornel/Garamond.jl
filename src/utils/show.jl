@@ -1,21 +1,9 @@
-# StringID
-show(io::IO, id::StringId) = print(io, "id=\"$(id.value)\"")
-
-
-# Searcher
-show(io::IO, srcher::Searcher{T,E,I}) where {T,E,I} = begin
-    _status = ifelse(isenabled(srcher), "enabled", "disabled")
-    _status_color = ifelse(isenabled(srcher), :light_green, :light_black)
-    printstyled(io, "[$_status] ", color=_status_color, bold=true)
-    printstyled(io, "Searcher $(id(srcher))/")
-    printstyled(io, "$(srcher.config.id_aggregation)", bold=true)
-    printstyled(io, ", ")
-
-    # Get embeddings type string
+# Embedders
+show(io::IO, embdr::E) where {E<:AbstractEmbedder} = begin
     local _vecs, _embedder, _indim, _outdim
     if E <: WordVectorsEmbedder
-        _indim = size(srcher.embedder.embeddings)[1]
-        _outdim = dimensionality(srcher.embedder)
+        _indim = size(embdr.embeddings)[1]
+        _outdim = dimensionality(embdr)
         if E<:BOEEmbedder
             _embedder = "BOE"
         elseif E<:SIFEmbedder
@@ -29,7 +17,7 @@ show(io::IO, srcher::Searcher{T,E,I}) where {T,E,I} = begin
         else
             _embedder = "?"
         end
-        L = typeof(srcher.embedder.embeddings)
+        L = typeof(embdr.embeddings)
         if L <: Word2Vec.WordVectors
             _vecs = "Word2Vec"
         elseif L <: Glowe.WordVectors
@@ -42,21 +30,31 @@ show(io::IO, srcher::Searcher{T,E,I}) where {T,E,I} = begin
             _vecs = "?"
         end
     elseif E<: DTVEmbedder
-        _vecs = "DTV($(srcher.config.vectors))"
-        _indim = length(srcher.embedder.model.vocab)
+        _vecs = "DTV($(embdr.config.vectors))"
+        _indim = length(embdr.model.vocab)
         _outdim = _indim
-        L = typeof(srcher.embedder.model)
+        L = typeof(embdr.model)
         if L <: StringAnalysis.LSAModel
             _embedder = "LSA"
-            _outdim = dimensionality(srcher.embedder)
-        elseif L <: StringAnalysis.RPModel && srcher.config.vectors_transform==:rp
+            _outdim = dimensionality(embdr)
+        elseif L <: StringAnalysis.RPModel && embdr.config.vectors_transform==:rp
             _embedder = "RP"
-            _outdim = dimensionality(srcher.embedder)
+            _outdim = dimensionality(embdr)
         else
             _embedder = "-"
         end
     end
-    printstyled(io, "$_vecs($_indim)/$_embedder($_outdim)", bold=true)
+    printstyled(io, "$_embedder embedder, $_indim to $_outdim, $_vecs vectors")
+end
+
+
+# Searcher
+show(io::IO, srcher::Searcher{T,E,I}) where {T,E,I} = begin
+    _status = ifelse(isenabled(srcher), "enabled", "disabled")
+    _status_color = ifelse(isenabled(srcher), :light_green, :light_black)
+    printstyled(io, "[$_status] ", color=_status_color, bold=true)
+    printstyled(io, "Searcher $(id(srcher))/")
+    printstyled(io, "$(srcher.config.id_aggregation)", bold=true)
     printstyled(io, ", ")
 
     # Get search index type string
@@ -77,7 +75,11 @@ show(io::IO, srcher::Searcher{T,E,I}) where {T,E,I} = begin
     end
     printstyled(io, "$_index_type", bold=true)
     #printstyled(io, "$(description(srcher))", color=:normal)
-    printstyled(io, ", $(length(srcher.index)) $T embedded documents")
+    printstyled(io, ", $(length(srcher.index)) $T embedded documents, ")
+    # Get embeddings type string
+    _embsstr = ifelse(srcher.data_embedder[] === srcher.input_embedder[],
+                      "one embedder", "two embedders")
+    printstyled(io, "$_embsstr")
 end
 
 
@@ -115,6 +117,9 @@ Base.show(io::IO, env::SearchEnv{T}) where {T} = begin
     printstyled(io, "$(env.id_key)\n", bold=true)
     printstyled(io, "  sampler = ")
     printstyled(io, "$(repr(env.sampler))\n", bold=true)
+    printstyled(io, "  embedders = [\n")
+    printstyled(io, "$(join(map(o->"    "*repr(o), env.embedders), "\n"))\n", bold=true)
+    printstyled(io, "  ]\n")
     printstyled(io, "  searchers = [\n")
     printstyled(io, "$(join(map(o->"    "*repr(o), env.searchers), "\n"))\n", bold=true)
     printstyled(io, "  ]\n")

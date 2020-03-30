@@ -2,7 +2,7 @@
 Object that stores the search results from a single searcher.
 """
 struct SearchResult{T<:AbstractFloat}
-    id::StringId
+    id::String
     query_matches::Vector{Tuple{T, Int}}  # vector of (score, idx)
     needle_matches::Vector{String}
     suggestions::MultiDict{String, Tuple{T, String}} # needle => tuples of (score,partial match)
@@ -52,7 +52,7 @@ aggregation id's are merged together into a new search result that
 replaces the individual searcher ones.
 """
 function aggregate!(results::Vector{S},
-                    aggregation_ids::Vector{StringId};
+                    aggregation_ids::Vector{String};
                     method=RESULT_AGGREGATION_STRATEGY,
                     max_matches=MAX_MATCHES,
                     max_suggestions=MAX_SUGGESTIONS,
@@ -75,7 +75,7 @@ function aggregate!(results::Vector{S},
             target_results = results[positions]
             # aggregate
             qm = [result.query_matches for result in target_results]
-            weights = [result.score_weight * T(get(custom_weights, Symbol(result.id.value), 1.0))
+            weights = [result.score_weight * T(get(custom_weights, Symbol(result.id), 1.0))
                        for result in target_results]
             merged_query_matches = __aggregate(qm, weights; method=method, max_matches=max_matches)
             # Create SearchResult object
@@ -128,11 +128,11 @@ function __aggregate(query_matches::Vector{Vector{Tuple{T,Int}}},
 
     # Merge results
     final_scores::Vector{T} = zeros(T, m)
-    (method == :minimum) && (final_scores = minimum(scores, dims=2)[:,1])
-    (method == :maximum) && (final_scores = maximum(scores, dims=2)[:,1])
-    (method == :median) && (final_scores = median(scores, dims=2)[:,1])
-    (method == :product) && (final_scores = prod(scores, dims=2)[:,1])
-    (method == :mean) && (final_scores = mean(scores, dims=2)[:,1])
+    (method == :minimum) && (final_scores = firstcol(minimum(scores, dims=2)))
+    (method == :maximum) && (final_scores = firstcol(maximum(scores, dims=2)))
+    (method == :median) && (final_scores = firstcol(median(scores, dims=2)))
+    (method == :product) && (final_scores = firstcol(prod(scores, dims=2)))
+    (method == :mean) && (final_scores = firstcol(mean(scores, dims=2)))
 
     # Sort and trim result list: intersect sorted score indices by the
     # indices with scores larger than 0 and then trim (the result of the

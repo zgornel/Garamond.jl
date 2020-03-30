@@ -6,17 +6,20 @@ using word vectors.
   * [Arora et al. ICLR 2017, "A simple but tough-to-beat baseline for sentence embeddings"]
     (https://openreview.net/pdf?id=SyK00v5xx)
 """
-struct SIFEmbedder{S,T} <: WordVectorsEmbedder{S,T}
-    embeddings::EmbeddingsLibrary{S,T}
+struct SIFEmbedder{T,S} <: WordVectorsEmbedder{T,S}
+    embeddings::EmbeddingsLibrary{T,S}
     lexicon::OrderedDict{S, Int}
     alpha::T
+    config::NamedTuple
 end
 
-SIFEmbedder(embeddings::EmbeddingsLibrary{S,T};
+SIFEmbedder(embeddings::EmbeddingsLibrary{T,S},
+            config;
             lexicon=OrderedDict{S, Int}(),
             alpha=DEFAULT_SIF_ALPHA,
-            kwargs...) where {S,T} =
-    SIFEmbedder(embeddings, lexicon, T(alpha))
+            kwargs...
+            ) where {T,S} =
+    SIFEmbedder(embeddings, lexicon, T(alpha), config)
 
 
 # Dimensionality function
@@ -29,7 +32,7 @@ end
 function sentences2vec(embedder::SIFEmbedder,
                        document_embedding::Vector{Matrix{T}};
                        embedded_words::Vector{Vector{S}}=[String[]],
-                       kwargs...) where {S,T}
+                       kwargs...) where {T,S}
     isempty(document_embedding) && return zeros(T, dimensionality(embedder), 0)
     sif(document_embedding,
         embedder.lexicon,

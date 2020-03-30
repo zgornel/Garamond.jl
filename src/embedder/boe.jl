@@ -1,11 +1,12 @@
 """
 Bag-of-embeddings (BOE) structure for document embedding using word vectors.
 """
-struct BOEEmbedder{S,T} <: WordVectorsEmbedder{S,T}
-    embeddings::EmbeddingsLibrary{S,T}
+struct BOEEmbedder{T,S} <: WordVectorsEmbedder{T,S}
+    embeddings::EmbeddingsLibrary{T,S}
+    config::NamedTuple
 end
 
-BOEEmbedder(embeddings; kwargs...) = BOEEmbedder(embeddings)
+BOEEmbedder(embeddings, config; kwargs...) = BOEEmbedder(embeddings, config)
 
 
 # Dimensionality function
@@ -15,9 +16,9 @@ end
 
 
 # Sentence embedding function
-function sentences2vec(embedder::BOEEmbedder,
+function sentences2vec(embedder::BOEEmbedder{T,S},
                        document_embedding::Vector{Matrix{T}};
-                       kwargs...) where {S,T}
+                       kwargs...) where {T,S}
     n = length(document_embedding)
     X = zeros(T, dimensionality(embedder), n)
     @inbounds @simd for i in 1:n
