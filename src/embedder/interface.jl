@@ -165,29 +165,33 @@ firstcol(m::AbstractMatrix) = m[:,1]
 function embed!(out::AbstractMatrix{T},
                 is_embedded::BitArray,
                 embedder::AbstractEmbedder{T},
-                documents;
+                entries;
+                fields=nothing,
                 kwargs...) where {T}
     flags = embedder.config.text_strip_flags | (embedder.config.stem_words ? stem_words : 0x0)
     language = get(STR_TO_LANG, embedder.config.language, DEFAULT_LANGUAGE)()
+    documents = [dbentry2text(entry, fields) for entry in entries]
     for i in eachindex(documents)
         out[:,i], is_embedded[i] = document2vec(embedder,
-                                                prepare.(documents[i], flags; language=language);
-                                                kwargs...)
+                                        prepare.(documents[i], flags; language=language);
+                                        kwargs...)
     end
     nothing
 end
 
 
-function embed(embedder::AbstractEmbedder, documents; kwargs...)
-    n = length(documents)
+function embed(embedder::AbstractEmbedder, entries; fields=nothing, kwargs...)
+    n = length(entries)
     embedded = preallocate_embeddings(embedder, n)
     isemb = falses(n)
-    embed!(embedded, isemb, embedder, documents; kwargs...)
+    embed!(embedded, isemb, embedder, entries; fields=fields, kwargs...)
     return embedded, isemb
 end
 
 
 function preallocate_embeddings(embedder::AbstractEmbedder{T,S}, len) where {T,S}
-    m = first(document2vec(embedder, S[]))
-    zeros(m, T, (dimensionality(embedder), len))
+    m, _ = document2vec(embedder, S[])
+    p = similar(m, T, (dimensionality(embedder), len))
+    fill!(p, zero(T))
+    return p
 end

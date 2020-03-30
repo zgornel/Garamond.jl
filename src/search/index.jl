@@ -97,31 +97,32 @@ function search(srcher::Searcher{T,E,I},
                 max_matches::Int=MAX_MATCHES,
                 max_suggestions::Int=MAX_SUGGESTIONS
                ) where {T<:AbstractFloat, E, I<:AbstractIndex}
-    ### # Prepare and embed query
-    needles = prepare_query(query)
-    embeddedq, is_embedded = embed(srcher.input_embedder[],
-                                   [needles];
-                                   isregex=(search_method===:regex))
+    # Make an entry i.e.e NamedTuple out of the query
+    qentry = (query=query2string(query),)  # query treated as single sentence
+    qfields = [:query]
+    isregex = search_method === :regex
+    qembedding, status = embed(srcher.input_embedder[], [qentry]; fields=qfields, isregex=isregex)
+
     # Search (if document vector is not zero)
     scores, idxs = T[], Int[]
-    if first(is_embedded)
-        ### Search
-        k = min(length(srcher.index), max_matches)
-        idxs, scores = knn_search(srcher.index, firstcol(embeddedq), k)
-        ###
+    if first(status)
+        idxs, scores = knn_search(srcher.index,
+                                  firstcol(qembedding),
+                                  min(length(srcher.index), max_matches))  # k
         score_transform!(scores, alpha=srcher.config.score_alpha)
     end
     query_matches = collect(zip(scores, idxs))
 
     # Find matching and missing needles
-    needle_matches, missing_needles = __found_missing_needles(srcher.input_embedder[], needles)
+    needles = query2vector(query)
+    needle_matches, missed_needles = missing_needles(srcher.input_embedder[], needles)
 
     # Get suggestions
     suggestions = MultiDict{String, Tuple{T, String}}()
-    if max_suggestions > 0 && !isempty(missing_needles)
+    if max_suggestions > 0 && !isempty(missed_needles)
         suggestion_search!(suggestions,
                            srcher.search_trees,
-                           missing_needles,
+                           missed_needles,
                            max_suggestions=max_suggestions)
     end
     return SearchResult(id(srcher), query_matches, needle_matches,
@@ -132,20 +133,20 @@ end
 """
 Returns found and missing needles using an embedder
 """
-__found_missing_needles
+missing_needles
 
-__found_missing_needles(embedder::WordVectorsEmbedder, needles) = (String[], String[])
+missing_needles(embedder::WordVectorsEmbedder, needles) = (String[], String[])
 
-__found_missing_needles(embedder::DTVEmbedder, needles) =
-    __found_missing_needles(embedder.model, needles)
+missing_needles(embedder::DTVEmbedder, needles) =
+    missing_needles(embedder.model, needles)
 
-__found_missing_needles(model::StringAnalysis.RPModel, needles) = begin
+missing_needles(model::StringAnalysis.RPModel, needles) = begin
     needle_matches = [needle for needle in needles if in(needle, model.vocab)]
-    missing_needles = setdiff(needles, needle_matches)
-    return needle_matches, missing_needles
+    missed_needles = setdiff(needles, needle_matches)
+    return needle_matches, missed_needles
 end
 
-__found_missing_needles(model::StringAnalysis.LSAModel, needles) = (String[], String[])
+missing_needles(model::StringAnalysis.LSAModel, needles) = (String[], String[])
 
 
 """
@@ -201,13 +202,15 @@ function score_transform!(x::AbstractVector{T};
 end
 
 
-"""
-    prepare_query(query)
+# Useful functions
+query2string(query::AbstractString) = String(query)
 
-Prepares the query for search.
-"""
-prepare_query(query::AbstractString) = String.(tokenize(query, method=DEFAULT_TOKENIZER))
+query2string(query::Vector{String}) = join(query, " ")
 
-prepare_query(needles::Vector{String}) = needles
+query2string(query) = throw(ArgumentError("query2string requires `String` or Vector{String} inputs."))
 
-prepare_query(query) = throw(ArgumentError("Query pre-processing requires `String` or Vector{String} inputs."))
+query2vector(query::Vector{String}) = query
+
+query2vector(query::AbstractString) = String.(tokenize(query, method=DEFAULT_TOKENIZER))
+
+query2vector(query) = throw(ArgumentError("query2vector requires `String` or Vector{String} inputs."))

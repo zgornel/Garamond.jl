@@ -31,8 +31,8 @@
     end
 
     idx_searcher = 1
-    disable!(seachers[idx_searcher])
-    @test !isenabled(seachers[idx_searcher])
-    enable!(seachers[idx_searcher])
-    @test isenabled(seachers[idx_searcher])
+    disable!(searchers[idx_searcher])
+    @test !isenabled(searchers[idx_searcher])
+    enable!(searchers[idx_searcher])
+    @test isenabled(searchers[idx_searcher])
 end

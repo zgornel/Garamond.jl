@@ -9,7 +9,8 @@
     _embeddable_fields = cfg.embedder_configs[1].embeddable_fields
     _embedder_kwarguments = Dict{Symbol,Any}()
     T = eval(cfg.vectors_eltype)
-    documents = [["1000","2000"], ["not_embeddable"]]  # 2 documents
+    entries = [(field1=1000, field2="2000"), (field1="not_embeddable")]  # 2 documents
+    fields = [:field1, :field2]
 
     for _vectors in [:count, :tf, :tfidf, :bm25]
         for _vectors_transform in [:none, :rp, :lsa]
@@ -38,7 +39,7 @@
                              )
                     embedder = Garamond.build_embedder(dbdata, config; vectors_eltype=T, id_key=cfg.id_key)
                     @test embedder isa AbstractEmbedder{T}
-                    embedded, isembedded = embed(embedder, documents)
+                    embedded, isembedded = embed(embedder, entries; fields=fields)
                     @test embedded isa SparseMatrixCSC{T,Int}
                     @test isembedded isa BitArray
                     @test isembedded[1] == true && isembedded[2] == false
@@ -82,7 +83,7 @@
                          )
                 embedder = Garamond.build_embedder(dbdata, config; vectors_eltype=T, id_key=cfg.id_key)
                 @test embedder isa AbstractEmbedder{T}
-                embedded, isembedded = embed(embedder, documents)
+                embedded, isembedded = embed(embedder, entries; fields=fields)
                 @test embedded isa Matrix{T}
                 @test Garamond.dimensionality(embedder) == size(embedded, 1)
                 @test isembedded isa BitArray

@@ -41,8 +41,7 @@ Base.push!(srcher::Searcher, entry) = pushinner!(srcher, entry, :last)
 Base.pushfirst!(srcher::Searcher, entry) = pushinner!(srcher, entry, :first)
 
 pushinner!(srcher::Searcher, entry, position::Symbol) = begin
-    document = [dbentry2text(entry, srcher.config.indexable_fields)]
-    embedded = first(embed(srcher.data_embedder[], document))
+    embedded, _ = embed(srcher.data_embedder[], [entry]; fields=srcher.config.indexable_fields)
     index_operation = ifelse(position === :first, pushfirst!, push!)
     index_operation(srcher.index, firstcol(embedded))  # push first column i.e. vector
     nothing
@@ -76,12 +75,9 @@ function build_searcher(dbdata, embedders, config; id_key=DEFAULT_DB_ID_KEY)
     input_embedder = first(filter(embdr->embdr.config.id==config.input_embedder, embedders))
     data_embedder = first(filter(embdr->embdr.config.id==config.data_embedder, embedders))
 
-    # Create documents
-    documents = [dbentry2text(dbentry, config.indexable_fields)
-                 for dbentry in db_sorted_row_iterator(dbdata; id_key=id_key, rev=false)]
-
-    # Calculate embeddings for each document
-    embedded = first(embed(data_embedder, documents))
+    # Embed db entries
+    entries = db_sorted_row_iterator(dbdata; id_key=id_key, rev=false)
+    embedded, _ = embed(data_embedder, entries; fields=config.indexable_fields)
 
     # Build search index
     indexer= build_indexer(config.search_index,
@@ -90,7 +86,7 @@ function build_searcher(dbdata, embedders, config; id_key=DEFAULT_DB_ID_KEY)
     srchindex = indexer(embedded)
 
     # Build search tree (for suggestions)
-    srchtree = build_bktree(config.heuristic, documents)
+    srchtree = build_bktree(dbdata, config.heuristic; id_key=id_key)
 
     # Build searcher
     srcher = Searcher(Ref(dbdata),
@@ -105,10 +101,11 @@ function build_searcher(dbdata, embedders, config; id_key=DEFAULT_DB_ID_KEY)
 end
 
 
-function build_bktree(heuristic, documents)
-    _documents = [join(sentences, " ") for sentences in documents]  # merge sentences
-    lexicon = create_lexicon(_documents, 1)
+function build_bktree(dbdata, heuristic; id_key=nothing)
     if heuristic != nothing
+        documents = [join(dbentry2text(dbentry, config.indexable_fields), " ") # merge sentences
+                     for dbentry in db_sorted_row_iterator(dbdata; id_key=id_key, rev=false)]
+        lexicon = create_lexicon(documents, 1)
         distance = get(HEURISTIC_TO_DISTANCE, heuristic, DEFAULT_DISTANCE)
         fdist = (x,y) -> evaluate(distance, x, y)
         return BKTree(fdist, collect(keys(lexicon)))
