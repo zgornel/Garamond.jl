@@ -56,7 +56,7 @@ end
     SEARCHERCONFIG_PROPS = Dict(:id => String,
                                 :id_aggregation => String,
                                 :description => String,
-                                :enabled => Bool,
+                                :enabled => Vector{Bool},
                                 :indexable_fields => Vector{Symbol},
                                 :data_embedder => String,
                                 :input_embedder => String,

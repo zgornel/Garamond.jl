@@ -48,7 +48,7 @@ that acts as a search environment configuration.
     `id::String`                        # searcher id
     `id_aggregation::String`            # aggregation id
     `description::String`               # description of the searcher
-    `enabled::Bool`                     # whether to use the searcher in search or not
+    `enabled::Vector{Bool}`             # whether to use the searcher in search or not
     `search_index::Symbol`              # type of the search index i.e. :naive, :kdtree, :hnsw
     `search_index_arguments::Vector{Any}`
     `search_index_kwarguments::Dict{Symbol, Any}`
@@ -257,7 +257,7 @@ function parse_configuration(filename::AbstractString)
             _id = make_id(get(srchercfg, "id", nothing))
             _id_aggregation = haskey(srchercfg, "id_aggregation") ? make_id(srchercfg["id_aggregation"]) : id_environment
             _description = get(srchercfg, "description", "")
-            _enabled = get(srchercfg, "enabled", true)
+            _enabled = [get(srchercfg, "enabled", true)]
             _search_index = Symbol(get(srchercfg, "search_index", DEFAULT_SEARCH_INDEX))
             _search_index_arguments = Vector{Any}(get(srchercfg, "search_index_arguments", []))
             _search_index_kwarguments = try

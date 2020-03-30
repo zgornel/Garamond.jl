@@ -5,9 +5,9 @@ abstract type AbstractSearcher{T} end
     Search object. It contains all the indexed data and related
 configuration that allows for searches to be performed.
 """
-mutable struct Searcher{T<:AbstractFloat,
-                        E<:AbstractEmbedder{T},
-                        I<:AbstractIndex} <: AbstractSearcher{T}
+struct Searcher{T<:AbstractFloat,
+                E<:AbstractEmbedder{T},
+                I<:AbstractIndex} <: AbstractSearcher{T}
     data::Ref
     config::NamedTuple
     input_embedder::Ref{E}                      # embeds queries
@@ -22,16 +22,16 @@ id(srcher::Searcher) = srcher.config.id
 
 description(srcher::Searcher) = srcher.config.description
 
-isenabled(srcher::Searcher) = srcher.config.enabled
+isenabled(srcher::Searcher) = first(srcher.config.enabled)
 
 disable!(srcher::Searcher) = begin
-    srcher.config.enabled = false
-    return srcher
+    srcher.config.enabled[1] = false
+    nothing
 end
 
 enable!(srcher::Searcher) = begin
-    srcher.config.enabled = true
-    return srcher
+    srcher.config.enabled[1] = true
+    nothing
 end
 
 
