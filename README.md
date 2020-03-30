@@ -5,6 +5,7 @@
 [![Coverage Status](https://coveralls.io/repos/github/zgornel/Garamond.jl/badge.svg?branch=master)](https://coveralls.io/github/zgornel/Garamond.jl?branch=master)
 
 Garamond is small, flexible neural and data search engine, written in Julia. Batteries not included.
+![Alt text](https://github.com/zgornel/Garamond.jl/blob/master/docs/src/assets/schematic.png)
 
 ## Installation
 
