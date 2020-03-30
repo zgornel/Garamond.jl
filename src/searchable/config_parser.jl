@@ -344,7 +344,7 @@ function parse_configuration(filename::AbstractString)
         used_embedder_ids = unique(vcat(map(c->c.data_embedder, searcher_configs),
                                          map(c->c.input_embedder, searcher_configs)))
         unk_embedders = setdiff(used_embedder_ids, embedder_ids)
-        if any(unk_embedders)
+        if !isempty(unk_embedders)
             @warn "Embedders: $(unk_embedders) are unknown!"
             return nothing
         end
