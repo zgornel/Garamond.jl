@@ -8,7 +8,7 @@ julia&gt; cfg = mktemp() do path, io  # write and parse config file on-the-fly
            flush(io)
            parse_configuration(path)
        end
-(data_loader = Garamond.var&quot;#126#136&quot;{Array{Any,1},Dict{Symbol,Any},typeof(Garamond.juliadb_loader)}(Any[&quot;/home/travis/build/zgornel/Garamond.jl/test/data/generated_data_100_samples.csv&quot;], Dict{Symbol,Any}(), Garamond.juliadb_loader), data_sampler = Garamond.identity_sampler, id_key = :id, vectors_eltype = Float32, searcher_configs = Any[(id = &quot;searcher_1&quot;, id_aggregation = &quot;aggid&quot;, description = &quot;A searcher using BM25+RP embeddings and naive indexing&quot;, enabled = Bool[1], search_index = :naive, search_index_arguments = Any[], search_index_kwarguments = Dict{Symbol,Any}(), indexable_fields = Symbol[:RandString, :StringField, :StringField2, :IntField], data_embedder = &quot;embedder_1&quot;, input_embedder = &quot;embedder_1&quot;, heuristic = nothing, score_alpha = 0.4f0, score_weight = 0.8f0)], embedder_configs = Any[(id = &quot;embedder_1&quot;, description = &quot;BM25+RP embedder&quot;, language = &quot;english&quot;, stem_words = false, ngram_complexity = 1, vectors = :bm25, vectors_transform = :rp, vectors_dimension = 50, embeddings_path = nothing, embeddings_kind = :binary, doc2vec_method = :boe, glove_vocabulary = nothing, oov_policy = :large_vector, embedder_kwarguments = Dict{Symbol,Any}(), embeddable_fields = Symbol[:RandString, :StringField, :StringField2, :IntField], text_strip_flags = 0x00700607, sif_alpha = 0.01f0, borep_dimension = 1024, borep_pooling_function = :sum, disc_ngram = 2)], config_path = &quot;/tmp/jl_7wHP6B&quot;)</code></pre><p>The configuration contains the data loader (a closure that only needs to be called with no argument to load the data), the path of the configuration file, the primary id key of the data (which needs to be a <a href="https://juliadb.org">JuliaDB</a> data type) and a list of configuration objects for the individual searchers of the engine.</p><pre><code class="language-julia-repl">julia&gt; for field in fieldnames(typeof(cfg))
+(data_loader = Garamond.var&quot;#126#136&quot;{Array{Any,1},Dict{Symbol,Any},typeof(Garamond.juliadb_loader)}(Any[&quot;/home/travis/build/zgornel/Garamond.jl/test/data/generated_data_100_samples.csv&quot;], Dict{Symbol,Any}(), Garamond.juliadb_loader), data_sampler = Garamond.identity_sampler, id_key = :id, vectors_eltype = Float32, searcher_configs = Any[(id = &quot;searcher_1&quot;, id_aggregation = &quot;aggid&quot;, description = &quot;A searcher using BM25+RP embeddings and naive indexing&quot;, enabled = Bool[1], search_index = :naive, search_index_arguments = Any[], search_index_kwarguments = Dict{Symbol,Any}(), indexable_fields = Symbol[:RandString, :StringField, :StringField2, :IntField], data_embedder = &quot;embedder_1&quot;, input_embedder = &quot;embedder_1&quot;, heuristic = nothing, score_alpha = 0.4f0, score_weight = 0.8f0)], embedder_configs = Any[(id = &quot;embedder_1&quot;, description = &quot;BM25+RP embedder&quot;, language = &quot;english&quot;, stem_words = false, ngram_complexity = 1, vectors = :bm25, vectors_transform = :rp, vectors_dimension = 50, embeddings_path = nothing, embeddings_kind = :binary, doc2vec_method = :boe, glove_vocabulary = nothing, oov_policy = :large_vector, embedder_kwarguments = Dict{Symbol,Any}(), embeddable_fields = Symbol[:RandString, :StringField, :StringField2, :IntField], text_strip_flags = 0x00700607, sif_alpha = 0.01f0, borep_dimension = 1024, borep_pooling_function = :sum, disc_ngram = 2)], config_path = &quot;/tmp/jl_Iv2CFW&quot;)</code></pre><p>The configuration contains the data loader (a closure that only needs to be called with no argument to load the data), the path of the configuration file, the primary id key of the data (which needs to be a <a href="https://juliadb.org">JuliaDB</a> data type) and a list of configuration objects for the individual searchers of the engine.</p><pre><code class="language-julia-repl">julia&gt; for field in fieldnames(typeof(cfg))
            println(&quot;$field=$(getfield(cfg, field))&quot;)
        end
 data_loader=#126
@@ -17,8 +17,8 @@ id_key=id
 vectors_eltype=Float32
 searcher_configs=Any[(id = &quot;searcher_1&quot;, id_aggregation = &quot;aggid&quot;, description = &quot;A searcher using BM25+RP embeddings and naive indexing&quot;, enabled = Bool[1], search_index = :naive, search_index_arguments = Any[], search_index_kwarguments = Dict{Symbol,Any}(), indexable_fields = Symbol[:RandString, :StringField, :StringField2, :IntField], data_embedder = &quot;embedder_1&quot;, input_embedder = &quot;embedder_1&quot;, heuristic = nothing, score_alpha = 0.4f0, score_weight = 0.8f0)]
 embedder_configs=Any[(id = &quot;embedder_1&quot;, description = &quot;BM25+RP embedder&quot;, language = &quot;english&quot;, stem_words = false, ngram_complexity = 1, vectors = :bm25, vectors_transform = :rp, vectors_dimension = 50, embeddings_path = nothing, embeddings_kind = :binary, doc2vec_method = :boe, glove_vocabulary = nothing, oov_policy = :large_vector, embedder_kwarguments = Dict{Symbol,Any}(), embeddable_fields = Symbol[:RandString, :StringField, :StringField2, :IntField], text_strip_flags = 0x00700607, sif_alpha = 0.01f0, borep_dimension = 1024, borep_pooling_function = :sum, disc_ngram = 2)]
-config_path=/tmp/jl_7wHP6B</code></pre><h2><a class="nav-anchor" id="The-search-environment-1" href="#The-search-environment-1">The search environment</a></h2><p>Building the search environment out of the configuration is straightforward. The environment holds the in-memory data in the form of an <code>IndexedTable</code> or <code>NDSparse</code> object, the searchers as well as other information such as primary db key and configuration paths. </p><pre><code class="language-julia-repl">julia&gt; env = build_search_env(cfg)
-[ Info: • Environment successfully built using config /tmp/jl_7wHP6B.
+config_path=/tmp/jl_Iv2CFW</code></pre><h2><a class="nav-anchor" id="The-search-environment-1" href="#The-search-environment-1">The search environment</a></h2><p>Building the search environment out of the configuration is straightforward. The environment holds the in-memory data in the form of an <code>IndexedTable</code> or <code>NDSparse</code> object, the searchers as well as other information such as primary db key and configuration paths. </p><pre><code class="language-julia-repl">julia&gt; env = build_search_env(cfg)
+[ Info: • Environment successfully built using config /tmp/jl_Iv2CFW.
 SearchEnv{Float32} with:
 `-dbdata = Table with 100 rows, 7 columns
   id_key = id
@@ -29,7 +29,7 @@ SearchEnv{Float32} with:
   searchers = [
     [enabled] Searcher searcher_1/aggid, Naive index, 100 Float32 embedded documents, one embedder
   ]
-  config_path = /tmp/jl_7wHP6B</code></pre><h2><a class="nav-anchor" id="Engine-operations-1" href="#Engine-operations-1">Engine operations</a></h2><p>The internal API is designed to be straightforward and uniform in the way it is called. First, one has to build a request which fully describes the operation to be performed and subsequently, call the operation desired. For example, to perform a search, one request would be:</p><pre><code class="language-julia-repl">julia&gt; request = Garamond.InternalRequest(operation=:search,
+  config_path = /tmp/jl_Iv2CFW</code></pre><h2><a class="nav-anchor" id="Engine-operations-1" href="#Engine-operations-1">Engine operations</a></h2><p>The internal API is designed to be straightforward and uniform in the way it is called. First, one has to build a request which fully describes the operation to be performed and subsequently, call the operation desired. For example, to perform a search, one request would be:</p><pre><code class="language-julia-repl">julia&gt; request = Garamond.InternalRequest(operation=:search,
                                           query=&quot;Q&quot;,
                                           search_method=:exact,
                                           max_matches=10,
@@ -44,17 +44,17 @@ InternalRequest: OPERATION=:search | QUERY=&quot;Q&quot; | MAX_MATCHES=10 | SEAR
 1-element Array{SearchResult{Float32},1}:
  Search results for searcher_1:  10 hits, 1 query terms, 0 suggestions.</code></pre><h2><a class="nav-anchor" id="Results-and-responses-1" href="#Results-and-responses-1">Results and responses</a></h2><p>Once results are available, these can be printed</p><pre><code class="language-julia-repl">julia&gt; print_search_results(env.dbdata, ranked; id_key=:id, fields=[:id, :RandString])
 [searcher_1] 10 search results:
-  0.857034 ~ 12 - Q
-  0.8071078 ~ 46 - q
-  0.74199486 ~ 68 - Eh
-  0.68621206 ~ 48 - 7dHHA0
-  0.6794542 ~ 78 - squf7nz
-  0.67096984 ~ 60 - ODkB
-  0.6637293 ~ 79 - 4
-  0.6614511 ~ 80 - vcdBdG4
-  0.6565348 ~ 38 - VRcFNAeS
-  0.65345657 ~ 36 - r</code></pre><p>or a JSON response created are sent elsewhere</p><pre><code class="language-julia-repl">julia&gt; response = Garamond.build_response(env.dbdata, request, ranked, id_key=env.id_key)
-&quot;{\&quot;n_searchers\&quot;:1,\&quot;n_searchers_w_results\&quot;:1,\&quot;suggestions\&quot;:{\&quot;d\&quot;:{}},\&quot;elapsed_time\&quot;:-1.0,\&quot;results\&quot;:{\&quot;searcher_1\&quot;:[{\&quot;id\&quot;:12,\&quot;RandString\&quot;:\&quot;Q\&quot;,\&quot;score\&quot;:0.857034,\&quot;StringField\&quot;:\&quot;\&quot;},{\&quot;id\&quot;:46,\&quot;RandString\&quot;:\&quot;q\&quot;,\&quot;score\&quot;:0.8071078,\&quot;StringField\&quot;:\&quot;A B C D E\&quot;},{\&quot;id\&quot;:68,\&quot;RandString\&quot;:\&quot;Eh\&quot;,\&quot;score\&quot;:0.74199486,\&quot;StringField\&quot;:\&quot;A B\&quot;},{\&quot;id\&quot;:48,\&quot;RandString\&quot;:\&quot;7dHHA0\&quot;,\&quot;score\&quot;:0.68621206,\&quot;StringField\&quot;:\&quot;A B\&quot;},{\&quot;id\&quot;:78,\&quot;RandString\&quot;:\&quot;squf7nz\&quot;,\&quot;score\&quot;:0.6794542,\&quot;StringField\&quot;:\&quot;\&quot;}]},\&quot;n_total_results\&quot;:10}&quot;</code></pre><p>To verify the response, it can be parsed and displayed:</p><pre><code class="language-julia-repl">julia&gt; parsed_response = JSON.parse(response)
+  0.98040146 ~ 12 - Q
+  0.80378926 ~ 46 - q
+  0.7161374 ~ 30 - oHYQIiB4gY
+  0.7116915 ~ 34 - uI9hh3j
+  0.70921636 ~ 22 - piXz
+  0.708724 ~ 21 - gpc
+  0.70637226 ~ 54 - 7deZzQbi
+  0.7035507 ~ 39 - 1x0G9Y
+  0.69902503 ~ 61 - 7
+  0.69860065 ~ 29 - 0GQ9JPhb</code></pre><p>or a JSON response created are sent elsewhere</p><pre><code class="language-julia-repl">julia&gt; response = Garamond.build_response(env.dbdata, request, ranked, id_key=env.id_key)
+&quot;{\&quot;n_searchers\&quot;:1,\&quot;n_searchers_w_results\&quot;:1,\&quot;suggestions\&quot;:{\&quot;d\&quot;:{}},\&quot;elapsed_time\&quot;:-1.0,\&quot;results\&quot;:{\&quot;searcher_1\&quot;:[{\&quot;id\&quot;:12,\&quot;RandString\&quot;:\&quot;Q\&quot;,\&quot;score\&quot;:0.98040146,\&quot;StringField\&quot;:\&quot;\&quot;},{\&quot;id\&quot;:46,\&quot;RandString\&quot;:\&quot;q\&quot;,\&quot;score\&quot;:0.80378926,\&quot;StringField\&quot;:\&quot;A B C D E\&quot;},{\&quot;id\&quot;:30,\&quot;RandString\&quot;:\&quot;oHYQIiB4gY\&quot;,\&quot;score\&quot;:0.7161374,\&quot;StringField\&quot;:\&quot;A B C D E\&quot;},{\&quot;id\&quot;:34,\&quot;RandString\&quot;:\&quot;uI9hh3j\&quot;,\&quot;score\&quot;:0.7116915,\&quot;StringField\&quot;:\&quot;A B C D E\&quot;},{\&quot;id\&quot;:22,\&quot;RandString\&quot;:\&quot;piXz\&quot;,\&quot;score\&quot;:0.70921636,\&quot;StringField\&quot;:\&quot;A B C D\&quot;}]},\&quot;n_total_results\&quot;:10}&quot;</code></pre><p>To verify the response, it can be parsed and displayed:</p><pre><code class="language-julia-repl">julia&gt; parsed_response = JSON.parse(response)
 Dict{String,Any} with 6 entries:
   &quot;n_searchers&quot;           =&gt; 1
   &quot;n_searchers_w_results&quot; =&gt; 1
@@ -65,8 +65,8 @@ Dict{String,Any} with 6 entries:
 
 julia&gt; parsed_response[&quot;results&quot;][collect(keys(parsed_response[&quot;results&quot;]))[1]]
 5-element Array{Any,1}:
- Dict{String,Any}(&quot;score&quot; =&gt; 0.857034,&quot;StringField&quot; =&gt; &quot;&quot;,&quot;id&quot; =&gt; 12,&quot;RandString&quot; =&gt; &quot;Q&quot;)
- Dict{String,Any}(&quot;score&quot; =&gt; 0.8071078,&quot;StringField&quot; =&gt; &quot;A B C D E&quot;,&quot;id&quot; =&gt; 46,&quot;RandString&quot; =&gt; &quot;q&quot;)
- Dict{String,Any}(&quot;score&quot; =&gt; 0.74199486,&quot;StringField&quot; =&gt; &quot;A B&quot;,&quot;id&quot; =&gt; 68,&quot;RandString&quot; =&gt; &quot;Eh&quot;)
- Dict{String,Any}(&quot;score&quot; =&gt; 0.68621206,&quot;StringField&quot; =&gt; &quot;A B&quot;,&quot;id&quot; =&gt; 48,&quot;RandString&quot; =&gt; &quot;7dHHA0&quot;)
- Dict{String,Any}(&quot;score&quot; =&gt; 0.6794542,&quot;StringField&quot; =&gt; &quot;&quot;,&quot;id&quot; =&gt; 78,&quot;RandString&quot; =&gt; &quot;squf7nz&quot;)</code></pre><footer><hr/><a class="previous" href="../"><span class="direction">Previous</span><span class="title">Introduction</span></a><a class="next" href="../configuration/"><span class="direction">Next</span><span class="title">Configuration</span></a></footer></article></body></html>
+ Dict{String,Any}(&quot;score&quot; =&gt; 0.98040146,&quot;StringField&quot; =&gt; &quot;&quot;,&quot;id&quot; =&gt; 12,&quot;RandString&quot; =&gt; &quot;Q&quot;)
+ Dict{String,Any}(&quot;score&quot; =&gt; 0.80378926,&quot;StringField&quot; =&gt; &quot;A B C D E&quot;,&quot;id&quot; =&gt; 46,&quot;RandString&quot; =&gt; &quot;q&quot;)
+ Dict{String,Any}(&quot;score&quot; =&gt; 0.7161374,&quot;StringField&quot; =&gt; &quot;A B C D E&quot;,&quot;id&quot; =&gt; 30,&quot;RandString&quot; =&gt; &quot;oHYQIiB4gY&quot;)
+ Dict{String,Any}(&quot;score&quot; =&gt; 0.7116915,&quot;StringField&quot; =&gt; &quot;A B C D E&quot;,&quot;id&quot; =&gt; 34,&quot;RandString&quot; =&gt; &quot;uI9hh3j&quot;)
+ Dict{String,Any}(&quot;score&quot; =&gt; 0.70921636,&quot;StringField&quot; =&gt; &quot;A B C D&quot;,&quot;id&quot; =&gt; 22,&quot;RandString&quot; =&gt; &quot;piXz&quot;)</code></pre><footer><hr/><a class="previous" href="../"><span class="direction">Previous</span><span class="title">Introduction</span></a><a class="next" href="../configuration/"><span class="direction">Next</span><span class="title">Configuration</span></a></footer></article></body></html>
