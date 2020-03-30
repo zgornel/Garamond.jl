@@ -9,7 +9,7 @@
     _embeddable_fields = cfg.embedder_configs[1].embeddable_fields
     _embedder_kwarguments = Dict{Symbol,Any}()
     T = eval(cfg.vectors_eltype)
-    entries = [(field1=1000, field2="2000"), (field1="not_embeddable")]  # 2 documents
+    entries = [(field1=1000, field2="2000"), (field1="not_embeddable",)]  # 2 documents
     fields = [:field1, :field2]
 
     for _vectors in [:count, :tf, :tfidf, :bm25]

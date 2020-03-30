@@ -60,7 +60,7 @@ function search(srchers::Vector{<:AbstractSearcher{T}},
                             max_suggestions=max_suggestions)
     end
     # Aggregate results
-    ids_agg = [srcher.config.id_aggregation for srcher in srchers if isenabled(srcher)]
+    ids_agg = String[srcher.config.id_aggregation for srcher in srchers if isenabled(srcher)]
     aggregate!(results,
                ids_agg,
                method=RESULT_AGGREGATION_STRATEGY,

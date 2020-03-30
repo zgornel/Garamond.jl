@@ -26,7 +26,7 @@ The main configuration of the engine pertains to data loading, parsing and index
 
 ```@repl_index
 using Logging, JSON, JuliaDB, Garamond
-include(joinpath(@__DIR__, "..", "..", "test", "configs", "configgenerator.jl"))
+include(joinpath(@__DIR__, "..", "..", "test", "configs", "configgenerator.jl"));
 cfg = mktemp() do path, io  # write and parse config file on-the-fly
     write(io, generate_sample_config_1())
     flush(io)
