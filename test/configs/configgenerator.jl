@@ -9,6 +9,9 @@ function generate_embeddings_path()
     embeddings_path = joinpath(root_path, "test", "embeddings", "word2vec", "sample_model.bin")
 end
 
+# The names of the configuration functions below
+const CONFIG_FUNCTIONS = [:generate_sample_config_1, :generate_sample_config_2]
+
 
 function generate_sample_config_1()
     text = """

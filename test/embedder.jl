@@ -1,5 +1,5 @@
 @testset "Embedder: build, embed" begin
-    cfg_symbol = :generate_sample_config_1
+    cfg_symbol = CONFIG_FUNCTIONS[1]
 	cfg = mktemp() do path, io  # write and parse config file on-the-fly
                write(io, eval(cfg_symbol)())
 			   flush(io)

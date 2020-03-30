@@ -20,6 +20,7 @@ with_logger(test_logger) do
     include("db.jl")
     include("index.jl")
     include("embedder.jl")
+    include("searcher.jl")
     include("env.jl")
     include("indexfilter.jl")
     include("config_parser.jl")

@@ -1,7 +1,3 @@
-const CONFIGS = [:generate_sample_config_1,
-                 :generate_sample_config_2]
-
-
 function test_nt_props(nt, validator)
     propnames = propertynames(nt)
     @assert isempty(symdiff(keys(validator), propnames))
@@ -12,7 +8,7 @@ function test_nt_props(nt, validator)
     true
 end
 
-@testset "Config parser: $config" for config in CONFIGS
+@testset "Config parser: $config" for config in CONFIG_FUNCTIONS
 	cfg = mktemp() do path, io  # write and parse config file on-the-fly
                write(io, eval(config)())
 			   flush(io)
