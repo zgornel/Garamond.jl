@@ -8,9 +8,7 @@ CurrentModule=Garamond
 
 # Introduction
 
-Garamond is a small, flexible neural and data search engine. It can be used both as a Julia package, with search functionality available through API method calls or as a standalone search server, with search functionality accessible through clients that communicate with the server.
-
-Internally, the engine's architecture is that of an ensemble of searchers, with an analytical database as data backend. Each searcher has its own characteristics i.e. ways of embedding documents, searching through the vectors and the search results from all searchers can be combined in a variety of ways. The engine supports runtime loading and use of custom data loaders, recommendation engines and result rankers.
+Garamond is a small, flexible neural and data search engine. Search functionality available through API method calls from Julia code or through communication with a Garamond search server.
 
 
 ## Installation
@@ -29,7 +27,7 @@ downloads the `master` branch of the repository and adds `Garamond` to the curre
 ## Architecture
 ![](assets/schematic.png)
 
-Architecturally, the engine employs an analytical database and a series of searcher objects to perform the search. The database acts as data source to create the searchers as well as for building responses for clients and as input source for the ranking and recommendation operations. Incoming search, recommendation or ranking requests are parsed to an internal request format and sent to the database, searchers or all, depending on the request. The results are then filtered and aggregated and a response is built and sent to the client. Any number of searcher objects can be created and each of these can re-use data embedders i.e. objects that transform data into numerical vectors. Data can be either indexed while the engine is running online i.e. pushed into all indexes plus database or, by fully reloading and reindexing. The engine supports runtime compilation of  custom data loaders, parsers, rankers and recommenders. These can be thin clients that connect i.e. through TCP sockets, HTTP, to external systems that perform the actual workload, provided that the internal client APIs are implemented.
+Architecturally, the engine employs an analytical database and a series of search indexes to perform the search. The database acts as data source to create the indexes (searcher objects), for building responses for clients and as input source for the ranking and recommendation operations. Incoming search/recommendation/ranking requests are parsed to an internal request format and sent to the database and searchers, depending on the request. Each searcher has its own characteristics i.e. ways of embedding documents, searching through the vectors. Search results from searchers can be combined in a variety of ways. The results are then filtered, aggregated and a response is built and sent to the client. Any number of searcher objects can be created and each of these can re-use data embedders i.e. objects that transform data into numerical vectors. Data can be either indexed while the engine is running online i.e. pushed into all indexes plus database or, by fully reloading and reindexing. The engine supports runtime compilation of  custom data loaders, parsers, rankers and recommenders. These can be thin clients that connect i.e. through TCP sockets, HTTP, to external systems that perform the actual workload, provided that the internal client APIs are implemented.
 
 
 ## Main features
