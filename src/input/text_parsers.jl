@@ -32,6 +32,24 @@ function parse_input(env, request)
 end
 
 
+function pre_parser(env, request, args...; magic=r"^[\s]*[\w]+[\s]*>", kwargs...)
+    m = match(magic, request.query)
+    if m !== nothing
+        request.query = strip(replace(request.query, magic=>""))
+        parser_name = Symbol(strip(replace(m.match, ">"=>"")))
+        input_parser = safe_symbol_eval(parser_name, DEFAULT_INPUT_PARSER_NAME)
+        @debug "PRE-Parser: selecting $(input_parser)..."
+        return input_parser(env,
+                            request;
+                            searchable_filters=request.searchable_filters)
+    else
+        search_query = request.query
+        filter_query = Dict{Symbol, Any}()
+        return (search=search_query, filter=filter_query)
+    end
+end
+
+
 # This function shoud parse an input query and return a Dict with the fields and
 # values necessary to filter the data later on.
 function base_input_parser(env,
