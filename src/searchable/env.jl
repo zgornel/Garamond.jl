@@ -93,6 +93,8 @@ Strips searchers from `env`.
 """
 build_data_env(env::SearchEnv) = (dbdata=env.dbdata, id_key=env.id_key, config_path=env.config_path)
 
+build_data_env(env::NamedTuple) = env
+
 
 """
     push!(env::SearchEnv, rawdata)
