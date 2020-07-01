@@ -22,13 +22,35 @@ where:
 
 The input parser function returns a named tuple with fields:
     • `search::AbstractString` which is the search query
-    • `filter::Dict{String, Any}` which represents filtering information
+    • `filter::Dict{Symbol, Any}` which represents filtering information
 =#
 function parse_input(env, request)
     input_parser = safe_symbol_eval(request.input_parser, DEFAULT_INPUT_PARSER_NAME)
-    return input_parser(build_data_env(env),
-                        request;
-                        searchable_filters=request.searchable_filters)
+    env_data = build_data_env(env)
+    return input_parser(env_data, request; searchable_filters=request.searchable_filters)
+end
+
+
+# The pre-parser supports specification of another parser (including itself)
+# into the query. It searches for the "magic" pattern, in this case
+# `parser_name>`. For example, the query:
+#
+# "pre_parser> pre_parser> noop_input_parser> query text"
+#
+# has 3 parser specifications and willrecursively call the pre-parser 2 times until
+# another parser, in the case the `noop_input_parser` is ecountered.
+# If no other parser is available, it will default to the DEFAULT_INPUT_PARSER_NAME
+# by virtue of evaluating an empty parser name.
+function pre_parser(env, request, args...; magic=r"^[\s]*[\w]+[\s]*>", kwargs...)
+    m = match(magic, request.query)
+    parser_name = DEFAULT_INPUT_PARSER_NAME
+    if m !== nothing
+        request.query = strip(replace(request.query, magic=>""))                # strip parser magic from query
+        parser_name = Symbol(strip(replace(m.match, last(magic.pattern)=>"")))  # extract parser name
+    end
+    input_parser = safe_symbol_eval(parser_name, DEFAULT_INPUT_PARSER_NAME)     # evaluate parser
+    @debug "PRE-Parser: selecting \"$(input_parser)\"..."
+    return input_parser(env, request; searchable_filters=request.searchable_filters)  # call parser
 end
 
 
@@ -38,6 +60,7 @@ function base_input_parser(env,
                            request;
                            separator=DEFAULT_QUERY_PARSING_SEPARATOR,
                            searchable_filters=Symbol[])
+    @debug "BASE Input Parser: Running..."
     query = request.query
     dbschema = db_create_schema(env.dbdata)
 
@@ -110,6 +133,7 @@ end
 
 # Parser that does nothing
 function noop_input_parser(env, request, args...; kwargs...)
+    @debug "NOOP Input Parser: Running..."
     search_query = request.query
     filter_query = Dict{Symbol, Any}()
     return (search=search_query, filter=filter_query)
