@@ -26,9 +26,9 @@ version = "0.4.0"
 
 [[Arpack_jll]]
 deps = ["Libdl", "OpenBLAS_jll", "Pkg"]
-git-tree-sha1 = "68a90a692ddc0eb72d69a6993ca26e2a923bf195"
+git-tree-sha1 = "e214a9b9bd1b4e1b4f15b22c0994862b66af7ff7"
 uuid = "68821587-b530-5797-8361-c406ea357684"
-version = "3.5.0+2"
+version = "3.5.0+3"
 
 [[AutoHashEquals]]
 git-tree-sha1 = "45bb6705d93be619b81451bb2006b7ee5d4e4453"
@@ -164,9 +164,9 @@ version = "0.2.0"
 
 [[Garamond]]
 deps = ["ArgParse", "BKTrees", "ConceptnetNumberbatch", "DataStructures", "Dates", "DelimitedFiles", "Distances", "EmbeddingsAnalysis", "Glowe", "HNSW", "HTTP", "IVFADC", "JSON", "JuliaDB", "Languages", "LightGraphs", "LinearAlgebra", "Logging", "NearestNeighbors", "PooledArrays", "ProgressMeter", "QuantizedArrays", "Random", "Serialization", "Sockets", "SparseArrays", "Statistics", "StringAnalysis", "StringDistances", "TSVD", "Unicode", "Word2Vec"]
-git-tree-sha1 = "d32f1c1612560fa119979bf4016fc7bbc4ca4d13"
-repo-rev = "cc-packagecompiler"
-repo-url = "/home/zgornel/projects/Garamond.jl"
+git-tree-sha1 = "599410632c4de094d57228261b48f785a2223ccd"
+repo-rev = "master"
+repo-url = "../.."
 uuid = "eb85711a-c571-11e8-1cba-d10fb99b73c5"
 version = "0.2.0"
 
@@ -319,9 +319,9 @@ version = "1.0.1"
 
 [[MbedTLS_jll]]
 deps = ["Libdl", "Pkg"]
-git-tree-sha1 = "066a4467008745eed36dad973ceb66405785a621"
+git-tree-sha1 = "c83f5a1d038f034ad0549f9ee4d5fac3fb429e33"
 uuid = "c8ffd9c3-330d-5841-b78e-0817d7145fa1"
-version = "2.16.0+1"
+version = "2.16.0+2"
 
 [[MemPool]]
 deps = ["DataStructures", "Distributed", "Mmap", "Random", "Serialization", "Sockets", "Test"]
@@ -368,16 +368,16 @@ uuid = "925886fa-5bf2-5e8e-b522-a9147a512338"
 version = "1.0.2"
 
 [[OpenBLAS_jll]]
-deps = ["Libdl", "Pkg"]
-git-tree-sha1 = "adc45e596df7007d48bf6829efb1dc64fdec3ddc"
+deps = ["CompilerSupportLibraries_jll", "Libdl", "Pkg"]
+git-tree-sha1 = "3f0d696c0640df9787bd0fb6a65c8fffbf6eacb8"
 uuid = "4536629a-c528-5b80-bd46-f80d51c5b363"
-version = "0.3.7+6"
+version = "0.3.7+9"
 
 [[OpenSpecFun_jll]]
 deps = ["CompilerSupportLibraries_jll", "Libdl", "Pkg"]
-git-tree-sha1 = "d110040968b9afe95c6bd9c6233570b0fe8abd22"
+git-tree-sha1 = "d51c416559217d974a1113522d5919235ae67a87"
 uuid = "efe28fd5-8261-553b-a9e1-b2916fc3738e"
-version = "0.5.3+2"
+version = "0.5.3+3"
 
 [[OrderedCollections]]
 deps = ["Random", "Serialization", "Test"]
