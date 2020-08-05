@@ -35,5 +35,15 @@ This code has an MIT license.
 This work could not have been possible without the great work of the people developing all the Julia packages and other technologies Garamond is based upon.
 
 
+## Citing
+`
+@misc{cofaru2019garamond,
+      title={Garamond},
+      author={Corneliu, Cofaru and others},
+      year={2019},
+      publisher={GitHub},
+      howpublished={\url{https://github.com/zgornel/Garamond.jl}},
+}
+`
 ## Reporting Bugs
 Garamond is at the moment under heavy development and much of the API and features are subject to change ¯\\_(ツ)_/¯. Please [file an issue](https://github.com/zgornel/Garamond.jl/issues/new) to report a bug or request a feature.
